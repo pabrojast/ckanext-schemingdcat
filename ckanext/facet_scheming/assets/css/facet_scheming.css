@@ -1,0 +1,60 @@
+
+/***********************************************/
+/*                facet scheming               */
+/***********************************************/
+
+.filters .module .orden {
+	display: inline-block;
+	position:relative;
+	float:right;
+    height: 40px;
+    width: 40px;
+    border-radius:5px;
+    background-color:rgba(255,255,255,0.7);
+    vertical-align:middle;
+    margin-right:5px;
+    top:5px;
+    cursor: pointer;
+}
+
+.filters .module .orden .label {
+	position: absolute;
+    right: 0;
+    bottom: 25%;
+    margin: auto;
+    padding-right:3px;
+    text-align: end;
+    color:#adb5bd;
+}
+
+.filters .module .orden.active .label {
+	color:var(--bs-body-color);	
+}
+	
+.filters .module .orden .up {
+	position:absolute;
+	top:2px;
+	left:2px;
+	color:#adb5bd;
+}
+.filters .module .orden .up.active {
+	color:#212529;	
+}
+
+.filters .module .orden .down {
+	position:absolute;
+	bottom:2px;
+	left:2px;
+	color:#adb5bd;
+}
+.filters .module .orden .down.active {
+	color:#212529;	
+}
+
+/* Iconos para facetado */
+
+img.facet-icon {
+	width: 15px;
+	height: auto;
+	margin-right: 5px;
+}

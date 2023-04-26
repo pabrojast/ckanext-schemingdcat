@@ -1,0 +1,30 @@
+{#
+  Render a list of items with icons
+#}
+
+{% set _class = _class or 'scheming-icon-list' %}
+{% set values = data[field.field_name] %}
+{% set icons_dir = h.fscheming_get_icons_dir(field) %}
+
+  <ul class="{{ _class }}">
+    {%- for choice in h.scheming_field_choices(field) -%}
+      {%- set val = choice.value -%}
+      {%- set label = h.scheming_language_text(choice.label) -%}
+      {%- if val in values -%}
+        {%- if icons_dir -%}
+          {%- set icon = h.fscheming_get_icon(choice,icons_dir) -%}
+          {% if icon -%}
+            {% set img_url= h.url_for_static(icon) -%}
+          {%- elif no_icon -%}
+            {%- set img_url= h.url_for_static(no_icon) -%}
+          {%- endif -%}
+        {%- endif -%}
+          <li>
+            {%- if img_url -%}
+               <img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon"></img>
+            {%- endif -%}
+               <a href="{{ val }}"> {{ label }}</a>
+          </li>
+      {%- endif -%}
+    {% endfor %}
+  </ul>

@@ -7,8 +7,8 @@
 #     preload:
 #       - base/main
 
-# facet_scheming-css:
-#   filter: cssrewrite
-#   output: ckanext-facet_scheming/%(version)s-facet_scheming.css
-#   contents:
-#     - css/facet_scheming.css
+ facet_scheming-css:
+   filter: cssrewrite
+   output: ckanext-facet_scheming/%(version)s-facet_scheming.css
+   contents:
+     - css/facet_scheming.css
