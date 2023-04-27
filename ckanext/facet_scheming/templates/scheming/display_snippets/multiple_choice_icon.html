@@ -6,7 +6,7 @@
 {% set values = data[field.field_name] %}
 {% set icons_dir = h.fscheming_get_icons_dir(field) %}
 
-  <ul class="{{ _class }}">
+  <ul class="{{ _class }} multiple_choice_icon">
     {%- for choice in h.scheming_field_choices(field) -%}
       {%- set val = choice.value -%}
       {%- set label = h.scheming_language_text(choice.label) -%}

@@ -45,13 +45,13 @@ def fscheming_organization_name(id):
     '''
     respuesta=None
     try:
-        org_dic = ckan_helpers.get_organization(id)
+        org_dic = ckan_helpers.get_organization(id['display_name'])
         if org_dic is not None:
             respuesta=org_dic['name']
         else:
-            logger.warning('No se ha podido encontrar el nombre de la organización con id %'.format(item['display_name']))
+            logger.warning('No se ha podido encontrar el nombre de la organización con id {0}'.format(id['display_name']))
     except Exception as e:
-        logger.error("Excepción al intentar encontrar el nombre de la organización: %".format(e))
+        logger.error("Excepción al intentar encontrar el nombre de la organización: {0}".format(e))
     return respuesta
 
 @helper
@@ -201,7 +201,7 @@ def fscheming_get_icons_dir(field):
             dir = fs_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):  
                 return dir
-        logger.debug("No hay directorio para ".format(field['field_name']))
+        logger.debug("No hay directorio para {0}".format(field['field_name']))
     return None
     
 @helper
@@ -217,33 +217,34 @@ def fscheming_get_default_icon(field):
 def fscheming_get_icon(choice, dir=None):
     """ Returns path for icon for the item
     :param choice: Choice selected for field
-    :param dir: Path to search for icon
+    :param dir: Path to search for icon. Usually the common path for icons for this field
     
     :returns: Relative url to icon
     """
     
     extensiones=['.svg','.png','.jpg','.gif']
     nombre=None
-    logger.debug("Busco icono para {0}".format(choice))
+#    logger.debug("Busco icono para {0}".format(choice.value))
     
-    if 'icon' in choice:
-        return (dir+"/" if dir else "") + choice['icon']
+    if choice:
+        if 'icon' in choice:
+            return (dir+"/" if dir else "") + choice['icon']
+        
+        if ckan_helpers.is_url(choice['value']):
+            cadena=choice['value'].split('/')
     
-    if ckan_helpers.is_url(choice['value']):
-        cadena=choice['value'].split('/')
-
-        if len(cadena)==1:
-            nombre=cadena[-1].lower()
+            if len(cadena)==1:
+                nombre=cadena[-1].lower()
+            else:
+                nombre=cadena[-2].lower()+'/'+cadena[-1].lower()
         else:
-            nombre=cadena[-2].lower()+'/'+cadena[-1].lower()
-    else:
-        nombre=choice['value']
-    
-    url_path=(dir+"/" if dir else "") + nombre
-    
-    for extension in extensiones:
-        if public_file_exists(url_path+extension):
-            return url_path+extension
+            nombre=choice['value']
+        
+        url_path=(dir+"/" if dir else "") + nombre
+        
+        for extension in extensiones:
+            if public_file_exists(url_path+extension):
+                return url_path+extension
     
     return None
 
@@ -256,7 +257,7 @@ def fscheming_get_choice_dic(field, value):
     :returns: The whole option item in scheming
     """
     if field and ('choices' in field):
-        logger.debug("Busco {0} en {1}".format(value,field['choices']))
+#        logger.debug("Busco {0} en {1}".format(value,field['choices']))
         for choice in field['choices']:
             if choice['value']==value:
                 return choice
