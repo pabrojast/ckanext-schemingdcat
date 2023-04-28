@@ -1,5 +1,3 @@
-
-
 from ckan.common import config
 import ckan.logic as logic
 import ckan.plugins as plugins
