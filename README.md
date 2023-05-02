@@ -1,15 +1,13 @@
 # ckanext-facet_scheming
+>**Warning**<br>
+> This extension needs [custom GeoDCAT-AP ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
 
-**TODO:** Put a description of your extension here:  What does it do? What features does it have? Consider including some screenshots or embedding a video!
+`ckanext-facet_scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
+
+![image](https://user-images.githubusercontent.com/96422458/235639244-4c2fc026-efec-460c-9800-62d2b5668b4a.png)
 
 
 ## Requirements
->**Warning**<br>
-> This extension needs [custom ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
-
-facet_scheming is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
- a set of tools to use those fields for scheming, and a way to include icons in its labels when displaying them.
-
 Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
@@ -172,7 +170,7 @@ There are not mandatory sets in the config file for this extension. You can use 
 As an example for facet list, we could suggest:
 
   ```ini
-  facet_scheming.facet_list = theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to
+  facet_scheming.facet_list = "theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to"
   ```
 
 ### Icons
