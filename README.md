@@ -1,13 +1,13 @@
-# ckanext-facet-scheming
+# ckanext-facet_scheming
 
 **TODO:** Put a description of your extension here:  What does it do? What features does it have? Consider including some screenshots or embedding a video!
 
 
 ## Requirements
+>**Warning**<br>
+> This extension needs [custom ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
 
-This extension needs Scheming extension to work.
-
-Facet-scheming is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
+facet_scheming is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
  a set of tools to use those fields for scheming, and a way to include icons in its labels when displaying them.
 
 Compatibility with core CKAN versions:
@@ -28,7 +28,7 @@ Suggested values:
 
 ## Installation
 
-To install ckanext-facet-scheming:
+To install ckanext-facet_scheming:
 
 1. Activate your CKAN virtual environment, for example:
 
@@ -36,13 +36,14 @@ To install ckanext-facet-scheming:
 
 2. Clone the source and install it on the virtualenv
 
-    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
-    cd ckanext-facet-scheming
+    ```bash 
+    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
+    cd ckanext-facet_scheming
     pip install -e .
-	pip install -r requirements.txt
-	sudo rm -fR /*
+    pip install -r requirements.txt
+    ```
 
-3. Add `facet-scheming` to the `ckan.plugins` setting in your CKAN
+3. Add `facet_scheming` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
    `/etc/ckan/default/ckan.ini`).
 
@@ -61,21 +62,21 @@ To install ckanext-facet-scheming:
    
    By now iepnb extension are ready to use these multivalued fields. You have to add this configuration fragment to solr schema in order to use them:
 
-	
-```xml
-	<! IEPNB extra fields - >
-    <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="conforms_to" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="lineage_source" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="lineage_process_steps" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="reference" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="theme" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    <field name="theme_es" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
-    <field name="metadata_profile" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
-    <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-	
-```
-    You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
+    ```xml
+    <! IEPNB extra fields - >
+      <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="conforms_to" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="lineage_source" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="lineage_process_steps" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="reference" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="theme" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="theme_es" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
+      <field name="metadata_profile" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
+      <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+    ```
+
+    >**Note**<br>
+    >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
    	
 	Be sure to restart Solr after modify the schema.
 	
@@ -93,7 +94,7 @@ To install ckanext-facet-scheming:
      
 ## Helpers
 
-Facet-scheming provides a set of useful helpers to be used in templates
+facet_scheming provides a set of useful helpers to be used in templates
 
 - **fscheming\_default\_facet\_search\_operator**(): Returns the default 
 facet search operator: AND/OR (string)
@@ -161,17 +162,18 @@ provided by the scheming extension. It adds an icon before the label of the valu
 ### Config (.ini) file
 
 There are not mandatory sets in the config file for this extension. You can use the following sets:
-```
-facet_scheming.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
-facet_scheming.default_facet_operator: [AND|OR]  # OR if not defined
-facet_scheming.icons_dir: (dir)                  # images/icons if not defined
-```
+
+  ```ini
+  facet_scheming.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
+  facet_scheming.default_facet_operator: [AND|OR]  # OR if not defined
+  facet_scheming.icons_dir: (dir)                  # images/icons if not defined
+  ```
 
 As an example for facet list, we could suggest:
 
-```
-facet_scheming.facet_list = theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to
-```
+  ```ini
+  facet_scheming.facet_list = theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to
+  ```
 
 ### Icons
 
@@ -212,22 +214,22 @@ because this is the default value)
 
 Defining icons in a schema file:
 
-```
-- field_name: strange_field
-...
-  icons_dir: icons/for/strange/field
-...
-  choices:
-  - value: http://some_domain.fake/level1/level2/strange_value
-    label:
-      en: Strange Value
-      es: Valor Extraño
-    description:
-      en: ''
-      es: 'Valor extraño para un campo extraño'
-    icon: strange_value_icon.gif
-    ...
-```
+  ```yml
+  - field_name: strange_field
+  ...
+    icons_dir: icons/for/strange/field
+  ...
+    choices:
+    - value: http://some_domain.fake/level1/level2/strange_value
+      label:
+        en: Strange Value
+        es: Valor Extraño
+      description:
+        en: ''
+        es: 'Valor extraño para un campo extraño'
+      icon: strange_value_icon.gif
+      ...
+  ```
     
 Icons file for "strange_field" field will be searched in public/icons/for/strange/field directory in all CKAN extensions. Url will be
 icons/for/strange/field/strange\_value\_icon.gif if file was found in any extension.
@@ -236,30 +238,30 @@ The value in facet\_scheming.icons\_dir will NOT be used to compose the url
 
 Using icons not defined in the schema file:
 
-```
-- field_name: strange_field
-...
-  choices:
-  - value: http://some_domain.fake/level1/level2/strange_value
-    label:
-      en: Strange Value
-      es: Valor Extraño
-    description:
-      en: ''
-      es: 'Valor extraño para un campo extraño'
-    ...
-```
+  ```yml
+  - field_name: strange_field
+  ...
+    choices:
+    - value: http://some_domain.fake/level1/level2/strange_value
+      label:
+        en: Strange Value
+        es: Valor Extraño
+      description:
+        en: ''
+        es: 'Valor extraño para un campo extraño'
+      ...
+  ```
 
 Url for this option will be _images/icons/strange\_field/level2/strange\_value.[ext]_,
  beeing [ext] any extension in svg, png, jpg or gif (searched in this order). 
 
 ## Developer installation
 
-To install ckanext-facet-scheming for development, activate your CKAN virtualenv and
+To install ckanext-facet_scheming for development, activate your CKAN virtualenv and
 do:
 
-    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
-    cd ckanext-facet-scheming
+    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
+    cd ckanext-facet_scheming
     python setup.py develop
     pip install -r dev-requirements.txt
 
@@ -271,9 +273,9 @@ To run the tests, do:
     pytest --ckan-ini=test.ini
 
 
-## Releasing a new version of ckanext-facet-scheming
+## Releasing a new version of ckanext-facet_scheming
 
-If ckanext-facet-scheming should be available on PyPI you can follow these steps to publish a new version:
+If ckanext-facet_scheming should be available on PyPI you can follow these steps to publish a new version:
 
 1. Update the version number in the `setup.py` file. See [PEP 440](http://legacy.python.org/dev/peps/pep-0440/#public-version-identifiers) for how to choose version numbers.
 
