@@ -1,0 +1,14 @@
+# facet_scheming-js:
+#   filter: rjsmin
+#   output: ckanext-facet_scheming/%(version)s-facet_scheming.js
+#   contents:
+#     - js/facet_scheming.js
+#   extra:
+#     preload:
+#       - base/main
+
+ facet_scheming-css:
+   filter: cssrewrite
+   output: ckanext-facet_scheming/%(version)s-facet_scheming.css
+   contents:
+     - css/facet_scheming.css

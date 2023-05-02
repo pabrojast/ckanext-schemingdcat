@@ -1,0 +1,17 @@
+{%- set _class = _class or 'scheming-icon-list' -%}
+{%- set value = data[field.field_name] -%}
+{%- set icons_dir = h.fscheming_get_icons_dir(field) -%}
+
+{%- if icons_dir -%}
+  {%- set icon = h.fscheming_get_icon(h.fscheming_get_choice_dic(field, value),icons_dir) -%}
+  {% if icon -%}
+    {% set img_url= h.url_for_static(icon) -%}
+  {%- elif no_icon -%}
+    {%- set img_url= h.url_for_static(no_icon) -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- if img_url -%}<img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon select_icon"></img> {% endif -%}
+{{ h.scheming_choices_label(
+  h.scheming_field_choices(field),
+  data[field.field_name]) }}
