@@ -1,11 +1,15 @@
 # ckanext-facet-scheming
 
-**TODO:** Put a description of your extension here:  What does it do? What features does it have? Consider including some screenshots or embedding a video!
+`ckanext-facet_scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
+
+![image](https://user-images.githubusercontent.com/96422458/235639244-4c2fc026-efec-460c-9800-62d2b5668b4a.png)
+
 
 
 ## Requirements
 
-This extension needs Scheming extension to work.
+>**Warning**<br>
+> This extension needs [custom GeoDCAT-AP ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
 
 Facet-scheming is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
  a set of tools to use those fields for scheming, and a way to include icons in its labels when displaying them.
@@ -75,7 +79,8 @@ To install ckanext-facet-scheming:
     <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
 	
 ```
-    You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
+     >**Note**<br>
+     >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
    	
 	Be sure to restart Solr after modify the schema.
 	
@@ -156,11 +161,15 @@ provided by the scheming extension. It adds an icon before the label of the valu
 - **select\_icon** Display snippet to use instead the original _select_ snippet
 provided by the scheming extension. It adds an icon before the label of the value.
 
+- **multiple_select-icon** Form snipet to use instead the original multiple_select to show icons 
+in multiple options fileds when adding or editing a resource
+
 ## Config settings
 
 ### Config (.ini) file
 
 There are not mandatory sets in the config file for this extension. You can use the following sets:
+
 ```
 facet_scheming.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
 facet_scheming.default_facet_operator: [AND|OR]  # OR if not defined
@@ -232,7 +241,7 @@ Defining icons in a schema file:
 Icons file for "strange_field" field will be searched in public/icons/for/strange/field directory in all CKAN extensions. Url will be
 icons/for/strange/field/strange\_value\_icon.gif if file was found in any extension.
 
-The value in facet\_scheming.icons\_dir will NOT be used to compose the url
+The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field
 
 Using icons not defined in the schema file:
 
@@ -249,6 +258,8 @@ Using icons not defined in the schema file:
       es: 'Valor extraño para un campo extraño'
     ...
 ```
+
+Directory for icons will be taken from facet\_scheming.icons\_dir, bacause you not provide a 
 
 Url for this option will be _images/icons/strange\_field/level2/strange\_value.[ext]_,
  beeing [ext] any extension in svg, png, jpg or gif (searched in this order). 
