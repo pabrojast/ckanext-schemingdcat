@@ -1,13 +1,20 @@
-# ckanext-facet_scheming
->**Warning**<br>
-> This extension needs [custom GeoDCAT-AP ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
+# ckanext-facet-scheming
+
 
 `ckanext-facet_scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
 
 ![image](https://user-images.githubusercontent.com/96422458/235639244-4c2fc026-efec-460c-9800-62d2b5668b4a.png)
 
 
+
 ## Requirements
+
+>**Warning**<br>
+> This extension needs [custom GeoDCAT-AP ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
+
+`facet-scheming` is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
+ a set of tools to use those fields for scheming, and a way to include icons in its labels when displaying them.
+
 Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
@@ -26,7 +33,7 @@ Suggested values:
 
 ## Installation
 
-To install ckanext-facet_scheming:
+To install ckanext-facet-scheming:
 
 1. Activate your CKAN virtual environment, for example:
 
@@ -35,13 +42,13 @@ To install ckanext-facet_scheming:
 2. Clone the source and install it on the virtualenv
 
     ```bash 
-    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
+    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
     cd ckanext-facet_scheming
     pip install -e .
     pip install -r requirements.txt
     ```
 
-3. Add `facet_scheming` to the `ckan.plugins` setting in your CKAN
+3. Add `facet-scheming` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
    `/etc/ckan/default/ckan.ini`).
 
@@ -60,6 +67,7 @@ To install ckanext-facet_scheming:
    
    By now iepnb extension are ready to use these multivalued fields. You have to add this configuration fragment to solr schema in order to use them:
 
+	
     ```xml
     <! IEPNB extra fields - >
       <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
@@ -92,7 +100,7 @@ To install ckanext-facet_scheming:
      
 ## Helpers
 
-facet_scheming provides a set of useful helpers to be used in templates
+`facet-scheming` provides a set of useful helpers to be used in templates
 
 - **fscheming\_default\_facet\_search\_operator**(): Returns the default 
 facet search operator: AND/OR (string)
@@ -154,6 +162,9 @@ provided by the scheming extension. It adds an icon before the label of the valu
 
 - **select\_icon** Display snippet to use instead the original _select_ snippet
 provided by the scheming extension. It adds an icon before the label of the value.
+
+- **multiple_select-icon** Form snipet to use instead the original multiple_select to show icons 
+in multiple options fileds when adding or editing a resource
 
 ## Config settings
 
@@ -229,10 +240,11 @@ Defining icons in a schema file:
       ...
   ```
     
+    
 Icons file for "strange_field" field will be searched in public/icons/for/strange/field directory in all CKAN extensions. Url will be
 icons/for/strange/field/strange\_value\_icon.gif if file was found in any extension.
 
-The value in facet\_scheming.icons\_dir will NOT be used to compose the url
+The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field
 
 Using icons not defined in the schema file:
 
@@ -250,16 +262,18 @@ Using icons not defined in the schema file:
       ...
   ```
 
+Directory for icons will be taken from facet\_scheming.icons\_dir, bacause you not provide a 
+
 Url for this option will be _images/icons/strange\_field/level2/strange\_value.[ext]_,
  beeing [ext] any extension in svg, png, jpg or gif (searched in this order). 
 
 ## Developer installation
 
-To install ckanext-facet_scheming for development, activate your CKAN virtualenv and
+To install ckanext-facet-scheming for development, activate your CKAN virtualenv and
 do:
 
-    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
-    cd ckanext-facet_scheming
+    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
+    cd ckanext-facet-scheming
     python setup.py develop
     pip install -r dev-requirements.txt
 
@@ -271,9 +285,9 @@ To run the tests, do:
     pytest --ckan-ini=test.ini
 
 
-## Releasing a new version of ckanext-facet_scheming
+## Releasing a new version of ckanext-facet-scheming
 
-If ckanext-facet_scheming should be available on PyPI you can follow these steps to publish a new version:
+If ckanext-facet-scheming should be available on PyPI you can follow these steps to publish a new version:
 
 1. Update the version number in the `setup.py` file. See [PEP 440](http://legacy.python.org/dev/peps/pep-0440/#public-version-identifiers) for how to choose version numbers.
 
