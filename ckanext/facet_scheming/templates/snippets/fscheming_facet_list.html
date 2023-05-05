@@ -55,7 +55,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
           </a>
           </div>
           <div class="orden{% if order.startswith('count') %} active{% endif %}">
-          <a href="{{ h.fscheming_new_order_url(name,'count') }}" title="ordenar por cuenta">
+          <a href="{{ h.fscheming_new_order_url(name,'count') }}" title="ordenar por resultados">
           <span class="up{% if order=='count_r' %} active{% endif %}">&#9650;</span>
           <span class="down{% if order=='count' %} active{% endif %}">&#9660;</span>
           <span class="label">1-9</span>
