@@ -1,7 +1,7 @@
-# ckanext-facet_scheming
+# ckanext-facet-scheming
 
 
-`ckanext-facet_scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
+`ckanext-facet-scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
 
 ![image](https://user-images.githubusercontent.com/96422458/235639244-4c2fc026-efec-460c-9800-62d2b5668b4a.png)
 
@@ -12,7 +12,7 @@
 >**Warning**<br>
 > This extension needs [custom GeoDCAT-AP ckanext-scheming](https://github.com/mjanez/ckanext-scheming) extension to work.
 
-`facet_scheming` is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
+`facet-scheming` is designed to provide templates and functions to be used by other extensions over it. It uses the fields defined in a scheming file to provide
  a set of tools to use those fields for scheming, and a way to include icons in its labels when displaying them.
 
 Compatibility with core CKAN versions:
@@ -33,7 +33,7 @@ Suggested values:
 
 ## Installation
 
-To install ckanext-facet_scheming:
+To install ckanext-facet-scheming:
 
 1. Activate your CKAN virtual environment, for example:
 
@@ -42,13 +42,13 @@ To install ckanext-facet_scheming:
 2. Clone the source and install it on the virtualenv
 
     ```bash 
-    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
-    cd ckanext-facet_scheming
+    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
+    cd ckanext-facet-scheming
     pip install -e .
     pip install -r requirements.txt
     ```
 
-3. Add `facet_scheming` to the `ckan.plugins` setting in your CKAN
+3. Add `facet-scheming` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
    `/etc/ckan/default/ckan.ini`).
 
@@ -100,7 +100,7 @@ To install ckanext-facet_scheming:
      
 ## Helpers
 
-`facet_scheming` provides a set of useful helpers to be used in templates
+`facet-scheming` provides a set of useful helpers to be used in templates
 
 - **fscheming\_default\_facet\_search\_operator**(): Returns the default 
 facet search operator: AND/OR (string)
@@ -181,7 +181,7 @@ There are not mandatory sets in the config file for this extension. You can use 
 As an example for facet list, we could suggest:
 
   ```ini
-  facet_scheming.facet_list = "theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to"
+  facet_scheming.facet_list = "theme groups theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to spatial_uri"
   ```
 
 ### Icons
@@ -269,11 +269,11 @@ Url for this option will be _images/icons/strange\_field/level2/strange\_value.[
 
 ## Developer installation
 
-To install ckanext-facet_scheming for development, activate your CKAN virtualenv and
+To install ckanext-facet-scheming for development, activate your CKAN virtualenv and
 do:
 
-    git clone https://github.com/dsanjurj/ckanext-facet_scheming.git
-    cd ckanext-facet_scheming
+    git clone https://github.com/dsanjurj/ckanext-facet-scheming.git
+    cd ckanext-facet-scheming
     python setup.py develop
     pip install -r dev-requirements.txt
 
@@ -285,9 +285,9 @@ To run the tests, do:
     pytest --ckan-ini=test.ini
 
 
-## Releasing a new version of ckanext-facet_scheming
+## Releasing a new version of ckanext-facet-scheming
 
-If ckanext-facet_scheming should be available on PyPI you can follow these steps to publish a new version:
+If ckanext-facet-scheming should be available on PyPI you can follow these steps to publish a new version:
 
 1. Update the version number in the `setup.py` file. See [PEP 440](http://legacy.python.org/dev/peps/pep-0440/#public-version-identifiers) for how to choose version numbers.
 
