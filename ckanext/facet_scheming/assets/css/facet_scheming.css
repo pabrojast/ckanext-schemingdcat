@@ -4,7 +4,7 @@
 /***********************************************/
 
 .filters .module .orden {
-	display: inline-block;
+	/* display: inline-block;*/
 	position:relative;
 	float:right;
     height: 40px;
@@ -57,4 +57,11 @@ img.facet-icon {
 	width: 15px;
 	height: auto;
 	margin-right: 5px;
+}
+
+option.icon_option{
+	background-repeat: no-repeat;
+	background-position:left;
+	background-size:15px;
+	padding-left:17px;
 }
