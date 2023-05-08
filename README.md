@@ -161,7 +161,7 @@ provided by the scheming extension. It adds an icon before the label of the valu
 - **select\_icon** Display snippet to use instead the original _select_ snippet
 provided by the scheming extension. It adds an icon before the label of the value.
 
-- **multiple_select-icon** Form snipet to use instead the original multiple_select to show icons 
+- **multiple\_select-icon** Form snipet to use instead the original multiple_select to show icons 
 in multiple options fileds when adding or editing a resource
 
 ## Config settings
@@ -241,7 +241,7 @@ Defining icons in a schema file:
 Icons file for "strange_field" field will be searched in public/icons/for/strange/field directory in all CKAN extensions. Url will be
 icons/for/strange/field/strange\_value\_icon.gif if file was found in any extension.
 
-The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field
+The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field.
 
 Using icons not defined in the schema file:
 
