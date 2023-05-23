@@ -149,8 +149,8 @@ Also a set of useful templates and snippets are provided
 
 - **fscheming\_facet\_list.html** Extending ckan original facet list 
 snippet, provides a way to show facet labels instead of values (which is what 
-Solr provides), prepending an icon if provided. To call you must extend the template 
-`package/search.html`.
+Solr provides), prepending an icon if provided. To use it you must extend 
+`package/search.html` template to call it instead the default snippet.
 
 - **fscheming\_facet_search\_operator** Gives the control to select the operator used to
 combine facets. 
@@ -182,13 +182,22 @@ As an example for facet list, we could suggest:
 facet_scheming.facet_list = theme theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to
 ```
 
+The same custom fields for faceting can be used when browsing organizations and groups data:
+
+```
+facet_scheming.organization_custom_facets = true
+facet_scheming.group_custom_facets = true
+```
+
+This two last settings are not mandatory. You can omit one or both (or set them to 'false'), and the default fields for faceting will be used instead.
+
 ### Icons
 
-You can set where the icons for each filed option in a scheming file must be by multiple ways:
+Icons' location for each field option in the scheming file can be set in multiple ways:
 
 - You can set a root directory path for icons for each field using the "icons\_dir" key in the scheming file.
 
-- If you don´t define this key, the directory path are guessed starting from the value provided for the 
+- If you don´t set this key, the directory path are guessed starting from the value provided for the 
 "facet\_scheming.icons\_dir" parameter ("images/icons" by default if not provided) in CKAN config file, adding the 
 name of the field (field\_name) as a additional step to the path.
 
@@ -197,7 +206,7 @@ icons for each option must be, or know where the extension will search for them 
 
 - For each option you can use a "icon" setting to provide the last steps of the icon path (from the field icons´ 
 root path defined before). This value may be just a file name, or include a path to add to the icon´s root 
-directory (_some\_name.jpg_ or _some\_dir\_name/some\_name.jpg_).
+directory (_some\_file\_name.jpg_ or _some\_path/some\_file\_name.jpg_).
 
 - If you dont use this setting, a directory and file name are guessed from the option´s value:
 
