@@ -1,15 +1,13 @@
 name: Prueba de flake8
-on: [pull_request]
-
-permissions:
-  contents: read
+run-name: ${{ github.actor }} probando facet-scheming-test
+on: [push, pull_request]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Install requirements
