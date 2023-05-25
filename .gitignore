@@ -43,6 +43,10 @@ docs/_build/
 /.project
 /.pydevproject
 
+#eclipse
+.project
+.pydevproject
+
 # Icons
 ckanext/facet_scheming/public/images
 !ckanext/facet_scheming/public/images/icons/spatial_uri
