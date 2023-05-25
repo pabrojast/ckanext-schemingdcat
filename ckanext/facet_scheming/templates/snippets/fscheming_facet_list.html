@@ -48,14 +48,14 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
         {% block facet_list_heading %}
           {% set order = h.get_request_param("_%s_sort" % name) or ""%}
           <div class="orden{% if order.startswith('name') %} active{% endif %}">
-          <a href="{{ h.fscheming_new_order_url(name,'name') }}" title="ordenar por nombre">
+          <a href="{{ h.fscheming_new_order_url(name,'name',extras) }}" title="ordenar por nombre">
           <span class="up{% if order=='name' %} active{% endif %}">&#9650;</span>
           <span class="down{% if order=='name_r' %} active{% endif %}">&#9660;</span>
           <span class="label">A-Z</span>
           </a>
           </div>
           <div class="orden{% if order.startswith('count') %} active{% endif %}">
-          <a href="{{ h.fscheming_new_order_url(name,'count') }}" title="ordenar por cuenta">
+          <a href="{{ h.fscheming_new_order_url(name,'count',extras) }}" title="ordenar por resultados">
           <span class="up{% if order=='count_r' %} active{% endif %}">&#9650;</span>
           <span class="down{% if order=='count' %} active{% endif %}">&#9660;</span>
           <span class="label">1-9</span>

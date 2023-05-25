@@ -1,6 +1,5 @@
 # ckanext-facet_scheming
 
-
 `ckanext-facet_scheming` provides functions and templates that have been specially developed to extend the search functionality in CKAN for custom schemas.  It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them.
 
 ![image](https://user-images.githubusercontent.com/96422458/235639244-4c2fc026-efec-460c-9800-62d2b5668b4a.png)
@@ -69,7 +68,7 @@ To install ckanext-facet_scheming:
 
 	
     ```xml
-    <! IEPNB extra fields - >
+    <!-- IEPNB extra fields -->
       <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
       <field name="conforms_to" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
       <field name="lineage_source" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
@@ -163,7 +162,7 @@ provided by the scheming extension. It adds an icon before the label of the valu
 - **select\_icon** Display snippet to use instead the original _select_ snippet
 provided by the scheming extension. It adds an icon before the label of the value.
 
-- **multiple_select-icon** Form snipet to use instead the original multiple_select to show icons 
+- **multiple\_select-icon** Form snipet to use instead the original multiple_select to show icons 
 in multiple options fileds when adding or editing a resource
 
 ## Config settings
@@ -184,9 +183,18 @@ As an example for facet list, we could suggest:
   facet_scheming.facet_list = "theme groups theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to spatial_uri"
   ```
 
+The same custom fields for faceting can be used when browsing organizations and groups data:
+
+  ```ini
+  facet_scheming.organization_custom_facets = true
+  facet_scheming.group_custom_facets = true
+  ```
+
+This two last settings are not mandatory. You can omit one or both (or set them to 'false'), and the default fields for faceting will be used instead.
+
 ### Icons
 
-You can set where the icons for each filed option in a scheming file must be by multiple ways:
+Icons' location for each field option in the scheming file can be set in multiple ways:
 
 - You can set a root directory path for icons for each field using the "icons\_dir" key in the scheming file.
 
@@ -201,10 +209,10 @@ icons for each option must be, or know where the extension will search for them 
 root path defined before). This value may be just a file name, or include a path to add to the icon´s root 
 directory (_some\_name.jpg_ or _some\_dir\_name/some\_name.jpg_).
 
-- If you dont use this setting, a directory and file name are guessed from the option´s value:
+- If you don't use this setting, a directory and file name are guessed from the option´s value:
 
   - If the value is a url, the last two steps of the url are used to guess were the icon is. The first is added 
-  to the icons´ dir path guessed or defined in the previous step as a subdirectory. The second are used to 
+  to the icons' dir path guessed or defined in the previous step as a subdirectory. The second are used to 
   guess the icon's name, adding and testing "svg","png","jpg" or "gif" as possible extensions.
   - If the value is not a url, it is taken as the name of the icon (testing the extensions named before) in the 
   icons root directory for this field.
@@ -244,7 +252,7 @@ Defining icons in a schema file:
 Icons file for "strange_field" field will be searched in public/icons/for/strange/field directory in all CKAN extensions. Url will be
 icons/for/strange/field/strange\_value\_icon.gif if file was found in any extension.
 
-The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field
+The value provided in facet\_scheming.icons\_dir (images/icons) will NOT be used to compose the url, because you have provided icons\_dir in the scheming file for this field.
 
 Using icons not defined in the schema file:
 
@@ -261,6 +269,8 @@ Using icons not defined in the schema file:
         es: 'Valor extraño para un campo extraño'
       ...
   ```
+
+Directory for icons will be taken from facet\_scheming.icons\_dir, bacause you not provide a 
 
 Directory for icons will be taken from facet\_scheming.icons\_dir, bacause you not provide a 
 

@@ -22,6 +22,10 @@ class Faceted():
         return facets_dict
 
     def dataset_facets(self, facets_dict, package_type):
+        return self._custom_facets(facets_dict, package_type)
+
+
+    def _custom_facets(self, facets_dict, package_type):
         
         #facetas=config.get('iepnb.facets', '').split()
         lang_code = request.environ['CKAN_LANG']
@@ -53,13 +57,22 @@ class Faceted():
         #facets_dict[tag_key] = plugins.toolkit._('Tag')
         # FIXME: PARA FACETA COMUN DE TAGS
         logger.debug("dataset_facets._facets_dict: {0}".format(_facets_dict))
-        return self._facets(_facets_dict)
+        return _facets_dict
 
     def group_facets(self, facets_dict, group_type, package_type):
-        
+        if facet_scheming_config.group_custom_facets:
+            logger.debug("facetas personalizadas para grupo")
+            facets_dict=self._custom_facets(facets_dict, package_type)
         return facets_dict
 
     def organization_facets(self, facets_dict, organization_type, package_type):
+
+        if facet_scheming_config.group_custom_facets:
+            logger.debug("facetas personalizadas para organización")
+            facets_dict=self._custom_facets(facets_dict, package_type)
+        else:
+            logger.debug("facetas por defecto para organización")
+
 
         #lang_code = pylons.request.environ['CKAN_LANG']
         #facets_dict.clear()

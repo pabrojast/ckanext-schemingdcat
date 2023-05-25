@@ -26,10 +26,13 @@ class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController):
         toolkit.add_resource('fanstatic',
             'facet_scheming')
         toolkit.add_resource('assets','ckanext-facet_scheming')
-        
-        fs_config.default_facet_operator=config_.get('facet_scheming.default_facet_operator', fs_config.default_facet_operator)
-        fs_config.icons_dir=config_.get('facet_scheming.icons_dir', fs_config.icons_dir)
         fs_config.default_locale=config_.get('ckan.locale_default', fs_config.default_locale)
+        
+        fs_config.default_facet_operator     = config_.get('facet_scheming.default_facet_operator', fs_config.default_facet_operator)
+        fs_config.icons_dir                  = config_.get('facet_scheming.icons_dir', fs_config.icons_dir)
+        
+        fs_config.organization_custom_facets = toolkit.asbool(config_.get('facet_scheming.organization_custom_facets', fs_config.organization_custom_facets))
+        fs_config.group_custom_facets        = toolkit.asbool(config_.get('facet_scheming.group_custom_facets', fs_config.group_custom_facets))
         
         
         self.facet_load_config(config_.get('facet_scheming.facet_list', '').split())

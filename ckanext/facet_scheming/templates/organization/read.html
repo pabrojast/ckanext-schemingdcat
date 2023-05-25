@@ -4,7 +4,12 @@
     <div>
     {{ h.snippet('snippets/fscheming_facet_search_operator.html', title= _('Search configuration'), extras={'id':group_dict.id}) }}
       {% for facet in facet_titles %}
-        {{ h.snippet('snippets/facet_list.html', title=facet_titles[facet], name=facet, extras={'id':group_dict.id}) }}
+        {% if facet =='owner_org' %}
+          {% set label_function = h.fscheming_organization_name %}
+        {% else %}
+          {% set label_function = None %}
+        {% endif %}
+        {{ h.snippet('snippets/fscheming_facet_list.html', title=facet_titles[facet], name=facet, search_facets=search_facets, scheming_choices=h.scheming_field_by_name(h.scheming_get_dataset_schema('dataset').dataset_fields,facet).choices, label_function = label_function, extras={'id':group_dict.id}) }}
       {% endfor %}
     </div>
     <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">{{_('cerrar')}}</span></a>

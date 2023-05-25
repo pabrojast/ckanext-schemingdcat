@@ -135,7 +135,7 @@ def fscheming_get_facet_items_dict(
     return facets
 
 @helper
-def fscheming_new_order_url(name,orden):
+def fscheming_new_order_url(name,orden,extras=None):
     '''Returns a url with the order parameter for the given facet and concept to use
     Based in the actual order it rotates ciclically from no order->direct order->inverse order over the given concept
     Arguments:
@@ -147,10 +147,12 @@ def fscheming_new_order_url(name,orden):
     param="_%s_sort" % name
     order_lst=request.params.getlist(param)
     new_param=None
+    if not extras:
+        extras={}
     
     controller = getattr(c, 'controller', False) or request.blueprint
     action = getattr(c, 'action', False) or p.toolkit.get_endpoint()[1]
-    extras = {}
+    #extras = {}
     url = ckan_helpers.url_for(controller=controller, action=action, **extras)
 
     
