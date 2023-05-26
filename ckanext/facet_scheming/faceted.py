@@ -6,26 +6,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Faceted():
 
     plugins.implements(plugins.IFacets)
     facet_list = []
-    
+
     def facet_load_config(self, facet_list):
         self.facet_list = facet_list
         logger.debug("Configured facet_list= {0}".format(self.facet_list))
 
 #    Remove group facet
     def _facets(self, facets_dict):
-        
-#        if 'groups' in facets_dict:
-#            del facets_dict['groups']
+
+        #     if 'groups' in facets_dict:
+        #         del facets_dict['groups']
         return facets_dict
 
     def dataset_facets(self,
                        facets_dict,
                        package_type):
-        
+
         return self._custom_facets(facets_dict, package_type)
 
     def _custom_facets(self,

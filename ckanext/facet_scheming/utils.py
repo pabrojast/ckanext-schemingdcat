@@ -30,7 +30,7 @@ def get_facets_dict():
                 # esta parte del código solo se entrará la primera vez que se
                 # ejecute el código al iniciar la aplicación, por lo que me ha
                 # parecido más eficiente a largo plazo hacerlo así.
-                _facets_dict= {}
+                _facets_dict = {}
 
                 schema = logic.get_action('scheming_dataset_schema_show')(
                     {},
