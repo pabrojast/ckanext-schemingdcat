@@ -12,8 +12,9 @@ FACET_SORT_PARAM_NAME = '_%s_sort'
 
 log = logging.getLogger(__name__)
 
+
 class PackageController():
-    
+
     plugins.implements(plugins.IPackageController)
 
     default_facet_operator = config.default_facet_operator
@@ -37,7 +38,7 @@ class PackageController():
         pass
 
     def before_search(self, search_params):
-        facet_field= search_params.get('facet.field', '')
+        facet_field = search_params.get('facet.field', '')
         if facet_field is not None and len(facet_field) > 0:
             new_fq = self._facet_search_operator(
                 (search_params.get('fq', '')), facet_field)
@@ -51,7 +52,7 @@ class PackageController():
     def before_index(self, data_dict):
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
-            logging.debug("Datos ({1}) en data: {0}".format(data,facet))
+            logging.debug("Datos ({1}) en data: {0}".format(data, facet))
             if data:
                 try:
                     data_dict[facet] = json.loads(data)
@@ -82,8 +83,8 @@ class PackageController():
         return facet_titles
 
     def package_controller_config(self, default_facet_operator):
-        self.default_facet_operator=default_facet_operator
-    
+        self.default_facet_operator = default_facet_operator
+
     def _facet_search_operator(self, fq, facet_field):
         """
         Si en el request se ha incluido información para el operador de
@@ -97,12 +98,12 @@ class PackageController():
         try:
             facet_operator = self.default_facet_operator
             try:
-# busco si hay definido un operador de facetas en el request,
-# y lo guardo en facet_operator
+                #    busco si hay definido un operador de facetas en el request,
+                #    y lo guardo en facet_operator
                 if request is not None and \
-                    request.params and \
-                    request.params.items():
-                    
+                        request.params and \
+                        request.params.items():
+
                     log.debug('request.params %r' % request.params)
                     if (FACET_OPERATOR_PARAM_NAME, 'AND') in request.params.items():
                         facet_operator = 'AND'
@@ -111,8 +112,8 @@ class PackageController():
 
             except Exception as e:
                 log.warn("[_facet_search_operator]exception:%r: " % e)
-                facet_operator = default_facet_operator
-                
+                facet_operator = self.default_facet_operator
+
             log.debug(u'facet_operator {0}'.format(facet_operator))
 
 # Por defecto la búsqueda por facetas es por intersección, pero si he pedido el
@@ -134,13 +135,15 @@ class PackageController():
                                     facets_group = '%s' % fq_s
                                     first_facet = False
                                 else:
-                                    facets_group = '%s" OR %s' % (facets_group, fq_s)
+                                    facets_group = ('%s" OR %s' %
+                                                    (facets_group, fq_s))
                         if not faceted:
                             if first_no_facet:
                                 no_facets_group = '%s' % fq_s
                                 first_no_facet = False
                             else:
-                                no_facets_group = '%s" AND %s' % (no_facets_group, fq_s)
+                                no_facets_group = ('%s" AND %s' %
+                                                   (no_facets_group, fq_s))
 # y aquí viene el salto final
                     if faceted:
                         if not first_no_facet:
@@ -148,14 +151,14 @@ class PackageController():
                     elif not first_facet:
                         facets_group = '(%s") AND ' % facets_group
 
-                    new_fq = '%s %s' % (facets_group, no_facets_group)            
+                    new_fq = '%s %s' % (facets_group, no_facets_group)
 
                     log.debug(u'temp2 new_fq {0}'.format(new_fq))
 #                    log.info('#### fq = %s' % fq)
 #                    log.info('#### new_fq = %s' % new_fq)
         except UnicodeEncodeError as e:
             log.warn('UnicodeDecodeError %s  %s' % (e.errno, e.strerror))
-        except:
+        except Exception:
             log.warn("Unexpected error:%r: " % sys.exc_info()[0])
             new_fq = fq
         log.debug(u'new fq {0}'.format(new_fq))

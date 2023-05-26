@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Faceted():
-    
+
     plugins.implements(plugins.IFacets)
     facet_list = []
     
@@ -17,14 +17,20 @@ class Faceted():
 
 #    Remove group facet
     def _facets(self, facets_dict):
+        
 #        if 'groups' in facets_dict:
 #            del facets_dict['groups']
         return facets_dict
 
-    def dataset_facets(self, facets_dict, package_type):
+    def dataset_facets(self,
+                       facets_dict,
+                       package_type):
+        
         return self._custom_facets(facets_dict, package_type)
 
-    def _custom_facets(self, facets_dict, package_type):
+    def _custom_facets(self,
+                       facets_dict,
+                       package_type):
 
         lang_code = request.environ['CKAN_LANG']
 
@@ -39,7 +45,7 @@ class Faceted():
                     logger.warning(
                         "No existe el valor '{0}' para facetar".format(facet))
             else:
-                try:           
+                try:
                     _facets_dict[facet] = scheming_item[lang_code]
                 except KeyError:
                     try:
@@ -61,13 +67,20 @@ class Faceted():
         logger.debug("dataset_facets._facets_dict: {0}".format(_facets_dict))
         return _facets_dict
 
-    def group_facets(self, facets_dict, group_type, package_type):
+    def group_facets(self,
+                     facets_dict,
+                     group_type,
+                     package_type):
+
         if facet_scheming_config.group_custom_facets:
             logger.debug("facetas personalizadas para grupo")
-            facets_dict=self._custom_facets(facets_dict, package_type)
+            facets_dict = self._custom_facets(facets_dict, package_type)
         return facets_dict
 
-    def organization_facets(self, facets_dict, organization_type, package_type):
+    def organization_facets(self,
+                            facets_dict,
+                            organization_type,
+                            package_type):
 
         if facet_scheming_config.group_custom_facets:
             logger.debug("facetas personalizadas para organización")
@@ -81,7 +94,8 @@ class Faceted():
 #        facets_dict['theme_id'] =  plugins.toolkit._('Category')
 #        facets_dict['res_format_label'] = plugins.toolkit._('Format')
 #        facets_dict['publisher_display_name'] = plugins.toolkit._('Publisher')
-#        facets_dict['administration_level'] = plugins.toolkit._('Administration level')
+#        facets_dict['administration_level'] = plugins.toolkit._(
+#                                                'Administration level')
 #        facets_dict['frequency'] = plugins.toolkit._('Update frequency')
 #        tag_key = 'tags_' + lang_code
 #        facets_dict[tag_key] = plugins.toolkit._('Tag')

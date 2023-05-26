@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController):
 
     plugins.implements(plugins.IConfigurer)
@@ -22,14 +23,17 @@ class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController):
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
+        
         toolkit.add_resource('fanstatic',
-            'facet_scheming')
-        toolkit.add_resource('assets','ckanext-facet_scheming')
+                             'facet_scheming')
+
+        toolkit.add_resource('assets',
+                             'ckanext-facet_scheming')
 
         fs_config.default_locale = config_.get('ckan.locale_default',
                                                fs_config.default_locale
                                                )
-        
+
         fs_config.default_facet_operator = config_.get(
             'facet_scheming.default_facet_operator',
             fs_config.default_facet_operator
@@ -51,8 +55,10 @@ class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController):
                         )
             )
 
-        self.facet_load_config(config_.get('facet_scheming.facet_list', '').split())
+        self.facet_load_config(config_.get(
+            'facet_scheming.facet_list',
+            '').split())
 
     def get_helpers(self):
-        respuesta=dict(helpers.all_helpers)
+        respuesta = dict(helpers.all_helpers)
         return respuesta

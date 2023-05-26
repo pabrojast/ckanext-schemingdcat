@@ -8,13 +8,14 @@ from ckanext.scheming.helpers import scheming_choices_label
 
 import ckanext.facet_scheming.config as fs_config
 from ckanext.facet_scheming.utils import (get_facets_dict, public_file_exists,
-    public_dir_exists)
+                                          public_dir_exists)
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 all_helpers = {}
+
 
 def helper(fn):
 
@@ -24,28 +25,29 @@ def helper(fn):
     all_helpers[fn.__name__] = fn
     return fn
 
-@helper
 
+@helper
 def fscheming_default_facet_search_operator():
     '''Returns the default facet search operator: AND/OR
     '''
     facet_operator = fs_config.default_facet_operator
-    if facet_operator and (facet_operator.upper() == 'AND' or facet_operator.upper() == 'OR'):
+    if facet_operator and (facet_operator.upper() == 'AND' 
+                           or facet_operator.upper() == 'OR'):
         facet_operator = facet_operator.upper()
     else:
         facet_operator = 'AND'
     return facet_operator
 
-@helper
 
+@helper
 def fscheming_decode_json(json_text):
     """Convierte un texto json en un objeto phyton
     """
 
     return json.loads(json_text)
 
-@helper
 
+@helper
 def fscheming_organization_name(id):
     '''Returns the name of the organization from its id
     '''
@@ -64,13 +66,13 @@ def fscheming_organization_name(id):
             "nombre de la organización: {0}".format(e))
     return respuesta
 
-@helper
 
-def fscheming_get_facet_label(facet):    
+@helper
+def fscheming_get_facet_label(facet):
     return get_facets_dict[facet]
-    
-@helper
 
+
+@helper
 def fscheming_get_facet_items_dict(
         facet, search_facets=None, limit=None,
         exclude_active=False, scheming_choices=None):
@@ -96,7 +98,7 @@ def fscheming_get_facet_items_dict(
     scheming_choices -- scheming choices to use to get label from value.
 
     '''
-    
+
     logger.debug("Returning facets for: {0}".format(facet))
     order = "default"
     if search_facets is None:
@@ -119,9 +121,9 @@ def fscheming_get_facet_items_dict(
         params_items = request.params.items(multi=True) \
             if is_flask_request() else request.params.items()
         if not (facet, facet_item['name']) in params_items:
-            facets.append(dict(active = False, **facet_item))
+            facets.append(dict(active=False, **facet_item))
         elif not exclude_active:
-            facets.append(dict(active = True, **facet_item))
+            facets.append(dict(active=True, **facet_item))
 
 #        logger.debug("params: {0}:{1}".format(
 #            facet,request.params.getlist("_%s_sort" % facet)))
@@ -140,7 +142,7 @@ def fscheming_get_facet_items_dict(
         facets.sort(key=lambda it: (it['count']))
     else:
         facets.sort(key=lambda it: (-it['count'], it['label'].lower()))
-        
+
     if hasattr(c, 'search_facets_limits'):
         if c.search_facets_limits and limit is None:
             limit = c.search_facets_limits.get(facet)
@@ -149,8 +151,8 @@ def fscheming_get_facet_items_dict(
         return facets[:limit]
     return facets
 
-@helper
 
+@helper
 def fscheming_new_order_url(name, orden, extras=None):
     '''Returns a url with the order parameter for the given facet and concept
     to use. Based in the actual order it rotates ciclically from
@@ -204,8 +206,8 @@ def fscheming_new_order_url(name, orden, extras=None):
 
     return url
 
-@helper
 
+@helper
 def fscheming_get_icons_dir(field):
     """
     :param field: scheming field definition
@@ -223,8 +225,8 @@ def fscheming_get_icons_dir(field):
         logger.debug("No hay directorio para {0}".format(field['field_name']))
     return None
 
-@helper
 
+@helper
 def fscheming_get_default_icon(field):
     """
     :param field: scheming field definition
@@ -233,8 +235,8 @@ def fscheming_get_default_icon(field):
     if 'default_icon' in field:
         return field['default_icon']
 
-@helper
 
+@helper
 def fscheming_get_icon(choice, dir=None):
     """ Returns path for icon for the item
     :param choice: Choice selected for field
@@ -243,7 +245,7 @@ def fscheming_get_icon(choice, dir=None):
     :returns: Relative url to icon
     """
 
-    extensiones = ['.svg','.png','.jpg','.gif']
+    extensiones = ['.svg', '.png', '.jpg', '.gif']
     nombre = None
 #    logger.debug("Busco icono para {0}".format(choice.value))
 
@@ -268,8 +270,8 @@ def fscheming_get_icon(choice, dir=None):
                 return url_path+extension
     return None
 
-@helper
 
+@helper
 def fscheming_get_choice_dic(field, value):
     """Gets whole choice item for the given value in field
     :param field: scheming field to look for choice item into
@@ -277,7 +279,7 @@ def fscheming_get_choice_dic(field, value):
     :returns: The whole option item in scheming
     """
     if field and ('choices' in field):
-#        logger.debug("Busco {0} en {1}".format(value,field['choices']))
+        #    logger.debug("Busco {0} en {1}".format(value,field['choices']))
         for choice in field['choices']:
             if choice['value'] == value:
                 return choice

@@ -1,7 +1,5 @@
 from ckan.common import config
 import ckan.logic as logic
-import ckan.plugins as plugins
-from ckan.lib import helpers as ckan_helpers
 import logging
 import os
 import hashlib
@@ -28,23 +26,25 @@ def get_facets_dict():
     if not _facets_dict:
         with _facets_dict_lock:
             if not _facets_dict:
-# Lo lógico sería colocar un único if tras el lock, pero en esta parte del código solo se entrará
-# la primera vez que se ejecute el código al iniciar la aplicación, por lo que me ha parecido más
-# eficiente a largo plazo hacerlo así.
+                # Lo lógico sería colocar un único if tras el lock, pero en
+                # esta parte del código solo se entrará la primera vez que se
+                # ejecute el código al iniciar la aplicación, por lo que me ha
+                # parecido más eficiente a largo plazo hacerlo así.
                 _facets_dict= {}
-    
-                schema=logic.get_action('scheming_dataset_schema_show')(
+
+                schema = logic.get_action('scheming_dataset_schema_show')(
                     {},
                     {'type': 'dataset'}
                     )
 
                 for item in schema['dataset_fields']:
-                    _facets_dict[item['field_name']]=item['label']
+                    _facets_dict[item['field_name']] = item['label']
 
                 for item in schema['resource_fields']:
-                    _facets_dict[item['field_name']]=item['label']
+                    _facets_dict[item['field_name']] = item['label']
 
     return _facets_dict
+
 
 def get_public_dirs():
     global _public_dirs
@@ -56,20 +56,22 @@ def get_public_dirs():
 
     return _public_dirs
 
+
 def public_file_exists(path):
-#    logger.debug("Compruebo si existe {0}".format(path))
+    #    logger.debug("Compruebo si existe {0}".format(path))
     file_hash = hashlib.sha512(path.encode('utf-8')).hexdigest()
 
     if file_hash in _files_hash:
         return True
 
     for dir in get_public_dirs():
-#        logger.debug("Buscando en {0}".format(os.path.join(dir,path)))
-        if os.path.isfile(os.path.join(dir,path)):
+        #  logger.debug("Buscando en {0}".format(os.path.join(dir,path)))
+        if os.path.isfile(os.path.join(dir, path)):
             _files_hash.append(file_hash)
             return True
 
     return False
+
 
 def public_dir_exists(path):
     dir_hash = hashlib.sha512(path.encode('utf-8')).hexdigest()
@@ -78,9 +80,8 @@ def public_dir_exists(path):
         return True
 
     for dir in get_public_dirs():
-        if os.path.isdir(os.path.join(dir,path)):
+        if os.path.isdir(os.path.join(dir, path)):
             _dirs_hash.append(dir_hash)
             return True
 
     return False
-        
