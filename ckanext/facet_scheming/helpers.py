@@ -31,7 +31,7 @@ def fscheming_default_facet_search_operator():
     '''Returns the default facet search operator: AND/OR
     '''
     facet_operator = fs_config.default_facet_operator
-    if facet_operator and (facet_operator.upper() == 'AND' 
+    if facet_operator and (facet_operator.upper() == 'AND'
                            or facet_operator.upper() == 'OR'):
         facet_operator = facet_operator.upper()
     else:
@@ -217,7 +217,7 @@ def fscheming_get_icons_dir(field):
     if field:
         if 'icons_dir' in field:
             return field['icons_dir']
-        
+
         if 'field_name' in field:
             dir = fs_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):

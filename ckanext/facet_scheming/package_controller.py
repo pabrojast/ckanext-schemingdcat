@@ -1,4 +1,4 @@
-from ckan.common import (_, request)
+from ckan.common import request
 import json
 import ckan.plugins as plugins
 import ckanext.facet_scheming.config as config
