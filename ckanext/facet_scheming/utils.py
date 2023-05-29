@@ -22,6 +22,9 @@ _public_dirs_lock = Lock()
 
 
 def get_facets_dict():
+    '''
+    Busco las etiquetas de todos los campos definidos en el fichero de scheming
+    '''
     global _facets_dict
     if not _facets_dict:
         with _facets_dict_lock:

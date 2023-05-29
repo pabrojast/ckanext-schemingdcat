@@ -37,30 +37,30 @@ class Faceted():
 
         _facets_dict = {}
         for facet in self.facet_list:
-            try:
-                scheming_item = get_facets_dict()[facet]
-            except KeyError:
-                try:
-                    _facets_dict[facet] = facets_dict[facet]
-                except KeyError:
-                    logger.warning(
-                        "No existe el valor '{0}' para facetar".format(facet))
+            # Busco la etiqueta del campo en el fichero de scheming.
+            # Si no está ahí, en el diccionario por defecto enviado
+            scheming_item = get_facets_dict().get(facet)
+
+            if scheming_item:
+                # Recupero la etiqueta correspondiente al idioma empleado
+                _facets_dict[facet] = scheming_item.get(lang_code)
+                if not _facets_dict[facet]:
+                    # Si no existe esa etiqueta intento la del idioma por defecto.
+                    # Y si tampoco, la primera que haya.
+                    raw_label = scheming_item.get(facet_scheming_config.default_locale,
+                                                list(scheming_item.values()).get(0))
+                    if raw_label:
+                        _facets_dict[facet]=plugins.toolkit._(raw_label)
+                    else:
+                        logger.warning(
+                            "Ha sido imposible encontrar una etiqueta "
+                            "válida para el campo '{0}' al facetar".format(facet))
+ 
+                if not _facets_dict[facet]:
+                    _facets_dict[facet]=plugins.toolkit._(facet)
+
             else:
-                try:
-                    _facets_dict[facet] = scheming_item[lang_code]
-                except KeyError:
-                    try:
-                        _facets_dict[facet] = plugins.toolkit._(
-                            scheming_item[facet_scheming_config.default_locale])
-                    except KeyError:
-                        try:
-                            _facets_dict[facet] = plugins.toolkit._(
-                                list(scheming_item.values())[0])
-                        except IndexError:
-                            logger.warning(
-                                "Ha sido imposible encontrar una etiqueta "
-                                "válida para el campo '{0}' al facetar".format(
-                                    facet))
+                _facets_dict[facet]=plugins.toolkit._(facets_dict.get(facet))
 
 #        tag_key = 'tags_' + lang_code
 #        facets_dict[tag_key] = plugins.toolkit._('Tag')
