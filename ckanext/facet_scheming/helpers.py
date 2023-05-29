@@ -104,8 +104,7 @@ def fscheming_get_facet_items_dict(
     order = "default"
     items = []
 
-    if search_facets is None:
-        search_facets = getattr(c, u'search_facets', None)
+    search_facets = (search_facets or getattr(c, u'search_facets', None))
 
     if search_facets \
        and isinstance(search_facets, dict) \
@@ -136,7 +135,7 @@ def fscheming_get_facet_items_dict(
                 order = order_lst[0]
         #     Sort descendingly by count and ascendingly by case-sensitive display name
         #    items.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
-        sorts={
+        sorts = {
             "name": ("label", False),
             "name_r": ("label", True),
             "count": ("count", False),
