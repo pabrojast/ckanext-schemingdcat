@@ -48,19 +48,19 @@ class Faceted():
                     # Si no existe esa etiqueta intento la del idioma por defecto.
                     # Y si tampoco, la primera que haya.
                     raw_label = scheming_item.get(facet_scheming_config.default_locale,
-                                                list(scheming_item.values()).get(0))
+                                                  list(scheming_item.values()).get(0))
                     if raw_label:
-                        _facets_dict[facet]=plugins.toolkit._(raw_label)
+                        _facets_dict[facet] = plugins.toolkit._(raw_label)
                     else:
                         logger.warning(
                             "Ha sido imposible encontrar una etiqueta "
                             "válida para el campo '{0}' al facetar".format(facet))
- 
+
                 if not _facets_dict[facet]:
-                    _facets_dict[facet]=plugins.toolkit._(facet)
+                    _facets_dict[facet] = plugins.toolkit._(facet)
 
             else:
-                _facets_dict[facet]=plugins.toolkit._(facets_dict.get(facet))
+                _facets_dict[facet] = plugins.toolkit._(facets_dict.get(facet))
 
 #        tag_key = 'tags_' + lang_code
 #        facets_dict[tag_key] = plugins.toolkit._('Tag')

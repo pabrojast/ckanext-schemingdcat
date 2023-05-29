@@ -100,56 +100,61 @@ def fscheming_get_facet_items_dict(
     '''
 
     logger.debug("Returning facets for: {0}".format(facet))
+
     order = "default"
+    items = []
+    
     if search_facets is None:
         search_facets = getattr(c, u'search_facets', None)
 
-    if not search_facets \
-       or not isinstance(search_facets, dict) \
-       or not search_facets.get(facet, {}).get('items'):
-        return []
+    if search_facets \
+       and isinstance(search_facets, dict) \
+       and search_facets.get(facet, {}).get('items'):
 
-    facets = []
-    for facet_item in search_facets.get(facet)['items']:
-        if scheming_choices:
-            facet_item['label'] = scheming_choices_label(
-                scheming_choices, facet_item['name'])
+        for facet_item in search_facets.get(facet)['items']:
+            if scheming_choices:
+                facet_item['label'] = scheming_choices_label(
+                    scheming_choices, facet_item['name'])
+            else:
+                facet_item['label'] = facet_item['display_name']
+    
+            if not len(facet_item['name'].strip()):
+                continue
+    
+            params_items = request.params.items(multi=True) \
+                if is_flask_request() else request.params.items()
+    
+            if not (facet, facet_item['name']) in params_items:
+                items.append(dict(active=False, **facet_item))
+            elif not exclude_active:
+                items.append(dict(active=True, **facet_item))
+    
+    #        logger.debug("params: {0}:{1}".format(
+    #            facet,request.params.getlist("_%s_sort" % facet)))
+            order_lst = request.params.getlist("_%s_sort" % facet)
+            if len(order_lst):
+                order = order_lst[0]
+    #     Sort descendingly by count and ascendingly by case-sensitive display name
+    #    items.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
+        if order == "name":
+            items.sort(key=lambda it: (it['label']))
+        elif order == "name_r":
+            items.sort(key=lambda it: (it['label']), reverse=True)
+        elif order == "count":
+            items.sort(key=lambda it: (it['count']), reverse=True)
+        elif order == "count_r":
+            items.sort(key=lambda it: (it['count']))
         else:
-            facet_item['label'] = facet_item['display_name']
-        if not len(facet_item['name'].strip()):
-            continue
-        params_items = request.params.items(multi=True) \
-            if is_flask_request() else request.params.items()
-        if not (facet, facet_item['name']) in params_items:
-            facets.append(dict(active=False, **facet_item))
-        elif not exclude_active:
-            facets.append(dict(active=True, **facet_item))
+            items.sort(key=lambda it: (-it['count'], it['label'].lower()))
+    
+        if hasattr(c, 'search_facets_limits'):
+            if c.search_facets_limits and limit is None:
+                limit = c.search_facets_limits.get(facet)
+    #     zero treated as infinite for hysterical raisins
+        if limit is not None and limit > 0:
+            return items[:limit]
 
-#        logger.debug("params: {0}:{1}".format(
-#            facet,request.params.getlist("_%s_sort" % facet)))
-        order_lst = request.params.getlist("_%s_sort" % facet)
-        if len(order_lst):
-            order = order_lst[0]
-#     Sort descendingly by count and ascendingly by case-sensitive display name
-#    facets.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
-    if order == "name":
-        facets.sort(key=lambda it: (it['label']))
-    elif order == "name_r":
-        facets.sort(key=lambda it: (it['label']), reverse=True)
-    elif order == "count":
-        facets.sort(key=lambda it: (it['count']), reverse=True)
-    elif order == "count_r":
-        facets.sort(key=lambda it: (it['count']))
-    else:
-        facets.sort(key=lambda it: (-it['count'], it['label'].lower()))
-
-    if hasattr(c, 'search_facets_limits'):
-        if c.search_facets_limits and limit is None:
-            limit = c.search_facets_limits.get(facet)
-#     zero treated as infinite for hysterical raisins
-    if limit is not None and limit > 0:
-        return facets[:limit]
-    return facets
+    return items
 
 
 @helper
@@ -165,7 +170,6 @@ def fscheming_new_order_url(name, orden, extras=None):
     old_order = None
     param = "_%s_sort" % name
     order_lst = request.params.getlist(param)
-    new_param = None
     if not extras:
         extras = {}
 
@@ -176,22 +180,22 @@ def fscheming_new_order_url(name, orden, extras=None):
 
     if len(order_lst):
         old_order = order_lst[0]
-
-    if orden == "name":
-        if old_order == "name":
-            new_param = (param, "name_r")
-        elif old_order == "name_r":
-            pass
-        else:
-            new_param = (param, "name")
-    if orden == "count":
-        if old_order == "count":
-            new_param = (param, "count_r")
-        elif old_order == "count_r":
-            pass
-        else:
-            new_param = (param, "count")
-
+        
+    asignacion = {
+        "name": {
+            "name": "name_r",
+            "name_r": None,
+            None: "name"
+            },
+        "count": {
+            "count": "count_r",
+            "count_r": None,
+            None: "count"
+            }
+        }
+    
+    new_order = asignacion.get(orden,{}).get(old_order)
+    
     params_items = request.params.items(multi=True) \
         if is_flask_request() else request.params.items()
     params_nopage = [
@@ -199,8 +203,9 @@ def fscheming_new_order_url(name, orden, extras=None):
         if k != param
     ]
 
-    if new_param:
-        params_nopage.append(new_param)
+    if new_order:
+        params_nopage.append((param, new_order))
+
     if params_nopage:
         url = url + u'?' + urlencode(params_nopage)
 
