@@ -103,7 +103,7 @@ def fscheming_get_facet_items_dict(
 
     order = "default"
     items = []
-    
+
     if search_facets is None:
         search_facets = getattr(c, u'search_facets', None)
 
@@ -117,36 +117,36 @@ def fscheming_get_facet_items_dict(
                     scheming_choices, facet_item['name'])
             else:
                 facet_item['label'] = facet_item['display_name']
-    
+
             if not len(facet_item['name'].strip()):
                 continue
-    
+
             params_items = request.params.items(multi=True) \
                 if is_flask_request() else request.params.items()
-    
+
             if not (facet, facet_item['name']) in params_items:
                 items.append(dict(active=False, **facet_item))
             elif not exclude_active:
                 items.append(dict(active=True, **facet_item))
-    
-    #        logger.debug("params: {0}:{1}".format(
-    #            facet,request.params.getlist("_%s_sort" % facet)))
+
+            #    logger.debug("params: {0}:{1}".format(
+            #    facet,request.params.getlist("_%s_sort" % facet)))
             order_lst = request.params.getlist("_%s_sort" % facet)
             if len(order_lst):
                 order = order_lst[0]
-    #     Sort descendingly by count and ascendingly by case-sensitive display name
-    #    items.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
-        if order == "name":
-            items.sort(key=lambda it: (it['label']))
-        elif order == "name_r":
-            items.sort(key=lambda it: (it['label']), reverse=True)
-        elif order == "count":
-            items.sort(key=lambda it: (it['count']), reverse=True)
-        elif order == "count_r":
-            items.sort(key=lambda it: (it['count']))
+        #     Sort descendingly by count and ascendingly by case-sensitive display name
+        #    items.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
+        sorts={
+            "name": ("label", False),
+            "name_r": ("label", True),
+            "count": ("count", False),
+            "count_r": ("count", True)
+            }
+        if sorts.get(order):
+            items.sort(key=lambda it: (it[sorts.get(order)[0]]), reverse=sorts.get(order)[1])
         else:
             items.sort(key=lambda it: (-it['count'], it['label'].lower()))
-    
+
         if hasattr(c, 'search_facets_limits'):
             if c.search_facets_limits and limit is None:
                 limit = c.search_facets_limits.get(facet)
@@ -180,7 +180,7 @@ def fscheming_new_order_url(name, orden, extras=None):
 
     if len(order_lst):
         old_order = order_lst[0]
-        
+
     asignacion = {
         "name": {
             "name": "name_r",
@@ -193,9 +193,9 @@ def fscheming_new_order_url(name, orden, extras=None):
             None: "count"
             }
         }
-    
-    new_order = asignacion.get(orden,{}).get(old_order)
-    
+
+    new_order = asignacion.get(orden, {}).get(old_order)
+
     params_items = request.params.items(multi=True) \
         if is_flask_request() else request.params.items()
     params_nopage = [
