@@ -32,6 +32,8 @@ jobs:
         pwd
         echo $GITHUB_WORKSPACE
         ls -al $GITHUB_WORKSPACE
+        wget https://dlcdn.apache.org/lucene/solr/8.11.2/solr-8.11.2.tgz
+        ls
         apt
         pip install --upgrade pip
         pip install -e .
