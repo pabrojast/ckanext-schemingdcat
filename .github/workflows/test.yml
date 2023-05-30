@@ -34,8 +34,10 @@ jobs:
         ls -al $GITHUB_WORKSPACE
         wget -q https://dlcdn.apache.org/lucene/solr/8.11.2/solr-8.11.2.tgz
         tar -C /opt -xzf solr-8.11.2.tgz
-        ls /opt
-        apt
+        ls /opt/solr
+        echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main"> /etc/apt/sources.list.d/pgdg.list
+        apt-get update -y
+        apt-get install -y postgresql-15
         pip install --upgrade pip
         pip install -e .
         # Replace default path to CKAN core config file with the one on the container
