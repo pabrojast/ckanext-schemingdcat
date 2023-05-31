@@ -43,8 +43,3 @@ docs/_build/
 /.project
 /.pydevproject
 
-# Icons
-ckanext/facet_scheming/public/images
-!ckanext/facet_scheming/public/images/icons/spatial_uri
-!ckanext/facet_scheming/public/images/icons/theme
-!ckanext/facet_scheming/public/images/icons/theme_es
