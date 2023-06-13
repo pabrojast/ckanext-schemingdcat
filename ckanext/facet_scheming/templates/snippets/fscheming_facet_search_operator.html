@@ -47,14 +47,15 @@
         {% endblock %}
         {% block facet_operator_items %}
         {% set facet_operator = request.params.get('_facet_operator',  h.fscheming_default_facet_search_operator()) %}
+        {{ request }}
         <nav>
           <ul class="unstyled nav nav-simple nav-facet">
           <li class="nav-item container__filter__type__search">
-            <span class="span__filter__type__search"> <strong>{{ _('Search type') }} </strong></span>
+            <span class="span__filter__type__search"> <strong>{{ _('Condiciones') }} </strong></span>
             <div class="container__filter__type__search_and__or">
               <div class="btn-group"  role="group" >
-                <button type="button" class="btn btn-default {%if facet_operator == 'OR'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{{ _('OR') }}</a></button>
-                <button type="button" class="btn btn-default {%if facet_operator == 'AND'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{{ _('AND') }}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'OR'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{{ _('Alguna') }}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'AND'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{{ _('Todas') }}</a></button>
               </div>
             </div>
           </li>
