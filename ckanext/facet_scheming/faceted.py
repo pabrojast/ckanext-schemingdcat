@@ -48,7 +48,7 @@ class Faceted():
                     # Si no existe esa etiqueta intento la del idioma por defecto.
                     # Y si tampoco, la primera que haya.
                     raw_label = scheming_item.get(facet_scheming_config.default_locale,
-                                                  list(scheming_item.values()).get(0))
+                                                  list(scheming_item.values())[0])
                     if raw_label:
                         _facets_dict[facet] = plugins.toolkit._(raw_label)
                     else:
