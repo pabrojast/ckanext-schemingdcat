@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-facet_scheming 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2023-06-13 09:02+0200\n"
+"POT-Creation-Date: 2023-06-14 09:34+0200\n"
 "PO-Revision-Date: 2023-06-13 09:03+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -47,11 +47,19 @@ msgstr "Search datasets..."
 #: ckanext/facet_scheming/templates/organization/read.html:5
 #: ckanext/facet_scheming/templates/package/search.html:6
 msgid "Configuración de la búsqueda"
-msgstr "Search configuration"
+msgstr "Search config"
 
 #: ckanext/facet_scheming/templates/organization/read.html:15
 msgid "Cerrar"
 msgstr "Close"
+
+#: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:51
+msgid "ordenar por nombre"
+msgstr "order by name"
+
+#: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:58
+msgid "ordenar por resultados"
+msgstr "order by datasets found"
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:111
 msgid "Mostrar Más {facet_type}"
@@ -66,14 +74,14 @@ msgid "No existen {facet_type} que coincidan con la búsqueda"
 msgstr "There are no {facet_type} that match this search"
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:53
-msgid "Típo de búsqueda"
+msgid "Criterios de selección"
 msgstr "Search type"
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:56
-msgid "Alguna condición"
+msgid "Alguno"
 msgstr "OR"
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:57
-msgid "Todas las condiciones"
+msgid "Todos"
 msgstr "AND"
 

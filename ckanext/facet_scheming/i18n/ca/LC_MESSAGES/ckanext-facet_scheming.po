@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ckanext-facet_scheming 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2023-06-13 09:02+0200\n"
-"PO-Revision-Date: 2023-06-13 09:02+0200\n"
+"POT-Creation-Date: 2023-06-14 09:34+0200\n"
+"PO-Revision-Date: 2023-06-14 09:35+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ca\n"
 "Language-Team: ca <LL@li.org>\n"
@@ -21,19 +21,19 @@ msgstr ""
 "Generated-By: Babel 2.7.0\n"
 
 #: ckanext/facet_scheming/templates/group/read.html:13
-msgid "Relevance"
+msgid "Relevancia"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/group/read.html:14
-msgid "Name Ascending"
+msgid "Nombre Ascendente"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/group/read.html:15
-msgid "Name Descending"
+msgid "Nombre Descendente"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/group/read.html:16
-msgid "Last Modified"
+msgid "Último Modificado"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/group/read.html:17
@@ -41,39 +41,47 @@ msgid "Popular"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/group/read.html:19
-msgid "Search datasets..."
+msgid "Buscar conjuntos de datos"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/organization/read.html:5
 #: ckanext/facet_scheming/templates/package/search.html:6
-msgid "Search configuration"
+msgid "Configuración de la búsqueda"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/organization/read.html:15
-msgid "cerrar"
+msgid "Cerrar"
+msgstr ""
+
+#: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:51
+msgid "ordenar por nombre"
+msgstr ""
+
+#: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:58
+msgid "ordenar por resultados"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:111
-msgid "Show More {facet_type}"
+msgid "Mostrar Más {facet_type}"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:114
-msgid "Show Only Popular {facet_type}"
+msgid "Mostrar solo los primeros {facet_type}"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_list.html:118
-msgid "There are no {facet_type} that match this search"
+msgid "No existen {facet_type} que coincidan con la búsqueda"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:53
-msgid "Search type"
+msgid "Criterios de selección"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:56
-msgid "OR"
+msgid "Alguno"
 msgstr ""
 
 #: ckanext/facet_scheming/templates/snippets/fscheming_facet_search_operator.html:57
-msgid "AND"
+msgid "Todos"
 msgstr ""
 

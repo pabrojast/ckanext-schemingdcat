@@ -5,18 +5,20 @@ import ckanext.facet_scheming.helpers as helpers
 import ckanext.facet_scheming.config as fs_config
 from ckanext.facet_scheming.faceted import Faceted
 from ckanext.facet_scheming.package_controller import PackageController
+from ckan.lib.plugins import DefaultTranslation
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController):
+class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation):
 
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IFacets)
     plugins.implements(plugins.IPackageController)
+    plugins.implements(plugins.ITranslation)
 
 # IConfigurer
 
