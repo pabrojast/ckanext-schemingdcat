@@ -26,8 +26,8 @@ class FacetSchemingPlugin(plugins.SingletonPlugin, Faceted, PackageController, D
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
 
-        toolkit.add_resource('fanstatic',
-                             'facet_scheming')
+        #toolkit.add_resource('fanstatic',
+        #                     'facet_scheming')
 
         toolkit.add_resource('assets',
                              'ckanext-facet_scheming')
