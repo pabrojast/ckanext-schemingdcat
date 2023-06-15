@@ -26,8 +26,11 @@ class Faceted():
     def dataset_facets(self,
                        facets_dict,
                        package_type):
-
-        return self._custom_facets(facets_dict, package_type)
+        #this patch is necessary to avoid collisions with harvest package type from these plugin (harvest)
+        if package_type == "dataset":
+            return self._custom_facets(facets_dict, package_type)
+        else:
+            return facets_dict
 
     def _custom_facets(self,
                        facets_dict,
