@@ -1,0 +1,73 @@
+name: facet-scheming-test
+run-name: ${{ github.actor }} probando facet-scheming-test
+on: [workflow_dispatch]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install requirements
+        run: pip install flake8 pycodestyle
+      - name: Check syntax
+        run: flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics --exclude ckan
+
+  test:
+    needs: lint
+    name: CKAN ${{ matrix.ckan-version }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      CKAN_SQLALCHEMY_URL: postgresql://ckan_default:pass@postgres/ckan_test
+      CKAN_DATASTORE_WRITE_URL: postgresql://datastore_write:pass@postgres/datastore_test
+      CKAN_DATASTORE_READ_URL: postgresql://datastore_read:pass@postgres/datastore_test
+      CKAN_SOLR_URL: http://solr:8983/solr/ckan
+      CKAN_REDIS_URL: redis://redis:6379/1
+
+    steps:
+    #- uses: actions/checkout@v3
+    
+    - name: Install requirements
+      run: |
+        pwd
+        echo $GITHUB_WORKSPACE
+        ls -al $GITHUB_WORKSPACE
+        wget -q https://dlcdn.apache.org/lucene/solr/8.11.2/solr-8.11.2.tgz
+        tar -C /opt -xzf solr-8.11.2.tgz
+        ls -l /opt/solr-8.11.2
+        sudo echo "deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main"> /etc/apt/sources.list.d/pgdg.list
+        sudo apt-get update -y
+        sudo apt-get install -y postgresql-15
+        pip install --upgrade pip
+        pip install -e .
+        # Replace default path to CKAN core config file with the one on the container
+        sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
+        sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test_subclass.ini
+    - name: Setup extension (CKAN >= 2.9)
+      if: ${{ matrix.ckan-version != '2.8' }}
+      run: |
+        pip install -r test-requirements.txt
+        ckan -c test.ini db init
+    - name: Setup extension (CKAN < 2.9)
+      if: ${{ matrix.ckan-version == '2.8' }}
+      run: |
+        pip install -r test-requirements-py2.txt
+        paster --plugin=ckan db init -c test.ini
+    - name: Run all tests
+      run: pytest --ckan-ini=test.ini --cov=ckanext.scheming ckanext/scheming/tests
+    - name: Run plugin subclassing tests
+      run: pytest --ckan-ini=test_subclass.ini ckanext/scheming/tests/test_dataset_display.py ckanext/scheming/tests/test_form.py::TestDatasetFormNew ckanext/scheming/tests/test_dataset_logic.py

@@ -17,37 +17,50 @@
     cursor: pointer;
 }
 
+.filters .module .orden .up,
+.filters .module .orden .down,
 .filters .module .orden .label {
-	position: absolute;
+	position:absolute;
+	left:2px;
+	color:#adb5bd;	
+}
+
+.filters .module .orden .label {
     right: 0;
     bottom: 25%;
     margin: auto;
     padding-right:3px;
     text-align: end;
-    color:#adb5bd;
 }
 
 .filters .module .orden.active .label {
 	color:var(--bs-body-color);	
 }
+
+.filters .module .orden {
+	border:1px solid #ffffff;
+}
+
+.filters .module .orden:hover {
+	border:1px solid #000;
+}
+
+.filters .module .orden:hover .label {
+	color:var(--bs-body-color);	
+}
+	
 	
 .filters .module .orden .up {
-	position:absolute;
 	top:2px;
-	left:2px;
-	color:#adb5bd;
-}
-.filters .module .orden .up.active {
-	color:#212529;	
 }
 
 .filters .module .orden .down {
-	position:absolute;
 	bottom:2px;
-	left:2px;
-	color:#adb5bd;
 }
-.filters .module .orden .down.active {
+
+.filters .module .orden .up.active,
+.filters .module .orden .down.active
+{
 	color:#212529;	
 }
 
@@ -64,4 +77,14 @@ option.icon_option{
 	background-position:left;
 	background-size:15px;
 	padding-left:17px;
+}
+
+/* Iconos para spatial_uri */
+
+img.spatial_uri-icon {
+	vertical-align: middle;
+	height: 1.6em;
+	display: inline-block;
+	border-radius: 50%;
+	margin-left: 1em;
 }
