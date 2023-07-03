@@ -78,3 +78,13 @@ option.icon_option{
 	background-size:15px;
 	padding-left:17px;
 }
+
+/* Iconos para spatial_uri */
+
+img.spatial_uri-icon {
+	vertical-align: middle;
+	height: 1.6em;
+	display: inline-block;
+	border-radius: 50%;
+	margin-left: 1em;
+}
