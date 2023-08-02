@@ -1,0 +1,90 @@
+{
+    "scheming_version": 2,
+    "organization_type": "organization",
+    "about": "Organizations: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements.",
+    "about_url": "https://github.com/mjanez/eikos",
+    "fields": [
+      {
+        "field_name": "title",
+        "label": "Nombre",
+        "validators": "ignore_missing unicode_safe",
+        "form_snippet": "large_text.html",
+        "form_attrs": {"data-module": "slug-preview-target"},
+        "form_placeholder": "Mi organización"
+      },
+      {
+        "field_name": "name",
+        "label": "URL",
+        "validators": "not_empty unicode_safe name_validator group_name_validator",
+        "form_snippet": "slug.html",
+        "display_snippet": "link.html",
+        "form_placeholder": "mi-organizacion"
+      },
+      {
+        "field_name": "description",
+        "label": "Resumen",
+        "form_snippet": "markdown.html",
+        "display_snippet": "markdown.html",
+        "form_placeholder": "Resumen de la organización..."
+      },
+      {
+        "field_name": "image_url",
+        "label": "URL de imagen",
+        "display_snippet": "link.html",
+        "preset": "resource_url_upload",
+        "form_placeholder": "http://example.com/my-image.jpg"
+      },
+      {
+        "field_name": "publisher_email",
+        "label": "Email",
+        "display_snippet": "email.html"
+      },
+      {
+        "field_name": "publisher_url",
+        "label": "URL",
+        "display_snippet": "link.html",
+        "form_placeholder": "e.g. https://iepnb.es/"
+      },
+      {
+        "field_name": "identifier",
+        "label": "Identificador del organismo público (DIR3)",
+        "display_snippet": "link.html",
+        "form_placeholder": "e.g. E05068001",
+        "help_text": "Identificador único (DIR3) del organismo público. (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)",
+        "help_allow_html": "True"
+      },
+      {
+        "field_name": "publisher_type",
+        "label": "Tipo de publicador",
+        "output_validators": "not_empty scheming_required",
+        "form_placeholder": "http://purl.org/adms/publishertype/NationalAuthority",
+        "display_snippet": "link.html",
+        "form_include_blank_choice": "False",
+        "form_snippet": "select.html",
+        "help_text": "Tipo de publicador: http://purl.org/adms/publishertype/1.0",
+        "choices": [
+          {
+              "label": "Autoridad nacional",
+              "value": "http://purl.org/adms/publishertype/NationalAuthority"
+          },
+          {
+              "label": "Autoridad regional",
+              "value": "http://purl.org/adms/publishertype/RegionalAuthority"
+          },
+          {
+            "label": "Autoridad supranacional",
+            "value": "http://purl.org/adms/publishertype/SupraNationalAuthority"
+          },
+          {
+              "label": "Autoridad local",
+              "value": "http://purl.org/adms/publishertype/LocalAuthority"
+          },
+
+          {
+              "label": "Organización sin animo de lucro",
+              "value": "http://purl.org/adms/publishertype/NonProfitOrganisation"
+          }
+        ]
+      }
+    ]
+  }

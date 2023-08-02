@@ -1,0 +1,13 @@
+{% extends "package/read.html" %}
+
+{% block secondary_content %}
+  {{ super() }}
+
+  // Standard version: "{% set dataset_extent = h.get_pkg_dict_extra(c.pkg_dict, 'spatial', '') %}"
+  // CKAN Docker Compose version: "{% set dataset_extent = pkg.spatial %}"
+  {% set dataset_extent = pkg.spatial %}
+  {% if dataset_extent %}
+    {% snippet "spatial/snippets/dataset_map_sidebar.html", extent=dataset_extent %}
+  {% endif %}
+
+{% endblock %}

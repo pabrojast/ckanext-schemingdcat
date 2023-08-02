@@ -1,0 +1,6 @@
+{% ckan_extends %}
+{% block content_primary_nav %}
+  {{ super() }}
+  {{ h.build_nav_icon('scheming_dcat.index', _('Linked Data'), id=pkg.id if is_activity_archive else pkg.name, icon='asterisk') }}
+  {{ h.build_nav_icon('scheming_dcat.geospatial_metadata', _('Geospatial Metadata'), id=pkg.id if is_activity_archive else pkg.name, icon='globe') }}
+{% endblock %}

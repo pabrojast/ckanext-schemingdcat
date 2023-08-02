@@ -1,0 +1,23 @@
+{#
+    Render a link from Schema values acording to value of field
+  
+    choices - list of values and labels from Schema
+  #}
+
+  {% set _class = _class or 'link_schema-list' %}
+  {% set link_schema_list = data[field.field_name] %}
+
+  {%- set choices = [] -%}
+  {%- for c in h.scheming_field_choices(field) -%}
+    {%- do choices.append(
+      (c.value, h.scheming_language_text(c.label))) -%}
+  {%- endfor -%}
+  
+  {% block link_schema_list %}
+      {%- for val, label in choices -%}
+        {%- if val in link_schema_list -%}
+              <a class="{% block link_schema_list_item_class %}{{ val }}{% endblock %}" href="{{ val }}">{{ label }}</a>
+        {%- endif -%}
+      {% endfor %}
+  {% endblock %}
+  

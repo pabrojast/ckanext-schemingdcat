@@ -1,0 +1,7 @@
+{% if '/' in data[field.field_name] %}
+    {%- set url_name = 'EPSG:' + data[field.field_name].split("/")[-1] -%}
+{% else %}
+    {%- set url_name = data[field.field_name] -%}    
+{% endif %}
+
+{{ h.link_to(url_name, data[field.field_name], rel=field.display_property, target='_blank') }}

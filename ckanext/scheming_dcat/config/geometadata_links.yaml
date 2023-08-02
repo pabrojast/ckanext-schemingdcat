@@ -1,0 +1,31 @@
+# must exist and have an {id} and {schema} keys
+csw_url: /csw/?service=CSW&version=2.0.2&request=GetRecordById&id={id}&elementSetName=full&outputSchema={schema}
+
+csw_formats:
+    - name: INSPIRE
+      display_name: INSPIRE
+      outputSchema: http://www.isotc211.org/2005/gmd
+      image_display_url: /images/formats/inspire_iso19139.svg
+      description: INSPIRE datasets and services in ISO/TS 19139 based XML format.
+      description_url: http://inspire.ec.europa.eu/id/document/tg/metadata-iso19139
+
+    - name: Dublin Core
+      display_name: Dublin Core
+      outputSchema: http://www.opengis.net/cat/csw/2.0.2
+      image_display_url: /images/formats/dc.svg
+      description: Dublin Core Metadata Element Set
+      description_url: https://www.dublincore.org/specifications/dublin-core/dcmes-xml/
+
+    - name: ATOM
+      display_name: ATOM
+      outputSchema: http://www.w3.org/2005/Atom
+      image_display_url: /images/formats/atom.svg
+      description: Atom Syndication Format (ATOM)
+      description_url: https://datatracker.ietf.org/doc/html/rfc4287
+
+    - name: FGDC
+      display_name: FGDC
+      outputSchema: http://www.opengis.net/cat/csw/csdgm
+      image_display_url: /images/formats/fgdc.svg
+      description: FGDC Content Standard for Digital Spatial Metadata (CSDGM).
+      description_url: https://www.fgdc.gov/metadata/csdgm-standard

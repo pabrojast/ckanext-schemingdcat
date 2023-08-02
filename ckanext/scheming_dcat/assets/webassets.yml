@@ -1,0 +1,14 @@
+# scheming_dcat-js:
+#   filter: rjsmin
+#   output: ckanext-scheming_dcat/%(version)s-scheming_dcat.js
+#   contents:
+#     - js/scheming_dcat.js
+#   extra:
+#     preload:
+#       - base/main
+
+ scheming_dcat-css:
+   filter: cssrewrite
+   output: ckanext-scheming_dcat/%(version)s-scheming_dcat.css
+   contents:
+     - css/scheming_dcat.css
