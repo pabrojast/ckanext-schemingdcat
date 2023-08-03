@@ -16,15 +16,11 @@ setup(
     description='''Custom CKAN schemas for DCAT vocabularies''',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license='AGPL',
     classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
     keywords='ckan',
     author='''OpenDataGIS Team''',
     url='https://github.com/opendatagis/ckanext-scheming_dcat',
-    license='MIT',   
-    packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
+    license='AGPL',   
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     namespace_packages=['ckanext'],
     include_package_data=True,
