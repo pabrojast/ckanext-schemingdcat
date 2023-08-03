@@ -31,79 +31,28 @@ This plugin is compatible with CKAN 2.9 or later.
 ```sh
 cd $CKAN_VENV/src/
 
+# Install latest stable release of:
+## ckanext-scheming (e.g. release-3.0.0)
+pip install -e git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
+
+## mjanez/ckanext-dcat (e.g. 1.0.0-geodcatap)
+pip install -e git+https://github.com/mjanez/ckanext-dcat.git@1.0.0-geodcatap#egg=ckanext-dcat
+pip install -r https://raw.githubusercontent.com/mjanez/ckanext-dcat/master/requirements.txt
+
+## ckanext-spatial (e.g. v.2.0.0)
+pip install -e git++https://github.com/ckan/ckanext-spatial.git@v2.0.0#egg=ckanext-spatial
+pip install -r https://raw.githubusercontent.com/ckan/ckanext-spatial/master/requirements.txt
+
+# Install the scheming_dataset plugin
 pip install -e "git+https://github.com/ckan/ckanext-scheming_dcat.git#egg=ckanext-scheming_dcat"
 ```
-
-### Facet ext integration
-for example:
-
-     . /usr/lib/ckan/default/bin/activate
-
-2. Clone the source and install it on the virtualenv
-
-    ```bash 
-    git clone https://github.com/opendatagis/ckanext-scheming_dcat.git
-    cd ckanext-scheming_dcat
-    pip install -e .
-    pip install -r requirements.txt
-    ```
-
-3. Add `scheming_dcat` to the `ckan.plugins` setting in your CKAN
-   config file (by default the config file is located at
-   `/etc/ckan/default/ckan.ini`).
-
-4. Clear the index in solr:
-
-	`ckan -c [route to your .ini ckan config file] search-index clear`
-   
-5. Modify the schema file on Solr (schema or managed schema) to add the multivalued fields added in the scheming extension used for faceting. You can add any field defined in the schema file used in the ckanext-scheming extension that you want to use for faceting.
-   You must define each field with these parameters:
-   - `type: string` - to avoid split the text in tokens, each individually "faceted".
-   - `uninvertible: false` - as recomended by solr´s documentation 
-   - `docValues: true` - to ease recovering faceted resources
-   - `indexed: true` - to let ckan recover resources under this facet 
-   - `stored: true` - to let the value to be recovered by queries
-   - `multiValued`: well... it depends on if it is a multivalued field (several values for one resource) or a regular field (just one value). Use "true" or "false" respectively. 
-   
-   E.g. [`ckanext-iepnb`](https://github.com/OpenDataGIS/ckanext-iepnb) extension are ready to use these multivalued fields. You have to add this configuration fragment to solr schema in order to use them:
-
-	
-    ```xml
-    <!-- Extra fields -->
-      <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="conforms_to" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="lineage_source" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="lineage_process_steps" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="reference" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="theme" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-      <field name="theme_es" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
-      <field name="metadata_profile" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
-      <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
-    ```
-
-    >**Note**<br>
-    >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
-   	
-	**Be sure to restart Solr after modify the schema.**
-	
-6. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
-
-     sudo service apache2 reload
-     
-7. Reindex solr index:
-
-	`ckan -c [route to your .ini ckan config file] search-index rebuild`
-
-	Sometimes solr can issue an error while reindexing. In that case I'd try to restart solr, delete index ("search-index clear"), restart solr, rebuild index, and restart solr again.
-	
-	Ckan needs to "fix" multivalued fields to be able to recover values correctly for faceting, so this step must be done in order to use faceting with multivalued fields. 
 
 ## Configuration
 Set the plugin:
 
   ```ini
 
-  # Each of the plugins is optional depending on your use
+  # Add the plugin to the list of plugins
   ckan.plugins = ... scheming_dcat
   ```
 
@@ -158,6 +107,50 @@ The same custom fields for faceting can be used when browsing organizations and 
   ```
 
 This two last settings are not mandatory. You can omit one or both (or set them to `false`), and the default fields for faceting will be used instead.
+
+#### Facet Scheming integration with Solr
+1. Clear the index in solr:
+
+	`ckan -c [route to your .ini ckan config file] search-index clear`
+   
+2. Modify the schema file on Solr (schema or managed schema) to add the multivalued fields added in the scheming extension used for faceting. You can add any field defined in the schema file used in the ckanext-scheming extension that you want to use for faceting.
+   You must define each field with these parameters:
+   - `type: string` - to avoid split the text in tokens, each individually "faceted".
+   - `uninvertible: false` - as recomended by solr´s documentation 
+   - `docValues: true` - to ease recovering faceted resources
+   - `indexed: true` - to let ckan recover resources under this facet 
+   - `stored: true` - to let the value to be recovered by queries
+   - `multiValued`: well... it depends on if it is a multivalued field (several values for one resource) or a regular field (just one value). Use "true" or "false" respectively. 
+   
+   E.g. [`ckanext-iepnb`](https://github.com/OpenDataGIS/ckanext-iepnb) extension are ready to use these multivalued fields. You have to add this configuration fragment to solr schema in order to use them:
+	
+    ```xml
+    <!-- Extra fields -->
+      <field name="tag_uri" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="conforms_to" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="lineage_source" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="lineage_process_steps" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="reference" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="theme" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+      <field name="theme_es" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
+      <field name="metadata_profile" type="string" uninvertible="false" docValues="true" multiValued="true" indexed="true" stored="true"/>
+      <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
+    ```
+
+    >**Note**<br>
+    >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
+   	
+	**Be sure to restart Solr after modify the schema.**
+	
+3. Restart CKAN. 
+     
+4. Reindex solr index:
+
+	`ckan -c [route to your .ini ckan config file] search-index rebuild`
+
+	Sometimes solr can issue an error while reindexing. In that case I'd try to restart solr, delete index ("search-index clear"), restart solr, rebuild index, and restart solr again.
+	
+	Ckan needs to "fix" multivalued fields to be able to recover values correctly for faceting, so this step must be done in order to use faceting with multivalued fields. 
 
 ### Icons
 Icons for each field option in the [`scheming file`](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml) can be set in multiple ways:
