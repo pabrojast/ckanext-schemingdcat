@@ -53,16 +53,16 @@ pip install -e "git+https://github.com/ckan/ckanext-scheming_dcat.git#egg=ckanex
 Set the plugin:
 
   ```ini
-
   # Add the plugin to the list of plugins
-  ckan.plugins = ... scheming_dcat
+  ckan.plugins = ... spatial_metadata ... dcat ... scheming_dcat
   ```
+>**Warning**<br>
+> When using `scheming_dcat` extension,**`scheming` should not appear in the list of plugins loaded in CKAN.** But `dcat` and `spatial` should.
 
 ### Scheming
 Set the schemas you want to use with configuration options:
 
   ```ini
-
   # Each of the plugins is optional depending on your use
   ckan.plugins = scheming_dcat_datasets scheming_dcat_groups scheming_dcat_organizations
   ```
