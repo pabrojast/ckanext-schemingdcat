@@ -1,6 +1,9 @@
 {%- set _class = _class or 'scheming-icon-list' -%}
 {%- set value = data[field.field_name] -%}
 {%- set icons_dir = h.schemingdct_get_icons_dir(field) -%}
+{%- set label =  h.scheming_choices_label(
+  h.scheming_field_choices(field),
+  data[field.field_name]) -%}
 
 {%- if icons_dir -%}
   {%- set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_dic(field, value),icons_dir) -%}
@@ -11,7 +14,7 @@
   {%- endif -%}
 {%- endif -%}
 
-{%- if img_url -%}<img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon select_icon"></img> {% endif -%}
-{{ h.scheming_choices_label(
-  h.scheming_field_choices(field),
-  data[field.field_name]) }}
+{%- if img_url -%}
+  <img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon spatial_uri-icon"></img> 
+  {% endif -%}
+  <a href="{{ value }}"> {{ label }}</a>
