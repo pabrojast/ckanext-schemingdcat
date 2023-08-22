@@ -28,7 +28,7 @@ dataset_fields:
     es: Título del conjunto de datos
   preset: title
   validators: not_empty scheming_required
-  required: true
+  required: True
   display_property: dct:title
   form_placeholder:
     en: eg. A descriptive title.
@@ -51,7 +51,7 @@ dataset_fields:
   label:
     en: Organization
     es: Organización
-  required: true
+  required: True
   help_text:
     en: Entity (organisation) responsible for making the Dataset available.
     es: Entidad (organización) responsable de publicar el conjunto de datos.
@@ -65,7 +65,7 @@ dataset_fields:
   form_snippet: markdown.html
   display_property: dct:description
   validators: not_empty scheming_required
-  required: true
+  required: True
   form_placeholder:
     en: eg. Some useful description about the dataset.
     es: ej. Una descripción útil sobre el conjunto de datos.
@@ -78,7 +78,7 @@ dataset_fields:
   preset: select
   form_include_blank_choice: False
   validators: not_empty scheming_required
-  required: true
+  required: True
   display_property: dct:type
   display_snippet: scheming_dcat/display_snippets/link_schema.html
   choices:
@@ -155,7 +155,7 @@ dataset_fields:
     en: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Themes</a> (NTI-RISP Annex IV)'
     es: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Temáticas</a> (Anexo IV NTI-RISP)'
   help_allow_html: True
-  sorted_choices: true
+  sorted_choices: True
   choices:
   - value: http://datos.gob.es/kos/sector-publico/sector/ciencia-tecnologia
     notation: ciencia-tecnologia
@@ -501,7 +501,7 @@ dataset_fields:
     en: Metadata identifier
     es: Identificador de los metadatos
   validators: not_empty scheming_required
-  required: true
+  required: True
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000
   help_text:
@@ -519,8 +519,8 @@ dataset_fields:
   display_snippet: scheming_dcat/display_snippets/link_schema.html
   form_include_blank_choice: False
   validators: not_empty scheming_required
-  required: true
-  sorted_choices: true
+  required: True
+  sorted_choices: True
   choices:
   - label:
       en: Spanish
@@ -538,7 +538,7 @@ dataset_fields:
     es: Fecha de creación
   validators: not_empty scheming_required
   display_property: dct:created
-  required: true
+  required: True
   preset: date
 
 # Date of last revision (O)
@@ -548,7 +548,7 @@ dataset_fields:
     es: Fecha de última modificación
     validators: not_empty scheming_required
   display_property: dct:modified
-  required: true
+  required: True
   preset: date
 
 # ISO 19115 topic category (M)
@@ -562,8 +562,8 @@ dataset_fields:
   display_snippet: scheming_dcat/display_snippets/link_schema.html
   form_include_blank_choice: False
   validators: not_empty scheming_required
-  required: true
-  sorted_choices: true
+  required: True
+  sorted_choices: True
   choices:
   - label: biota
     value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/biota
@@ -662,7 +662,7 @@ dataset_fields:
     en: Metadata contact point email
     es: Email del punto de contacto de los Metadatos
   validators: not_empty scheming_required
-  required: true
+  required: True
   display_property: vcard:hasEmail
   display_snippet: email.html
   form_placeholder: joseblanco@example.com
@@ -969,7 +969,7 @@ dataset_fields:
   preset: select
   display_property: dct:accrualPeriodicity
   display_snippet: scheming_dcat/display_snippets/link_schema.html
-  sorted_choices: true
+  sorted_choices: True
   choices:
   - label:
       en: Annual
@@ -1170,7 +1170,7 @@ dataset_fields:
   field_name: theme
   label:
     en: INSPIRE Themes
-    es: Temitas INSPIRE
+    es: Temas INSPIRE
   validators: ignore_missing scheming_dcat_multiple_choice
   form_snippet: scheming_dcat/form_snippets/multiple_select_icon.html
   display_property: dcat:theme
@@ -1180,7 +1180,7 @@ dataset_fields:
     en: '<a href="http://inspire.ec.europa.eu/theme" target="_blank" rel="noopener">Themes</a> (INSPIRE)'
     es: '<a href="http://inspire.ec.europa.eu/theme" target="_blank" rel="noopener">Temas</a> (INSPIRE)'
   help_allow_html: True
-  sorted_choices: true
+  sorted_choices: True
   choices:
   - label:
       en: Meteorological Geographical Features (MF)
@@ -1368,7 +1368,7 @@ dataset_fields:
   display_property: dcat:theme
   display_snippet: scheming_dcat/display_snippets/select_icon.html
   select_size: 10
-  sorted_choices: true
+  sorted_choices: True
   choices:
   - label:
       es: España
@@ -1891,7 +1891,7 @@ dataset_fields:
     en: '<a href="http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType" target="_blank" rel="noopener">Spatial representation type</a> (INSPIRE)'
     es: '<a href="http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType" target="_blank" rel="noopener">Tipos de representación espacial</a> (INSPIRE)'
   help_allow_html: True
-  sorted_choices: true
+  sorted_choices: True
   choices:
   - label:
       en: Grid
