@@ -68,10 +68,10 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
       </h2>
         {% endblock %}
 
-      {%- block facet_list_items -%}
-        {%- set field = h.scheming_field_by_name(h.scheming_get_dataset_schema('dataset').dataset_fields,name) -%}
-        {%- set icons_dir = h.schemingdct_get_icons_dir(field) -%}
-        {%- with items = items or h.schemingdct_get_facet_items_dict(name, search_facets or c.search_facets,scheming_choices=scheming_choices) -%}
+      {%  block facet_list_items %}
+        {%  set field = h.scheming_field_by_name(h.scheming_get_dataset_schema('dataset').dataset_fields,name) %}
+        {%  set icons_dir = h.schemingdct_get_icons_dir(field) %}
+        {%  with items = items or h.schemingdct_get_facet_items_dict(name, search_facets or c.search_facets,scheming_choices=scheming_choices) %}
           {% if items %}
             {% set nav_class = 'nav nav-simple nav-facet '+name %}
         <nav aria-label="{{ title }}">
@@ -83,19 +83,19 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
               {% set label_truncated = h.truncate(label, 22) if not label_function else label %}
               {% set count = count_label(item['count']) if count_label else ('%d' % item['count']) %}
               {% set nav_item_class = 'nav-item ' %}
-              {%- if icons_dir -%}
-                {%- set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_dic(field, item.name),icons_dir) -%}
-                {%- if icon -%}
-                  {% set img_url= h.url_for_static(icon) -%}
-                {%- elif no_icon -%}
-                  {%- set img_url= h.url_for_static(no_icon) -%}
-                {%- endif -%}
-              {%- endif -%}
+              {%  if icons_dir %}
+                {%  set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field, item.name),icons_dir) %}
+                {%  if icon %}
+                  {% set img_url= h.url_for_static(icon) %}
+                {%  elif no_icon %}
+                  {%  set img_url= h.url_for_static(no_icon) %}
+                {%  endif %}
+              {%  endif %}
               <li class="{{ 'nav-item' }}{% if item.active %} active{% endif %}">
                 <a href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
-              {%- if img_url -%}
+              {%  if img_url %}
                   <img src="{{ img_url }}" title="{{ label }}" class="facet-icon"></img>
-              {%- endif -%}
+              {%  endif %}
                   <span class="item-label">{{ label_truncated }}</span>
                   <span class="hidden separator"> - </span>
                   <span class="item-count badge">{{ count }}</span>

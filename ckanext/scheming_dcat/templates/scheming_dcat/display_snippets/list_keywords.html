@@ -5,20 +5,20 @@
 #}
 
 {% set _class = _class or 'keyword-list' %}
-{%- set choices = data[field.field_name] -%}
+{%  set choices = data[field.field_name] %}
 
 {% if choices is iterable and (choices is not string) %}
-  {%- set values = choices or ([''] * field.get('form_blanks', 1)) -%}
+  {%  set values = choices or ([''] * field.get('form_blanks', 1)) %}
 {% elif choices is string %}
-  {%- set values = h.scheming_display_json_list(choices).strip('][').split('",') or ([''] * field.get('form_blanks', 1)) -%}
+  {%  set values = h.scheming_display_json_list(choices).strip('][').split('",') or ([''] * field.get('form_blanks', 1)) %}
 {% else %}
-  {%- set values = [''] -%}
+  {%  set values = [''] %}
 {% endif %}
 
-{%- set choices_uniques = [] -%}
+{%  set choices_uniques = [] %}
 {% for value in values if value not in choices_uniques %}
-  {%- do choices_uniques.append(
-    (value, value.split("/")[-1].lower())) -%}
+  {%  do choices_uniques.append(
+    (value, value.split("/")[-1].lower())) %}
 {% endfor %}
 
 {% block choices_uniques %}

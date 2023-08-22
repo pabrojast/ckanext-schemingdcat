@@ -1,0 +1,18 @@
+{% block access_rights %}
+  {% if pkg.access_rights %}
+    <section class="module module-narrow access_rights">
+      <h2 class="module-heading"><i class="fa fa-share-alt-square"></i> {{ _('Access rights') }}</h2>
+      <ul class="nav nav-simple">
+        {% set choices = h.scheming_field_choices(field) %}
+        {% set access_rights_label = h.scheming_choices_label(choices, pkg.access_rights) %}
+        {% set fa_icon = 'fa fa-lock' %}
+        {% if 'nolimitations' in pkg.access_rights.lower() %}
+          {% set fa_icon = 'fa fa-unlock' %}
+        {% endif %}
+        <li class="nav-item">
+          <a href="{{ pkg.access_rights }}" target="_blank"><i class="{{ fa_icon }}"></i> {{ access_rights_label }}</a>
+        </li>
+      </ul>
+    </section>
+  {% endif %}
+{% endblock %}

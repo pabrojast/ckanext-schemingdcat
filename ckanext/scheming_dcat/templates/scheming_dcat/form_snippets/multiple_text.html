@@ -16,14 +16,14 @@
   </li>
 {% endmacro %}
 
-{%- set choices = data[field.field_name] -%}
+{%  set choices = data[field.field_name] %}
 
 {% if choices is iterable and (choices is not string) %}
-  {%- set values = choices or ([''] * field.get('form_blanks', 1)) -%}
+  {%  set values = choices or ([''] * field.get('form_blanks', 1)) %}
 {% elif choices is string %}
-  {%- set values = h.scheming_display_json_list(choices).strip('][').split('",') or ([''] * field.get('form_blanks', 1)) -%}
+  {%  set values = h.scheming_display_json_list(choices).strip('][').split('",') or ([''] * field.get('form_blanks', 1)) %}
 {% else %}
-  {%- set values = [''] -%}
+  {%  set values = [''] %}
 {% endif %}
 
 {% call form.input_block(
@@ -35,9 +35,9 @@
   is_required=h.scheming_field_required(field)) %}
   <fieldset name="{{ field.field_name }}" class="scheming-fieldset" data-module="scheming-multiple-text">
     <ol class="multiple-text-group">
-      {%- for element in values -%}
+      {%  for element in values %}
         {{ h.scheming_clean_json_value(multiple_text(element, errors[field.field_name] if loop.index == 1 else "")) }}
-      {%- endfor -%}
+      {%  endfor %}
     </ol>
 
     <div class="control-medium">

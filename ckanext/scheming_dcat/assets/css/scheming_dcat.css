@@ -65,11 +65,12 @@
 }
 
 /* Facet icons */
-
 img.facet-icon {
-	width: 15px;
-	height: auto;
+	width: 1.3em;
 	margin-right: 5px;
+  display: inline-block;
+	border-radius: 50%;
+  vertical-align: middle;
 }
 
 option.icon_option{
@@ -160,4 +161,28 @@ img.spatial_uri-icon {
   font-size: 12px;
   position: relative;
   justify-content: left;
+}
+
+/* package/read */
+.item_heading {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  line-height: 1.3;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+  -webkit-hyphens: auto;
+  -moz-hyphens: auto;
+  -ms-hyphens: auto;
+  hyphens: auto;
+  font: bold;
+  font-style: bold;
+  font-weight: bold;
+}
+
+img.item_icon{
+  vertical-align: middle;
+  max-height: 14px;
+  display: inline-block;
+  border-radius: 25%;
 }

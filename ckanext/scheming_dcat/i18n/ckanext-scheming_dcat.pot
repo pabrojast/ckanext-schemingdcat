@@ -198,3 +198,7 @@ msgstr ""
 #: ckanext/scheming_dcat/templates/scheming_dcat/custom_data/snippets/custom_data_item.html:35
 msgid "Format definition"
 msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/access_rights.html:4
+msgid "Access rights"
+msgstr ""

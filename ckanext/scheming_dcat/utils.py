@@ -12,11 +12,6 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-# No configuro estas variables al principio del todo porque no sé si luego la
-# aplicación cargará otras extensiones con información que pueda necesitar.
-# Configurándolas con la primera petición me aseguro que todo está en orden y
-# funcionando cuando se inicien.
-
 _facets_dict = None
 _public_dirs = None
 _files_hash = []
@@ -27,17 +22,15 @@ _public_dirs_lock = Lock()
 
 
 def get_facets_dict():
-    '''
-    Busco las etiquetas de todos los campos definidos en el fichero de scheming
-    '''
+    """Get the labels for all fields defined in the scheming file.
+
+    Returns:
+        dict: A dictionary containing the labels for all fields defined in the scheming file.
+    """
     global _facets_dict
     if not _facets_dict:
         with _facets_dict_lock:
             if not _facets_dict:
-                # Lo lógico sería colocar un único if tras el lock, pero en
-                # esta parte del código solo se entrará la primera vez que se
-                # ejecute el código al iniciar la aplicación, por lo que me ha
-                # parecido más eficiente a largo plazo hacerlo así.
                 _facets_dict = {}
 
                 schema = logic.get_action('scheming_dataset_schema_show')(
@@ -53,8 +46,12 @@ def get_facets_dict():
 
     return _facets_dict
 
-
 def get_public_dirs():
+    """Get the list of public directories specified in the configuration file.
+
+    Returns:
+        list: A list of public directories specified in the configuration file.
+    """
     global _public_dirs
 
     if not _public_dirs:
@@ -64,31 +61,48 @@ def get_public_dirs():
 
     return _public_dirs
 
-
 def public_file_exists(path):
-    #    log.debug("Compruebo si existe {0}".format(path))
+    """Check if a file exists in the public directories specified in the configuration file.
+
+    Args:
+        path (str): The path of the file to check.
+
+    Returns:
+        bool: True if the file exists in one of the public directories, False otherwise.
+    """
+    #log.debug("Check if exists: {0}".format(path))
     file_hash = hashlib.sha512(path.encode('utf-8')).hexdigest()
 
     if file_hash in _files_hash:
         return True
 
-    for dir in get_public_dirs():
-        #  log.debug("Buscando en {0}".format(os.path.join(dir,path)))
-        if os.path.isfile(os.path.join(dir, path)):
+    public_dirs = get_public_dirs()
+    for i in range(len(public_dirs)):
+        public_path = os.path.join(public_dirs[i], path)
+        if os.path.isfile(public_path):
             _files_hash.append(file_hash)
             return True
 
     return False
 
-
 def public_dir_exists(path):
+    """Check if a directory exists in the public directories specified in the configuration file.
+
+    Args:
+        path (str): The path of the directory to check.
+
+    Returns:
+        bool: True if the directory exists in one of the public directories, False otherwise.
+    """
     dir_hash = hashlib.sha512(path.encode('utf-8')).hexdigest()
 
     if dir_hash in _dirs_hash:
         return True
 
-    for dir in get_public_dirs():
-        if os.path.isdir(os.path.join(dir, path)):
+    public_dirs = get_public_dirs()
+    for i in range(len(public_dirs)):
+        public_path = os.path.join(public_dirs[i], path)
+        if os.path.isdir(public_path):
             _dirs_hash.append(dir_hash)
             return True
 
@@ -99,20 +113,36 @@ def init_config():
     fs_config.geometadata_links = _load_yaml('geometadata_links.yaml')
 
 def _load_yaml(file):
+    """Load a YAML file from the 'config' directory.
+
+    Args:
+        file (str): The name of the YAML file to load.
+
+    Returns:
+        dict: A dictionary containing the data from the YAML file.
+    """
     source_path = Path(__file__).resolve(True)
-    respuesta = {}
+    yaml_data = {}
     try:
         p = source_path.parent.joinpath('config',file)
         with open(p,'r') as f:
-            respuesta=yaml.load(f, Loader=SafeLoader )
+            yaml_data=yaml.load(f, Loader=SafeLoader )
     except FileNotFoundError:
-        log.error("El fichero {0} no existe".format(file))
+        log.error("The file {0} does not exist".format(file))
     except Exception as e:
-        log.error("No ha sido posible leer la configuración de {0}: {1}".format(file, e))
-    return respuesta
+        log.error("Could not read configuration from {0}: {1}".format(file, e))
 
+    return yaml_data
 
 def get_linked_data(id):
+    """Get linked data for a given identifier.
+
+    Args:
+        id (str): The identifier to get linked data for.
+
+    Returns:
+        list: A list of dictionaries containing linked data for the identifier.
+    """
     if fs_config.debug:
         linkeddata_links = _load_yaml('linkeddata_links.yaml')
     else:
@@ -124,7 +154,7 @@ def get_linked_data(id):
             'name': name,
             'display_name': linkeddata_links.get(name,{}).get('display_name',CONTENT_TYPES[name]),
             'image_display_url': linkeddata_links.get(name,{}).get('image_display_url', None),
-            'description': linkeddata_links.get(name,{}).get('description','Tipos '+ CONTENT_TYPES[name]),
+            'description': linkeddata_links.get(name,{}).get('description','Formats '+ CONTENT_TYPES[name]),
             'description_url': linkeddata_links.get(name,{}).get('description_url', None),
             'endpoint_data':{
                 '_id': id,
@@ -135,6 +165,11 @@ def get_linked_data(id):
     return data
 
 def get_geospatial_metadata():
+    """Get geospatial metadata for CSW formats.
+
+    Returns:
+        list: A list of dictionaries containing geospatial metadata for CSW formats.
+    """
     if fs_config.debug:
         geometadata_links = _load_yaml('geometadata_links.yaml')
     else:
@@ -147,7 +182,7 @@ def get_geospatial_metadata():
             'image_display_url': item['image_display_url'],
             'description': item['description'],
             'description_url': item['description_url'],
-            'url': geometadata_links['csw_url'].format(schema=item['outputSchema'],id='{id}')
+            'url': (fs_config.geometadata_link_domain or '') + geometadata_links['csw_url'].format(schema=item['outputSchema'], id='{id}')
         })
 
     return data
