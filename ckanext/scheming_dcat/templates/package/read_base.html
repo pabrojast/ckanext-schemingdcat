@@ -2,11 +2,11 @@
 {#
   geospatial_metadata_values: Sublist of dcat_type_values that has geospatial metadata (INSPIRE Register).
 #}
-{%  set geospatial_metadata_values = [
+{%- set geospatial_metadata_values = [
   'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset',
   'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series',
   'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service'
-] %}
+] -%}
 
 {% block content_primary_nav %}
   {{ super() }}
