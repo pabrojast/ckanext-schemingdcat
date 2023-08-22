@@ -72,12 +72,17 @@ class DcatFacetSchemingPlugin(plugins.SingletonPlugin,
                         fs_config.debug
                         )
             )
-        
-        #Load yamls config files, if not in debug mode
+
+        fs_config.geometadata_link_domain = config_.get(
+            'scheming_dcat.geometadata_link_domain',
+            None
+            )
+
+        # Load yamls config files, if not in debug mode
         if not fs_config.debug:
             init_config()
 
-        #configure Faceted class (parent of this)
+        # configure Faceted class (parent of this)
         self.facet_load_config(config_.get(
             'scheming_dcat.facet_list',
             '').split())

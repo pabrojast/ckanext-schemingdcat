@@ -86,20 +86,24 @@ class PackageController():
         self.default_facet_operator = default_facet_operator
 
     def _facet_search_operator(self, fq, facet_field):
-        """
-        Si en el request se ha incluido información para el operador de
-        facets y está definido como OR, se devuelve una versión de fq
-        donde se incluyen todos los filtros unidos por el operador OR
-        """
+        """Return a version of fq where all filters are joined by the OR operator.
 
+        If information for the facets operator is included in the request and defined as OR,
+        a version of fq is returned where all filters are joined by the OR operator.
+
+        Args:
+            fq (str): The filter query to modify.
+            facet_field (list): A list of facet fields.
+
+        Returns:
+            str: A modified version of fq where all filters are joined by the OR operator.
+        """
         new_fq = fq
         facets_group = ""
         no_facets_group = ""
         try:
             facet_operator = self.default_facet_operator
             try:
-                #    busco si hay definido un operador de facetas en el request,
-                #    y lo guardo en facet_operator
                 if request is not None and \
                         request.params and \
                         request.params.items():
@@ -115,9 +119,6 @@ class PackageController():
                 facet_operator = self.default_facet_operator
 
             #log.debug(u'facet_operator {0}'.format(facet_operator))
-
-# Por defecto la búsqueda por facetas es por intersección, pero si he pedido el
-# operador OR, la hago aditiva
 
             if (facet_operator == 'OR'):
                 fq_split = fq.split('" ')
@@ -143,8 +144,7 @@ class PackageController():
                                 first_no_facet = False
                             else:
                                 no_facets_group = ('%s" AND %s' %
-                                                   (no_facets_group, fq_s))
-            # y aquí viene el salto final
+                                                (no_facets_group, fq_s))
                     if faceted:
                         if not first_no_facet:
                             no_facets_group = '%s"' % no_facets_group
@@ -156,6 +156,7 @@ class PackageController():
                     #log.debug(u'temp2 new_fq {0}'.format(new_fq))
                     #log.info('#### fq = %s' % fq)
                     #log.info('#### new_fq = %s' % new_fq)
+
         except UnicodeEncodeError as e:
             log.warn('UnicodeDecodeError %s  %s' % (e.errno, e.strerror))
         except Exception:
