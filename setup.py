@@ -19,7 +19,7 @@ setup(
     classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
     keywords='ckan',
     author='''OpenDataGIS Team''',
-    url='https://github.com/opendatagis/ckanext-scheming_dcat',
+    url='https://github.com/mjanez/ckanext-scheming_dcat',
     license='AGPL',   
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     namespace_packages=['ckanext'],

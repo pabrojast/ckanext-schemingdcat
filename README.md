@@ -14,12 +14,12 @@ This CKAN extension provides functions and templates specifically designed to ex
 >**Warning**:<br>
 > Requires [mjanez/ckanext-dcat](https://github.com/mjanez/ckanext-dcat), [ckan/ckanext-scheming](https://github.com/ckan/ckanext-scheming) and [ckan/ckanext-spatial](https://github.com/ckan/ckanext-spatial) to work properly.
 >
-> It is **recommended to use with** [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw).
+> It is **recommended to use with:** [`ckan-docker`](https://github.com/mjanez/ckan-docker) deployment or only use [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw) to deploy a CSW Catalog.
 
 
 Enhancements:
 - Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
-- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/OpenDataGIS/ckanext-scheming_dcat)
+- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat_dcat)
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
@@ -141,7 +141,9 @@ This two last settings are not mandatory. You can omit one or both (or set them 
     ```
 
     >**Note**<br>
-    >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning.
+    >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning. 
+    >
+    >The extra fields depend on your [schema](/ckanext/scheming_dcat/schemas/)
    	
 	**Be sure to restart Solr after modify the schema.**
 	
@@ -174,8 +176,8 @@ With this plugin, you can customize the group, organization, and dataset entitie
 
 Are available to use with this extension a number of custom schema.
 
-### GeoDCAT-AP
-This is a **custom schema** with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
+### GeoDCAT-AP (ES)
+This is a [**custom schema**](/ckanext/scheming_dcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
 
 >**Warning**
 > * Custom extension, needs: [`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)
@@ -269,21 +271,19 @@ This is a **custom schema** with specific extensions for spatial data and [GeoDC
 | dcat:Distribution | dct:conformsTo        | Resource                     | Conformity (M)                            | B.6.14 Conformity and data quality (M)                                                                                     | -                                                                            | Conformity (M) *not in ISO19115 core                       | -                                       | -                                                                        | conforms_to           | 1                |
 | dcat:Distribution | dct:conformsTo        | Resource                     | -                                         | B..6.23 Coordinate reference systems and Temporal reference systems – *Reference System (M)                                | -                                                                            | Coordinate Reference System (M) *Reference System (O)      | -                                       | https://www.opengis.net/def/crs/EPSG/0                                   | epsg                  | 0.1              |
 | dcat:Distribution | dct:provenance        | Resource                     | Lineage statement (O)                     | -                                                                                                                          | -                                                                            | -                                                          | -                                       | -                                                                        | provenance            | 0.1              |
-| dcat:Distribution | ?                     | Resource                     |
-Lineage process steps (O)                 | -
-| -                                                                            |
--                                                          | -
-| -                                                                        |
-lineage_process_steps | 0.*              |
+| dcat:Distribution | ?                     | Resource                     | Lineage process steps (O)                 | -                                                                                                                          | -                                                                            | -                                                          | -                                       | -                                                                        | lineage_process_steps | 0.*              |
 
 ### TODO: DCAT 
 [`schemas/dcat`](/ckanext/scheming_dcat/schemas/dcat/dcat_dataset.yaml) based
 on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
 ### TODO: DCAT-AP (EU)
-[`schemas/dcatap`](/ckanext/scheming_dcat/schemas/dcat/dcat_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
+[`schemas/dcatap`](/ckanext/scheming_dcat/schemas/dcatap/dcatap_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
+
+### TODO: GeoDCAT-AP (EU)
+[`schemas/geodcatap`](/ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml) based on: [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP) for the european context.
 
 ## Running the Tests
 To run the tests:
 
-    pytest --ckan-ini=test.ini ckanext/scheming/tests
+    pytest --ckan-ini=test.ini ckanext/scheming_dcat/tests
