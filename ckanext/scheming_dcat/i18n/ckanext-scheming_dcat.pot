@@ -206,3 +206,11 @@ msgstr ""
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:25
 msgid "No Access Rights provided"
 msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/spatial_query.html:18
+msgid "Filter by location"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/spatial_query.html:19
+msgid "Clear"
+msgstr ""

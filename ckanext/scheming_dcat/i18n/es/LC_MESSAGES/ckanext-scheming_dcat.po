@@ -213,3 +213,11 @@ msgstr "Derechos de acceso"
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:25
 msgid "No Access Rights provided"
 msgstr "No se han proporcionado derechos de acceso"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/spatial_query.html:18
+msgid "Filter by location"
+msgstr "Búsqueda por extensión"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/spatial_query.html:19
+msgid "Clear"
+msgstr "Limpiar"
