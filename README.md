@@ -19,7 +19,7 @@ This CKAN extension provides functions and templates specifically designed to ex
 
 Enhancements:
 - Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
-- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat_dcat)
+- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat)
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
