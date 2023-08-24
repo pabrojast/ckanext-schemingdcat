@@ -1,7 +1,9 @@
-scheming_version: 1
+scheming_version: 2
 dataset_type: dataset
-about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements."
+about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. European context (EU27)"
 about_url: https://github.com/mjanez/ckanext-scheming_dcat
+schema_version: 0.1
+schema_date: 2023-08-24
 
 ### Codes in Schema
 # (M): Mandatory
