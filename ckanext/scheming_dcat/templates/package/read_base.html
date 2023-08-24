@@ -1,4 +1,5 @@
 {% ckan_extends %}
+
 {#
   geospatial_metadata_values: Sublist of dcat_type_values that has geospatial metadata (INSPIRE Register).
 #}
@@ -10,9 +11,46 @@
 
 {% block content_primary_nav %}
   {{ super() }}
-  {{ h.build_nav_icon('scheming_dcat.index', _('Linked Data'), id=pkg.id if is_activity_archive else pkg.name, icon='asterisk') }}
+  {{ h.build_nav_icon('scheming_dcat.index', _('Linked Data'), id=pkg.id if is_activity_archive else pkg.name, icon='share-alt') }}
 
   {% if pkg.dcat_type in geospatial_metadata_values %}
     {{ h.build_nav_icon('scheming_dcat.geospatial_metadata', _('Geospatial Metadata'), id=pkg.id if is_activity_archive else pkg.name, icon='globe') }}
   {% endif %}
+{% endblock %}
+
+{% block secondary_content %}
+  {% block secondary_help_content %}{% endblock %}
+
+  {% set dataset_extent = pkg.spatial %}
+  {% if dataset_extent %}
+    {% snippet "spatial/snippets/dataset_map_sidebar.html", extent=dataset_extent %}
+  {% endif %}
+
+  {% block package_info %}
+    {% snippet 'package/snippets/info.html', pkg=pkg %}
+  {% endblock %}
+
+  {% block package_organization %}
+    {% if pkg.organization %}
+      {% set org = h.get_organization(pkg.organization.id) %}
+      {% snippet "snippets/organization.html", organization=org, has_context_title=true %}
+    {% endif %}
+  {% endblock %}
+  
+  {% block package_publisher %}
+    {% snippet "scheming_dcat/snippets/schemingdct_publisher_info.html", pkg_dict=pkg, dataset_type=dataset_type %}
+  {% endblock %}
+
+  {% block package_social %}
+    {% snippet "snippets/social.html" %}
+  {% endblock %}
+
+  {% block package_access_rights %}
+    {% snippet "scheming_dcat/snippets/schemingdct_access_rights.html", pkg_dict=pkg, dataset_type=dataset_type %}
+  {% endblock %}
+
+  {% block package_license %}
+    {% snippet "scheming_dcat/snippets/schemingdct_license.html", pkg_dict=pkg %}
+  {% endblock %}
+
 {% endblock %}

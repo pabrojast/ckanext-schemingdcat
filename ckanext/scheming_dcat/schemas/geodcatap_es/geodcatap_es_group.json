@@ -1,0 +1,477 @@
+{
+    "scheming_version": 1,
+    "group_type": "group",
+    "about": "Organizations: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements.",
+    "about_url": "https://github.com/mjanez/eikos",
+    "fields": [
+      {
+        "field_name": "title",
+        "label": "Nombre",
+        "validators": "ignore_missing unicode_safe",
+        "form_snippet": "large_text.html",
+        "form_attrs": {"data-module": "slug-preview-target"},
+        "form_placeholder": "Mi organización"
+      },
+      {
+        "field_name": "name",
+        "label": "URL",
+        "validators": "not_empty unicode_safe name_validator group_name_validator",
+        "form_snippet": "slug.html",
+        "display_snippet": "link.html",
+        "form_placeholder": "mi-organizacion"
+      },
+      {
+        "field_name": "description",
+        "label": "Resumen",
+        "form_snippet": "markdown.html",
+        "display_snippet": "markdown.html",
+        "form_placeholder": "Resumen de la organización..."
+      },
+      {
+        "field_name": "image_url",
+        "label": "URL de imagen",
+        "display_snippet": "link.html",
+        "preset": "resource_url_upload",
+        "form_placeholder": "http://example.com/my-image.jpg"
+      },
+      {
+        "field_name": "identifier",
+        "label": "Identificador de la colección",
+        "display_snippet": "link.html",
+        "form_placeholder": "https://www.eionet.europa.eu/gemet/en/concept/5033",
+        "help_text": "Identificador único de la colección en un tesauro o vocabulario controlado, por ejemplo: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>GEMET - marine environment</a>)",
+        "help_allow_html": "True"
+      },
+      {
+        "field_name": "theme_es",
+        "label": "Temática (NTI-RISP)",
+        "output_validators": "not_empty scheming_required",
+        "form_placeholder": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente",
+        "display_snippet": "multiple_choice.html",
+        "form_include_blank_choice": "False",
+        "form_snippet": "multiple_select.html",
+        "help_text": " (<a href='hhttps://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv' target='_blank'>Temáticas Anexo IV NTI-RISP</a>)",
+        "help_allow_html": "True",
+        "choices": [
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/ciencia-tecnologia",
+            "notation": "ciencia-tecnologia",
+            "label": {
+              "en": "Science and technology",
+              "es": "Ciencia y tecnolog\u00EDa",
+              "ca": "Ci\u00E8ncia i tecnologia",
+              "gl": "Ciencia e tecnolox\u00EDa",
+              "eu": "Zientzia eta teknologia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Innovaci\u00F3n, Investigaci\u00F3n, I/u002BD/u002BI, Telecomunicaciones, Inernet y Sociedad de la Informaci\u00F3n.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/TECH"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/comercio",
+            "notation": "comercio",
+            "label": {
+              "en": "Commerce",
+              "es": "Comercio",
+              "ca": "Comer\u00E7",
+              "gl": "Comercio",
+              "eu": "Merkataritza"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Consumo.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ECON"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/cultura-ocio",
+            "notation": "cultura-ocio",
+            "label": {
+              "en": "Culture and leisure",
+              "es": "Cultura y ocio",
+              "ca": "Cultura i lleure",
+              "gl": "Cultura e lecer",
+              "eu": "Kultura eta aisia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Tiempo libre.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/EDUC"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/demografia",
+            "notation": "demografia",
+            "label": {
+              "en": "Demography",
+              "es": "Demograf\u00EDa",
+              "ca": "Demografia",
+              "gl": "Demograf\u00EDa",
+              "eu": "Demografia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Inmigraci\u00F3n y Emigraci\u00F3n, Familia, Mujeres, Infancia, Mayores, Padr\u00F3n.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/SOCI"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/deporte",
+            "notation": "deporte",
+            "label": {
+              "en": "Sport",
+              "es": "Deporte",
+              "ca": "Esport",
+              "gl": "Deporte",
+              "eu": "Kirola"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Instalaciones deportivas, Federaciones, Competiciones.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/EDUC"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/economia",
+            "notation": "economia",
+            "label": {
+              "en": "Economy",
+              "es": "Econom\u00EDa",
+              "ca": "Economia",
+              "gl": "Econom\u00EDa",
+              "eu": "Ekonomia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Deuda, Moneda y Banca y finanzas.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ECON"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/educacion",
+            "notation": "educacion",
+            "label": {
+              "en": "Education",
+              "es": "Educaci\u00F3n",
+              "ca": "Educaci\u00F3",
+              "gl": "Educaci\u00F3n",
+              "eu": "Hezkuntza"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Formaci\u00F3n.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/EDUC"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/empleo",
+            "notation": "empleo",
+            "label": {
+              "en": "Employment",
+              "es": "Empleo",
+              "ca": "Ocupaci\u00F3",
+              "gl": "Emprego",
+              "eu": "Enplegua"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Trabajo, Mercado laboral.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ECON"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/energia",
+            "notation": "energia",
+            "label": {
+              "en": "Energy",
+              "es": "Energ\u00EDa",
+              "ca": "Energia",
+              "gl": "Enerx\u00EDa",
+              "eu": "Energia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Fuentes renovables.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ENER"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/hacienda",
+            "notation": "hacienda",
+            "label": {
+              "en": "Treasury",
+              "es": "Hacienda",
+              "ca": "Hisenda",
+              "gl": "Facenda",
+              "eu": "Ogasuna"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Impuestos.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/GOVE"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/industria",
+            "notation": "industria",
+            "label": {
+              "en": "Industry",
+              "es": "Industria",
+              "ca": "Ind\u00FAstria",
+              "gl": "Industria",
+              "eu": "Industria"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Miner\u00EDa.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ECON"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/legislacion-justicia",
+            "notation": "legislacion-justicia",
+            "label": {
+              "en": "Legislation and justice",
+              "es": "Legislaci\u00F3n y justicia",
+              "ca": "Legislaci\u00F3 i just\u00EDcia",
+              "gl": "Lexislaci\u00F3n e xustiza",
+              "eu": "Legegintza eta justizia"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Registros.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/JUST"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente",
+            "notation": "medio-ambiente",
+            "label": {
+              "en": "Environment",
+              "es": "Medio ambiente",
+              "ca": "Medi ambient",
+              "gl": "Medio ambiente",
+              "eu": "Ingurumena"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Meteorolog\u00EDa, Geograf\u00EDa, Conservaci\u00F3n fauna y flora.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ENVI"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/medio-rural-pesca",
+            "notation": "medio-rural-pesca",
+            "label": {
+              "en": "Rural environment",
+              "es": "Medio Rural",
+              "ca": "Medi rural",
+              "gl": "Medio rural",
+              "eu": "Nekazaritza"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Agricultura, Ganader\u00EDa, Pesca y Silvicultura.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/AGRI"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/salud",
+            "notation": "salud",
+            "label": {
+              "en": "Healthcare",
+              "es": "Salud",
+              "ca": "Salut",
+              "gl": "Sa\u00FAde",
+              "eu": "Osasuna"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Sanidad.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/HEAL"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/sector-publico",
+            "notation": "sector-publico",
+            "label": {
+              "en": "Public sector",
+              "es": "Sector p\u00FAblico",
+              "ca": "Sector p\u00FAblic",
+              "gl": "Sector p\u00FAblico",
+              "eu": "Sektore publikoa"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Presupuestos, Organigrama institucional, Legislaci\u00F3n interna, Funci\u00F3n p\u00FAblica.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/GOVE"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/seguridad",
+            "notation": "seguridad",
+            "label": {
+              "en": "Security",
+              "es": "Seguridad",
+              "ca": "Seguretat",
+              "gl": "Seguridade",
+              "eu": "Segurtasuna"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Protecci\u00F3n civil, Defensa.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/JUST"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/sociedad-bienestar",
+            "notation": "sociedad-bienestar",
+            "label": {
+              "en": "Society and welfare",
+              "es": "Sociedad y bienestar",
+              "ca": "Societat i benestar",
+              "gl": "Sociedade e benestar",
+              "eu": "Gizartea eta ongizatea"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Participaci\u00F3n ciudadana, Marginaci\u00F3n, Envejecimiento Activo, Autonom\u00EDa personal y Dependencia, Invalidez, Jubilaci\u00F3n, Seguros y Pensiones, Prestaciones y Subvenciones.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/SOCI"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/transporte",
+            "notation": "transporte",
+            "label": {
+              "en": "Transport",
+              "es": "Transporte",
+              "ca": "Transport",
+              "gl": "Transporte",
+              "eu": "Garraioa"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Comunicaciones y Tr/u00E1fico.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/TRAN"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/turismo",
+            "notation": "turismo",
+            "label": {
+              "en": "Tourism",
+              "es": "Turismo",
+              "ca": "Turisme",
+              "gl": "Turismo",
+              "eu": "Turismoa"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Alojamientos, Hosteler\u00EDa, Gastronom\u00EDa.",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/ECON"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/urbanismo-infraestructuras",
+            "notation": "urbanismo-infraestructuras",
+            "label": {
+              "en": "Town planning and infrastructures",
+              "es": "Urbanismo e infraestructuras",
+              "ca": "Urbanisme i infraestructures",
+              "gl": "Urbanismo e infraestruturas",
+              "eu": "Hirigintza eta azpiegiturak"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Saneamiento p\u00FAblico, Construcci\u00F3n (infraestructuras, equipamientos p\u00FAblicos).",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/REGI"
+          },
+          {
+            "value": "http://datos.gob.es/kos/sector-publico/sector/vivienda",
+            "notation": "vivienda",
+            "label": {
+              "en": "Housing",
+              "es": "Vivienda",
+              "ca": "Habitatge",
+              "gl": "Vivenda",
+              "eu": "Etxebizitza"
+            },
+            "description": {
+              "en": "",
+              "es": "Incluye: Mercado inmobiliario, Construcci\u00F3n (viviendas).",
+              "ca": "",
+              "gl": "",
+              "eu": ""
+            },
+            "dcat_ap": "http://publications.europa.eu/resource/authority/data-theme/REGI"
+          }
+        ]
+      }
+    ]
+  }

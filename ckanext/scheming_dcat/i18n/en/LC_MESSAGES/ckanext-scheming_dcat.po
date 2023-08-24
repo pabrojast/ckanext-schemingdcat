@@ -202,6 +202,10 @@ msgstr "Geospatial Metadata"
 msgid "Definition"
 msgstr "Definition"
 
-#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/access_rights.html:4
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:7
 msgid "Access rights"
 msgstr "Access rights"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:25
+msgid "No Access Rights provided"
+msgstr "No Access Rights provided"

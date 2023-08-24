@@ -19,17 +19,17 @@ setup(
     classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
     keywords='ckan',
     author='''OpenDataGIS Team''',
-    url='https://github.com/opendatagis/ckanext-scheming_dcat',
+    url='https://github.com/mjanez/ckanext-scheming_dcat',
     license='AGPL',   
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     namespace_packages=['ckanext'],
     include_package_data=True,
     entry_points='''
         [ckan.plugins]
-        scheming_dcat=ckanext.scheming_dcat.plugin:DcatFacetSchemingPlugin
-        scheming_dcat_datasets=ckanext.scheming_dcat.plugin:DcatSchemingDatasetsPlugin
-        scheming_dcat_groups=ckanext.scheming_dcat.plugin:DcatSchemingGroupsPlugin
-        scheming_dcat_organizations=ckanext.scheming_dcat.plugin:DcatSchemingOrganizationsPlugin
+        scheming_dcat=ckanext.scheming_dcat.plugin:FacetSchemingDcatPlugin
+        scheming_dcat_datasets=ckanext.scheming_dcat.plugin:SchemingDcatDatasetsPlugin
+        scheming_dcat_groups=ckanext.scheming_dcat.plugin:SchemingDcatGroupsPlugin
+        scheming_dcat_organizations=ckanext.scheming_dcat.plugin:SchemingDcatOrganizationsPlugin
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan

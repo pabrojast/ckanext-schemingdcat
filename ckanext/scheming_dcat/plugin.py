@@ -16,7 +16,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class DcatFacetSchemingPlugin(plugins.SingletonPlugin,
+class FacetSchemingDcatPlugin(plugins.SingletonPlugin,
                            Faceted, 
                            PackageController, 
                            DefaultTranslation):
@@ -30,8 +30,7 @@ class DcatFacetSchemingPlugin(plugins.SingletonPlugin,
     plugins.implements(plugins.IBlueprint)
 
 
-# IConfigurer
-
+    # IConfigurer
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
@@ -93,7 +92,6 @@ class DcatFacetSchemingPlugin(plugins.SingletonPlugin,
         return respuesta
     
     def get_validators(self):
-        log.debug("Validadores: {0}".format(dict(validators.all_validators)))
         return dict(validators.all_validators)
 
     #IBlueprint
@@ -101,7 +99,7 @@ class DcatFacetSchemingPlugin(plugins.SingletonPlugin,
         return blueprint.schemingdct
 
 
-class DcatSchemingDatasetsPlugin(SchemingDatasetsPlugin):
+class SchemingDcatDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.ITemplateHelpers)
@@ -115,7 +113,7 @@ class DcatSchemingDatasetsPlugin(SchemingDatasetsPlugin):
     def resource_template(self):
         return 'scheming_dcat/package/resource_read.html'
 
-class DcatSchemingGroupsPlugin(SchemingGroupsPlugin):
+class SchemingDcatGroupsPlugin(SchemingGroupsPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IGroupForm, inherit=True)
@@ -125,7 +123,7 @@ class DcatSchemingGroupsPlugin(SchemingGroupsPlugin):
     def about_template(self):
         return 'scheming_dcat/group/about.html'
 
-class DcatSchemingOrganizationsPlugin(SchemingOrganizationsPlugin):
+class SchemingDcatOrganizationsPlugin(SchemingOrganizationsPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IGroupForm, inherit=True)
