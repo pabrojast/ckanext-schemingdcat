@@ -852,7 +852,7 @@ dataset_fields:
 
 # Geographic identifier (O)
 - field_name: spatial_uri
-  label:
+  label: 
     en: Geographic identifier
     es: Identificador geográfico
   validators: ignore_missing
@@ -975,9 +975,17 @@ dataset_fields:
       en: Sweden
     value: http://publications.europa.eu/resource/authority/country/SWE
   - label:
+      es: Argentina
+      en: Argentina
+    value: http://publications.europa.eu/resource/authority/country/ARG
+  - label:
       es: Australia
       en: Australia
     value: http://publications.europa.eu/resource/authority/country/AUS
+  - label:
+      es: Brasil
+      en: Brazil
+    value: http://publications.europa.eu/resource/authority/country/BRA
   - label:
       es: Canadá
       en: Canada
@@ -995,12 +1003,20 @@ dataset_fields:
       en: Japan
     value: http://publications.europa.eu/resource/authority/country/JPN
   - label:
+      es: Mexico
+      en: Mexico
+    value: http://publications.europa.eu/resource/authority/country/MEX
+  - label:
+      es: Nueva Zelanda
+      en: New Zeland
+    value: http://publications.europa.eu/resource/authority/country/NZL
+  - label:
       es: Reino Unido
       en: United Kingdom
     value: http://publications.europa.eu/resource/authority/country/GBR
   help_text:
-    en: 'Geographic coverage of the dataset. More information in <a href="http://www.boe.es/diario_boe/txt.php?id=BOE-A-2013-2380" target="_blank" rel="noopener">NTI-RISP Annex V</a>.'
-    es: 'Ámbito geográfico cubierto por el conjunto de datos. Más información en el <a href="http://www.boe.es/diario_boe/txt.php?id=BOE-A-2013-2380" target="_blank" rel="noopener">Anexo V de NTI-RISP</a>.'
+    en: 'Geographic coverage of the dataset. More information in <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
+    es: 'Ámbito geográfico cubierto por el conjunto de datos. Más información en <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
   help_allow_html: True
 
 # Spatial resolution (C)

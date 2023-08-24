@@ -280,7 +280,7 @@ def schemingdct_get_icon(choice, icons_dir=None):
     """
     extensions = ['.svg', '.png', '.jpg', '.gif']
     icon_name = None 
-    #log.debug("Busco icono para {0}".format(choice.value))
+    #log.debug("Field value: {0}".format(choice))
 
     if choice:
         if 'icon' in choice:
@@ -297,6 +297,7 @@ def schemingdct_get_icon(choice, icons_dir=None):
             icon_name = choice['value']
 
         url_path = (icons_dir+"/" if icons_dir else "") + icon_name
+        #log.debug("Searching for: {0}".format(url_path))
 
         for extension in extensions:
             if public_file_exists(url_path+extension):
@@ -315,7 +316,7 @@ def schemingdct_get_choice_item(field, value):
         dict: The whole option item in scheming, or None if not found.
     """
     if field and ('choices' in field):
-        log.debug("Searching: {0} en {1}".format(value,field['choices']))
+        #log.debug("Searching: {0} en {1}".format(value,field['choices']))
         for choice in field['choices']:
             if choice['value'] == value:
                 return choice
