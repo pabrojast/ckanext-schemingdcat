@@ -59,6 +59,17 @@ dataset_fields:
     es: Entidad (organización) responsable de publicar el conjunto de datos.
   preset: dataset_organization
 
+# Graphic overview (O)
+- field_name: graphic_overview
+  label:
+    en: Graphic overview of the dataset
+    es: Descripción gráfica del conjunto de datos
+  display_snippet: scheming_dcat/display_snippets/graphic_overview.html
+  form_placeholder: http://example.com/dataset.jpg
+  help_text:
+    en: "Graphic that provides an illustration of the dataset."
+    es: "Gráfico que ilustra el conjunto de datos."
+
 # Dataset abstract (M)
 - field_name: notes
   label: 
@@ -549,6 +560,7 @@ dataset_fields:
     en: Date of last revision
     es: Fecha de última modificación
     validators: not_empty scheming_required
+  display_snippet: scheming_dcat/display_snippets/last_update.html
   display_property: dct:modified
   required: True
   preset: date
@@ -631,8 +643,8 @@ dataset_fields:
 ## Only for ckanext-dcat profiles.py
 - field_name: tag_uri
   label: 
-    en: Keyword URIs in accordance with INSPIRE MD Register
-    es: URI de palabras clave conforme al Registro INSPIRE
+    en: Keyword URIs
+    es: URI de palabras clave
   validators: ignore_missing scheming_dcat_multiple_text
   form_snippet: scheming_dcat/form_snippets/multiple_text.html
   display_snippet: scheming_dcat/display_snippets/list_keywords.html
@@ -1336,8 +1348,8 @@ dataset_fields:
 # Coordinate Reference System (M)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
@@ -2314,8 +2326,8 @@ resource_fields:
 # Coordinate Reference System (C)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326

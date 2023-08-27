@@ -59,6 +59,17 @@ dataset_fields:
     es: Entidad (organización) responsable de publicar el conjunto de datos.
   preset: dataset_organization
 
+# Graphic overview (O)
+- field_name: graphic_overview
+  label:
+    en: Graphic overview of the dataset
+    es: Descripción gráfica del conjunto de datos
+  display_snippet: scheming_dcat/display_snippets/graphic_overview.html
+  form_placeholder: http://example.com/dataset.jpg
+  help_text:
+    en: "Graphic that provides an illustration of the dataset."
+    es: "Gráfico que ilustra el conjunto de datos."
+
 # Dataset abstract (M)
 - field_name: notes
   label: 
@@ -128,6 +139,73 @@ dataset_fields:
       en: Text
       es: Texto
     value: http://purl.org/dc/dcmitype/Text
+
+# MDR Themes (M)
+## Taxonomy [DCAT-AP](hhttp://publications.europa.eu/resource/authority/data-theme)
+- field_name: theme_eu
+  label:
+    en: Themes (DCAT-AP)
+    es: Temáticas (DCAT-AP)
+  validators: ignore_missing scheming_dcat_multiple_choice
+  form_snippet: scheming_dcat/form_snippets/multiple_select_icon.html
+  display_property: dcat:theme
+  display_snippet: scheming_dcat/display_snippets/multiple_choice_icon.html
+  select_size: 10
+  required: True
+  help_text:
+    en: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Themes</a> (DCAT-AP)'
+    es: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Temáticas</a> (DCAT-AP)'
+  help_allow_html: True
+  sorted_choices: True
+  choices:
+    - value: http://publications.europa.eu/resource/authority/data-theme/AGRI
+      label:
+        en: Agriculture, fisheries, forestry and food
+        es: Agricultura, pesca, silvicultura y alimentación
+    - value: http://publications.europa.eu/resource/authority/data-theme/ECON
+      label:
+        en: Economy and finance
+        es: Economía y finanzas
+    - value: http://publications.europa.eu/resource/authority/data-theme/EDUC
+      label:
+        en: Education, culture and sport
+        es: Educación, cultura y deporte
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENER
+      label:
+        en: Energy
+        es: Energía
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENVI
+      label:
+        en: Environment
+        es: Medio ambiente
+    - value: http://publications.europa.eu/resource/authority/data-theme/GOVE
+      label:
+        en: Government and public sector
+        es: Gobierno y sector público
+    - value: http://publications.europa.eu/resource/authority/data-theme/HEAL
+      label:
+        en: Health
+        es: Salud
+    - value: http://publications.europa.eu/resource/authority/data-theme/INTR
+      label:
+        en: International issues
+        es: Asuntos internacionales
+    - value: http://publications.europa.eu/resource/authority/data-theme/JUST
+      label:
+        en: Justice, legal system and public safety
+        es: Justicia, sistema jurídico y seguridad pública
+    - value: http://publications.europa.eu/resource/authority/data-theme/REGI
+      label:
+        en: Regions and cities
+        es: Regiones y ciudades
+    - value: http://publications.europa.eu/resource/authority/data-theme/SOCI
+      label:
+        en: Population and society
+        es: Población y sociedad
+    - value: http://publications.europa.eu/resource/authority/data-theme/TECH
+      label:
+        en: Science and technology
+        es: Ciencia y tecnología
 
 # Metadata file identifier (M)
 ## Unique resource identifier (UUID)  (Mandatory). If it does not exist, CKAN creates a UUID (Metadata file identifier 'package_id')
@@ -306,6 +384,7 @@ dataset_fields:
     en: Date of last revision
     es: Fecha de última modificación
     validators: not_empty scheming_required
+  display_snippet: scheming_dcat/display_snippets/last_update.html
   display_property: dct:modified
   required: True
   preset: date
@@ -840,8 +919,8 @@ dataset_fields:
 # Coordinate Reference System (M)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
@@ -1513,8 +1592,8 @@ resource_fields:
 # Coordinate Reference System (C)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326

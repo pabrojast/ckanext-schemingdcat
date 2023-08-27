@@ -1,0 +1,37 @@
+{% if pkg_dict %}
+  <section class="module module-narrow dataset_org_info">
+    <div class="module context-info">
+      {% set org_img = 'placeholder' in organization.image_display_url %}
+      {% set org_img = h.url_for_static('/images/default/organization.png') if org_img else organization.image_display_url or h.url_for_static('/images/default/organization.png') %}
+      {% set url = h.url_for(organization.type + '.read', id=organization.name) %}
+      <h2 class="info_heading">
+        <img class="module-image info_heading_image" src="{{ org_img }}" alt="{{ organization.title }}" />
+        <a href="{{ url }}" class="info_text_bold" title="{{ _('Organization') }}">{{ organization.title }}</a>
+      </h2>
+      {% if pkg_dict.theme_eu %}
+        {% set theme_field = 'theme_eu' %}
+      {% else %}
+        {% set theme_field = 'theme' %}
+      {% endif %}
+      {% set field = h.scheming_field_by_name(schema.dataset_fields, theme_field) %}
+      {% if field %}
+        {% set field_choices = h.scheming_field_choices(field) %}
+        {% set list_values = h.schemingdct_listify_str(pkg_dict[theme_field]) %}
+        {% set icons_dir = h.schemingdct_get_icons_dir(field) %}
+        <ul class="nav nav-simple scrollable-list">
+          {% for item in list_values %}
+            {% set label = h.scheming_choices_label(field_choices, item) %}
+            {% set choice_item = h.schemingdct_get_choice_item(field, item) %}
+            {% set icon = choice_item and h.schemingdct_get_icon(choice_item, icons_dir) %}
+            {% set img_url = h.url_for_static(icon) if icon else h.url_for_static(no_icon) %}
+            {% set url = h.url_for('dataset.search', theme_eu=item) if theme_field == 'theme_eu' else h.url_for('dataset.search', theme=item) %}
+            <li class="nav-item info_item" title="{{ h.scheming_language_text(field.label) }}">
+              <img class="module-image info_image" src="{{ img_url }}" alt="{{ organization.title }}" />
+              <a href="{{ url }}" class="info_text">{{ label }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}

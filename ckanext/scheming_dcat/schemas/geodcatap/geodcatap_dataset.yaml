@@ -59,6 +59,17 @@ dataset_fields:
     es: Entidad (organización) responsable de publicar el conjunto de datos.
   preset: dataset_organization
 
+# Graphic overview (O)
+- field_name: graphic_overview
+  label:
+    en: Graphic overview of the dataset
+    es: Descripción gráfica del conjunto de datos
+  display_snippet: scheming_dcat/display_snippets/graphic_overview.html
+  form_placeholder: http://example.com/dataset.jpg
+  help_text:
+    en: "Graphic that provides an illustration of the dataset."
+    es: "Gráfico que ilustra el conjunto de datos."
+
 # Dataset abstract (M)
 - field_name: notes
   label: 
@@ -141,12 +152,12 @@ dataset_fields:
       es: Texto
     value: http://purl.org/dc/dcmitype/Text
 
-# NTI-RISP Theme (M)
-## Taxonomy [NTI-RISP Annex IV](http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv)
-- field_name: theme_es
+# MDR Themes (M)
+## Taxonomy [DCAT-AP](hhttp://publications.europa.eu/resource/authority/data-theme)
+- field_name: theme_eu
   label:
-    en: Themes (NTI-RISP)
-    es: Temáticas (NTI-RISP)
+    en: Themes (DCAT-AP)
+    es: Temáticas (DCAT-AP)
   validators: ignore_missing scheming_dcat_multiple_choice
   form_snippet: scheming_dcat/form_snippets/multiple_select_icon.html
   display_property: dcat:theme
@@ -154,347 +165,59 @@ dataset_fields:
   select_size: 10
   required: True
   help_text:
-    en: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Themes</a> (NTI-RISP Annex IV)'
-    es: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Temáticas</a> (Anexo IV NTI-RISP)'
+    en: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Themes</a> (DCAT-AP)'
+    es: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Temáticas</a> (DCAT-AP)'
   help_allow_html: True
   sorted_choices: True
   choices:
-  - value: http://datos.gob.es/kos/sector-publico/sector/ciencia-tecnologia
-    notation: ciencia-tecnologia
-    label:
-      en: Science and technology
-      es: Ciencia y tecnología
-      ca: Ciència i tecnologia
-      gl: Ciencia e tecnoloxía
-      eu: Zientzia eta teknologia
-    description:
-      en: ''
-      es: 'Incluye: Innovación, Investigación, I/u002BD/u002BI, Telecomunicaciones,
-        Inernet y Sociedad de la Información.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/TECH
-  - value: http://datos.gob.es/kos/sector-publico/sector/comercio
-    notation: comercio
-    label:
-      en: Commerce
-      es: Comercio
-      ca: Comerç
-      gl: Comercio
-      eu: Merkataritza
-    description:
-      en: ''
-      es: 'Incluye: Consumo.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/cultura-ocio
-    notation: cultura-ocio
-    label:
-      en: Culture and leisure
-      es: Cultura y ocio
-      ca: Cultura i lleure
-      gl: Cultura e lecer
-      eu: Kultura eta aisia
-    description:
-      en: ''
-      es: 'Incluye: Tiempo libre.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/demografia
-    notation: demografia
-    label:
-      en: Demography
-      es: Demografía
-      ca: Demografia
-      gl: Demografía
-      eu: Demografia
-    description:
-      en: ''
-      es: 'Incluye: Inmigración y Emigración, Familia, Mujeres, Infancia, Mayores,
-        Padrón.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/SOCI
-  - value: http://datos.gob.es/kos/sector-publico/sector/deporte
-    notation: deporte
-    label:
-      en: Sport
-      es: Deporte
-      ca: Esport
-      gl: Deporte
-      eu: Kirola
-    description:
-      en: ''
-      es: 'Incluye: Instalaciones deportivas, Federaciones, Competiciones.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/economia
-    notation: economia
-    label:
-      en: Economy
-      es: Economía
-      ca: Economia
-      gl: Economía
-      eu: Ekonomia
-    description:
-      en: ''
-      es: 'Incluye: Deuda, Moneda y Banca y finanzas.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/educacion
-    notation: educacion
-    label:
-      en: Education
-      es: Educación
-      ca: Educació
-      gl: Educación
-      eu: Hezkuntza
-    description:
-      en: ''
-      es: 'Incluye: Formación.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/empleo
-    notation: empleo
-    label:
-      en: Employment
-      es: Empleo
-      ca: Ocupació
-      gl: Emprego
-      eu: Enplegua
-    description:
-      en: ''
-      es: 'Incluye: Trabajo, Mercado laboral.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/energia
-    notation: energia
-    label:
-      en: Energy
-      es: Energía
-      ca: Energia
-      gl: Enerxía
-      eu: Energia
-    description:
-      en: ''
-      es: 'Incluye: Fuentes renovables.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ENER
-  - value: http://datos.gob.es/kos/sector-publico/sector/hacienda
-    notation: hacienda
-    label:
-      en: Treasury
-      es: Hacienda
-      ca: Hisenda
-      gl: Facenda
-      eu: Ogasuna
-    description:
-      en: ''
-      es: 'Incluye: Impuestos.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/GOVE
-  - value: http://datos.gob.es/kos/sector-publico/sector/industria
-    notation: industria
-    label:
-      en: Industry
-      es: Industria
-      ca: Indústria
-      gl: Industria
-      eu: Industria
-    description:
-      en: ''
-      es: 'Incluye: Minería.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/legislacion-justicia
-    notation: legislacion-justicia
-    label:
-      en: Legislation and justice
-      es: Legislación y justicia
-      ca: Legislació i justícia
-      gl: Lexislación e xustiza
-      eu: Legegintza eta justizia
-    description:
-      en: ''
-      es: 'Incluye: Registros.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/JUST
-  - value: http://datos.gob.es/kos/sector-publico/sector/medio-ambiente
-    notation: medio-ambiente
-    label:
-      en: Environment
-      es: Medio ambiente
-      ca: Medi ambient
-      gl: Medio ambiente
-      eu: Ingurumena
-    description:
-      en: ''
-      es: 'Incluye: Meteorología, Geografía, Conservación fauna y flora.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ENVI
-  - value: http://datos.gob.es/kos/sector-publico/sector/medio-rural-pesca
-    notation: medio-rural-pesca
-    label:
-      en: Rural environment
-      es: Medio Rural
-      ca: Medi rural
-      gl: Medio rural
-      eu: Nekazaritza
-    description:
-      en: ''
-      es: 'Incluye: Agricultura, Ganadería, Pesca y Silvicultura.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/AGRI
-  - value: http://datos.gob.es/kos/sector-publico/sector/salud
-    notation: salud
-    label:
-      en: Healthcare
-      es: Salud
-      ca: Salut
-      gl: Saúde
-      eu: Osasuna
-    description:
-      en: ''
-      es: 'Incluye: Sanidad.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/HEAL
-  - value: http://datos.gob.es/kos/sector-publico/sector/sector-publico
-    notation: sector-publico
-    label:
-      en: Public sector
-      es: Sector público
-      ca: Sector públic
-      gl: Sector público
-      eu: Sektore publikoa
-    description:
-      en: ''
-      es: 'Incluye: Presupuestos, Organigrama institucional, Legislación interna,
-        Función pública.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/GOVE
-  - value: http://datos.gob.es/kos/sector-publico/sector/seguridad
-    notation: seguridad
-    label:
-      en: Security
-      es: Seguridad
-      ca: Seguretat
-      gl: Seguridade
-      eu: Segurtasuna
-    description:
-      en: ''
-      es: 'Incluye: Protección civil, Defensa.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/JUST
-  - value: http://datos.gob.es/kos/sector-publico/sector/sociedad-bienestar
-    notation: sociedad-bienestar
-    label:
-      en: Society and welfare
-      es: Sociedad y bienestar
-      ca: Societat i benestar
-      gl: Sociedade e benestar
-      eu: Gizartea eta ongizatea
-    description:
-      en: ''
-      es: 'Incluye: Participación ciudadana, Marginación, Envejecimiento Activo, Autonomía
-        personal y Dependencia, Invalidez, Jubilación, Seguros y Pensiones, Prestaciones
-        y Subvenciones.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/SOCI
-  - value: http://datos.gob.es/kos/sector-publico/sector/transporte
-    notation: transporte
-    label:
-      en: Transport
-      es: Transporte
-      ca: Transport
-      gl: Transporte
-      eu: Garraioa
-    description:
-      en: ''
-      es: 'Incluye: Comunicaciones y Tr/u00E1fico.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/TRAN
-  - value: http://datos.gob.es/kos/sector-publico/sector/turismo
-    notation: turismo
-    label:
-      en: Tourism
-      es: Turismo
-      ca: Turisme
-      gl: Turismo
-      eu: Turismoa
-    description:
-      en: ''
-      es: 'Incluye: Alojamientos, Hostelería, Gastronomía.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/urbanismo-infraestructuras
-    notation: urbanismo-infraestructuras
-    label:
-      en: Town planning and infrastructures
-      es: Urbanismo e infraestructuras
-      ca: Urbanisme i infraestructures
-      gl: Urbanismo e infraestruturas
-      eu: Hirigintza eta azpiegiturak
-    description:
-      en: ''
-      es: 'Incluye: Saneamiento público, Construcción (infraestructuras, equipamientos
-        públicos).'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/REGI
-  - value: http://datos.gob.es/kos/sector-publico/sector/vivienda
-    notation: vivienda
-    label:
-      en: Housing
-      es: Vivienda
-      ca: Habitatge
-      gl: Vivenda
-      eu: Etxebizitza
-    description:
-      en: ''
-      es: 'Incluye: Mercado inmobiliario, Construcción (viviendas).'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/REGI
+    - value: http://publications.europa.eu/resource/authority/data-theme/AGRI
+      label:
+        en: Agriculture, fisheries, forestry and food
+        es: Agricultura, pesca, silvicultura y alimentación
+    - value: http://publications.europa.eu/resource/authority/data-theme/ECON
+      label:
+        en: Economy and finance
+        es: Economía y finanzas
+    - value: http://publications.europa.eu/resource/authority/data-theme/EDUC
+      label:
+        en: Education, culture and sport
+        es: Educación, cultura y deporte
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENER
+      label:
+        en: Energy
+        es: Energía
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENVI
+      label:
+        en: Environment
+        es: Medio ambiente
+    - value: http://publications.europa.eu/resource/authority/data-theme/GOVE
+      label:
+        en: Government and public sector
+        es: Gobierno y sector público
+    - value: http://publications.europa.eu/resource/authority/data-theme/HEAL
+      label:
+        en: Health
+        es: Salud
+    - value: http://publications.europa.eu/resource/authority/data-theme/INTR
+      label:
+        en: International issues
+        es: Asuntos internacionales
+    - value: http://publications.europa.eu/resource/authority/data-theme/JUST
+      label:
+        en: Justice, legal system and public safety
+        es: Justicia, sistema jurídico y seguridad pública
+    - value: http://publications.europa.eu/resource/authority/data-theme/REGI
+      label:
+        en: Regions and cities
+        es: Regiones y ciudades
+    - value: http://publications.europa.eu/resource/authority/data-theme/SOCI
+      label:
+        en: Population and society
+        es: Población y sociedad
+    - value: http://publications.europa.eu/resource/authority/data-theme/TECH
+      label:
+        en: Science and technology
+        es: Ciencia y tecnología
 
 # Metadata file identifier (M)
 ## Unique resource identifier (UUID)  (Mandatory). If it does not exist, CKAN creates a UUID (Metadata file identifier 'package_id')
@@ -549,6 +272,7 @@ dataset_fields:
     en: Date of last revision
     es: Fecha de última modificación
     validators: not_empty scheming_required
+  display_snippet: scheming_dcat/display_snippets/last_update.html
   display_property: dct:modified
   required: True
   preset: date
@@ -631,8 +355,8 @@ dataset_fields:
 ## Only for ckanext-dcat profiles.py
 - field_name: tag_uri
   label: 
-    en: Keyword URIs in accordance with INSPIRE MD Register
-    es: URI de palabras clave conforme al Registro INSPIRE
+    en: Keyword URIs
+    es: URI de palabras clave
   validators: ignore_missing scheming_dcat_multiple_text
   form_snippet: scheming_dcat/form_snippets/multiple_text.html
   display_snippet: scheming_dcat/display_snippets/list_keywords.html
@@ -1336,8 +1060,8 @@ dataset_fields:
 # Coordinate Reference System (M)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
@@ -1962,8 +1686,8 @@ resource_fields:
 # Coordinate Reference System (C)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
