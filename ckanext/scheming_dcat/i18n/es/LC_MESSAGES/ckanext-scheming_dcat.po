@@ -180,7 +180,7 @@ msgstr "No existen {facet_type} que coincidan con la búsqueda"
 
 #: ckanext/scheming_dcat/templates/snippets/facet_search_operator.html:53
 msgid "Criteria for selection"
-msgstr "Criterios de selección"
+msgstr "Criterio de selección"
 
 #: ckanext/scheming_dcat/templates/snippets/facet_search_operator.html:56
 msgid "OR"
