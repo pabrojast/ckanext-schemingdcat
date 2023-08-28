@@ -10,13 +10,13 @@
       'remove_field': remove_field }
     %}
     {% set sorting = [
-      (_('Relevancia'), 'score desc, metadata_modified desc'),
-      (_('Nombre Ascendente'), 'title_string asc'),
-      (_('Nombre Descendente'), 'title_string desc'),
-      (_('Último Modificado'), 'metadata_modified desc'),
+      (_('Relevance'), 'score desc, metadata_modified desc'),
+      (_('Name ascending'), 'title_string asc'),
+      (_('Name descending'), 'title_string desc'),
+      (_('Last modified'), 'metadata_modified desc'),
       (_('Popular'), 'views_recent desc') if g.tracking_enabled else (false, false) ]
     %}
-    {% snippet 'snippets/search_form.html', form_id='group-datasets-search-form', type='dataset', query=q, sorting=sorting, sorting_selected=sort_by_selected, count=page.item_count, facets=facets, placeholder=_('Buscar conjuntos de datos'), show_empty=request.params, fields=fields %}
+    {% snippet 'snippets/search_form.html', form_id='group-datasets-search-form', type='dataset', query=q, sorting=sorting, sorting_selected=sort_by_selected, count=page.item_count, facets=facets, placeholder=_('Search datasets...'), show_empty=request.params, fields=fields %}
   {% endblock %}
   {% block packages_list %}
     {% if page.items %}

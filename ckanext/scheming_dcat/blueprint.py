@@ -30,6 +30,7 @@ def index(id):
     try:
         pkg_dict = get_action(u'package_show')(context, data_dict)
         pkg = context[u'package']
+        schema = get_action(u'package_show')(context, data_dict)
     except (logic.NotFound, logic.NotAuthorized):
         return base.abort(404, _(u'Dataset {dataset} not found').format({dataset:id}))
 

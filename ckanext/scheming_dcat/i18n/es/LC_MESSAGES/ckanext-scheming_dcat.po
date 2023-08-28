@@ -22,37 +22,37 @@ msgstr ""
 "X-Generator: Poedit 3.3.2\n"
 
 #: ckanext/scheming_dcat/templates/group/read.html:13
-msgid "Relevancia"
-msgstr ""
+msgid "Relevance"
+msgstr "Relevancia"
 
 #: ckanext/scheming_dcat/templates/group/read.html:14
-msgid "Nombre Ascendente"
-msgstr ""
+msgid "Name ascending"
+msgstr "Nombre ascendente"
 
 #: ckanext/scheming_dcat/templates/group/read.html:15
-msgid "Nombre Descendente"
-msgstr ""
+msgid "Name descending"
+msgstr "Nombre descendiente"
 
 #: ckanext/scheming_dcat/templates/group/read.html:16
-msgid "Último Modificado"
-msgstr ""
+msgid "Last modified"
+msgstr "Último modificado"
 
 #: ckanext/scheming_dcat/templates/group/read.html:17
 msgid "Popular"
-msgstr ""
+msgstr "Popular"
 
 #: ckanext/scheming_dcat/templates/group/read.html:19
-msgid "Buscar conjuntos de datos"
-msgstr ""
+msgid "Search datasets..."
+msgstr "Buscar conjuntos de datos..."
 
 #: ckanext/scheming_dcat/templates/organization/read.html:5
 #: ckanext/scheming_dcat/templates/package/search.html:6
-msgid "Configuración de la búsqueda"
-msgstr ""
+msgid "Search config"
+msgstr "Configuración de búsqueda"
 
 #: ckanext/scheming_dcat/templates/organization/read.html:15
-msgid "Cerrar"
-msgstr ""
+msgid "Close"
+msgstr "Cerrar"
 
 #: ckanext/scheming_dcat/templates/scheming/form_snippets/multiple_text.html:14
 msgid "Remove"
@@ -63,7 +63,7 @@ msgid "Add"
 msgstr "Añadir"
 
 #: ckanext/scheming_dcat/templates/scheming/package/resource_read.html:21
-msgid "Additional Information"
+msgid "Additional information"
 msgstr "Información adicional"
 
 #: ckanext/scheming_dcat/templates/scheming/package/resource_read.html:26
@@ -107,7 +107,7 @@ msgid "Rights"
 msgstr "Derechos"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:155
-msgid "Additional Info"
+msgid "Additional info"
 msgstr "Información adicional"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:179
@@ -115,19 +115,19 @@ msgid "Punto de contacto"
 msgstr "Punto de contacto"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:207
-msgid "Información espacial"
+msgid "Spatial information"
 msgstr "Información espacial"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:232
-msgid "Procedencia"
+msgid "Provenance"
 msgstr "Procedencia"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:252
-msgid "Linaje"
+msgid "Lineage"
 msgstr "Linaje"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:270
-msgid "Extensión temporal"
+msgid "Temporal extent"
 msgstr "Extensión temporal"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:288
@@ -143,7 +143,7 @@ msgid "State"
 msgstr "Estado"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:333
-msgid "Organización responsable"
+msgid "Responsible party"
 msgstr "Parte responsable"
 
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:338
@@ -159,36 +159,36 @@ msgid "Maintainer"
 msgstr "Mantenedor"
 
 #: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_list.html:51
-msgid "ordenar por nombre"
-msgstr ""
+msgid "sort by name"
+msgstr "ordenar por nombre"
 
 #: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_list.html:58
-msgid "ordenar por resultados"
-msgstr ""
+msgid "sort by results"
+msgstr "ordenar por resultados"
 
 #: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_list.html:111
-msgid "Mostrar Más {facet_type}"
-msgstr ""
+msgid "Show more {facet_type}"
+msgstr "Mostrar Más {facet_type}"
 
 #: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_list.html:114
-msgid "Mostrar solo los primeros {facet_type}"
-msgstr ""
+msgid "Display only the first {facet_type}"
+msgstr "Mostrar solo los primeros {facet_type}"
 
 #: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_list.html:118
-msgid "No existen {facet_type} que coincidan con la búsqueda"
-msgstr ""
+msgid "No {facet_type} matching your search"
+msgstr "No existen {facet_type} que coincidan con la búsqueda"
 
-#: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_search_operator.html:53
-msgid "Criterios de selección"
-msgstr ""
+#: ckanext/scheming_dcat/templates/snippets/facet_search_operator.html:53
+msgid "Criteria for selection"
+msgstr "Criterio de selección"
 
-#: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_search_operator.html:56
-msgid "Alguno"
-msgstr ""
+#: ckanext/scheming_dcat/templates/snippets/facet_search_operator.html:56
+msgid "OR"
+msgstr "Alguno"
 
-#: ckanext/scheming_dcat/templates/snippets/schemingdct_facet_search_operator.html:57
-msgid "Todos"
-msgstr ""
+#: ckanext/scheming_dcat/templates/snippets/facet_search_operator.html:57
+msgid "AND"
+msgstr "Todos"
 
 #: ckanext/scheming_dcat/templates/package/read_base.html:4
 msgid "Linked Data"
@@ -206,10 +206,46 @@ msgstr "Actualizar {page}"
 msgid "Definition"
 msgstr "Definición"
 
-#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:7
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/access_rights.html:7
 msgid "Access rights"
 msgstr "Derechos de acceso"
 
-#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_access_rights.html:25
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/access_rights.html:25
 msgid "No Access Rights provided"
 msgstr "No se han proporcionado derechos de acceso"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/graphic_overview.html:4
+msgid "Graphic overview"
+msgstr "Descripción gráfica"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_dataset_map_sidebar.html:17
+msgid "Dataset extent"
+msgstr "Extensión del conjunto de datos"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_spatial_query.html:18
+msgid "Filter by location"
+msgstr "Búsqueda por extensión"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_spatial_query.html:19
+msgid "Clear"
+msgstr "Limpiar"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/display_snippets/last_update.html:3
+msgid "Show changelog"
+msgstr "Mostrar histórico de cambios"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:20
+msgid "Data Access and Licensing"
+msgstr "Derechos de acceso y Licencia"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:37
+msgid "This {resource} is classified as"
+msgstr "El {resource} está clasificado como"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:37
+msgid "under the Access to Information Classification Policy of the catalog"
+msgstr "según la Política de Clasificación del Acceso a la Información del catálogo"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:38
+msgid "Users outside the catalog cannot access this {resource}"
+msgstr "Los usuarios ajenos al catalogo no pueden acceder a este {resource}"

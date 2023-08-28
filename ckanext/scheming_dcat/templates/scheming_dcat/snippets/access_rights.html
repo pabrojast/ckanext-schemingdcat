@@ -1,6 +1,5 @@
 {% block access_rights %}
   {% if pkg_dict.access_rights %}
-    {% set schema = h.scheming_get_dataset_schema(dataset_type) %}
     {% set field = h.scheming_field_by_name(schema.dataset_fields, 'access_rights') %}
 
     <section class="module module-narrow access_rights">

@@ -280,7 +280,7 @@ def schemingdct_get_icon(choice, icons_dir=None):
     """
     extensions = ['.svg', '.png', '.jpg', '.gif']
     icon_name = None 
-    #log.debug("Busco icono para {0}".format(choice.value))
+    #log.debug("Field value: {0}".format(choice))
 
     if choice:
         if 'icon' in choice:
@@ -297,6 +297,7 @@ def schemingdct_get_icon(choice, icons_dir=None):
             icon_name = choice['value']
 
         url_path = (icons_dir+"/" if icons_dir else "") + icon_name
+        #log.debug("Searching for: {0}".format(url_path))
 
         for extension in extensions:
             if public_file_exists(url_path+extension):
@@ -315,7 +316,7 @@ def schemingdct_get_choice_item(field, value):
         dict: The whole option item in scheming, or None if not found.
     """
     if field and ('choices' in field):
-        log.debug("Searching: {0} en {1}".format(value,field['choices']))
+        #log.debug("Searching: {0} en {1}".format(value,field['choices']))
         for choice in field['choices']:
             if choice['value'] == value:
                 return choice
@@ -372,3 +373,42 @@ def schemingdct_prettify_url(url):
         return cleaned_url
     except AttributeError:
         return url
+
+@helper
+def schemingdct_prettify_url_name(url):
+    """Extracts the name of the last segment of a URL.
+
+    Args:
+        url (str): The URL to extract the name from.
+
+    Returns:
+        str: The name of the last segment of the URL.
+    """
+    if '/' in url:
+        url_name = url.split("/")[-1]
+    else:
+        url_name = url
+    return url_name
+
+@helper
+def schemingdct_listify_str(values):
+    """Converts a string or list/tuple of strings to a list of strings.
+
+    If `values` is already a list or tuple, it is returned as is. If `values` is a string,
+    it is split into a list of strings using commas as the delimiter. Each string in the
+    resulting list is stripped of leading/trailing whitespace and quotes.
+
+    Args:
+        values (str or list or tuple): The value(s) to convert to a list of strings.
+
+    Returns:
+        list: A list of strings.
+    """
+    if isinstance(values, str):
+        values = values.strip('][').split(',')
+        values = [item.strip().strip('"') for item in values]
+    elif not isinstance(values, (list, tuple)):
+        log.debug("Not a list or string: {0}".format(values))
+        values = ['']
+    
+    return values

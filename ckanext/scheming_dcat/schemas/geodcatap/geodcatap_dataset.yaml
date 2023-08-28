@@ -1,7 +1,9 @@
-scheming_version: 1
+scheming_version: 2
 dataset_type: dataset
-about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements."
+about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. European context (EU27)"
 about_url: https://github.com/mjanez/ckanext-scheming_dcat
+schema_version: 0.1
+schema_date: 2023-08-24
 
 ### Codes in Schema
 # (M): Mandatory
@@ -56,6 +58,17 @@ dataset_fields:
     en: Entity (organisation) responsible for making the Dataset available.
     es: Entidad (organización) responsable de publicar el conjunto de datos.
   preset: dataset_organization
+
+# Graphic overview (O)
+- field_name: graphic_overview
+  label:
+    en: Graphic overview of the dataset
+    es: Descripción gráfica del conjunto de datos
+  display_snippet: scheming_dcat/display_snippets/graphic_overview.html
+  form_placeholder: http://example.com/dataset.jpg
+  help_text:
+    en: "Graphic that provides an illustration of the dataset."
+    es: "Gráfico que ilustra el conjunto de datos."
 
 # Dataset abstract (M)
 - field_name: notes
@@ -139,12 +152,12 @@ dataset_fields:
       es: Texto
     value: http://purl.org/dc/dcmitype/Text
 
-# NTI-RISP Theme (M)
-## Taxonomy [NTI-RISP Annex IV](http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv)
-- field_name: theme_es
+# MDR Themes (M)
+## Taxonomy [DCAT-AP](hhttp://publications.europa.eu/resource/authority/data-theme)
+- field_name: theme_eu
   label:
-    en: Themes (NTI-RISP)
-    es: Temáticas (NTI-RISP)
+    en: Themes (DCAT-AP)
+    es: Temáticas (DCAT-AP)
   validators: ignore_missing scheming_dcat_multiple_choice
   form_snippet: scheming_dcat/form_snippets/multiple_select_icon.html
   display_property: dcat:theme
@@ -152,347 +165,59 @@ dataset_fields:
   select_size: 10
   required: True
   help_text:
-    en: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Themes</a> (NTI-RISP Annex IV)'
-    es: '<a href="http://www.boe.es/eli/es/res/2013/02/19/(4)/con#aniv" target="_blank" rel="noopener">Temáticas</a> (Anexo IV NTI-RISP)'
+    en: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Themes</a> (DCAT-AP)'
+    es: '<a href="http://publications.europa.eu/resource/authority/data-theme" target="_blank" rel="noopener">Temáticas</a> (DCAT-AP)'
   help_allow_html: True
   sorted_choices: True
   choices:
-  - value: http://datos.gob.es/kos/sector-publico/sector/ciencia-tecnologia
-    notation: ciencia-tecnologia
-    label:
-      en: Science and technology
-      es: Ciencia y tecnología
-      ca: Ciència i tecnologia
-      gl: Ciencia e tecnoloxía
-      eu: Zientzia eta teknologia
-    description:
-      en: ''
-      es: 'Incluye: Innovación, Investigación, I/u002BD/u002BI, Telecomunicaciones,
-        Inernet y Sociedad de la Información.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/TECH
-  - value: http://datos.gob.es/kos/sector-publico/sector/comercio
-    notation: comercio
-    label:
-      en: Commerce
-      es: Comercio
-      ca: Comerç
-      gl: Comercio
-      eu: Merkataritza
-    description:
-      en: ''
-      es: 'Incluye: Consumo.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/cultura-ocio
-    notation: cultura-ocio
-    label:
-      en: Culture and leisure
-      es: Cultura y ocio
-      ca: Cultura i lleure
-      gl: Cultura e lecer
-      eu: Kultura eta aisia
-    description:
-      en: ''
-      es: 'Incluye: Tiempo libre.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/demografia
-    notation: demografia
-    label:
-      en: Demography
-      es: Demografía
-      ca: Demografia
-      gl: Demografía
-      eu: Demografia
-    description:
-      en: ''
-      es: 'Incluye: Inmigración y Emigración, Familia, Mujeres, Infancia, Mayores,
-        Padrón.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/SOCI
-  - value: http://datos.gob.es/kos/sector-publico/sector/deporte
-    notation: deporte
-    label:
-      en: Sport
-      es: Deporte
-      ca: Esport
-      gl: Deporte
-      eu: Kirola
-    description:
-      en: ''
-      es: 'Incluye: Instalaciones deportivas, Federaciones, Competiciones.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/economia
-    notation: economia
-    label:
-      en: Economy
-      es: Economía
-      ca: Economia
-      gl: Economía
-      eu: Ekonomia
-    description:
-      en: ''
-      es: 'Incluye: Deuda, Moneda y Banca y finanzas.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/educacion
-    notation: educacion
-    label:
-      en: Education
-      es: Educación
-      ca: Educació
-      gl: Educación
-      eu: Hezkuntza
-    description:
-      en: ''
-      es: 'Incluye: Formación.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/EDUC
-  - value: http://datos.gob.es/kos/sector-publico/sector/empleo
-    notation: empleo
-    label:
-      en: Employment
-      es: Empleo
-      ca: Ocupació
-      gl: Emprego
-      eu: Enplegua
-    description:
-      en: ''
-      es: 'Incluye: Trabajo, Mercado laboral.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/energia
-    notation: energia
-    label:
-      en: Energy
-      es: Energía
-      ca: Energia
-      gl: Enerxía
-      eu: Energia
-    description:
-      en: ''
-      es: 'Incluye: Fuentes renovables.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ENER
-  - value: http://datos.gob.es/kos/sector-publico/sector/hacienda
-    notation: hacienda
-    label:
-      en: Treasury
-      es: Hacienda
-      ca: Hisenda
-      gl: Facenda
-      eu: Ogasuna
-    description:
-      en: ''
-      es: 'Incluye: Impuestos.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/GOVE
-  - value: http://datos.gob.es/kos/sector-publico/sector/industria
-    notation: industria
-    label:
-      en: Industry
-      es: Industria
-      ca: Indústria
-      gl: Industria
-      eu: Industria
-    description:
-      en: ''
-      es: 'Incluye: Minería.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/legislacion-justicia
-    notation: legislacion-justicia
-    label:
-      en: Legislation and justice
-      es: Legislación y justicia
-      ca: Legislació i justícia
-      gl: Lexislación e xustiza
-      eu: Legegintza eta justizia
-    description:
-      en: ''
-      es: 'Incluye: Registros.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/JUST
-  - value: http://datos.gob.es/kos/sector-publico/sector/medio-ambiente
-    notation: medio-ambiente
-    label:
-      en: Environment
-      es: Medio ambiente
-      ca: Medi ambient
-      gl: Medio ambiente
-      eu: Ingurumena
-    description:
-      en: ''
-      es: 'Incluye: Meteorología, Geografía, Conservación fauna y flora.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ENVI
-  - value: http://datos.gob.es/kos/sector-publico/sector/medio-rural-pesca
-    notation: medio-rural-pesca
-    label:
-      en: Rural environment
-      es: Medio Rural
-      ca: Medi rural
-      gl: Medio rural
-      eu: Nekazaritza
-    description:
-      en: ''
-      es: 'Incluye: Agricultura, Ganadería, Pesca y Silvicultura.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/AGRI
-  - value: http://datos.gob.es/kos/sector-publico/sector/salud
-    notation: salud
-    label:
-      en: Healthcare
-      es: Salud
-      ca: Salut
-      gl: Saúde
-      eu: Osasuna
-    description:
-      en: ''
-      es: 'Incluye: Sanidad.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/HEAL
-  - value: http://datos.gob.es/kos/sector-publico/sector/sector-publico
-    notation: sector-publico
-    label:
-      en: Public sector
-      es: Sector público
-      ca: Sector públic
-      gl: Sector público
-      eu: Sektore publikoa
-    description:
-      en: ''
-      es: 'Incluye: Presupuestos, Organigrama institucional, Legislación interna,
-        Función pública.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/GOVE
-  - value: http://datos.gob.es/kos/sector-publico/sector/seguridad
-    notation: seguridad
-    label:
-      en: Security
-      es: Seguridad
-      ca: Seguretat
-      gl: Seguridade
-      eu: Segurtasuna
-    description:
-      en: ''
-      es: 'Incluye: Protección civil, Defensa.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/JUST
-  - value: http://datos.gob.es/kos/sector-publico/sector/sociedad-bienestar
-    notation: sociedad-bienestar
-    label:
-      en: Society and welfare
-      es: Sociedad y bienestar
-      ca: Societat i benestar
-      gl: Sociedade e benestar
-      eu: Gizartea eta ongizatea
-    description:
-      en: ''
-      es: 'Incluye: Participación ciudadana, Marginación, Envejecimiento Activo, Autonomía
-        personal y Dependencia, Invalidez, Jubilación, Seguros y Pensiones, Prestaciones
-        y Subvenciones.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/SOCI
-  - value: http://datos.gob.es/kos/sector-publico/sector/transporte
-    notation: transporte
-    label:
-      en: Transport
-      es: Transporte
-      ca: Transport
-      gl: Transporte
-      eu: Garraioa
-    description:
-      en: ''
-      es: 'Incluye: Comunicaciones y Tr/u00E1fico.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/TRAN
-  - value: http://datos.gob.es/kos/sector-publico/sector/turismo
-    notation: turismo
-    label:
-      en: Tourism
-      es: Turismo
-      ca: Turisme
-      gl: Turismo
-      eu: Turismoa
-    description:
-      en: ''
-      es: 'Incluye: Alojamientos, Hostelería, Gastronomía.'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/ECON
-  - value: http://datos.gob.es/kos/sector-publico/sector/urbanismo-infraestructuras
-    notation: urbanismo-infraestructuras
-    label:
-      en: Town planning and infrastructures
-      es: Urbanismo e infraestructuras
-      ca: Urbanisme i infraestructures
-      gl: Urbanismo e infraestruturas
-      eu: Hirigintza eta azpiegiturak
-    description:
-      en: ''
-      es: 'Incluye: Saneamiento público, Construcción (infraestructuras, equipamientos
-        públicos).'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/REGI
-  - value: http://datos.gob.es/kos/sector-publico/sector/vivienda
-    notation: vivienda
-    label:
-      en: Housing
-      es: Vivienda
-      ca: Habitatge
-      gl: Vivenda
-      eu: Etxebizitza
-    description:
-      en: ''
-      es: 'Incluye: Mercado inmobiliario, Construcción (viviendas).'
-      ca: ''
-      gl: ''
-      eu: ''
-    dcat_ap: http://publications.europa.eu/resource/authority/data-theme/REGI
+    - value: http://publications.europa.eu/resource/authority/data-theme/AGRI
+      label:
+        en: Agriculture, fisheries, forestry and food
+        es: Agricultura, pesca, silvicultura y alimentación
+    - value: http://publications.europa.eu/resource/authority/data-theme/ECON
+      label:
+        en: Economy and finance
+        es: Economía y finanzas
+    - value: http://publications.europa.eu/resource/authority/data-theme/EDUC
+      label:
+        en: Education, culture and sport
+        es: Educación, cultura y deporte
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENER
+      label:
+        en: Energy
+        es: Energía
+    - value: http://publications.europa.eu/resource/authority/data-theme/ENVI
+      label:
+        en: Environment
+        es: Medio ambiente
+    - value: http://publications.europa.eu/resource/authority/data-theme/GOVE
+      label:
+        en: Government and public sector
+        es: Gobierno y sector público
+    - value: http://publications.europa.eu/resource/authority/data-theme/HEAL
+      label:
+        en: Health
+        es: Salud
+    - value: http://publications.europa.eu/resource/authority/data-theme/INTR
+      label:
+        en: International issues
+        es: Asuntos internacionales
+    - value: http://publications.europa.eu/resource/authority/data-theme/JUST
+      label:
+        en: Justice, legal system and public safety
+        es: Justicia, sistema jurídico y seguridad pública
+    - value: http://publications.europa.eu/resource/authority/data-theme/REGI
+      label:
+        en: Regions and cities
+        es: Regiones y ciudades
+    - value: http://publications.europa.eu/resource/authority/data-theme/SOCI
+      label:
+        en: Population and society
+        es: Población y sociedad
+    - value: http://publications.europa.eu/resource/authority/data-theme/TECH
+      label:
+        en: Science and technology
+        es: Ciencia y tecnología
 
 # Metadata file identifier (M)
 ## Unique resource identifier (UUID)  (Mandatory). If it does not exist, CKAN creates a UUID (Metadata file identifier 'package_id')
@@ -547,6 +272,7 @@ dataset_fields:
     en: Date of last revision
     es: Fecha de última modificación
     validators: not_empty scheming_required
+  display_snippet: scheming_dcat/display_snippets/last_update.html
   display_property: dct:modified
   required: True
   preset: date
@@ -629,8 +355,8 @@ dataset_fields:
 ## Only for ckanext-dcat profiles.py
 - field_name: tag_uri
   label: 
-    en: Keyword URIs in accordance with INSPIRE MD Register
-    es: URI de palabras clave conforme al Registro INSPIRE
+    en: Keyword URIs
+    es: URI de palabras clave
   validators: ignore_missing scheming_dcat_multiple_text
   form_snippet: scheming_dcat/form_snippets/multiple_text.html
   display_snippet: scheming_dcat/display_snippets/list_keywords.html
@@ -1334,8 +1060,8 @@ dataset_fields:
 # Coordinate Reference System (M)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
@@ -1373,510 +1099,158 @@ dataset_fields:
   - label:
       es: España
       en: Spain
-      ca: España
-      gl: España
-      eu: España
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Pais/España
-  - label:
-      es: Andalucía
-      en: Andalucía
-      ca: Andalucía
-      gl: Andalucía
-      eu: Andalucía
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Andalucia
-  - label:
-      es: Almería
-      en: Almería
-      ca: Almería
-      gl: Almería
-      eu: Almería
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Almeria
-  - label:
-      es: Cádiz
-      en: Cádiz
-      ca: Cádiz
-      gl: Cádiz
-      eu: Cádiz
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cadiz
-  - label:
-      es: Córdoba
-      en: Córdoba
-      ca: Córdoba
-      gl: Córdoba
-      eu: Córdoba
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cordoba
-  - label:
-      es: Granada
-      en: Granada
-      ca: Granada
-      gl: Granada
-      eu: Granada
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Granada
-  - label:
-      es: Huelva
-      en: Huelva
-      ca: Huelva
-      gl: Huelva
-      eu: Huelva
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Huelva
-  - label:
-      es: Jaén
-      en: Jaén
-      ca: Jaén
-      gl: Jaén
-      eu: Jaén
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Jaen
-  - label:
-      es: Málaga
-      en: Málaga
-      ca: Málaga
-      gl: Málaga
-      eu: Málaga
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Malaga
-  - label:
-      es: Sevilla
-      en: Sevilla
-      ca: Sevilla
-      gl: Sevilla
-      eu: Sevilla
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Sevilla
-  - label:
-      es: Aragón
-      en: Aragón
-      ca: Aragón
-      gl: Aragón
-      eu: Aragón
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Aragon
-  - label:
-      es: Huesca
-      en: Huesca
-      ca: Huesca
-      gl: Huesca
-      eu: Huesca
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Huesca
-  - label:
-      es: Teruel
-      en: Teruel
-      ca: Teruel
-      gl: Teruel
-      eu: Teruel
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Teruel
-  - label:
-      es: Zaragoza
-      en: Zaragoza
-      ca: Zaragoza
-      gl: Zaragoza
-      eu: Zaragoza
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Zaragoza
-  - label:
-      es: Principado de Asturias
-      en: Principado de Asturias
-      ca: Principado de Asturias
-      gl: Principado de Asturias
-      eu: Principado de Asturias
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Principado-Asturias
-  - label:
-      es: Asturias
-      en: Asturias
-      ca: Asturias
-      gl: Asturias
-      eu: Asturias
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Asturias
-  - label:
-      es: Illes Balears
-      en: Illes Balears
-      ca: Illes Balears
-      gl: Illes Balears
-      eu: Illes Balears
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Illes-Balears
-  - label:
-      es: Provincia de Illes Balears
-      en: Provincia de Illes Balears
-      ca: Provincia de Illes Balears
-      gl: Provincia de Illes Balears
-      eu: Provincia de Illes Balears
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Illes-Balears
-  - label:
-      es: Canarias
-      en: Canarias
-      ca: Canarias
-      gl: Canarias
-      eu: Canarias
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Canarias
-  - label:
-      es: Las Palmas
-      en: Las Palmas
-      ca: Las Palmas
-      gl: Las Palmas
-      eu: Las Palmas
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Las-Palmas
-  - label:
-      es: Santa Cruz de Tenerife
-      en: Santa Cruz de Tenerife
-      ca: Santa Cruz de Tenerife
-      gl: Santa Cruz de Tenerife
-      eu: Santa Cruz de Tenerife
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Santa-Cruz-Tenerife
-  - label:
-      es: Cantabria
-      en: Cantabria
-      ca: Cantabria
-      gl: Cantabria
-      eu: Cantabria
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Cantabria
-  - label:
-      es: Provincia de Cantabria
-      en: Provincia de Cantabria
-      ca: Provincia de Cantabria
-      gl: Provincia de Cantabria
-      eu: Provincia de Cantabria
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cantabria
-  - label:
-      es: Castilla y León
-      en: Castilla y León
-      ca: Castilla y León
-      gl: Castilla y León
-      eu: Castilla y León
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Castilla-Leon
-  - label:
-      es: Ávila
-      en: Ávila
-      ca: Ávila
-      gl: Ávila
-      eu: Ávila
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Avila
-  - label:
-      es: Burgos
-      en: Burgos
-      ca: Burgos
-      gl: Burgos
-      eu: Burgos
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Burgos
-  - label:
-      es: León
-      en: León
-      ca: León
-      gl: León
-      eu: León
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Leon
-  - label:
-      es: Palencia
-      en: Palencia
-      ca: Palencia
-      gl: Palencia
-      eu: Palencia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Palencia
-  - label:
-      es: Salamanca
-      en: Salamanca
-      ca: Salamanca
-      gl: Salamanca
-      eu: Salamanca
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Salamanca
-  - label:
-      es: Segovia
-      en: Segovia
-      ca: Segovia
-      gl: Segovia
-      eu: Segovia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Segovia
-  - label:
-      es: Soria
-      en: Soria
-      ca: Soria
-      gl: Soria
-      eu: Soria
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Soria
-  - label:
-      es: Valladolid
-      en: Valladolid
-      ca: Valladolid
-      gl: Valladolid
-      eu: Valladolid
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Valladolid
-  - label:
-      es: Zamora
-      en: Zamora
-      ca: Zamora
-      gl: Zamora
-      eu: Zamora
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Zamora
-  - label:
-      es: Castilla-La Mancha
-      en: Castilla-La Mancha
-      ca: Castilla-La Mancha
-      gl: Castilla-La Mancha
-      eu: Castilla-La Mancha
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Castilla-La-Mancha
-  - label:
-      es: Albacete
-      en: Albacete
-      ca: Albacete
-      gl: Albacete
-      eu: Albacete
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Albacete
-  - label:
-      es: Ciudad Real
-      en: Ciudad Real
-      ca: Ciudad Real
-      gl: Ciudad Real
-      eu: Ciudad Real
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ciudad-Real
-  - label:
-      es: Cuenca
-      en: Cuenca
-      ca: Cuenca
-      gl: Cuenca
-      eu: Cuenca
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cuenca
-  - label:
-      es: Guadalajara
-      en: Guadalajara
-      ca: Guadalajara
-      gl: Guadalajara
-      eu: Guadalajara
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Guadalajara
-  - label:
-      es: Toledo
-      en: Toledo
-      ca: Toledo
-      gl: Toledo
-      eu: Toledo
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Toledo
-  - label:
-      es: Cataluña
-      en: Cataluña
-      ca: Cataluña
-      gl: Cataluña
-      eu: Cataluña
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Cataluna
-  - label:
-      es: Barcelona
-      en: Barcelona
-      ca: Barcelona
-      gl: Barcelona
-      eu: Barcelona
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Barcelona
-  - label:
-      es: Girona
-      en: Girona
-      ca: Girona
-      gl: Girona
-      eu: Girona
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Girona
-  - label:
-      es: Lleida
-      en: Lleida
-      ca: Lleida
-      gl: Lleida
-      eu: Lleida
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Lleida
-  - label:
-      es: Tarragona
-      en: Tarragona
-      ca: Tarragona
-      gl: Tarragona
-      eu: Tarragona
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Tarragona
-  - label:
-      es: Comunitat Valenciana
-      en: Comunitat Valenciana
-      ca: Comunitat Valenciana
-      gl: Comunitat Valenciana
-      eu: Comunitat Valenciana
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunitat-Valenciana
-  - label:
-      es: Alicante
-      en: Alicante
-      ca: Alicante
-      gl: Alicante
-      eu: Alicante
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Alicante
-  - label:
-      es: Castellón
-      en: Castellón
-      ca: Castellón
-      gl: Castellón
-      eu: Castellón
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Castellon
-  - label:
-      es: Valencia
-      en: Valencia
-      ca: Valencia
-      gl: Valencia
-      eu: Valencia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Valencia
-  - label:
-      es: Extremadura
-      en: Extremadura
-      ca: Extremadura
-      gl: Extremadura
-      eu: Extremadura
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Extremadura
-  - label:
-      es: Badajoz
-      en: Badajoz
-      ca: Badajoz
-      gl: Badajoz
-      eu: Badajoz
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Badajoz
-  - label:
-      es: Cáceres
-      en: Cáceres
-      ca: Cáceres
-      gl: Cáceres
-      eu: Cáceres
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Caceres
-  - label:
-      es: Galicia
-      en: Galicia
-      ca: Galicia
-      gl: Galicia
-      eu: Galicia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Galicia
-  - label:
-      es: A Coruña
-      en: A Coruña
-      ca: A Coruña
-      gl: A Coruña
-      eu: A Coruña
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/A-Coruna
-  - label:
-      es: Lugo
-      en: Lugo
-      ca: Lugo
-      gl: Lugo
-      eu: Lugo
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Lugo
-  - label:
-      es: Ourense
-      en: Ourense
-      ca: Ourense
-      gl: Ourense
-      eu: Ourense
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ourense
-  - label:
-      es: Pontevedra
-      en: Pontevedra
-      ca: Pontevedra
-      gl: Pontevedra
-      eu: Pontevedra
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Pontevedra
-  - label:
-      es: Comunidad de Madrid
-      en: Comunidad de Madrid
-      ca: Comunidad de Madrid
-      gl: Comunidad de Madrid
-      eu: Comunidad de Madrid
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunidad-Madrid
-  - label:
-      es: Madrid
-      en: Madrid
-      ca: Madrid
-      gl: Madrid
-      eu: Madrid
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Madrid
-  - label:
-      es: Región de Murcia
-      en: Región de Murcia
-      ca: Región de Murcia
-      gl: Región de Murcia
-      eu: Región de Murcia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Region-Murcia
-  - label:
-      es: Murcia
-      en: Murcia
-      ca: Murcia
-      gl: Murcia
-      eu: Murcia
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Murcia
-  - label:
-      es: C. Foral de Navarra
-      en: C. Foral de Navarra
-      ca: C. Foral de Navarra
-      gl: C. Foral de Navarra
-      eu: C. Foral de Navarra
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunidad-Foral-Navarra
-  - label:
-      es: Navarra
-      en: Navarra
-      ca: Navarra
-      gl: Navarra
-      eu: Navarra
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Navarra
-  - label:
-      es: País Vasco
-      en: País Vasco
-      ca: País Vasco
-      gl: País Vasco
-      eu: País Vasco
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Pais-Vasco
-  - label:
-      es: Álava
-      en: Álava
-      ca: Álava
-      gl: Álava
-      eu: Álava
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Alava
-  - label:
-      es: Guipúzcoa
-      en: Guipúzcoa
-      ca: Guipúzcoa
-      gl: Guipúzcoa
-      eu: Guipúzcoa
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Guipuzcoa
-  - label:
-      es: Vizcaya
-      en: Vizcaya
-      ca: Vizcaya
-      gl: Vizcaya
-      eu: Vizcaya
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Vizcaya
-  - label:
-      es: La Rioja
-      en: La Rioja
-      ca: La Rioja
-      gl: La Rioja
-      eu: La Rioja
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/La-Rioja
-  - label:
-      es: Provincia de La Rioja
-      en: Provincia de La Rioja
-      ca: Provincia de La Rioja
-      gl: Provincia de La Rioja
-      eu: Provincia de La Rioja
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/La-Rioja
-  - label:
-      es: Ceuta
-      en: Ceuta
-      ca: Ceuta
-      gl: Ceuta
-      eu: Ceuta
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Ceuta
-  - label:
-      es: Provincia de Ceuta
-      en: Provincia de Ceuta
-      ca: Provincia de Ceuta
-      gl: Provincia de Ceuta
-      eu: Provincia de Ceuta
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ceuta
-  - label:
-      es: Melilla
-      en: Melilla
-      ca: Melilla
-      gl: Melilla
-      eu: Melilla
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Melilla
-  - label:
-      es: Provincia de Melilla
-      en: Provincia de Melilla
-      ca: Provincia de Melilla
-      gl: Provincia de Melilla
-      eu: Provincia de Melilla
-    value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Melilla
+    value: http://publications.europa.eu/resource/authority/country/ESP
+  - label:
+      es: Alemania
+      en: Germany
+    value: http://publications.europa.eu/resource/authority/country/DEU
+  - label:
+      es: Austria
+      en: Austria
+    value: http://publications.europa.eu/resource/authority/country/AUT
+  - label:
+      es: Bélgica
+      en: Belgium
+    value: http://publications.europa.eu/resource/authority/country/BEL
+  - label:
+      es: Bulgaria
+      en: Bulgaria
+    value: http://publications.europa.eu/resource/authority/country/BGR
+  - label:
+      es: Chipre
+      en: Cyprus
+    value: http://publications.europa.eu/resource/authority/country/CYP
+  - label:
+      es: Croacia
+      en: Croatia
+    value: http://publications.europa.eu/resource/authority/country/HRV
+  - label:
+      es: Dinamarca
+      en: Denmark
+    value: http://publications.europa.eu/resource/authority/country/DNK
+  - label:
+      es: Eslovaquia
+      en: Slovakia
+    value: http://publications.europa.eu/resource/authority/country/SVK
+  - label:
+      es: Eslovenia
+      en: Slovenia
+    value: http://publications.europa.eu/resource/authority/country/SVN
+  - label:
+      es: Estonia
+      en: Estonia
+    value: http://publications.europa.eu/resource/authority/country/EST
+  - label:
+      es: Finlandia
+      en: Finland
+    value: http://publications.europa.eu/resource/authority/country/FIN
+  - label:
+      es: Francia
+      en: France
+    value: http://publications.europa.eu/resource/authority/country/FRA
+  - label:
+      es: Grecia
+      en: Greece
+    value: http://publications.europa.eu/resource/authority/country/GRC
+  - label:
+      es: Hungría
+      en: Hungary
+    value: http://publications.europa.eu/resource/authority/country/HUN
+  - label:
+      es: Irlanda
+      en: Ireland
+    value: http://publications.europa.eu/resource/authority/country/IRL
+  - label:
+      es: Italia
+      en: Italy
+    value: http://publications.europa.eu/resource/authority/country/ITA
+  - label:
+      es: Letonia
+      en: Latvia
+    value: http://publications.europa.eu/resource/authority/country/LVA
+  - label:
+      es: Lituania
+      en: Lithuania
+    value: http://publications.europa.eu/resource/authority/country/LTU
+  - label:
+      es: Luxemburgo
+      en: Luxembourg
+    value: http://publications.europa.eu/resource/authority/country/LUX
+  - label:
+      es: Malta
+      en: Malta
+    value: http://publications.europa.eu/resource/authority/country/MLT
+  - label:
+      es: Nueva Zelanda
+      en: New Zealand
+    value: http://publications.europa.eu/resource/authority/country/NZL
+  - label:
+      es: Países Bajos
+      en: Netherlands
+    value: http://publications.europa.eu/resource/authority/country/NLD
+  - label:
+      es: Polonia
+      en: Poland
+    value: http://publications.europa.eu/resource/authority/country/POL
+  - label:
+      es: Portugal
+      en: Portugal
+    value: http://publications.europa.eu/resource/authority/country/PRT
+  - label:
+      es: República Checa
+      en: Czech Republic
+    value: http://publications.europa.eu/resource/authority/country/CZE
+  - label:
+      es: Rumania
+      en: Romania
+    value: http://publications.europa.eu/resource/authority/country/ROU
+  - label:
+      es: Suecia
+      en: Sweden
+    value: http://publications.europa.eu/resource/authority/country/SWE
+  - label:
+      es: Argentina
+      en: Argentina
+    value: http://publications.europa.eu/resource/authority/country/ARG
+  - label:
+      es: Australia
+      en: Australia
+    value: http://publications.europa.eu/resource/authority/country/AUS
+  - label:
+      es: Brasil
+      en: Brazil
+    value: http://publications.europa.eu/resource/authority/country/BRA
+  - label:
+      es: Canadá
+      en: Canada
+    value: http://publications.europa.eu/resource/authority/country/CAN
+  - label:
+      es: China
+      en: China
+    value: http://publications.europa.eu/resource/authority/country/CHN
+  - label:
+      es: Estados Unidos
+      en: United States
+    value: http://publications.europa.eu/resource/authority/country/USA
+  - label:
+      es: Japón
+      en: Japan
+    value: http://publications.europa.eu/resource/authority/country/JPN
+  - label:
+      es: Mexico
+      en: Mexico
+    value: http://publications.europa.eu/resource/authority/country/MEX
+  - label:
+      es: Nueva Zelanda
+      en: New Zeland
+    value: http://publications.europa.eu/resource/authority/country/NZL
+  - label:
+      es: Reino Unido
+      en: United Kingdom
+    value: http://publications.europa.eu/resource/authority/country/GBR
   help_text:
-    en: 'Geographic coverage of the dataset. More information in <a href="http://www.boe.es/diario_boe/txt.php?id=BOE-A-2013-2380" target="_blank" rel="noopener">NTI-RISP Annex V</a>.'
-    es: 'Ámbito geográfico cubierto por el conjunto de datos. Más información en el <a href="http://www.boe.es/diario_boe/txt.php?id=BOE-A-2013-2380" target="_blank" rel="noopener">Anexo V de NTI-RISP</a>.'
+    en: 'Geographic coverage of the dataset. More information in <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
+    es: 'Ámbito geográfico cubierto por el conjunto de datos. Más información en <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
   help_allow_html: True
 
 # Spatial representation type (O)
@@ -2312,8 +1686,8 @@ resource_fields:
 # Coordinate Reference System (C)
 - field_name: reference_system
   label:
-    en: URI of the Coordinate Reference System
-    es: URI del Sistema de Referencia de Coordenadas
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
   validators: ignore_missing scheming_dcat_valid_url
   display_snippet: scheming_dcat/display_snippets/link_epsg.html
   form_placeholder: http://www.opengis.net/def/crs/EPSG/0/4326
