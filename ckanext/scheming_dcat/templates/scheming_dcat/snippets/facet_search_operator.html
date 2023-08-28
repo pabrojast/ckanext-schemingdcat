@@ -39,10 +39,8 @@
   {% block facet_search_operator %}
       <section class="{{ wrapper_class or 'module module-narrow module-shallow' }}">
         {% block facet_search_operator_heading %}
-        <h2 class="module-heading">
-          <i class="icon-medium icon-filter"></i>
-          {% set title = title %}
-          {{ title }}
+        <h2 class="module-heading search_heading">
+          <span class="search_heading_span" ><i class="fa fa-cog"></i>  {{ title }}</span>
         </h2>
         {% endblock %}
         {% block facet_operator_items %}
@@ -50,11 +48,10 @@
         <nav>
           <ul class="unstyled nav nav-simple nav-facet">
           <li class="nav-item container__filter__type__search">
-            <span class="span__filter__type__search"><strong>{% trans %}Criteria for selection{% endtrans %}</strong></span>
             <div class="container__filter__type__search_and__or">
               <div class="btn-group"  role="group" >
-                <button type="button" class="btn btn-default {%if facet_operator == 'OR'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{% trans %}OR{% endtrans %}</a></button>
-                <button type="button" class="btn btn-default {%if facet_operator == 'AND'%} active{% endif %}"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{% trans %}AND{% endtrans %}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'OR'%} active{% endif %}" title="{{ _('Criteria for selection') }}: OR"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{{ _('OR') }}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'AND'%} active{% endif %}" title="{{ _('Criteria for selection') }}: AND"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{{ _('AND') }}</a></button>
               </div>
             </div>
           </li>

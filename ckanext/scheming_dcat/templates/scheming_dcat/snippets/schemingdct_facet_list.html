@@ -45,28 +45,31 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
 
 #}
 
-        {% block facet_list_heading %}
-          {% set order = h.get_request_param("_%s_sort" % name) or ""%}
-          <div class="orden{% if order.startswith('name') %} active{% endif %}">
-          <a href="{{ h.schemingdct_new_order_url(name,'name',extras) }}" title="{% trans %}sort by name{% endtrans %}">
-          <span class="up{% if order=='name' %} active{% endif %}">&#9650;</span>
-          <span class="down{% if order=='name_r' %} active{% endif %}">&#9660;</span>
-          <span class="label">A-Z</span>
-          </a>
+      {% block facet_list_heading %}
+      <div>
+          {% set order = h.get_request_param("_%s_sort" % name) or "" %}
+              {% set title = title or h.get_facet_title(name) %}
+              <h2 class="module-heading search_heading">
+                <span class="search_heading_span" ><i class="fa fa-filter"></i>  {{ title }}</span>
+          <div class="sorting_heading">
+          <div class="sorting{% if order.startswith('name') %} active{% endif %}">
+              <a href="{{ h.schemingdct_new_order_url(name,'name',extras) }}" title="{% trans %}sort by name{% endtrans %}">
+                  <span class="up{% if order=='name' %} active{% endif %}">&#9650;</span>
+                  <span class="down{% if order=='name_r' %} active{% endif %}">&#9660;</span>
+                  <span class="label">A-Z</span>
+              </a>
           </div>
-          <div class="orden{% if order.startswith('count') %} active{% endif %}">
-          <a href="{{ h.schemingdct_new_order_url(name,'count',extras) }}" title="{% trans %}sort by results{% endtrans %}">
-          <span class="up{% if order=='count_r' %} active{% endif %}">&#9650;</span>
-          <span class="down{% if order=='count' %} active{% endif %}">&#9660;</span>
-          <span class="label">1-9</span>
-          </a>
+          <div class="sorting{% if order.startswith('count') %} active{% endif %}">
+              <a href="{{ h.schemingdct_new_order_url(name,'count',extras) }}" title="{% trans %}sort by results{% endtrans %}">
+                  <span class="up{% if order=='count_r' %} active{% endif %}">&#9650;</span>
+                  <span class="down{% if order=='count' %} active{% endif %}">&#9660;</span>
+                  <span class="label">1-9</span>
+              </a>
           </div>
-      <h2 class="module-heading">
-          <i class="fa fa-filter"></i>
-          {% set title = title or h.get_facet_title(name) %}
-          {{ title }}
-      </h2>
-        {% endblock %}
+          </div>
+        </h2>
+        </div>
+      {% endblock %}
 
       {%  block facet_list_items %}
         {%  set field = h.scheming_field_by_name(h.scheming_get_dataset_schema('dataset').dataset_fields,name) %}

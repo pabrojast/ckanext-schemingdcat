@@ -3,65 +3,84 @@
 /*                 scheming_dcat               */
 /***********************************************/
 
-.filters .module .orden {
-	/* display: inline-block;*/
-	position:relative;
-	float:right;
-    height: 40px;
-    width: 40px;
+.search_heading {
+  display:flex;
+  align-items: center;
+}
+
+.search_heading_span {
+  width:90%
+}
+
+.sorting_heading {
+  margin-left: 5px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filters .module .sorting {
+    position:relative;
+    float:right;
+    height: 38px;
+    width: 38px;
     border-radius:5px;
     background-color:rgba(255,255,255,0.7);
     vertical-align:middle;
     margin-right:5px;
-    top:5px;
     cursor: pointer;
 }
 
-.filters .module .orden .up,
-.filters .module .orden .down,
-.filters .module .orden .label {
+.filters .module .sorting .up,
+.filters .module .sorting .down,
+.filters .module .sorting .label {
 	position:absolute;
 	left:2px;
 	color:#adb5bd;	
 }
 
-.filters .module .orden .label {
+.filters .module .sorting .label {
     right: 0;
     bottom: 25%;
     margin: auto;
-    padding-right:3px;
+    padding-right:2px;
     text-align: end;
 }
 
-.filters .module .orden.active .label {
+.filters .module .sorting.active .label {
 	color:var(--bs-body-color);	
 }
 
-.filters .module .orden {
+.filters .module .sorting {
 	border:1px solid #ffffff;
 }
 
-.filters .module .orden:hover {
+.filters .module .sorting:hover {
 	border:1px solid #000;
 }
 
-.filters .module .orden:hover .label {
+.filters .module .sorting:hover .label {
 	color:var(--bs-body-color);	
 }
 	
-	
-.filters .module .orden .up {
-	top:2px;
+.filters .module .sorting .up {
+	top:3px;
 }
 
-.filters .module .orden .down {
-	bottom:2px;
+.filters .module .sorting .down {
+	bottom:3px;
 }
 
-.filters .module .orden .up.active,
-.filters .module .orden .down.active
+.filters .module .sorting .up.active,
+.filters .module .sorting .down.active
 {
 	color:#212529;	
+}
+
+.container__filter__type__search_and__or{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 /* ckanext-scheming */
