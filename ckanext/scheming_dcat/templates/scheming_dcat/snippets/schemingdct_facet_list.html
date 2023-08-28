@@ -48,7 +48,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
       {% block facet_list_heading %}
       <div>
           {% set order = h.get_request_param("_%s_sort" % name) or "" %}
-              {% set title = title or h.get_facet_title(name) %}
+              {% set title = title or _('unknown') %}
               <h2 class="module-heading search_heading">
                 <span class="search_heading_span" ><i class="fa fa-filter"></i>  {{ title }}</span>
           <div class="sorting_heading">

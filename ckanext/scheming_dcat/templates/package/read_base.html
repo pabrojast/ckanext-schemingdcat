@@ -35,9 +35,10 @@
     {% endif %}
   {% endblock %}
 
-  {% set dataset_extent = pkg.spatial %}
-  {% if dataset_extent %}
-    {% snippet "scheming_dcat/snippets/schemingdct_dataset_map_sidebar.html", extent=dataset_extent %}
+  {% if pkg.spatial %}
+    {% if pkg.spatial %}
+      {% snippet "scheming_dcat/snippets/schemingdct_dataset_map_sidebar.html", extent=pkg.spatial %}
+    {% endif %}
   {% endif %}
 
   {% block package_data_access %}
@@ -54,7 +55,9 @@
   {% endblock %}
 
   {% block package_related_resources %}
-    {% snippet "scheming_dcat/snippets/related_resources.html", pkg_dict=pkg %}
+    {% if pkg_dict.reference %}
+      {% snippet "scheming_dcat/snippets/related_resources.html", pkg_dict=pkg %}
+    {% endif %}
   {% endblock %}
 
   {% block package_social %}

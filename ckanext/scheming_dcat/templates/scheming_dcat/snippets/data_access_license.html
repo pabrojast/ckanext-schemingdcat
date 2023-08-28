@@ -16,9 +16,11 @@
     </h2>
     
     <ul class="nav nav-simple">
+      {% if pkg_dict.access_rights %}
       <li class="nav-item">
         <a href="{{ access_rights_url }}" target="_blank"><i class="{{ access_rights_fa_icon }}"></i> {{ access_rights_label }}</a>
       </li>
+      {% endif %}
       <li class="nav-item">
         {% if pkg_dict.license_url %}
           <a href="{{ pkg_dict.license_url }}" target="_blank" rel="dc:rights"><i class="{{ license_fa_icon }}"></i> {{ pkg_dict.license_title }}</a>
