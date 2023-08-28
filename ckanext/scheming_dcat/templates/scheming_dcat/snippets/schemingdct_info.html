@@ -10,6 +10,8 @@
       </h2>
       {% if pkg_dict.theme_eu %}
         {% set theme_field = 'theme_eu' %}
+      {% elif pkg_dict.theme_es %}
+        {% set theme_field = 'theme_es' %}
       {% else %}
         {% set theme_field = 'theme' %}
       {% endif %}
