@@ -35,11 +35,11 @@
     {% endif %}
   {% endblock %}
 
-  {% if pkg.spatial %}
-    {% if pkg.spatial %}
-      {% snippet "scheming_dcat/snippets/schemingdct_dataset_map_sidebar.html", extent=pkg.spatial %}
+  {% block graphic_overview %}
+    {% if pkg.graphic_overview %}
+      {% snippet "scheming_dcat/snippets/graphic_overview.html", pkg_dict=pkg %}
     {% endif %}
-  {% endif %}
+  {% endblock %}
 
   {% block package_data_access %}
     {% set schema = h.scheming_get_dataset_schema(dataset_type) %}
@@ -48,12 +48,6 @@
     {% snippet "scheming_dcat/snippets/contact_info.html", pkg_dict=pkg, schema=schema, file_name='contact_info.html' %}
   {% endblock %}
   
-  {% block graphic_overview %}
-    {% if pkg.graphic_overview %}
-      {% snippet "scheming_dcat/snippets/graphic_overview.html", pkg_dict=pkg %}
-    {% endif %}
-  {% endblock %}
-
   {% block package_related_resources %}
     {% if pkg_dict.reference %}
       {% snippet "scheming_dcat/snippets/related_resources.html", pkg_dict=pkg %}
