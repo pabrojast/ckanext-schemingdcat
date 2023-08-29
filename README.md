@@ -178,7 +178,7 @@ Are available to use with this extension a number of custom schema, more info: [
 [`schemas/geodcatp_es`](/ckanext/scheming_dcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
 
 >**Note**<br>
-> RDF to CKAN dataset mapping: [GeoDCAT-AP (ES) to CKAN](./ckanext/scheming_dcat/schemas/README.md#geodcat-ap-es)
+> RDF to CKAN dataset mapping: [GeoDCAT-AP (ES) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-es)
 
 
 ### DCAT 
@@ -186,19 +186,19 @@ Are available to use with this extension a number of custom schema, more info: [
 on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
 >**Note**<br>
-> RDF to CKAN dataset mapping: [DCAT to CKAN](./ckanext/scheming_dcat/schemas/README.md#dcat)
+> RDF to CKAN dataset mapping: [DCAT to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat)
 
 ### DCAT-AP (EU)
 [`schemas/dcatap`](/ckanext/scheming_dcat/schemas/dcatap/dcatap_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
 
 >**Note**<br>
-> RDF to CKAN dataset mapping: [DCAT-AP (EU) to CKAN](./ckanext/scheming_dcat/schemas/README.md#dcat-ap-eu)
+> RDF to CKAN dataset mapping: [DCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat-ap-eu)
 
 ### GeoDCAT-AP (EU)
 [`schemas/geodcatap`](/ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml) based on: [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP) for the european context.
 
 >**Note**<br>
-> RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](./ckanext/scheming_dcat/schemas/README.md#geodcat-ap-eu)
+> RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-eu)
 
 
 ## Running the Tests
