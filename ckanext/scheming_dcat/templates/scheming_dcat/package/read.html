@@ -32,7 +32,7 @@
       {% if (h.scheming_field_by_name(schema.dataset_fields, 'notes') or
         h.scheming_field_by_name(schema.dataset_fields, 'notes_translated')) and
         pkg.notes%}
-        <div class="notes embedded-content">
+        <div class="notes embedded-content package_notes">
           {{ h.render_markdown(h.get_translated(pkg, 'notes')) }}
         </div>
       {% endif %}
@@ -44,11 +44,11 @@
       can_edit=h.check_access('package_update', {'id':pkg.id }) %}
   {% endblock %}
 
+  {% if pkg.spatial %}
   {% block package_dataset_extent %}
-    {% if pkg.spatial %}
       {% snippet "scheming_dcat/snippets/schemingdct_dataset_map_additional_info.html", extent=pkg.spatial %}
-    {% endif %}
   {% endblock %}
+  {% endif %}
 
   {% block package_tags %}
     {% snippet "package/snippets/tags.html", tags=pkg.tags %}
