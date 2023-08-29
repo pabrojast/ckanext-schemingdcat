@@ -28,7 +28,7 @@
             {% set choice_item = h.schemingdct_get_choice_item(field, item) %}
             {% set icon = choice_item and h.schemingdct_get_icon(choice_item, icons_dir) %}
             {% set img_url = h.url_for_static(icon) if icon else h.url_for_static(no_icon) %}
-            {% set url = h.url_for('dataset.search', theme_eu=item) if theme_field == 'theme_eu' else h.url_for('dataset.search', theme=item) %}
+            {% set url = h.url_for('dataset.search', **{theme_field: item}) %}
             <li class="nav-item info_item" title="{{ h.scheming_language_text(field.label) }}">
               <img class="module-image info_image" src="{{ img_url }}" alt="{{ organization.title }}" />
               <a href="{{ url }}" class="info_text">{{ label }}</a>

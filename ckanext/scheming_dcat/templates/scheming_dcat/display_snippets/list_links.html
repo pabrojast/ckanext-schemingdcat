@@ -5,7 +5,7 @@
 #}
 
 {% set _class = _class or 'link-list' %}
-{%  set choices = data[field.field_name] %}
+{% set choices = data[field.field_name] %}
 
 {% if choices is iterable and (choices is not string) %}
   {%  set values = choices or ([''] * field.get('form_blanks', 1)) %}

@@ -7,15 +7,20 @@
   'format',
   'rights',
   'license',
-  'modified',
-  'created',
-  'availability',
-  'reference_system',
-  'mimetype',
-  'conforms_to',
-  'language',
-  'resource_relation',
+  'size'
   ] %}
+
+  {# Fields for snippet scheming_dcat/package/snippets/resource_extended_info.html #}
+  {% set extended_fields = [
+    'modified',
+    'created',
+    'conforms_to',
+    'language',
+    'mimetype',
+    'reference_system'
+    ]
+  %}
+
 {%  set schema = h.scheming_get_dataset_schema(dataset_type) %}
 
 {% block resource_actions_inner %}
@@ -90,7 +95,6 @@
         </thead>
         {% block resource_data_dictionary_data %}
           {% set dict=h.datastore_dictionary(res.id) %}
-          {{ dict }}
           {% for field in dict %}
             {% snippet "package/snippets/dictionary_table.html", field=field %}
           {% endfor %}
@@ -112,51 +116,25 @@
         </thead>
       {%  endblock %}
       <tbody>
-        {%  block resource_format %}
-          <tr>
-            <th scope="row">{{ _('Format') }}</th>
-            <td>{{ res.format or _('unknown') }}</td>
-          </tr>
-          <tr>
-            <th scope="row">{{ _('Data last updated') }}</th>
-            <td>{{ h.render_datetime(res.last_modified) or h.render_datetime(res.created) or _('unknown') }}</td>
-          </tr>
-          <tr>
-            <th scope="row">{{ _('Metadata last updated') }}</th>
-            <td>{{ h.render_datetime(res.metadata_modified) or h.render_datetime(res.created) or _('unknown') }}</td>
-          </tr>
-        {%  endblock %}
-        {% if res.reference_system %}
-          {% block reference_system %}
-          {% if 'epsg' in res.reference_system.lower() %}
-            {% set url_name = h.schemingdct_prettify_url_name(res.reference_system)%}
-          {% else %}
-            {%  set url_name = res.reference_system %}
-          {% endif %}
-            <tr>
-              <th scope="row">{{ _('Coordinate Reference System') }}</th>
-              <td>EPSG:{{ h.link_to(url_name, res.reference_system, target='_blank') }}</td>
-            </tr>
-          {% endblock %}
-        {% endif %}
-        {#TODO: Fix field_names in resource object #}
+        {% block extended_info %}
+          {% snippet "scheming_dcat/package/snippets/resource_extended_info.html", field=field, res=res, extended_fields=extended_fields, schema=schema %}
+        {% endblock %}
+        
         {%  block resource_fields %}
           {%  for field in schema.resource_fields %}
             {%  if field.field_name not in exclude_fields
+                and field.field_name not in extended_fields
                 and field.display_snippet is not none %}
-              <tr>
-                <th scope="row">
-                  {{- h.scheming_language_text(field.label) -}}
-                </th>
-                <td>
-                  {%  snippet 'scheming/snippets/display_field.html',
-                      field=field, data=res, entity_type='dataset',
-                      object_type=dataset_type %}
-                </td>
-              </tr>
-            {%  endif %}
-          {%  endfor %}
-        {%  endblock %}
+                  <tr>
+                    <th scope="row">{{ h.scheming_language_text(field.label) }}</th>
+                    <td class="dataset-details"{%
+                      if field.display_property %} property="{{ field.display_property
+                      }}"{% endif %}>{%  snippet 'scheming/snippets/display_field.html',
+                      field=field, data=res, schema=schema %}</td>
+                  </tr>
+            {% endif %}
+          {% endfor %}
+        {% endblock %}
       </tbody>
     </table>
 
