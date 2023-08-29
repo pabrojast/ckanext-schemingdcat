@@ -3,6 +3,10 @@
 /*                 scheming_dcat               */
 /***********************************************/
 
+p {
+  text-align: justify;
+}
+
 .search_heading {
   display:flex;
   align-items: center;
@@ -211,11 +215,7 @@ ul, ol {
 }
 
 .item_p_public {
-  padding-left: 15px;
-  padding-right: 15px;
-  position: relative;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding: 5px 10px;
   margin: 0;
   text-align: justify;
   text-justify: inter-word;
@@ -257,7 +257,7 @@ img.item_image {
 
 .graphic_overview {
   display: block;
-  padding: 10px;
+  padding: 5px 15px;
 }
 
 /* info */
@@ -362,6 +362,10 @@ img.item_image {
 }
 
 /* package/additional_info */
+.package_notes{
+  text-align: justify;
+}
+
 .thead-normal_table {
   background-color: #f0f0f0; 
   border: 1px solid #ddd; 
@@ -373,7 +377,7 @@ img.item_image {
   background-color: #f0f0f0;
   border: 1px solid #ddd;
   margin-top: 20px;
-  max-height: 400px; 
+  max-height: 450px; 
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
@@ -427,4 +431,46 @@ img.item_image {
   padding: 5px;
   text-align: right;
   font-size: 11px;
+}
+
+/* URIRef popup */
+.permalink-label::after {
+  content: none;
+}
+
+.permalink-label {
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: normal;
+  display: block;
+  position: relative;
+  margin: -7px -25px;
+  padding: 10px 15px;
+}
+
+.permanav:hover {
+  background-color: #eeeeee; 
+}
+
+.permalink-checkbox {
+  display: none;
+}
+
+.permalink-popup {
+  font-size: 12px;
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  border: 1px solid #e3e3e3;
+  padding: 10px;
+  z-index: 1;
+  border-radius: 10px;
+  max-width: 300px;
+  overflow-wrap: break-word; 
+  text-align: justify;
+}
+
+/* Mostrar el popup cuando el checkbox esté marcado */
+.permalink-checkbox:checked + .permalink-label + .permalink-popup {
+  display: block;
 }

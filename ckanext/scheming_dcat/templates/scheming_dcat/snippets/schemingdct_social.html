@@ -29,8 +29,18 @@
                 {% endif %}
             {% endblock %}
         {% endif %}
-        <li class="nav-item"><a href="https://twitter.com/share?url={{ current_url }}" target="_blank"><i class="fa fa-twitter-square"></i> Twitter</a></li>
-        <li class="nav-item"><a href="https://www.facebook.com/sharer.php?u={{ current_url }}" target="_blank"><i class="fa fa-facebook-square"></i> Facebook</a></li>
+          {% block permalink %}
+            {% set resource_name = _('Dataset') %}
+            <li class="nav-item permanav" title="{{ _('Permalink') }}">
+              {% snippet "scheming_dcat/snippets/permanent_url.html", url=current_url, resource_name=resource_name %}
+            </li>        
+          {% endblock %}
+          <li class="nav-item">
+            <a href="https://twitter.com/share?url={{ current_url }}" target="_blank"><i class="fa fa-twitter-square"></i> Twitter</a>
+          </li>
+          <li class="nav-item"><a href="https://www.facebook.com/sharer.php?u={{ current_url }}" target="_blank">
+            <i class="fa fa-facebook-square"></i> Facebook</a>
+          </li>
       </ul>
     {% endblock %}
   </section>

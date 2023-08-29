@@ -1,5 +1,6 @@
 {% block access_rights_and_license %}
-  {% set access_rights_field = h.scheming_field_by_name(schema.dataset_fields, 'access_rights') %}
+  {% set dataset_fields = h.scheming_get_dataset_schema(dataset_type).dataset_fields %}
+  {% set access_rights_field = h.scheming_field_by_name(dataset_fields, 'access_rights') %}
   {% set access_rights_choices = h.scheming_field_choices(access_rights_field) %}
   {% set open_data_image_url = h.url_for_static('/base/images/od_80x15_blue.png') %}
   {% set resource_name = _('Dataset') %}

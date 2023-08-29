@@ -1,4 +1,6 @@
 {% if pkg_dict %}
+  {% set dataset_fields = h.scheming_get_dataset_schema(dataset_type).dataset_fields %}
+
   <section class="module module-narrow dataset_org_info">
     <div class="module context-info">
       {% set org_img = 'placeholder' in organization.image_display_url %}
@@ -15,7 +17,7 @@
       {% else %}
         {% set theme_field = 'theme' %}
       {% endif %}
-      {% set field = h.scheming_field_by_name(schema.dataset_fields, theme_field) %}
+      {% set field = h.scheming_field_by_name(dataset_fields, theme_field) %}
       {% if field %}
         {% set field_choices = h.scheming_field_choices(field) %}
         {% set list_values = h.schemingdct_listify_str(pkg_dict[theme_field]) %}
