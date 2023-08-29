@@ -18,20 +18,13 @@
   {% endif %}
 {% endblock %}
 
-{% block content %}
-  {% set schema = h.scheming_get_dataset_schema(dataset_type) %}
-  {{ super() }}
-{% endblock %}
-
 {% block secondary_content %}
-
   {% block secondary_help_content %}{% endblock %}
 
   {% block package_info %}
     {% if pkg.organization %}
-      {% set schema = h.scheming_get_dataset_schema(dataset_type) %}
       {% set org = h.get_organization(pkg.organization.id) %}
-      {% snippet 'scheming_dcat/snippets/schemingdct_info.html', pkg_dict=pkg, organization=org, schema=schema %}
+      {% snippet 'scheming_dcat/snippets/schemingdct_info.html', pkg_dict=pkg, dataset_type=dataset_type, organization=org %}
     {% endif %}
   {% endblock %}
 
@@ -42,20 +35,30 @@
   {% endblock %}
 
   {% block package_data_access %}
-    {% set schema = h.scheming_get_dataset_schema(dataset_type) %}
-    {% snippet "scheming_dcat/snippets/data_access_license.html", pkg_dict=pkg, schema=schema %}
-    {% snippet "scheming_dcat/snippets/publisher_info.html", pkg_dict=pkg, schema=schema, file_name='publisher_info.html' %}
-    {% snippet "scheming_dcat/snippets/contact_info.html", pkg_dict=pkg, schema=schema, file_name='contact_info.html' %}
+    {% if pkg.access_rights or pkg_dict.license_url %}
+      {% snippet "scheming_dcat/snippets/data_access_license.html", pkg_dict=pkg, dataset_type=dataset_type %}
+    {% endif %}
   {% endblock %}
   
+  {% block package_publisher_info %}
+    {% if pkg_dict.publisher_name %}
+      {% snippet "scheming_dcat/snippets/publisher_info.html", pkg_dict=pkg, dataset_type=dataset_type %}
+    {% endif %}
+  {% endblock %}
+
+  {% block package_contact_info %}
+    {% if pkg_dict.contact_name %}
+      {% snippet "scheming_dcat/snippets/contact_info.html", pkg_dict=pkg, dataset_type=dataset_type %}
+    {% endif %}
+  {% endblock %}
+
   {% block package_related_resources %}
     {% if pkg_dict.reference %}
-      {% snippet "scheming_dcat/snippets/related_resources.html", pkg_dict=pkg %}
+      {% snippet "scheming_dcat/snippets/related_resources.html", pkg_dict=pkg%}
     {% endif %}
   {% endblock %}
 
   {% block package_social %}
-  {% snippet "scheming_dcat/snippets/schemingdct_social.html", pkg_dict=pkg %}
+    {% snippet "scheming_dcat/snippets/schemingdct_social.html", pkg_dict=pkg %}
   {% endblock %}
-
 {% endblock %}
