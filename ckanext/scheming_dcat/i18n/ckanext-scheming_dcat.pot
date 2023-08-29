@@ -103,6 +103,10 @@ msgstr ""
 msgid "Rights"
 msgstr ""
 
+#: ckanext/scheming_dcat/templates/scheming/package/resource_read.html:68
+msgid "Coordinate Reference System"
+msgstr ""
+
 #: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:155
 msgid "Additional info"
 msgstr ""
@@ -241,4 +245,12 @@ msgstr ""
 
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:38
 msgid "Users outside the catalog cannot access this {resource}"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:32
+msgid "Permalink"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:33
+msgid "{resource} URI"
 msgstr ""

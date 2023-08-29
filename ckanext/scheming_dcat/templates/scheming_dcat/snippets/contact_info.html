@@ -1,6 +1,7 @@
 {% block contact_info %}
   {% if pkg_dict.contact_name %}
-    {% set field_spatial_uri = h.scheming_field_by_name(schema.dataset_fields, 'spatial_uri') %}
+    {% set dataset_fields = h.scheming_get_dataset_schema(dataset_type).dataset_fields %}
+    {% set field_spatial_uri = h.scheming_field_by_name(dataset_fields, 'spatial_uri') %}
 
     <section class="module module-narrow module-shallow contact_info">
       <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('Punto de contacto') }}</h2>

@@ -94,6 +94,10 @@ msgstr "Última actualización de los metadatos"
 msgid "Created"
 msgstr "Creado"
 
+#: ckanext/scheming_dcat/templates/scheming/package/resource_read.html:68
+msgid "Coordinate Reference System"
+msgstr "Sistema de Referencia de Coordenadas"
+
 #: ckanext/scheming_dcat/templates/scheming/package/resource_read.html:52
 msgid "Format"
 msgstr "Formato"
@@ -249,3 +253,11 @@ msgstr "según la Política de Clasificación del Acceso a la Información del c
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/data_access_license.html:38
 msgid "Users outside the catalog cannot access this {resource}"
 msgstr "Los usuarios ajenos al catalogo no pueden acceder a este {resource}"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:32
+msgid "Permalink"
+msgstr "Enlace permanente"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:33
+msgid "{resource} URI"
+msgstr "URI del {resource}"
