@@ -1,4 +1,4 @@
-{% set current_url = h.full_current_url() %}
+{% set current_url = h.url_for_static_or_external(h.full_current_url()) %}
 {% block social %}
   <section class="module module-narrow social">
     {% block social_title %}
@@ -31,9 +31,7 @@
         {% endif %}
           {% block permalink %}
             {% set resource_name = _('Dataset') %}
-            <li class="nav-item permanav" title="{{ _('Permalink') }}">
-              {% snippet "scheming_dcat/snippets/permanent_url.html", url=current_url, resource_name=resource_name %}
-            </li>        
+              {% snippet "scheming_dcat/snippets/permanent_url.html", url=current_url, resource_name=resource_name %}     
           {% endblock %}
           <li class="nav-item">
             <a href="https://twitter.com/share?url={{ current_url }}" target="_blank"><i class="fa fa-twitter-square"></i> Twitter</a>
