@@ -72,8 +72,8 @@ class FacetSchemingDcatPlugin(plugins.SingletonPlugin,
                         )
             )
 
-        fs_config.geometadata_link_domain = config_.get(
-            'scheming_dcat.geometadata_link_domain',
+        fs_config.geometadata_base_uri = config_.get(
+            'scheming_dcat.geometadata_base_uri',
             None
             )
 

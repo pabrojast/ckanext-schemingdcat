@@ -3,6 +3,9 @@ from ckan.lib import helpers as ckan_helpers
 import ckan.plugins as p
 import six
 import re
+import yaml
+from yaml.loader import SafeLoader
+from pathlib import Path
 
 from six.moves.urllib.parse import urlencode
 
@@ -11,6 +14,8 @@ from ckanext.scheming.helpers import scheming_choices_label
 import ckanext.scheming_dcat.config as fs_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
+from ckanext.scheming_dcat import config as fs_config
+from ckanext.dcat.utils import CONTENT_TYPES
 
 import logging
 
@@ -252,6 +257,7 @@ def schemingdct_get_icons_dir(field):
             if public_dir_exists(dir):
                 return dir
         log.debug("No directory found for {0}".format(field['field_name']))
+    
     return None
 
 @helper
@@ -412,3 +418,92 @@ def schemingdct_listify_str(values):
         values = ['']
     
     return values
+@helper
+def schemingdct_load_yaml(file):
+    """Load a YAML file from the 'config' directory.
+
+    Args:
+        file (str): The name of the YAML file to load.
+
+    Returns:
+        dict: A dictionary containing the data from the YAML file.
+    """
+    source_path = Path(__file__).resolve(True)
+    yaml_data = {}
+    try:
+        p = source_path.parent.joinpath('config',file)
+        with open(p,'r') as f:
+            yaml_data=yaml.load(f, Loader=SafeLoader )
+    except FileNotFoundError:
+        log.error("The file {0} does not exist".format(file))
+    except Exception as e:
+        log.error("Could not read configuration from {0}: {1}".format(file, e))
+
+    return yaml_data
+
+@helper
+def schemingdct_get_linked_data(id):
+    """Get linked data for a given identifier.
+
+    Args:
+        id (str): The identifier to get linked data for.
+
+    Returns:
+        list: A list of dictionaries containing linked data for the identifier.
+    """
+    linkeddata_links = schemingdct_load_yaml('linkeddata_links.yaml') if fs_config.debug else fs_config.linkeddata_links
+
+    return [{
+        'name': name,
+        'display_name': linkeddata_links.get(name, {'display_name': content_type})['display_name'],
+        'format': linkeddata_links.get(name, {}).get('format'),
+        'image_display_url': linkeddata_links.get(name, {}).get('image_display_url'),
+        'description': linkeddata_links.get(name, {}).get('description') or f"Formats {content_type}",
+        'description_url': linkeddata_links.get(name, {}).get('description_url'),
+        'endpoint': 'dcat.read_dataset',
+        'endpoint_data': {
+            '_id': id,
+            '_format': name,
+        }
+    } for name, content_type in CONTENT_TYPES.items()]
+
+@helper
+def schemingdct_get_geospatial_metadata():
+    """Get geospatial metadata for CSW formats.
+
+    Returns:
+        list: A list of dictionaries containing geospatial metadata for CSW formats.
+    """
+    geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if fs_config.debug else fs_config.geometadata_links
+    base_uri = fs_config.geometadata_base_uri.rstrip('/') + '/csw' if '/csw' not in fs_config.geometadata_base_uri else fs_config.geometadata_base_uri or ''
+
+    return [{
+        'name': item['name'],
+        'display_name': item['display_name'],
+        'format': item['format'],
+        'image_display_url': item['image_display_url'],
+        'description': item['description'],
+        'description_url': item['description_url'],
+        'url': base_uri + geometadata_links['get_record_by_id_v3'].format(output_format=item['output_format'], schema=item['output_schema'], id='{id}')
+    } for item in geometadata_links['csw_formats']]
+
+@helper
+def schemingdct_get_all_metadata(id):
+    """Get linked data and geospatial metadata for a given identifier.
+
+    Args:
+        id (str): The identifier to get linked data and geospatial metadata for.
+
+    Returns:
+        list: A list of dictionaries containing linked data and geospatial metadata for the identifier.
+    """
+    geospatial_metadata = schemingdct_get_geospatial_metadata()
+    linked_data = schemingdct_get_linked_data(id)
+
+    for metadata in geospatial_metadata:
+        metadata['endpoint_type'] = 'csw'
+
+    for data in linked_data:
+        data['endpoint_type'] = 'dcat'
+
+    return geospatial_metadata + linked_data

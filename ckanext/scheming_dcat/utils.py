@@ -182,7 +182,7 @@ def get_geospatial_metadata():
             'image_display_url': item['image_display_url'],
             'description': item['description'],
             'description_url': item['description_url'],
-            'url': (fs_config.geometadata_link_domain or '') + geometadata_links['csw_url'].format(schema=item['outputSchema'], id='{id}')
+            'url': (fs_config.geometadata_link_domain or '') + geometadata_links['csw_url'].format(output_format=item['output_format'], schema=item['output_schema'], id='{id}')
         })
 
     return data
