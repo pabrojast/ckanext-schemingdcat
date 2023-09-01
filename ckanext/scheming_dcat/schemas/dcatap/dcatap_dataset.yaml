@@ -146,10 +146,8 @@ dataset_fields:
   label:
     en: Themes (DCAT-AP)
     es: Temáticas (DCAT-AP)
-  validators: ignore_missing scheming_dcat_multiple_choice
-  form_snippet: scheming_dcat/form_snippets/multiple_select_icon.html
+  preset: multiple_choice_icon
   display_property: dcat:theme
-  display_snippet: scheming_dcat/display_snippets/multiple_choice_icon.html
   select_size: 10
   required: True
   help_text:
@@ -683,11 +681,9 @@ dataset_fields:
   label: 
     en: Conformity 
     es: Conformidad
-  validators: ignore_missing scheming_dcat_multiple_text
   required: False
-  form_snippet: scheming_dcat/form_snippets/multiple_text.html
   display_property: dct:conformsTo
-  display_snippet: scheming_dcat/display_snippets/list_links.html
+  preset: multiple_text_links
   form_placeholder: 'https://www.w3.org/TR/rdf-schema/'
   help_text:
     en: 'An established standard to which the described resource conforms.'
@@ -698,12 +694,10 @@ dataset_fields:
   label:
     en: Metadata Standard
     es: Perfil de Metadatos
-  validators: ignore_missing scheming_dcat_multiple_text
   required: False
-  form_snippet: scheming_dcat/form_snippets/multiple_text.html
   display_property: dct:conformsTo
-  display_snippet: scheming_dcat/display_snippets/list_links.html
-  form_placeholder: 'http://semiceu.github.io/GeoDCAT-AP/releases/2.0.0'
+  preset: multiple_text_links
+  form_placeholder: 'https://semiceu.github.io/DCAT-AP/releases/3.0.0'
   help_text:
     en: 'URI(s) of the Metadata profile used'
     es: 'URI(s) del perfil de Metadatos utilizado'
@@ -858,7 +852,7 @@ dataset_fields:
     es: Conjunto de datos de origen
   display_property: dct:source
   display_snippet: scheming_dcat/display_snippets/link_name.html
-  form_placeholder: http://iepnb.es/catalogo/en/dataset/fc21c1a5-4c02-4157-9d2f-9a2cd200f908
+  form_placeholder: http://example.org/catalog/en/dataset/fc21c1a5-4c02-4157-9d2f-9a2cd200f908
   help_text:
     en: This property refers to a related Dataset from which the described Dataset is derived. URI
     es: Esta propiedad hace referencia a un conjunto de datos relacionado del que deriva el conjunto de datos descrito. URI
@@ -868,11 +862,9 @@ dataset_fields:
   label: 
     en: Related sources
     es: Recurso(s) relacionado(s)
-  validators: ignore_missing scheming_dcat_multiple_text
-  form_snippet: scheming_dcat/form_snippets/multiple_text.html
-  display_snippet: scheming_dcat/display_snippets/list_links.html
+  preset: multiple_text_links
   display_property: dcat:relation
-  form_placeholder: 'http://iepnb.es/catalogo/dataset/ejemplo'
+  form_placeholder: 'http://example.org/catalog/dataset/ejemplo'
   help_text:
     en: 'URI identifying the related resource. You can include as many properties as you know of references.'
     es: 'URI que identifica al recurso relacionado. Se pueden incluir tantas propiedades como referencias se conozcan.'
@@ -1514,9 +1506,7 @@ resource_fields:
   label: 
     en: Additional format information
     es: Información adicional sobre el formato
-  form_snippet: scheming_dcat/form_snippets/multiple_text.html
-  validators: ignore_missing scheming_dcat_multiple_text
-  display_snippet: scheming_dcat/display_snippets/list_raws_ordered.html
+  preset: multiple_text_raws_ordered
   form_placeholder: 'http://www.catastro.minhap.es/ayuda/lang/castellano/ayuda_descarga_shape.htm'
   help_text:
     en: 'Link(s) related to the format, where the format, the scheme used for its representation or other technical information on how to access the documents or information resources is indicated.'
@@ -1580,14 +1570,12 @@ resource_fields:
   label: 
     en: Conformity 
     es: Conformidad
-  validators: ignore_missing scheming_dcat_multiple_text
-  form_snippet: scheming_dcat/form_snippets/multiple_text.html
+  preset: multiple_text_links
   display_property: dct:conformsTo
-  display_snippet: scheming_dcat/display_snippets/list_links.html
   form_placeholder: 'http://www.opengeospatial.org/standards/wms'
   help_text:
-    en: 'An established standard to which the described resource conforms (eg. OGC). URLs'
-    es: 'Norma establecida a la que se ajusta el recurso descrito (ej. OGC). URLs'
+    en: 'Specification (eg. OGC). URLs'
+    es: 'Especificaciones (eg. OGC). URLs'
 
 # Coordinate Reference System (C)
 - field_name: reference_system
