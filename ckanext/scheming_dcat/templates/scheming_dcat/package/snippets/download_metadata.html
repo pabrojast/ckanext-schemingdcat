@@ -1,0 +1,48 @@
+{% set inspire_metadata_values = [
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset',
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series',
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service'
+] %}
+
+{% block package_download_metadata %}
+    {% set metadata_profile_lod = '<a href="https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe?f%5B0%5D=solution_content_bundle%3Aasset_release" target="_blank">DCAT-AP</a>' %}
+    {% set metadata_profile_geo = '<a href="https://inspire.ec.europa.eu/metadata/6541" target="_blank">INSPIRE</a>' ~ '/' ~ metadata_profile_lod %}
+    {% set metadata_profile = metadata_profile_geo if pkg.dcat_type in inspire_metadata_values else metadata_profile_lod %}
+
+    <div class="download-links pull-right">
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{{ h.url_for('api.action', ver=3, logic_function='package_show', _external=True, id=pkg.name) }}" target="_blank"><i class="fa fa-download"></i> {{ _('Download') }}</a>
+            <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                {% set linked_data_links = h.schemingdct_get_all_metadata(pkg.id) %}
+                {% if pkg.dcat_type in inspire_metadata_values %}
+                    <li class="dropdown-header" title="{{ _('CSW Endpoint') }}"><i class="fa fa-globe"></i> CSW - {{ _('Geospatial data') }}</li>
+                    {% for link in linked_data_links if link.endpoint_type == 'csw' %}
+                        {% set url = link.url.format(id=pkg.identifier) %}
+                        {% set format_label = '<strong>' + link.format + '</strong>' %}
+                        <li>
+                            <a href="{{ url }}" target="_blank">
+                                <span class="metadata-download_info_label">{{ _('{metadata_format} Metadata').format(metadata_format=format_label|safe) }}</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+                <li class="dropdown-header" title="{{ _('RDF DCAT Endpoint') }}"><i class="fa fa-share-alt"></i> DCAT - {{ _('Linked Data') }}</li>
+                {% for link in linked_data_links if link.endpoint_type == 'dcat' %}
+                    {% set url = h.url_for(link.endpoint, **link.endpoint_data) %}
+                    {% set format_label = '<strong>' + link.format + '</strong>' %}
+                    <li>
+                        <a href="{{ url }}" target="_blank">
+                            <span class="metadata-download_info_label">{{ _('{metadata_format} Metadata').format(metadata_format=format_label|safe) }}</span>
+                        </a>
+                    </li>
+                {% endfor %}                
+            </ul>
+        </div>
+        <div class="metadata-label pull-left">
+            <span>{{ metadata_profile|safe }}</span> <i class="fa fa-check-circle"></i>
+        </div>
+    </div>
+{% endblock %}
