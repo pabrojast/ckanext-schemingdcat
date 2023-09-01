@@ -3,7 +3,7 @@
 /*                 scheming_dcat               */
 /***********************************************/
 
-p {
+.box {
   text-align: justify;
 }
 
@@ -111,6 +111,12 @@ img.spatial_uri-icon {
 	display: inline-block;
 	border-radius: 50%;
 	margin-left: 1em;
+}
+
+/* Metadata profile list*/
+.metadata-profile-list { 
+  list-style-type: "📃 ";
+  vertical-align: middle;
 }
 
 /* Links list*/
@@ -369,7 +375,10 @@ img.item_image {
 .thead-normal_table {
   background-color: #f0f0f0; 
   border: 1px solid #ddd; 
-  margin-top: 20px;
+  padding: 5px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .toggle-table {
@@ -421,6 +430,16 @@ img.item_image {
   border-radius: 6px; 
 }
 
+.toggle-show-more {
+  background-color: #f9f9f9;
+  font-size: 16px;
+}
+
+.toggle-show-more a:hover, a:focus {
+  text-decoration: none;
+  color: #2a6ebb;
+}
+
 /* dataset_extent */ 
 .additional_info_map {
   border: 1px solid #e3e3e3;
@@ -452,25 +471,96 @@ img.item_image {
   background-color: #eeeeee; 
 }
 
-.permalink-checkbox {
-  display: none;
+.permalink-input {
+  margin-top: 5px;
+  margin-left: 5px;
+  width: calc(100% - 10px);
 }
 
-.permalink-popup {
-  font-size: 12px;
-  display: none;
+.permalink-copy {
+  font-size: 2em;
+  color: green;
+  display: flex;
+  justify-content: right;
+  align-items: right;
+}
+
+/* metadata_info */
+.table tr.toggle-separator {
+  display: table-row;
+}
+
+.table tr.toggle-separator td {
+  padding: 0px;
+  /* height: 5px; */
+  /* background: repeating-linear-gradient(-45deg, #f9f9f9 5px, #fff 5px, #fff 10px); */
+}
+.table-toggle-more::after {
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-top-color: #ddd;
+}
+
+.table-toggle-more:after {
   position: absolute;
-  background-color: #f9f9f9;
-  border: 1px solid #e3e3e3;
-  padding: 10px;
-  z-index: 1;
-  border-radius: 10px;
-  max-width: 300px;
-  overflow-wrap: break-word; 
-  text-align: justify;
+  left: 50%;
+  transform: translateX(-50%);
+  content: "";
+  height: 0;
+  width: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 12px #ddd solid;
 }
 
-/* Mostrar el popup cuando el checkbox esté marcado */
-.permalink-checkbox:checked + .permalink-label + .permalink-popup {
+.dropdown-header {
   display: block;
+  padding: 5px 5px 1px 7px;
+  font-size: 13px;
+  line-height: 1.42857143;
+  color: #999999;
+  white-space: nowrap;
+  font-weight: 300;
 }
+
+.metadata-download{
+  position:relative;
+  float: left;
+}
+
+.metadata-download_info_label{
+  font-size:12px;
+}
+
+.download-links .btn-group{
+  float:right;
+  margin-right:1px;
+}
+
+.download-links .btn-group .btn{
+  max-width: 130px;
+}
+
+.metadata-label{
+  display: block;
+  max-width: 180px;
+  padding: 6px 5px 6px 5px;
+  margin-right: 5px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  background-color: #f5f5f5;
+  border-color: #ECECEC;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
+
+.metadata-label > i { 
+  font-size: 15px;
+  color: #3fb950;
+}
+
+.metadata-label:after{
+  font-size: 14px;
+}
+
