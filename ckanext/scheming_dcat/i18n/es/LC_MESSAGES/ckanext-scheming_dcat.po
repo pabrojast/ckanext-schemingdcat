@@ -261,3 +261,27 @@ msgstr "Enlace permanente"
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:33
 msgid "{resource} URI"
 msgstr "URI del {resource}"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/download_metadata.html:32
+msgid "Geospatial data"
+msgstr "Datos geográficos"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/download_metadata.html:32
+msgid "RDF DCAT Endpoint"
+msgstr "Punto final RDF DCAT"
+
+#: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:77
+msgid "Basic information"
+msgstr "Información básica"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "Metadata"
+msgstr "Metadatos"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{metadata_format} Metadata"
+msgstr "Metadatos {metadata_format}"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{endpoint_type} Endpoint"
+msgstr "Endpoint {endpoint_type}"

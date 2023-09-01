@@ -257,3 +257,23 @@ msgstr "Permalink"
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:33
 msgid "{resource} URI"
 msgstr "{resource} URI"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/download_metadata.html:32
+msgid "Geospatial data"
+msgstr "Geospatial data"
+
+#: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:77
+msgid "Basic information"
+msgstr "Basic information"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "Metadata"
+msgstr "Metadata"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{metadata_format} Metadata"
+msgstr "{metadata_format} Metadata"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{endpoint_type} Endpoint"
+msgstr "{endpoint_type} Endpoint"
