@@ -54,9 +54,9 @@
     {% snippet "package/snippets/tags.html", tags=pkg.tags %}
   {% endblock %}
 
-  {% block package_additional_info %}
-    {% snippet "scheming_dcat/package/snippets/additional_info.html",
-      pkg_dict=pkg, dataset_type=dataset_type, schema=schema %}
+  {% block package_metadata_info %}
+    {% snippet "scheming_dcat/package/snippets/metadata_info.html",
+      pkg=pkg, dataset_type=dataset_type, schema=schema %}
   {% endblock %}
 
 {% endblock %}

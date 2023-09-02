@@ -27,7 +27,7 @@
     {% set value = h.scheming_clean_json_value(value.replace(' ', '')) %}
     {% set label = h.scheming_clean_json_value(label.replace(' ', '')) %}
       <li>
-        <a class="{% block theme_list_item_class %}{{ value }}{% endblock %}" href="{{ value }}">{{ label }}</a>
+        <a href="{{ value }}">{{ label }}</a>
       </li>
     {% endfor %}
   </ul>

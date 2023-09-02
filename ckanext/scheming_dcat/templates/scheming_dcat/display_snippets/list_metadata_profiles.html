@@ -4,7 +4,7 @@
   values - list of cleaned values
 #}
 
-{% set _class = _class or 'link-list' %}
+{% set _class = _class or 'metadata-profile-list' %}
 {% set choices = data[field.field_name] %}
 
 {% if choices is iterable and (choices is not string) %}

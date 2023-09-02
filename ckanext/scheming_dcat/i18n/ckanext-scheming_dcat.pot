@@ -254,3 +254,27 @@ msgstr ""
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/schemingdct_social.html:33
 msgid "{resource} URI"
 msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/download_metadata.html:32
+msgid "Geospatial data"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming/package/snippets/additional_info.html:77
+msgid "Basic information"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "Metadata"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{metadata_format} Metadata"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
+msgid "{endpoint_type} Endpoint"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/resource_read.html:112
+msgid "Distribution metadata"
+msgstr ""
