@@ -32,7 +32,7 @@
 {% endmacro %}
 
 {% block format %}
-    {% set field_name = _('Format') %}
+    {% set field_name = 'format' %}
     {% set field = h.scheming_field_by_name(schema.resource_fields, 'format') %}
     {{ render_basic_field_block(field_name, field, res, schema) }}
 {% endblock %}
