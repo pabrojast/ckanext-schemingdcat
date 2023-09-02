@@ -285,3 +285,7 @@ msgstr "Metadatos {metadata_format}"
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
 msgid "{endpoint_type} Endpoint"
 msgstr "Endpoint {endpoint_type}"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/resource_read.html:112
+msgid "Distribution metadata"
+msgstr "Metadatos de la distribución"
