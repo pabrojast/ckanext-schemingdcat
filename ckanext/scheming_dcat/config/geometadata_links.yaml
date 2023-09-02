@@ -1,18 +1,20 @@
 # must exist and have an {id} and {schema} keys
-get_record_by_id_v2: /?service=CSW&version=2.0.2&request=GetRecordById&id={id}&elementSetName=full&outputSchema={schema}&OutputFormat={output_format}
-get_record_by_id_v3: /?service=CSW&version=3.0.0&request=GetRecordById&id={id}&elementSetName=full&outputSchema={schema}&OutputFormat={output_format}
+get_record_by_id_v2: /?service=CSW&version={csw_version}&request=GetRecordById&id={id}&elementSetName={element_set_name}&outputSchema={output_schema}&OutputFormat={output_format}
+get_record_by_id_v3: /?service=CSW&version={csw_version}&request=GetRecordById&id={id}&elementSetName={element_set_name}&outputSchema={output_schema}&OutputFormat={output_format}
 
 csw_formats:
-    - name: INSPIRE
+    - name: inspire_xml
       display_name: INSPIRE
-      format: INSPIRE XML
+      format: INSPIRE ISO-19139
       output_schema: http://www.isotc211.org/2005/gmd
       output_format: application/xml
       image_display_url: /images/formats/inspire_iso19139.svg
       description: INSPIRE datasets and services in ISO/TS 19139 based XML format.
       description_url: http://inspire.ec.europa.eu/id/document/tg/metadata-iso19139
+      csw_version: 3.0.0
+      element_set_name: full
 
-    - name: INSPIRE
+    - name: inspire_json
       display_name: INSPIRE
       format: INSPIRE JSON
       output_schema: http://www.isotc211.org/2005/gmd
@@ -20,17 +22,21 @@ csw_formats:
       image_display_url: /images/formats/inspire_iso19139.svg
       description: INSPIRE datasets and services in ISO/TS 19139 based XML format.
       description_url: http://inspire.ec.europa.eu/id/document/tg/metadata-iso19139
+      csw_version: 3.0.0
+      element_set_name: full
 
-    - name: Dublin Core
+    - name: dc
       display_name: Dublin Core
       format: Dublin Core XML
       output_format: application/xml
-      output_schema: http://www.opengis.net/cat/csw/2.0.2
+      output_schema: http://www.opengis.net/cat/csw/3.0
       image_display_url: /images/formats/dc.svg
       description: Dublin Core Metadata Element Set
       description_url: https://www.dublincore.org/specifications/dublin-core/dcmes-xml/
+      csw_version: 3.0.0
+      element_set_name: full
 
-    - name: ATOM
+    - name: atom
       display_name: ATOM
       format: ATOM XML
       output_format: application/xml
@@ -38,8 +44,10 @@ csw_formats:
       image_display_url: /images/formats/atom.svg
       description: Atom Syndication Format (ATOM)
       description_url: https://datatracker.ietf.org/doc/html/rfc4287
+      csw_version: 3.0.0
+      element_set_name: full
 
-    - name: FGDC
+    - name: fgdc
       display_name: FGDC
       format: FGDC XML
       output_format: application/xml
@@ -47,3 +55,16 @@ csw_formats:
       image_display_url: /images/formats/fgdc.svg
       description: FGDC Content Standard for Digital Spatial Metadata (CSDGM).
       description_url: https://www.fgdc.gov/metadata/csdgm-standard
+      csw_version: 3.0.0
+      element_set_name: full
+
+    - name: dif
+      display_name: NASA DIF
+      format: NASA DIF XML
+      output_format: application/xml
+      output_schema: http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/
+      image_display_url: /images/formats/fgdc.svg
+      description: Directory Interchange Format (NASA DIF).
+      description_url: https://www.earthdata.nasa.gov/esdis/esco/standards-and-practices/directory-interchange-format-dif-standard
+      csw_version: 3.0.0
+      element_set_name: full

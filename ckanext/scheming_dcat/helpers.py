@@ -11,10 +11,10 @@ from six.moves.urllib.parse import urlencode
 
 from ckanext.scheming.helpers import scheming_choices_label
 
-import ckanext.scheming_dcat.config as fs_config
+import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
-from ckanext.scheming_dcat import config as fs_config
+from ckanext.scheming_dcat import config as sd_config
 from ckanext.dcat.utils import CONTENT_TYPES
 
 import logging
@@ -43,7 +43,7 @@ def schemingdct_default_facet_search_operator():
     Returns:
         str: The default facet search operator.
     """
-    facet_operator = fs_config.default_facet_operator
+    facet_operator = sd_config.default_facet_operator
     if facet_operator and (facet_operator.upper() == 'AND'
                            or facet_operator.upper() == 'OR'):
         facet_operator = facet_operator.upper()
@@ -253,7 +253,7 @@ def schemingdct_get_icons_dir(field):
             return field['icons_dir']
 
         if 'field_name' in field:
-            dir = fs_config.icons_dir + '/' + field['field_name']
+            dir = sd_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):
                 return dir
         log.debug("No directory found for {0}".format(field['field_name']))
@@ -451,7 +451,7 @@ def schemingdct_get_linked_data(id):
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
     """
-    linkeddata_links = schemingdct_load_yaml('linkeddata_links.yaml') if fs_config.debug else fs_config.linkeddata_links
+    linkeddata_links = schemingdct_load_yaml('linkeddata_links.yaml') if sd_config.debug else sd_config.linkeddata_links
 
     return [{
         'name': name,
@@ -474,8 +474,17 @@ def schemingdct_get_geospatial_metadata():
     Returns:
         list: A list of dictionaries containing geospatial metadata for CSW formats.
     """
-    geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if fs_config.debug else fs_config.geometadata_links
-    base_uri = fs_config.geometadata_base_uri.rstrip('/') + '/csw' if '/csw' not in fs_config.geometadata_base_uri else fs_config.geometadata_base_uri or ''
+    geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if sd_config.debug else sd_config.geometadata_links
+    
+    try:
+        if sd_config.geometadata_base_uri and '/csw' not in sd_config.geometadata_base_uri:
+            base_uri = sd_config.geometadata_base_uri.rstrip('/') + '/csw'
+        elif sd_config.geometadata_base_uri == '':
+            base_uri = '/csw'
+        else:
+            base_uri = sd_config.geometadata_base_uri.rstrip('/')
+    except:
+        base_uri = '/csw'
 
     return [{
         'name': item['name'],
@@ -484,7 +493,7 @@ def schemingdct_get_geospatial_metadata():
         'image_display_url': item['image_display_url'],
         'description': item['description'],
         'description_url': item['description_url'],
-        'url': base_uri + geometadata_links['get_record_by_id_v3'].format(output_format=item['output_format'], schema=item['output_schema'], id='{id}')
+        'url': base_uri + geometadata_links['get_record_by_id_v3'].format(output_format=item['output_format'], csw_version=item['csw_version'], element_set_name=item['element_set_name'], output_schema=item['output_schema'], id='{id}')
     } for item in geometadata_links['csw_formats']]
 
 @helper

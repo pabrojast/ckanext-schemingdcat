@@ -1,6 +1,6 @@
 from ckan.common import config
 import ckan.logic as logic
-from ckanext.scheming_dcat import config as fs_config
+from ckanext.scheming_dcat import config as sd_config
 import logging
 import os
 import hashlib
@@ -109,8 +109,8 @@ def public_dir_exists(path):
     return False
 
 def init_config():
-    fs_config.linkeddata_links = _load_yaml('linkeddata_links.yaml')
-    fs_config.geometadata_links = _load_yaml('geometadata_links.yaml')
+    sd_config.linkeddata_links = _load_yaml('linkeddata_links.yaml')
+    sd_config.geometadata_links = _load_yaml('geometadata_links.yaml')
 
 def _load_yaml(file):
     """Load a YAML file from the 'config' directory.
@@ -143,10 +143,10 @@ def get_linked_data(id):
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
     """
-    if fs_config.debug:
+    if sd_config.debug:
         linkeddata_links = _load_yaml('linkeddata_links.yaml')
     else:
-        linkeddata_links = fs_config.linkeddata_links
+        linkeddata_links = sd_config.linkeddata_links
 
     data=[]
     for name in CONTENT_TYPES:
@@ -170,10 +170,10 @@ def get_geospatial_metadata():
     Returns:
         list: A list of dictionaries containing geospatial metadata for CSW formats.
     """
-    if fs_config.debug:
+    if sd_config.debug:
         geometadata_links = _load_yaml('geometadata_links.yaml')
     else:
-        geometadata_links = fs_config.geometadata_links
+        geometadata_links = sd_config.geometadata_links
     data=[]
     for item in geometadata_links.get('csw_formats',{}):
         data.append({
@@ -182,7 +182,7 @@ def get_geospatial_metadata():
             'image_display_url': item['image_display_url'],
             'description': item['description'],
             'description_url': item['description_url'],
-            'url': (fs_config.geometadata_link_domain or '') + geometadata_links['csw_url'].format(output_format=item['output_format'], schema=item['output_schema'], id='{id}')
+            'url': (sd_config.geometadata_link_domain or '') + geometadata_links['csw_url'].format(output_format=item['output_format'], schema=item['output_schema'], id='{id}')
         })
 
     return data
