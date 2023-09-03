@@ -199,8 +199,7 @@
       "preset_name": "spatial",
       "values": {
         "form_snippet": "json.html",
-        "validators": "ignore_missing scheming_dcat_valid_json_object",
-        "output_validators": "scheming_load_json"
+        "validators": "ignore_missing scheming_dcat_valid_json_object"
       }
     }
   ]
