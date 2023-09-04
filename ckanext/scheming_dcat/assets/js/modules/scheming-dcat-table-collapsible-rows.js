@@ -85,7 +85,7 @@
                     return false;
                 });
             
-                debug('Initialized module: scheming-dcat-table-collapsible-rows, opts=', opts);
+                //debug('Initialized module: scheming-dcat-table-collapsible-rows, opts=', opts);
             },            
         };
     });
