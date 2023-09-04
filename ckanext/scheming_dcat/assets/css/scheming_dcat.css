@@ -467,6 +467,10 @@ img.item_image {
   padding: 10px 15px;
 }
 
+.permanav {
+  cursor: pointer;
+}
+
 .permanav:hover {
   background-color: #eeeeee; 
 }
@@ -478,8 +482,8 @@ img.item_image {
 }
 
 .permalink-copy {
-  font-size: 2em;
-  color: green;
+  font-size: 24px;
+  color: #3A833A;
   display: flex;
   justify-content: right;
   align-items: right;

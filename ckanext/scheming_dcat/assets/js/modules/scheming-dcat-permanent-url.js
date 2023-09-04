@@ -1,3 +1,10 @@
+/**
+ * A CKAN module that provides functionality for copying a permanent URL to the clipboard.
+ *
+ * @module scheming-dcat-table-permament-url
+ * @param {Object} $ - The jQuery object.
+ * @param {Object} _ - The underscore object.
+ */
 (function () {
     var debug = $.proxy(window.console, 'debug')
     var warn = $.proxy(window.console, 'warn')
