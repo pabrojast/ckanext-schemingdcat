@@ -1142,6 +1142,15 @@ dataset_fields:
     en: 'URI identifying the related resource. You can include as many properties as you know of references.'
     es: 'URI que identifica al recurso relacionado. Se pueden incluir tantas propiedades como referencias se conozcan.'
 
+# Purpose (O)
+- field_name: purpose
+  label:
+    en: Purpose
+    es: Propósito
+  form_placeholder: 'Gestión del Medio Ambiente.'
+    en: 'Summary of the intentions for which the dataset was developed (ISO 19115).'
+    es: 'Resumen de las intenciones para las que se desarrolló el conjunto de datos (ISO 19115).'
+
 # Character encoding (C)
 - field_name: encoding
   label:
