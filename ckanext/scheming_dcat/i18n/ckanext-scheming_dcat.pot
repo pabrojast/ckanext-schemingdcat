@@ -278,3 +278,7 @@ msgstr ""
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/resource_read.html:112
 msgid "Distribution metadata"
 msgstr ""
+
+#: ckanext/scheming_dcat/templates/home/snippets/endpoints.html:5
+msgid "Catalog endpoints"
+msgstr ""

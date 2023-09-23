@@ -15,7 +15,7 @@ import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
 from ckanext.scheming_dcat import config as sd_config
-from ckanext.dcat.utils import CONTENT_TYPES
+from ckanext.dcat.utils import CONTENT_TYPES, get_endpoint
 
 import logging
 
@@ -274,15 +274,16 @@ def schemingdct_get_default_icon(field):
         return field['default_icon']
 
 @helper
-def schemingdct_get_icon(choice, icons_dir=None):
+def schemingdct_get_icon(choice, icons_dir=None, default='/images/default/no_icon.svg'):
     """Return the relative URL to the icon for the item.
 
     Args:
         choice (dict): The choice selected for the field.
         icons_dir (str, optional): The path to search for the icon. Usually the common path for icons for this field.
+        default (str, optional): The default value to return if no icon is found.
 
     Returns:
-        str: The relative URL to the icon, or None if not found.
+        str: The relative URL to the icon, or the default value if not found.
     """
     extensions = ['.svg', '.png', '.jpg', '.gif']
     icon_name = None 
@@ -308,7 +309,7 @@ def schemingdct_get_icon(choice, icons_dir=None):
         for extension in extensions:
             if public_file_exists(url_path+extension):
                 return url_path+extension
-    return None
+    return default
 
 @helper
 def schemingdct_get_choice_item(field, value):
@@ -468,6 +469,63 @@ def schemingdct_get_linked_data(id):
     } for name, content_type in CONTENT_TYPES.items()]
 
 @helper
+def schemingdct_get_catalog_endpoints():
+    """Get the catalog endpoints.
+
+    Returns:
+        list: A list of dictionaries containing linked data for the identifier.
+    """
+    endpoints = schemingdct_load_yaml('endpoints.yaml') if sd_config.debug else sd_config.endpoints
+    
+    csw_uri = schemingdct_get_geospatial_endpoint('catalog')
+    
+    return [{
+        'name': item['name'],
+        'display_name': item['display_name'],
+        'format': item['format'],
+        'image_display_url': item['image_display_url'],
+        'description': item['description'],
+        'type': item['type'],
+        'profile': item['profile'],
+        'profile_label': item['profile_label'],
+        'endpoint': get_endpoint('catalog') if item.get('type') == 'lod' else csw_uri.format(version=item['version']) if item.get('type') == 'ogc' else None,
+        'endpoint_data': {
+            '_format': item['format'],
+            '_external': True,
+            'profiles': item['profile'],
+        }
+    } for item in endpoints['catalog_endpoints']]
+
+@helper
+def schemingdct_get_geospatial_endpoint(type='dataset'):
+    """Get geospatial base URI for CSW Endpoint.
+
+    Args:
+        type (str): The type of endpoint to return. Can be 'catalog' or 'dataset'.
+
+    Returns:
+        str: The base URI of the CSW Endpoint with the appropriate format.
+    """    
+    try:
+        
+        if sd_config.geometadata_base_uri:
+            csw_uri = sd_config.geometadata_base_uri
+        
+        if sd_config.geometadata_base_uri and '/csw' not in sd_config.geometadata_base_uri:
+            csw_uri = sd_config.geometadata_base_uri.rstrip('/') + '/csw'
+        elif sd_config.geometadata_base_uri == '':
+            csw_uri = '/csw'
+        else:
+            csw_uri = sd_config.geometadata_base_uri.rstrip('/')
+    except:
+        csw_uri = '/csw'
+
+    if type == 'catalog':
+        return csw_uri + '?service=CSW&version={version}&request=GetCapabilities'
+    else:
+        return csw_uri + '?service=CSW&version={version}&request=GetRecordById&id={id}&elementSetName={element_set_name}&outputSchema={output_schema}&OutputFormat={output_format}'
+
+@helper
 def schemingdct_get_geospatial_metadata():
     """Get geospatial metadata for CSW formats.
 
@@ -476,15 +534,7 @@ def schemingdct_get_geospatial_metadata():
     """
     geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if sd_config.debug else sd_config.geometadata_links
     
-    try:
-        if sd_config.geometadata_base_uri and '/csw' not in sd_config.geometadata_base_uri:
-            base_uri = sd_config.geometadata_base_uri.rstrip('/') + '/csw'
-        elif sd_config.geometadata_base_uri == '':
-            base_uri = '/csw'
-        else:
-            base_uri = sd_config.geometadata_base_uri.rstrip('/')
-    except:
-        base_uri = '/csw'
+    csw_uri = schemingdct_get_geospatial_endpoint('dataset')
 
     return [{
         'name': item['name'],
@@ -493,7 +543,7 @@ def schemingdct_get_geospatial_metadata():
         'image_display_url': item['image_display_url'],
         'description': item['description'],
         'description_url': item['description_url'],
-        'url': base_uri + geometadata_links['get_record_by_id_v3'].format(output_format=item['output_format'], csw_version=item['csw_version'], element_set_name=item['element_set_name'], output_schema=item['output_schema'], id='{id}')
+        'url': csw_uri.format(output_format=item['output_format'], version=item['version'], element_set_name=item['element_set_name'], output_schema=item['output_schema'], id='{id}')
     } for item in geometadata_links['csw_formats']]
 
 @helper

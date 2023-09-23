@@ -9,14 +9,12 @@
   <ul class="{{ _class }} multiple_choice_icon">
     {%  for choice in h.scheming_field_choices(field) %}
       {%  set val = choice.value %}
-      {%  set label = h.scheming_language_text(choice.label) %}
+      {%  set label = h.scheming_language_text(choice.label) if choice.label else h.schemingdct_prettify_url_name(val) %}
       {%  if val in values %}
         {%  if icons_dir %}
           {%  set icon = h.schemingdct_get_icon(choice,icons_dir) %}
           {% if icon %}
             {% set img_url= h.url_for_static(icon) %}
-          {%  elif no_icon %}
-            {%  set img_url= h.url_for_static(no_icon) %}
           {%  endif %}
         {%  endif %}
           <li>

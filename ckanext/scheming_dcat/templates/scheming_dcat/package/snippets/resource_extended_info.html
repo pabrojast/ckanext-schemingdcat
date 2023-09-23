@@ -20,7 +20,7 @@
                 {% snippet 'scheming_dcat/display_snippets/link_epsg.html',
                     field=field, data=res, schema=schema %}
                 {% else %}
-                    {% if 'http' in res[field_name] %}
+                    {% if h.is_url(res[field_name]) %}
                         {{ h.link_to(res[field_name], res[field_name], target='_blank') }}
                     {% else %}
                         {{ res[field_name] }}
