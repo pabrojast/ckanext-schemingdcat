@@ -26,7 +26,7 @@ Enhancements:
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
-- Modern UI.
+- Modern UI inspired on [`datopian/ckanext-datopian`](https://github.com/datopian/ckanext-datopian).
 - LOD/OGC Endpoints based on avalaible profiles (DCAT) and CSW capabilities with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw).
 
 ## Requirements
