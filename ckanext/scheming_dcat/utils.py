@@ -111,6 +111,7 @@ def public_dir_exists(path):
 def init_config():
     sd_config.linkeddata_links = _load_yaml('linkeddata_links.yaml')
     sd_config.geometadata_links = _load_yaml('geometadata_links.yaml')
+    sd_config.endpoints = _load_yaml('endpoints.yaml')
 
 def _load_yaml(file):
     """Load a YAML file from the 'config' directory.
