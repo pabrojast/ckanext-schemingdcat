@@ -6,3 +6,4 @@ group_custom_facets = False
 debug = False
 linkeddata_links = None
 geometadata_links = None
+endpoints = None

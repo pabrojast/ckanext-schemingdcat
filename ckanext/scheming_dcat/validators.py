@@ -1,6 +1,7 @@
 import json
 import six
 import ckanext.scheming.helpers as sh
+import ckan.lib.helpers as h
 from urllib.parse import urlparse
 
 from ckantoolkit import (
@@ -178,7 +179,7 @@ def scheming_dcat_multiple_text(field, schema):
                 # Avoid errors
                 if '"' in element:
                     element=element.replace('"', '\"')
-                if 'http' in element:
+                if h.is_url(element):
                     element=element.replace(' ', '')
                 out.append(element)
 
