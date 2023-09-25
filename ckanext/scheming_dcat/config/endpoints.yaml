@@ -44,7 +44,7 @@ catalog_endpoints:
     type: ogc
     format: xml
     image_display_url: /images/icons/endpoints/csw_inspire.svg
-    description: JSON-LD NTI-RISP Endpoint for spanish data portals.
+    description: OGC-INSPIRE Endpoint for spatial metadata.
     profile: spain_dcat
     profile_label: INSPIRE
     version: 2.0.2
@@ -54,7 +54,7 @@ catalog_endpoints:
     type: ogc
     format: xml
     image_display_url: /images/icons/endpoints/csw_inspire.svg
-    description: JSON-LD NTI-RISP Endpoint for spanish data portals.
+    description: OGC-INSPIRE Endpoint for spatial metadata.
     profile: spain_dcat
     profile_label: INSPIRE
     version: 3.0.0
