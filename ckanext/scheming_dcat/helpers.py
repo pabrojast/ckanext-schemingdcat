@@ -488,7 +488,7 @@ def schemingdct_get_catalog_endpoints():
         'type': item['type'],
         'profile': item['profile'],
         'profile_label': item['profile_label'],
-        'endpoint': get_endpoint('catalog') if item.get('type') == 'lod' else csw_uri.format(version=item['version']) if item.get('type') == 'ogc' else None,
+        'endpoint': get_endpoint('catalog') if item.get('type').lower() == 'lod' else csw_uri.format(version=item['version']) if item.get('type').lower() == 'ogc' else None,
         'endpoint_data': {
             '_format': item['format'],
             '_external': True,
