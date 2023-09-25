@@ -1,11 +1,13 @@
-{% set tags = h.get_facet_items_dict('tags', c.search_facets, limit=10
+{% set tags = h.get_facet_items_dict('tags', c.search_facets, limit=8
 
 ) %}
 {% set placeholder = _('E.g. environment') %}
 
+{% set heading_title = c.site_title or _('Open Data Catalog')%}
+
 <div class="module module-search module-narrow module-shallow box">
   <form class="module-content search-form" method="get" action="{% url_for 'dataset.search' %}">
-    <h3 class="heading">{{ c.site_description }}</h3>
+    <h3 class="heading-layout2">{{ heading_title }}</h3>
     <div class="search-input form-group search-giant">
       <input aria-label="{% block header_site_search_label %}{{ _('Search datasets') }}{% endblock %}" id="field-main-search" type="text" class="form-control" name="q" value="" autocomplete="off" placeholder="{% block search_placeholder %}{{ placeholder }}{% endblock %}" />
       <button type="submit" aria-labelledby="search-label">

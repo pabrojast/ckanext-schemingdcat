@@ -285,3 +285,8 @@ msgstr "Distribution metadata"
 #: ckanext/scheming_dcat/templates/home/snippets/endpoints.html:5
 msgid "Catalog endpoints"
 msgstr "Catalog endpoints"
+
+
+#: ckanext/scheming_dcat/templates/home/snippets/search.html:6
+msgid "Open Data Catalog"
+msgstr "Open Data Catalog"
