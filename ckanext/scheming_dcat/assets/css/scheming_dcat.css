@@ -105,7 +105,7 @@ img {
   }
 }
 .hero {
-  background: #fff url('/base/images/hero-bg.png') !important;
+  background: #fff  !important;
   background-size: auto 120% !important;
   background-repeat: no-repeat !important;
   background-position: right top !important;
@@ -1509,9 +1509,11 @@ a.endpoints_layout1:hover {
   }
 }
 /* footer */
+.site-footer .attribution .ckan-footer-logo {
+  background: url("../../images/default/ckan-logo-footer.png") no-repeat top left;
+}
 .site-footer {
   padding: 60px 0;
-  color: #fff;
 }
 .site-footer .logo {
   margin-bottom: 40px;
@@ -1519,14 +1521,12 @@ a.endpoints_layout1:hover {
 .site-footer label,
 .site-footer small,
 .site-footer strong {
-  color: #fff;
   font-size: 18px;
   margin-bottom: 10px;
 }
 .site-footer p,
 .site-footer a {
   font-size: 15px;
-  color: #fff;
 }
 .site-footer .footer-links ul li {
   margin-bottom: 15px;
