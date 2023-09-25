@@ -1,20 +1,16 @@
-{%  set _class = _class or 'scheming-icon-list' %}
-{%  set value = data[field.field_name] %}
-{%  set icons_dir = h.schemingdct_get_icons_dir(field) %}
-{%  set label =  h.scheming_choices_label(
-  h.scheming_field_choices(field),
-  data[field.field_name]) %}
+{% set _class = _class or 'scheming-icon-list' %}
+{% set value = data[field.field_name] %}
+{% set icons_dir = h.schemingdct_get_icons_dir(field) %}
+{% set label = h.scheming_choices_label(h.scheming_field_choices(field), value) %}
+{% set icon = icons_dir and h.schemingdct_get_icon(h.schemingdct_get_choice_item(field, value), icons_dir) %}
+{% set img_url = icon and h.url_for_static(icon) %}
 
-{%  if icons_dir %}
-  {%  set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field, value),icons_dir) %}
-  {% if icon %}
-    {% set img_url= h.url_for_static(icon) %}
-  {%  elif no_icon %}
-    {%  set img_url= h.url_for_static(no_icon) %}
-  {%  endif %}
-{%  endif %}
-
-{%  if img_url %}
+{% if img_url %}
   <img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon spatial_uri-icon"></img> 
-  {% endif %}
+{% endif %}
+
+{% if value == label %}
+  <a href="{{ value }}"> {{ h.schemingdct_prettify_url_name(value) }}</a>
+{% else %}
   <a href="{{ value }}"> {{ label }}</a>
+{% endif %}

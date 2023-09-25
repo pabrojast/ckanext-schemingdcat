@@ -90,15 +90,16 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
                 {%  set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field, item.name),icons_dir) %}
                 {%  if icon %}
                   {% set img_url= h.url_for_static(icon) %}
-                {%  elif no_icon %}
-                  {%  set img_url= h.url_for_static(no_icon) %}
                 {%  endif %}
               {%  endif %}
               <li class="{{ 'nav-item' }}{% if item.active %} active{% endif %}">
                 <a href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
               {%  if img_url %}
                   <img src="{{ img_url }}" title="{{ label }}" class="facet-icon"></img>
-              {%  endif %}
+              {%  endif %}    
+              {% if h.is_url(label_truncated) %}
+                {% set label_truncated =  h.schemingdct_prettify_url_name(label).strip(']["')%}
+              {% endif %} 
                   <span class="item-label">{{ label_truncated }}</span>
                   <span class="hidden separator"> - </span>
                   <span class="item-count badge">{{ count }}</span>

@@ -1,0 +1,60 @@
+catalog_endpoints:
+  - name: euro_dcat_ap_2_rdf
+    display_name: RDF DCAT-AP
+    type: lod
+    format: rdf
+    image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
+    description: RDF DCAT-AP Endpoint for european data portals.
+    profile: euro_dcat_ap_2
+    profile_label: DCAT-AP
+    version: null
+
+  - name: euro_dcat_ap_2_jsonld
+    display_name: JSON-LD DCAT-AP
+    type: lod
+    format: jsonld
+    image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
+    description: RDF DCAT-AP Endpoint for european data portals.
+    profile: euro_dcat_ap_2
+    profile_label: DCAT-AP
+    version: null
+
+  - name: spain_dcat_rdf
+    display_name: RDF NTI-RISP
+    type: lod
+    format: rdf
+    image_display_url: /images/icons/endpoints/spain_dcat.svg
+    description: RDF NTI-RISP Endpoint for spanish data portals.
+    profile: spain_dcat
+    profile_label: NTI-RISP
+    version: null
+
+  - name: spain_dcat_jsonld
+    display_name: JSON-LD NTI-RISP
+    type: lod
+    format: jsonld
+    image_display_url: /images/icons/endpoints/spain_dcat.svg
+    description: JSON-LD NTI-RISP Endpoint for spanish data portals.
+    profile: spain_dcat
+    profile_label: NTI-RISP
+    version: null
+
+  - name: csw_inspire
+    display_name: CSW INSPIRE 2.0.2
+    type: ogc
+    format: xml
+    image_display_url: /images/icons/endpoints/csw_inspire.svg
+    description: OGC-INSPIRE Endpoint for spatial metadata.
+    profile: spain_dcat
+    profile_label: INSPIRE
+    version: 2.0.2
+
+  - name: csw_inspire
+    display_name: CSW INSPIRE-3.0.0
+    type: ogc
+    format: xml
+    image_display_url: /images/icons/endpoints/csw_inspire.svg
+    description: OGC-INSPIRE Endpoint for spatial metadata.
+    profile: spain_dcat
+    profile_label: INSPIRE
+    version: 3.0.0

@@ -33,8 +33,6 @@
       {%  set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field, val),icons_dir) %}
       {% if icon %}
         {% set img_url= h.url_for_static(icon) %}
-      {%  elif no_icon %}
-        {%  set img_url= h.url_for_static(no_icon) %}
       {%  endif %}
     {%  endif %} 
       <option 
