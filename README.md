@@ -87,6 +87,37 @@ To use custom schemas in `ckanext-scheming`:
   scheming.dataset_fallback = false
   ```
 
+### Endpoints
+You can update the [`endpoints.yaml`](./ckanext/scheming_dcat/config/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8. 
+
+Examples:
+
+* LOD endpoint: A Linked Open Data endpoint is a DCAT endpoint that provides access to RDF data. More information about the catalogue endpoint, how to use the endpoin, (e.g. `https://{ckan-instance-host}/catalog.{format}?[page={page}]&[modified_since={date}]&[profiles={profile1},{profile2}]&[q={query}]&[fq={filter query}]`, and more at [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat?tab=readme-ov-file#catalog-endpoint)
+    ```yaml
+      - name: euro_dcat_ap_2_rdf
+        display_name: RDF DCAT-AP
+        type: lod
+        format: rdf
+        image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
+        description: RDF DCAT-AP Endpoint for european data portals.
+        profile: euro_dcat_ap_2
+        profile_label: DCAT-AP
+        version: null
+    ```
+
+* OGC Endpoint: An OGC CSW endpoint provides a standards-based interface to discover, browse, and query metadata about spatial datasets and data services. More info about the endpoint at [OGC: Catalogue Service](https://www.ogc.org/)standard/cat/
+    ```yaml
+      - name: csw_inspire
+        display_name: CSW INSPIRE 2.0.2
+        type: ogc
+        format: xml
+        image_display_url: /images/icons/endpoints/csw_inspire.svg
+        description: OGC-INSPIRE Endpoint for spatial metadata.
+        profile: spain_dcat
+        profile_label: INSPIRE
+        version: 2.0.2
+    ```
+
 ### Facet Scheming
 To configure facets, there are no mandatory sets in the config file for this extension. The following sets can be used:
 
