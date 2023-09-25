@@ -15,7 +15,7 @@
 {% block primary_content_inner %}
     <h1>{{ group_dict.display_name }}
         {% if group_dict.identifier %}
-            {% if 'http' in group_dict.identifier %}
+            {% if h.is_url(group_dict.identifier) %}
                 ({{ h.link_to(h.schemingdct_prettify_url_name(group_dict.identifier), group_dict.identifier) }})
             {% else %}
                 ({{ group_dict.identifier }})
