@@ -24,7 +24,7 @@ Enhancements:
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
-- Update the base theme of CKAN to use with the enhancements of this extension.
+- [Update the base theme](#new-theme) of CKAN to use with the enhancements of this extension.
 
 
 ## Requirements
