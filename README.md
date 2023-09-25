@@ -207,7 +207,6 @@ Update the base theme of CKAN to use with the enhancements of this extension.
 ![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/48b63c9e-1ab2-4504-b991-2ac63a8875c8)
 ![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/213def6f-5d4c-4786-9d5b-24fed010d307)
 
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/1a57e7d3-4e43-4244-a241-41e20b27f949)
 ![screenshot 1695622478](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/bb522849-1319-49cd-ab93-5c3fa5784587)
 ![screenshot 1695622650](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/7244f9c2-416d-4489-aee8-41cf91ae25a5)
 ![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/5325df04-0ee7-48c3-a924-c8875fc8e2ad)
