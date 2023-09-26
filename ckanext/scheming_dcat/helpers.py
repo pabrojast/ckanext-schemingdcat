@@ -381,7 +381,6 @@ def schemingdct_prettify_url(url):
     except AttributeError:
         return url
 
-@helper
 def schemingdct_prettify_url_name(url):
     """Extracts the name of the last segment of a URL.
 
@@ -391,10 +390,13 @@ def schemingdct_prettify_url_name(url):
     Returns:
         str: The name of the last segment of the URL.
     """
-    if '/' in url:
-        url_name = url.split("/")[-1]
+    url_name = url.split("/")[-1] if '/' in url else url
+
+    if url_name is not None:
+        url_name = re.sub(r'^https?://', '', url_name)
     else:
-        url_name = url
+        url_name = re.sub(r'^https?://', '', url)
+
     return url_name
 
 @helper
