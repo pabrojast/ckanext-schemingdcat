@@ -381,6 +381,7 @@ def schemingdct_prettify_url(url):
     except AttributeError:
         return url
 
+@helper
 def schemingdct_prettify_url_name(url):
     """Extracts the name of the last segment of a URL.
 
