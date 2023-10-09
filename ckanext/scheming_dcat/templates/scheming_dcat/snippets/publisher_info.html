@@ -23,12 +23,12 @@
       <ul class="nav nav-simple">
         {% if pkg_dict.publisher_email %}
           <li class="nav-item">
-            <a href="{{ 'mailto:' + pkg_dict.publisher_email }}" target="_blank"><i class="fa fa-envelope"></i> {{ pkg_dict.publisher_email }}</a>
+            <a href="{{ 'mailto:' + pkg_dict.publisher_email }}" target="_blank"><i class="fa fa-envelope"></i> {{ pkg_dict.publisher_email | truncate(26) }}</a>
           </li>
         {% endif %}
         {% if pkg_dict.publisher_url %}
           <li class="nav-item">
-            <a href="{{ pkg_dict.publisher_url }}" target="_blank"><i class="fa fa-external-link"></i> {{ h.schemingdct_prettify_url(pkg_dict.publisher_url) }}</a>
+            <a href="{{ pkg_dict.publisher_url }}" target="_blank"><i class="fa fa-external-link"></i> {{  h.schemingdct_prettify_url(pkg_dict.publisher_url) | truncate(26) }}</a>
           </li>
         {% endif %}
         {% if pkg_dict.publisher_identifier %}

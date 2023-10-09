@@ -23,16 +23,16 @@
         <ul class="nav nav-simple">
             {% if pkg_dict.contact_email %}
                 <li class="nav-item">
-                <a href="{{ 'mailto:' + pkg_dict.contact_email }}" target="_blank"><i class="fa fa-envelope"></i> {{ pkg_dict.contact_email }}</a>
+                <a href="{{ 'mailto:' + pkg_dict.contact_email }}" target="_blank"><i class="fa fa-envelope"></i> {{ pkg_dict.contact_email | truncate(26) }}</a>
                 </li>
             {% endif %}
             {% if pkg_dict.contact_url %}
                 <li class="nav-item">
-                <a href="{{ pkg_dict.contact_url }}" target="_blank"><i class="fa fa-external-link"></i> {{ h.schemingdct_prettify_url(pkg_dict.contact_url) }}</a>
+                <a href="{{ pkg_dict.contact_url }}" target="_blank"><i class="fa fa-external-link"></i> {{ h.schemingdct_prettify_url(pkg_dict.contact_url) | truncate(26) }}</a>
                 </li>
             {% endif %}
             {% if pkg_dict.contact_uri %}
-                {%  set url_name = h.schemingdct_prettify_url_name(pkg_dict.contact_uri ) %} 
+                {%  set url_name = h.schemingdct_prettify_url_name(pkg_dict.contact_uri) %} 
                 <li class="nav-item">
                 <a href="{{ pkg_dict.contact_uri }}" target="_blank"><i class="fa fa-user-circle-o"></i> {{ url_name }}</a>
                 </li>

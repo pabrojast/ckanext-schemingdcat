@@ -296,9 +296,47 @@ button.active {
   box-shadow: none;
 }
 /* Stages */
-.stages li.active .highlight {
-  background: #003164;
+.stages li:before {
+  border-radius: 3px;
+  content: counter(stage);
+  display: inline-block;
+  width: 20px;
+  height: 27px;
+  margin-right: 5px;
+  font-weight: bold;
+  text-align: center;
+  color: #fff;
+  background-color: #aeaeae;
+  z-index: 1;
 }
+
+.stages li .highlight {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 13px 52px;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+  line-height: 11px;
+  z-index: -1;
+}
+
+.stages li.active .highlight {
+  color: #fff;
+  background: #003164 !important;
+}
+
+.stages li.active:after {
+  border-color: rgba(140, 198, 138, 0);
+  border-top-color: #4c537f;
+  border-bottom-color: #4c537f;
+}
+
 .stages li.active:before {
   color: #252525;
 }
