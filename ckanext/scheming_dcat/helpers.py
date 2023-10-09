@@ -391,10 +391,13 @@ def schemingdct_prettify_url_name(url):
     Returns:
         str: The name of the last segment of the URL.
     """
-    if '/' in url:
-        url_name = url.split("/")[-1]
+    url_name = url.split("/")[-1] if '/' in url else url
+
+    if url_name is not None:
+        url_name = re.sub(r'^https?://', '', url_name)
     else:
-        url_name = url
+        url_name = re.sub(r'^https?://', '', url)
+
     return url_name
 
 @helper
@@ -488,7 +491,7 @@ def schemingdct_get_catalog_endpoints():
         'type': item['type'],
         'profile': item['profile'],
         'profile_label': item['profile_label'],
-        'endpoint': get_endpoint('catalog') if item.get('type') == 'lod' else csw_uri.format(version=item['version']) if item.get('type') == 'ogc' else None,
+        'endpoint': get_endpoint('catalog') if item.get('type').lower() == 'lod' else csw_uri.format(version=item['version']) if item.get('type').lower() == 'ogc' else None,
         'endpoint_data': {
             '_format': item['format'],
             '_external': True,

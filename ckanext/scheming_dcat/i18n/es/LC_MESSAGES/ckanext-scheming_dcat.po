@@ -293,3 +293,7 @@ msgstr "Metadatos de la distribución"
 #: ckanext/scheming_dcat/templates/home/snippets/endpoints.html:5
 msgid "Catalog endpoints"
 msgstr "Puntos finales del catálogo"
+
+#: ckanext/scheming_dcat/templates/home/snippets/search.html:6
+msgid "Open Data Catalog"
+msgstr "Catálogo de Datos Abiertos"

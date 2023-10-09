@@ -12,11 +12,10 @@
 ## Overview
 This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml).
 
->**Warning**:<br>
+>**Warning**<br>
 > Requires [mjanez/ckanext-dcat](https://github.com/mjanez/ckanext-dcat), [ckan/ckanext-scheming](https://github.com/ckan/ckanext-scheming) and [ckan/ckanext-spatial](https://github.com/ckan/ckanext-spatial) to work properly.
 >
 > It is **recommended to use with:** [`ckan-docker`](https://github.com/mjanez/ckan-docker) deployment or only use [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw) to deploy a CSW Catalog.
-
 
 ![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/6b3d6fd4-7119-4307-8be7-5e17d41292fe)
 
@@ -26,6 +25,7 @@ Enhancements:
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
+- [Update the base theme](#new-theme) of CKAN to use with the enhancements of this extension.
 - Modern UI inspired on [`datopian/ckanext-datopian`](https://github.com/datopian/ckanext-datopian).
 - LOD/OGC Endpoints based on avalaible profiles (DCAT) and CSW capabilities with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw).
 
@@ -38,14 +38,14 @@ This plugin is compatible with CKAN 2.9 or later.
 cd $CKAN_VENV/src/
 
 # Install latest stable release of:
-## ckanext-scheming (e.g. release-3.0.0)
+## ckanext-scheming: https://github.com/ckan/ckanext-scheming/tags (e.g. release-3.0.0)
 pip install -e git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
 
-## mjanez/ckanext-dcat (e.g. 1.0.0-geodcatap)
-pip install -e git+https://github.com/mjanez/ckanext-dcat.git@1.0.0-geodcatap#egg=ckanext-dcat
+## mjanez/ckanext-dcat: https://github.com/mjanez/ckanext-dcat/tags (e.g. 1.2.0-geodcatap)
+pip install -e git+https://github.com/mjanez/ckanext-dcat.git@1.2.0-geodcatap#egg=ckanext-dcat
 pip install -r https://raw.githubusercontent.com/mjanez/ckanext-dcat/master/requirements.txt
 
-## ckanext-spatial (e.g. v.2.0.0)
+## ckanext-spatial: https://github.com/ckan/ckanext-spatial/tags (e.g. v.2.0.0)
 pip install -e git++https://github.com/ckan/ckanext-spatial.git@v2.0.0#egg=ckanext-spatial
 pip install -r https://raw.githubusercontent.com/ckan/ckanext-spatial/master/requirements.txt
 
@@ -63,7 +63,7 @@ Set the plugin:
 >**Warning**<br>
 > When using `scheming_dcat` extension,**`scheming` should not appear in the list of plugins loaded in CKAN.** But `dcat` and `spatial` should.
 
-### Scheming
+### Scheming DCAT
 Set the schemas you want to use with configuration options:
 
   ```ini
@@ -96,6 +96,37 @@ To use custom schemas in `ckanext-scheming`:
   #   The is_fallback setting may be changed as well. Defaults to false:
   scheming.dataset_fallback = false
   ```
+
+### Endpoints
+You can update the [`endpoints.yaml`](./ckanext/scheming_dcat/config/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8.
+
+Examples:
+
+* LOD endpoint: A Linked Open Data endpoint is a DCAT endpoint that provides access to RDF data. More information about the catalogue endpoint, how to use the endpoint, (e.g. `https://{ckan-instance-host}/catalog.{format}?[page={page}]&[modified_since={date}]&[profiles={profile1},{profile2}]&[q={query}]&[fq={filter query}]`, and more at [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat?tab=readme-ov-file#catalog-endpoint)
+    ```yaml
+      - name: euro_dcat_ap_2_rdf
+        display_name: RDF DCAT-AP
+        type: lod
+        format: rdf
+        image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
+        description: RDF DCAT-AP Endpoint for european data portals.
+        profile: euro_dcat_ap_2
+        profile_label: DCAT-AP
+        version: null
+    ```
+
+* OGC Endpoint: An OGC CSW endpoint provides a standards-based interface to discover, browse, and query metadata about spatial datasets and data services. More info about the endpoint at [OGC: Catalogue Service](https://www.ogc.org/)standard/cat/
+    ```yaml
+      - name: csw_inspire
+        display_name: CSW INSPIRE 2.0.2
+        type: ogc
+        format: xml
+        image_display_url: /images/icons/endpoints/csw_inspire.svg
+        description: OGC-INSPIRE Endpoint for spatial metadata.
+        profile: spain_dcat
+        profile_label: INSPIRE
+        version: 2.0.2
+    ```
 
 ### Facet Scheming
 To configure facets, there are no mandatory sets in the config file for this extension. The following sets can be used:
@@ -178,6 +209,18 @@ Icons for each field option in the [`scheming file`](ckanext/scheming_dcat/schem
 - Icons files are tested for existence when using `schemingdct_schema_icon` function to get them. If the file doesn't exist, the function returns `None`. Icons can be provided by any CKAN extension in its `public` directory.
 - Set a `default icon` for a field using the default_icon setting in the scheming file. You can get it using `schemingdct_schema_get_default_icon` function, and it is your duty to decide when and where to get and use it in a template.
 
+## New theme
+Update the base theme of CKAN to use with the enhancements of this extension.
+
+![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/97b91bdc-b1ec-402a-9750-cfe30ca3201b)
+![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/48b63c9e-1ab2-4504-b991-2ac63a8875c8)
+![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/213def6f-5d4c-4786-9d5b-24fed010d307)
+
+![screenshot 1695622478](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/bb522849-1319-49cd-ab93-5c3fa5784587)
+![screenshot 1695622650](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/7244f9c2-416d-4489-aee8-41cf91ae25a5)
+![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/5325df04-0ee7-48c3-a924-c8875fc8e2ad)
+![screenshot 1695622687](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/054ff4e5-56a3-4683-9492-1aa0659ee536)
+![screenshot 1695622719](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/1ecb14c9-9946-4802-8e02-7a51e2911226)
 
 ## Schemas
 With this plugin, you can customize the group, organization, and dataset entities in CKAN. Adding and enabling a schema will modify the forms used to update and create each entity, indicated by the respective `type` property at the root level. Such as `group_type`, `organization_type`, and `dataset_type`. Non-default types are supported properly as is indicated throughout the examples.
