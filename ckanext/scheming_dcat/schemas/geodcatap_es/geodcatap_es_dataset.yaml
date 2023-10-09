@@ -1148,6 +1148,7 @@ dataset_fields:
     en: Purpose
     es: Propósito
   form_placeholder: 'Gestión del Medio Ambiente.'
+  form_snippet: markdown.html
   help_text:
     en: 'Summary of the intentions for which the dataset was developed (ISO 19115).'
     es: 'Resumen de las intenciones para las que se desarrolló el conjunto de datos (ISO 19115).'
