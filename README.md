@@ -17,6 +17,7 @@ This CKAN extension provides functions and templates specifically designed to ex
 >
 > It is **recommended to use with:** [`ckan-docker`](https://github.com/mjanez/ckan-docker) deployment or only use [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw) to deploy a CSW Catalog.
 
+![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/6b3d6fd4-7119-4307-8be7-5e17d41292fe)
 
 Enhancements:
 - Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
@@ -25,7 +26,8 @@ Enhancements:
 - Add i18n translations.
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
 - [Update the base theme](#new-theme) of CKAN to use with the enhancements of this extension.
-
+- Modern UI inspired on [`datopian/ckanext-datopian`](https://github.com/datopian/ckanext-datopian).
+- LOD/OGC Endpoints based on avalaible profiles (DCAT) and CSW capabilities with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw).
 
 ## Requirements
 This plugin is compatible with CKAN 2.9 or later.
@@ -67,6 +69,13 @@ Set the schemas you want to use with configuration options:
   ```ini
   # Each of the plugins is optional depending on your use
   ckan.plugins = scheming_dcat_datasets scheming_dcat_groups scheming_dcat_organizations
+  ```
+
+To use CSW Endpoint in `ckanext-scheming_dcat`:
+
+  ```ini
+  scheming_dcat.geometadata_base_uri = http://localhost:81/csw
+  ckanext.dcat.base_uri = http://localhost:81/catalog
   ```
 
 To use custom schemas in `ckanext-scheming`:
