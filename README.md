@@ -193,7 +193,7 @@ This two last settings are not mandatory. You can omit one or both (or set them 
      
 4. Reindex solr index:
 
-	`ckan -c [route to your .ini ckan config file] search-index rebuild`
+	`ckan -c [route to your .ini ckan config file] search-index rebuild-fast`
 
 	Sometimes solr can issue an error while reindexing. In that case I'd try to restart solr, delete index ("search-index clear"), restart solr, rebuild index, and restart solr again.
 	

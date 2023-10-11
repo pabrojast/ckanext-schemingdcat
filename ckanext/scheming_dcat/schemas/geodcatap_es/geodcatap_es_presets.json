@@ -1,6 +1,6 @@
 {
   "scheming_presets_version": 1,
-  "about": "these are the default scheming_dcat field presets",
+  "about": "GeoDCAT-AP (ES) default scheming_dcat field presets",
   "about_url": "http://github.com/ckan/ckanext-scheming#preset",
   "presets": [
     {
@@ -200,6 +200,93 @@
       "values": {
         "form_snippet": "json.html",
         "validators": "ignore_missing scheming_dcat_valid_json_object"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_title_translated",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_text.html",
+        "display_snippet": "fluent_text.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "if_empty_same_as(name) unicode_safe not_empty scheming_required scheming_dcat_fluent_text",
+        "output_validators": "fluent_core_translated_output",
+        "form_attrs": {
+          "data-module": "slug-preview-target"
+        }
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_notes_translated",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_markdown.html",
+        "display_snippet": "fluent_markdown.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "not_empty scheming_required scheming_dcat_fluent_text",
+        "output_validators": "fluent_core_translated_output"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_core_translated_txt",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_text.html",
+        "display_snippet": "fluent_text.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "scheming_dcat_fluent_text",
+        "output_validators": "fluent_core_translated_output"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_core_translated_md",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_markdown.html",
+        "display_snippet": "fluent_markdown.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "scheming_dcat_fluent_text",
+        "output_validators": "fluent_core_translated_output"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_text",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_text.html",
+        "display_snippet": "fluent_text.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "scheming_dcat_fluent_text",
+        "output_validators": "fluent_text_output"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_tags",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_tags.html",
+        "display_snippet": "fluent_tags.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "fluent_tags",
+        "output_validators": "fluent_tags_output",
+        "form_attrs": {
+          "data-module": "autocomplete",
+          "data-module-tags": ""
+        }
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_markdown",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_markdown.html",
+        "display_snippet": "fluent_markdown.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "scheming_dcat_fluent_text",
+        "output_validators": "fluent_text_output"
+      }
+    },
+    {
+      "preset_name": "scheming_dcat_fluent_link",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_text.html",
+        "display_snippet": "fluent_link.html",
+        "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
+        "validators": "scheming_dcat_fluent_text",
+        "output_validators": "fluent_text_output"
       }
     }
   ]

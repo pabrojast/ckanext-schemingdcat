@@ -1,5 +1,6 @@
 from ckan.common import json, c, request, is_flask_request
 from ckan.lib import helpers as ckan_helpers
+from ckan.lib.i18n import get_available_locales
 import ckan.plugins as p
 import six
 import re
@@ -9,7 +10,7 @@ from pathlib import Path
 
 from six.moves.urllib.parse import urlencode
 
-from ckanext.scheming.helpers import scheming_choices_label
+from ckanext.scheming.helpers import scheming_choices_label,scheming_language_text
 
 import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
@@ -569,3 +570,75 @@ def schemingdct_get_all_metadata(id):
         data['endpoint_type'] = 'dcat'
 
     return geospatial_metadata + linked_data
+
+
+@helper
+def schemingdct_get_default_lang():
+    return sd_config.default_locale
+
+@helper
+def fluent_form_languages(field=None, entity_type=None, object_type=None,
+        schema=None):
+    """
+    Return a list of language codes for this form (or form field)
+
+    1. return field['form_languages'] if it is defined
+    2. return schema['form_languages'] if it is defined
+    3. get schema from entity_type + object_type then
+       return schema['form_languages'] if they are defined
+    4. return languages from site configuration
+    """
+    if field and 'form_languages' in field:
+        return field['form_languages']
+    if schema and 'form_languages' in schema:
+        return schema['form_languages']
+    if entity_type and object_type:
+        # late import for compatibility with older ckanext-scheming
+        from ckanext.scheming.helpers import scheming_get_schema
+        schema = scheming_get_schema(entity_type, object_type)
+        if schema and 'form_languages' in schema:
+            return schema['form_languages']
+
+    langs = []
+    for l in get_available_locales():
+        if l.language not in langs:
+            langs.append(l.language)
+    return langs
+
+@helper
+def schemingdct_fluent_form_label(field, lang):
+    """Returns a label for the input field in the specified language.
+
+    If the field has a `fluent_form_label` defined, the label will be taken from there.
+    If a matching label cannot be found, this helper will return the standard label
+    with the language code in uppercase.
+
+    Args:
+        field (dict): A dictionary representing the input field.
+        lang (str): A string representing the language code.
+
+    Returns:
+        str: A string representing the label for the input field in the specified language.
+    """
+    form_label = field.get('fluent_form_label', {})
+    label = scheming_language_text(form_label.get(lang, field['label']))
+    return f"{label} ({lang.upper()})"
+
+@helper
+def schemingdct_multiple_field_required(field, lang):
+    """
+    Return field['required'] or guess based on validators if not present.
+    """
+    if 'required' in field:
+        return field['required']
+    if 'required_language' in field and field['required_language'] == lang:
+        return True
+    return 'not_empty' in field.get('validators', '').split()
+
+def parse_json(value, default_value=None):
+    try:
+        return json.loads(value)
+    except (ValueError, TypeError, AttributeError):
+        if default_value is not None:
+            return default_value
+        return value
