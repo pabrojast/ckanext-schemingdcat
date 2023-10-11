@@ -517,7 +517,7 @@ dataset_fields:
   label: 
     en: Metadata identifier
     es: Identificador de los metadatos
-  validators: not_empty scheming_required
+  preset: scheming_dcat_identifier
   required: True
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000

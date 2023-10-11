@@ -203,16 +203,22 @@
       }
     },
     {
+      "preset_name": "scheming_dcat_identifier",
+      "values": {
+        "validators": "not_empty scheming_required",
+        "form_attrs": {
+          "data-module": "slug-preview-target"
+        }
+      }
+    },
+    {
       "preset_name": "scheming_dcat_fluent_title_translated",
       "values": {
         "form_snippet": "scheming_dcat/form_snippets/schemingdct_fluent_text.html",
         "display_snippet": "fluent_text.html",
         "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
         "validators": "if_empty_same_as(name) unicode_safe not_empty scheming_required scheming_dcat_fluent_text",
-        "output_validators": "fluent_core_translated_output",
-        "form_attrs": {
-          "data-module": "slug-preview-target"
-        }
+        "output_validators": "fluent_core_translated_output"
       }
     },
     {

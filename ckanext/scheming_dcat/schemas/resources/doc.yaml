@@ -99,10 +99,6 @@ dataset_fields:
   display_snippet: scheming_dcat/display_snippets/link_schema.html
   choices:
   - label:
-      en: Spatial data set
-      es: Conjunto de datos espacial
-    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset
-  - label:
       en: Collection
       es: Colección
     value: http://purl.org/dc/dcmitype/Collection
@@ -130,18 +126,6 @@ dataset_fields:
       en: Interactive Resource
       es: Recurso interactivo
     value: http://purl.org/dc/dcmitype/InteractiveResource
-  - label:
-      en: Spatial data set series
-      es: Series de datos espaciales
-    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series
-  - label:
-      en: Service
-      es: Servicio
-    value: http://purl.org/dc/dcmitype/Service
-  - label:
-      en: Spatial data service
-      es: Servicio de datos espaciales
-    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service
   - label:
       en: Sound
       es: Sonido
@@ -514,7 +498,7 @@ dataset_fields:
   label: 
     en: Metadata identifier
     es: Identificador de los metadatos
-  validators: not_empty scheming_required
+  preset: scheming_dcat_identifier
   required: True
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000
