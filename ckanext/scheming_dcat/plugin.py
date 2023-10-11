@@ -114,6 +114,9 @@ class SchemingDcatDatasetsPlugin(SchemingDatasetsPlugin):
     def resource_template(self):
         return 'scheming_dcat/package/resource_read.html'
 
+    def package_form(self):
+        return 'scheming_dcat/package/snippets/package_form.html'
+
 class SchemingDcatGroupsPlugin(SchemingGroupsPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)

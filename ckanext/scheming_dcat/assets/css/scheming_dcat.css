@@ -567,6 +567,7 @@ button.active {
   webkit-box-shadow: 0 0 0 0 rgb(0 0 0 / 5%);
   box-shadow: 0 0 0 0 rgb(0 0 0 / 5%);
   text-align: justify;
+  margin: 4px;
 }
 
 .addons {
@@ -1221,13 +1222,14 @@ img.item_image {
   font-weight: 400;
   background-color: #2e88a3;
 }
+
 /* Search */
 .homepage .module-search {
-  margin-top: 50px;
   padding: 5px;
   color: #fff;
   background: transparent;
 }
+
 @media only screen and (max-width: 768px) {
   .homepage .module-search {
     margin-top: 0px !important;
