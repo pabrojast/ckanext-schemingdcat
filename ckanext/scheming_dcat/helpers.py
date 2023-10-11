@@ -15,7 +15,6 @@ from ckanext.scheming.helpers import scheming_choices_label,scheming_language_te
 import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
-from ckanext.scheming_dcat import config as sd_config
 from ckanext.dcat.utils import CONTENT_TYPES, get_endpoint
 
 import logging
@@ -571,10 +570,9 @@ def schemingdct_get_all_metadata(id):
 
     return geospatial_metadata + linked_data
 
-
 @helper
 def schemingdct_get_default_lang():
-    return sd_config.default_locale
+    return p.toolkit.config.get('ckan.locale_default', 'en')
 
 @helper
 def fluent_form_languages(field=None, entity_type=None, object_type=None,
@@ -627,7 +625,14 @@ def schemingdct_fluent_form_label(field, lang):
 @helper
 def schemingdct_multiple_field_required(field, lang):
     """
-    Return field['required'] or guess based on validators if not present.
+    Returns whether a field is required or not based on the field definition and language.
+
+    Args:
+        field (dict): The field definition.
+        lang (str): The language to check for required fields.
+
+    Returns:
+        bool: True if the field is required, False otherwise.
     """
     if 'required' in field:
         return field['required']
@@ -642,3 +647,63 @@ def parse_json(value, default_value=None):
         if default_value is not None:
             return default_value
         return value
+
+@helper
+def schemingdct_get_current_lang():
+    """
+    Returns the current language of the CKAN instance.
+
+    Returns:
+        str: The current language of the CKAN instance. If the language cannot be determined, the default language 'en' is returned.
+    """
+    try:
+        return p.toolkit.request.environ['CKAN_LANG']
+    except TypeError:
+        return p.toolkit.config.get('ckan.locale_default', 'en')
+    
+@helper
+def schemingdct_extract_lang_text(text, current_lang):
+    """Extracts the text content for a specified language from a string.
+
+    Args:
+        text (str): The string to extract the language content from.
+        current_lang (str): The language code to extract the content for.
+
+    Returns:
+        str: The extracted language content, or the original string if no content is found.
+
+    """
+    def process_language_content(language_label):
+        """Helper function to process the content for a specific language label.
+
+        Args:
+            language_label (str): The language label to process.
+
+        Returns:
+            list: A list of lines containing the language content.
+
+        """
+        lang_text = []
+        in_target_lang = False
+        for line in text.split('\n'):
+            if line.startswith(language_label):
+                in_target_lang = True
+            elif in_target_lang and line.strip().startswith("[#") and line.strip().endswith("#]"):
+                break
+            elif in_target_lang:
+                lang_text.append(line)
+        return lang_text
+
+    lang_label = f"[#{current_lang}#]"
+    default_lang = p.toolkit.config.get('ckan.locale_default', 'en')
+    default_lang_label = f"[#{default_lang}#]"
+
+    lang_text = process_language_content(lang_label)
+
+    if not lang_text and lang_label != default_lang_label:
+        lang_text = process_language_content(default_lang_label)
+
+    if not lang_text:
+        return text
+
+    return '\n'.join(lang_text)

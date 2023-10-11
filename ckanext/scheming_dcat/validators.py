@@ -24,7 +24,7 @@ from ckanext.fluent.helpers import (
 from ckanext.fluent.validators import (
     BCP_47_LANGUAGE, fluent_text_output, scheming_language_text, LANG_SUFFIX)
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 all_validators = {}
 
@@ -291,8 +291,8 @@ def scheming_dcat_fluent_text(field, schema):
         alternate_langs = fluent_alternate_languages(field, schema=schema)
 
 
-    #logger.debug("Start | required_langs: {0}".format(required_langs))
-    #logger.debug("Start | field: {0}".format(field))
+    #log.debug("Start | required_langs: {0}".format(required_langs))
+    #log.debug("Start | field: {0}".format(field))
 
     def validator(key, data, errors, context):
         # just in case there was an error before our validator,
@@ -302,8 +302,8 @@ def scheming_dcat_fluent_text(field, schema):
 
         value = data[key]
 
-        logger.debug("Start | key: {0}".format(key))
-        #logger.debug("Start | key: {0} and data:{1}".format(key, data))
+        log.debug("Start | key: {0}".format(key))
+        #log.debug("Start | key: {0} and data:{1}".format(key, data))
 
         # Extract any extras from the data dictionary that match the prefix
         try:
@@ -317,11 +317,11 @@ def scheming_dcat_fluent_text(field, schema):
         # Check if extras is not None and contains keys starting with the fluent prefix
         extras_mode = extras is not None and any(name.startswith(prefix) for name in extras.keys())
 
-        #logger.debug("Start | extras_mode: {1} and extras: {0}".format(extras, extras_mode))
+        #log.debug("Start | extras_mode: {1} and extras: {0}".format(extras, extras_mode))
 
         # 1 or 2. dict or JSON encoded string
         if value is not missing and (value is not '' and not field.get('required')) and extras_mode is False:
-            logger.debug("1-2 | key: {0} - value: {1}".format(key, value))
+            log.debug("1-2 | key: {0} - value: {1}".format(key, value))
             if isinstance(value, six.string_types):
                 try:
                     value = json.loads(value)
@@ -364,12 +364,12 @@ def scheming_dcat_fluent_text(field, schema):
 
             if not errors[key]:
                 data[key] = json.dumps(value)
-                logger.debug("1-2 | output: {0}".format(data))
+                log.debug("1-2 | output: {0}".format(data))
             return
 
         # 3. separate fields
         if extras_mode:
-            #logger.debug("3 | key: {0}".format(key))
+            #log.debug("3 | key: {0}".format(key))
             output = {}
             extras = data.get(key[:-1] + ('__extras',), {})
 
@@ -399,7 +399,7 @@ def scheming_dcat_fluent_text(field, schema):
             for lang in output:
                 del extras[prefix + lang]
             data[key] = json.dumps(output)
-            logger.debug("3 | output: {0}".format(data))
+            log.debug("3 | output: {0}".format(data))
 
         # 4. value is missing and is required
         if (value is missing) and field.get('required'):

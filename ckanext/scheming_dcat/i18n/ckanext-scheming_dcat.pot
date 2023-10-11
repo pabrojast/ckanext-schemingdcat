@@ -286,3 +286,27 @@ msgstr ""
 #: ckanext/scheming_dcat/templates/home/snippets/search.html:6
 msgid "Open Data Catalog"
 msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:14
+msgid "Frontpage intro text"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:16
+msgid "If this text is set, it will appear as intro text on the Homepage, see"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:21
+msgid "Multilang intro text"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:21
+msgid "Add the tag with the lang code: <code>[#{iso639-1}#]</code> before the introductory text. Add as many tags as you want for each language."
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:23
+msgid "ISO 639-1 codes"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/admin/config.html:31
+msgid "Standard CKAN settings"
+msgstr ""

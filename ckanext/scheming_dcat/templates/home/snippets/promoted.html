@@ -1,4 +1,4 @@
-{% set intro = g.site_intro_text %}
+{% set intro = h.schemingdct_extract_lang_text(g.site_intro_text, h.schemingdct_get_current_lang())  %}
 
 <div class="module-content box">
   <div>
