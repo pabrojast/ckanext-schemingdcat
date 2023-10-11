@@ -1,0 +1,9 @@
+{% extends "snippets/search_form.html" %}
+
+  {% block search_title %}
+    {% if not error %}
+      <h1 class="h1-search">{% snippet 'snippets/search_result_text.html', query=query, count=count, type=type %}</h1>
+    {% else %}
+      <h2>Error</h2>
+    {% endif %}
+  {% endblock %}
