@@ -256,7 +256,7 @@ def schemingdct_get_icons_dir(field):
             dir = sd_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):
                 return dir
-        log.debug("No directory found for {0}".format(field['field_name']))
+        #log.debug("No directory found for {0}".format(field['field_name']))
     
     return None
 

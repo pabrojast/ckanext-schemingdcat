@@ -302,7 +302,7 @@ def scheming_dcat_fluent_text(field, schema):
 
         value = data[key]
 
-        log.debug("Start | key: {0}".format(key))
+        #log.debug("Start | key: {0}".format(key))
         #log.debug("Start | key: {0} and data:{1}".format(key, data))
 
         # Extract any extras from the data dictionary that match the prefix
@@ -321,7 +321,7 @@ def scheming_dcat_fluent_text(field, schema):
 
         # 1 or 2. dict or JSON encoded string
         if value is not missing and (value is not '' and not field.get('required')) and extras_mode is False:
-            log.debug("1-2 | key: {0} - value: {1}".format(key, value))
+            #log.debug("1-2 | key: {0} - value: {1}".format(key, value))
             if isinstance(value, six.string_types):
                 try:
                     value = json.loads(value)
@@ -364,7 +364,7 @@ def scheming_dcat_fluent_text(field, schema):
 
             if not errors[key]:
                 data[key] = json.dumps(value)
-                log.debug("1-2 | output: {0}".format(data))
+                #log.debug("1-2 | output: {0}".format(data))
             return
 
         # 3. separate fields
@@ -399,7 +399,7 @@ def scheming_dcat_fluent_text(field, schema):
             for lang in output:
                 del extras[prefix + lang]
             data[key] = json.dumps(output)
-            log.debug("3 | output: {0}".format(data))
+            #log.debug("3 | output: {0}".format(data))
 
         # 4. value is missing and is required
         if (value is missing) and field.get('required'):
