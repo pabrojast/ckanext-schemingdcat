@@ -218,7 +218,7 @@
         "display_snippet": "fluent_text.html",
         "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
         "validators": "if_empty_same_as(name) unicode_safe not_empty scheming_required scheming_dcat_fluent_text",
-        "output_validators": "fluent_core_translated_output"
+        "output_validators": "scheming_dcat_fluent_core_translated_output"
       }
     },
     {
@@ -228,7 +228,7 @@
         "display_snippet": "fluent_markdown.html",
         "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
         "validators": "unicode_safe scheming_dcat_fluent_text",
-        "output_validators": "fluent_core_translated_output"
+        "output_validators": "scheming_dcat_fluent_core_translated_output"
       }
     },
     {
@@ -238,7 +238,7 @@
         "display_snippet": "fluent_text.html",
         "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
         "validators": "scheming_dcat_fluent_text",
-        "output_validators": "fluent_core_translated_output"
+        "output_validators": "scheming_dcat_fluent_core_translated_output"
       }
     },
     {
@@ -248,7 +248,7 @@
         "display_snippet": "fluent_markdown.html",
         "error_snippet": "scheming_dcat/error_snippets/schemingdct_fluent_text.html",
         "validators": "unicode_safe not_empty scheming_dcat_fluent_text",
-        "output_validators": "fluent_core_translated_output"
+        "output_validators": "scheming_dcat_fluent_core_translated_output"
       }
     },
     {

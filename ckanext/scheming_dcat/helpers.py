@@ -1,6 +1,6 @@
 from ckan.common import json, c, request, is_flask_request
 from ckan.lib import helpers as ckan_helpers
-from ckan.lib.i18n import get_available_locales
+from ckan.lib.i18n import get_available_locales, get_lang
 import ckan.plugins as p
 import six
 import re
@@ -256,7 +256,7 @@ def schemingdct_get_icons_dir(field):
             dir = sd_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):
                 return dir
-        log.debug("No directory found for {0}".format(field['field_name']))
+        #log.debug("No directory found for {0}".format(field['field_name']))
     
     return None
 
@@ -657,7 +657,7 @@ def schemingdct_get_current_lang():
         str: The current language of the CKAN instance. If the language cannot be determined, the default language 'en' is returned.
     """
     try:
-        return p.toolkit.request.environ['CKAN_LANG']
+        return get_lang()
     except TypeError:
         return p.toolkit.config.get('ckan.locale_default', 'en')
     
@@ -707,3 +707,39 @@ def schemingdct_extract_lang_text(text, current_lang):
         return text
 
     return '\n'.join(lang_text)
+
+@helper
+def dataset_display_name(package_or_package_dict):
+    """
+    monkey patched version of ckan.lib.helpers.dataset_display_name which
+    extracts the correct translation of the dataset name
+    """
+    field_name = 'title' if 'title' in package_or_package_dict else 'name'
+    
+    return scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name)
+
+@helper
+def dataset_display_field_value(package_or_package_dict, field_name):
+    """
+    extracts the correct translation of the dataset name
+    """    
+    return scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name)
+
+@helper
+def scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name, default=''):
+    if isinstance(package_or_package_dict, str):
+        try:
+            package_or_package_dict = json.loads(package_or_package_dict)
+        except ValueError:
+            return default
+    
+    lang_code = schemingdct_get_current_lang().split('_')[0]
+    default_lang_code = schemingdct_get_default_lang()
+    
+    translated_package_or_package_dict = package_or_package_dict.get(field_name + u'_translated', {})
+    
+    # Check the lang_code, if not check the default_lang
+    value = translated_package_or_package_dict.get(lang_code, None) or \
+            (default_lang_code and translated_package_or_package_dict.get(default_lang_code, None)) 
+
+    return value if value is not None else default
