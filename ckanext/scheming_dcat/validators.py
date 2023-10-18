@@ -233,6 +233,12 @@ def scheming_dcat_valid_url(value: str) -> str:
 def scheming_dcat_translated_output(field, schema):
     assert field['field_name'].endswith(LANG_SUFFIX), 'Output validator "fluent_core_translated" must only used on a field that ends with "_translated"'
 
+    required_langs = schema.get('required_language', field.get('required_language'))
+    if required_langs and not isinstance(required_langs, list):
+        required_langs = [required_langs]
+    
+    lang = required_langs[0] if required_langs else config.get('ckan.locale_default', 'en')
+
     def validator(key, data, errors, context):
         """
         Return a value for a core field using a multilingual dict.
@@ -243,7 +249,7 @@ def scheming_dcat_translated_output(field, schema):
         new_key = key[:-1] + (k[:-len(LANG_SUFFIX)],)
 
         if new_key in data:
-            data[new_key] = scheming_language_text(data[key], config.get('ckan.locale_default', 'en'))
+            data[new_key] = scheming_language_text(data[key], lang)
 
     return validator
 
@@ -253,6 +259,12 @@ def scheming_dcat_translated_output(field, schema):
 def scheming_dcat_fluent_core_translated_output(field, schema):
     assert field['field_name'].endswith(LANG_SUFFIX), 'Output validator "fluent_core_translated" must only used on a field that ends with "_translated"'
 
+    required_langs = schema.get('required_language', field.get('required_language'))
+    if required_langs and not isinstance(required_langs, list):
+        required_langs = [required_langs]
+    
+    lang = required_langs[0] if required_langs else config.get('ckan.locale_default', 'en')
+
     def validator(key, data, errors, context):
         """
         Return a value for a core field using a multilingual dict.
@@ -263,7 +275,7 @@ def scheming_dcat_fluent_core_translated_output(field, schema):
         new_key = key[:-1] + (k[:-len(LANG_SUFFIX)],)
 
         if new_key in data:
-            data[new_key] = scheming_language_text(data[key], config.get('ckan.locale_default', 'en'))
+            data[new_key] = scheming_language_text(data[key], lang)
 
     return validator
 
