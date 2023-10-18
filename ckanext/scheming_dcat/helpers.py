@@ -711,8 +711,13 @@ def schemingdct_extract_lang_text(text, current_lang):
 @helper
 def dataset_display_name(package_or_package_dict):
     """
-    monkey patched version of ckan.lib.helpers.dataset_display_name which
-    extracts the correct translation of the dataset name
+    Returns the localized value of the dataset name by extracting the correct translation.
+    
+    Args:
+    - package_or_package_dict: A dictionary containing the package information.
+    
+    Returns:
+    - The localized value of the dataset name.
     """
     field_name = 'title' if 'title' in package_or_package_dict else 'name'
     
@@ -721,12 +726,30 @@ def dataset_display_name(package_or_package_dict):
 @helper
 def dataset_display_field_value(package_or_package_dict, field_name):
     """
-    extracts the correct translation of the dataset field
-    """    
+    Extracts the correct translation of the dataset field.
+
+    Args:
+        package_or_package_dict (dict): The package or package dictionary to extract the value from.
+        field_name (str): The name of the field to extract the value for.
+
+    Returns:
+        str: The localized value for the given field name.
+    """
     return scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name)
 
 @helper
 def scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name, default=''):
+    """
+    Returns the localized value for a given field name from the provided package or package dictionary.
+
+    Args:
+        package_or_package_dict (str or dict): The package or package dictionary to extract the value from.
+        field_name (str): The name of the field to extract the value for.
+        default (str, optional): The default value to return if the field is not found. Defaults to ''.
+
+    Returns:
+        str: The localized value for the given field name, or the default value if the field is not found.
+    """
     if isinstance(package_or_package_dict, str):
         try:
             package_or_package_dict = json.loads(package_or_package_dict)
@@ -738,8 +761,9 @@ def scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_na
     
     translated_package_or_package_dict = package_or_package_dict.get(field_name + u'_translated', {})
     
-    # Check the lang_code, if not check the default_lang
+    # Check the lang_code, if not check the default_lang, if not check the field without translation
     value = translated_package_or_package_dict.get(lang_code, None) or \
-            (default_lang_code and translated_package_or_package_dict.get(default_lang_code, None)) 
+            translated_package_or_package_dict.get(default_lang_code, None) or \
+            package_or_package_dict.get(field_name, None)
 
     return value if value is not None else default
