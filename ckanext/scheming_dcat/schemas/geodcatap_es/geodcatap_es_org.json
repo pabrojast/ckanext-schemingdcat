@@ -37,13 +37,10 @@
             "es": "Identificador del publicador"
           },
           "required": true,
-          "validators": "not_empty scheming_required",
-          "form_attrs": {
-            "data-module": "slug-preview-target"
-          },
+          "preset": "scheming_dcat_identifier",
           "form_placeholder": {
-            "en": "e.g. E05068001 or my-organization-name",
-            "es": "ej. E05068001 o mi-nombre-de-organizacion"
+            "en": "e.g. http://datos.gob.es/recurso/sector-publico/org/Organismo/E05065601 or E05065601 or my-organization-name",
+            "es": "ej. http://datos.gob.es/recurso/sector-publico/org/Organismo/E05065601 o E05068001 o mi-nombre-de-organizacion"
           },
           "help_text": {
             "en": "e.g. Unique identifier of the organisation, for example DIR3 code for Spain (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>).",

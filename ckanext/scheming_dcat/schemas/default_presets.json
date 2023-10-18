@@ -205,7 +205,7 @@
     {
       "preset_name": "scheming_dcat_identifier",
       "values": {
-        "validators": "not_empty scheming_required",
+        "validators": "not_empty scheming_required scheming_dcat_clean_identifier",
         "form_attrs": {
           "data-module": "slug-preview-target"
         }

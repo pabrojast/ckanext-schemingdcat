@@ -37,13 +37,10 @@
         "es": "Identificador del grupo"
       },
       "required": true,
-      "validators": "not_empty scheming_required",
-      "form_attrs": {
-        "data-module": "slug-preview-target"
-      },
+      "preset": "scheming_dcat_identifier",
       "form_placeholder": {
-        "en": "e.g. 26773 or my-group-name",
-        "es": "ej. 26773 o mi-nombre-de-grupo"
+        "en": "e.g. https://www.eionet.europa.eu/gemet/en/concept/26773 or 26773 or my-group-name",
+        "es": "ej. https://www.eionet.europa.eu/gemet/en/concept/26773 o 26773 o mi-nombre-de-grupo"
       },
       "help_text": {
         "en": "e.g. Unique identifier code of the collection in a thesaurus or controlled vocabulary, e.g.: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>5033</a>: GEMET - marine environment)",

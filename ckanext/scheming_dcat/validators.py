@@ -209,7 +209,15 @@ def scheming_dcat_multiple_text(field, schema):
 @validator
 def scheming_dcat_valid_url(value: str) -> str:
     """
-    Check if value is a valid URL string
+    Check if the given value is a valid URL string.
+    Args:
+    - value: A string representing the URL.
+
+    Returns:
+    - The URL string if it is valid.
+
+    Raises:
+    - Invalid: If the URL is not a string or is not valid.
     """
     def check_url(url):
         try:
@@ -226,11 +234,36 @@ def scheming_dcat_valid_url(value: str) -> str:
     except (ValueError) as e:
         raise Invalid(_('URL must be a string'))
 
+@validator
+def scheming_dcat_clean_identifier(value: str) -> str:
+    """
+    Cleans a value by removing spaces at the beginning and end of the string and replacing spaces between letters with underscores.
+    
+    Args:
+    - value: A string representing the value.
+    
+    Returns:
+    - The cleaned value string.
+    """
+    if not value.startswith('http'):
+        value = value.strip().replace(' ', '-').strip()
+    
+    return value
 
 # ckanext-fluent
 @scheming_validator
 @validator
 def scheming_dcat_translated_output(field, schema):
+    """
+    Output validator that returns a value for a core field using a multilingual dict.
+    
+    Args:
+    - field: A dictionary containing the field information.
+    - schema: A dictionary containing the schema information.
+    
+    Returns:
+    - A validator function that returns a value for a core field using a multilingual dict.
+    """
     assert field['field_name'].endswith(LANG_SUFFIX), 'Output validator "fluent_core_translated" must only used on a field that ends with "_translated"'
 
     required_langs = schema.get('required_language', field.get('required_language'))
@@ -257,6 +290,16 @@ def scheming_dcat_translated_output(field, schema):
 @scheming_validator
 @validator
 def scheming_dcat_fluent_core_translated_output(field, schema):
+    """
+    Output validator that returns a value for a core field using a multilingual dict.
+    
+    Args:
+    - field: A dictionary containing the field information.
+    - schema: A dictionary containing the schema information.
+    
+    Returns:
+    - A validator function that returns a value for a core field using a multilingual dict.
+    """
     assert field['field_name'].endswith(LANG_SUFFIX), 'Output validator "fluent_core_translated" must only used on a field that ends with "_translated"'
 
     required_langs = schema.get('required_language', field.get('required_language'))
