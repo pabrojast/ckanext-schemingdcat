@@ -2,7 +2,7 @@
     "scheming_version": 2,
     "organization_type": "organization",
     "about": "Organizations: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements.",
-    "about_url": "https://github.com/mjanez/eikos",
+    "about_url": "https://github.com/mjanez/ckanext-scheming_dcat",
     "fields": [
         {
           "field_name": "title",

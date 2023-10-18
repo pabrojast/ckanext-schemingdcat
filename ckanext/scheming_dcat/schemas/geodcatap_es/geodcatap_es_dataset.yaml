@@ -3,6 +3,7 @@ dataset_type: dataset
 about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. Spanish context NTI-RISP: http://www.boe.es/eli/es/res/2013/02/19/(4)/con"
 about_url: https://github.com/mjanez/ckanext-scheming_dcat,
 form_languages: ["es", "en"]
+required_language: "es"
 schema_version: 1.1
 schema_date: 2023-10-01
 

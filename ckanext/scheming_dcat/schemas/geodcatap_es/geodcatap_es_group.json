@@ -2,21 +2,54 @@
   "scheming_version": 1,
   "group_type": "group",
   "about": "Organizations: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements.",
-  "about_url": "https://github.com/mjanez/eikos",
+  "about_url": "https://github.com/mjanez/ckanext-scheming_dcat",
+  "required_language": "es",
+  "form_languages": ["es", "en"],
   "fields": [
     {
-      "field_name": "title",
+      "field_name": "display_name",
+      "label": {
+        "en": "Display name",
+        "de": "Nombre para mostrar"
+      },
+      "preset": "hidden_field",
+      "output_validators": "scheming_dcat_if_empty_same_as_title"
+    },
+    {
+      "field_name": "title_translated",
       "label": {
         "en": "Name",
         "es": "Nombre"
       },
-      "validators": "ignore_missing unicode_safe",
-      "form_snippet": "large_text.html",
-      "form_attrs": {"data-module": "slug-preview-target"},
+      "required": true,
+      "preset": "scheming_dcat_fluent_title_translated",
       "form_placeholder": {
-        "en": "My organization",
-        "es": "Mi organización"
-      }
+        "en": "My group",
+        "es": "Mi grupo"
+      },
+      "form_languages": ["es", "en"],
+      "required_language": "es"
+    },
+    {
+      "field_name": "identifier",
+      "label": {
+        "en": "Identifier of the group",
+        "es": "Identificador del grupo"
+      },
+      "required": true,
+      "validators": "not_empty scheming_required",
+      "form_attrs": {
+        "data-module": "slug-preview-target"
+      },
+      "form_placeholder": {
+        "en": "e.g. 26773 or my-group-name",
+        "es": "ej. 26773 o mi-nombre-de-grupo"
+      },
+      "help_text": {
+        "en": "e.g. Unique identifier code of the collection in a thesaurus or controlled vocabulary, e.g.: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>5033</a>: GEMET - marine environment)",
+        "es": "Identificador único de la colección en un tesauro o vocabulario controlado, por ejemplo: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>5033</a>: GEMET - marine environment)"
+      },
+      "help_allow_html": "True"
     },
     {
       "field_name": "name",
@@ -27,17 +60,18 @@
       "form_placeholder": "my-group"
     },
     {
-      "field_name": "description",
+      "field_name": "description_translated",
       "label": {
         "en": "Abstract",
         "es": "Resumen"
       },
-      "form_snippet": "markdown.html",
-      "display_snippet": "markdown.html",
+      "preset": "scheming_dcat_fluent_notes_translated",
       "form_placeholder": {
         "en": "eg. Some useful description about the organization.",
         "es": "ej. Una descripción útil sobre la organización."
-      }
+      },
+      "form_languages": ["es", "en"],
+      "required_language": "es"
     },
     {
       "field_name": "image_url",
@@ -48,20 +82,6 @@
       "display_snippet": "link.html",
       "preset": "resource_url_upload",
       "form_placeholder": "http://example.com/my-image.jpg"
-    },
-    {
-      "field_name": "identifier",
-      "label": {
-        "en": "URI identifier",
-        "es": "Identificador URI"
-      },
-      "display_snippet": "link.html",
-      "form_placeholder": "https://www.eionet.europa.eu/gemet/en/concept/5033",
-      "help_text": {
-        "en": "Unique identifier of the collection in a thesaurus or controlled vocabulary, e.g.: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>GEMET - marine environment</a>)",
-        "es": "Identificador único de la colección en un tesauro o vocabulario controlado, por ejemplo: (<a href='https://www.eionet.europa.eu/gemet/en/concept/5033' target='_blank'>GEMET - marine environment</a>)"
-      },
-      "help_allow_html": "True"
     },
     {
       "field_name": "theme_es",

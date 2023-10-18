@@ -3,6 +3,7 @@ import ckan.logic as logic
 from ckanext.scheming_dcat import config as sd_config
 import logging
 import os
+import json
 import hashlib
 from threading import Lock
 from ckanext.dcat.utils import CONTENT_TYPES
@@ -187,3 +188,31 @@ def get_geospatial_metadata():
         })
 
     return data
+
+def parse_json(value, default_value=None):
+    """
+    Parses a JSON string and returns the resulting object.
+    If the input value is not a valid JSON string, returns the default value.
+    If the default value is not provided, returns the input value.
+
+    Args:
+        value (str): The JSON string to parse.
+        default_value (any, optional): The default value to return if the input value is not a valid JSON string.
+            Defaults to None.
+
+    Returns:
+        any: The parsed JSON object, or the default value if the input value is not a valid JSON string.
+    """
+    try:
+        return json.loads(value)
+    except (ValueError, TypeError, AttributeError):
+        if default_value is not None:
+            return default_value
+
+        # The json may already have been parsed and we have the value for the
+        # language already.
+        if isinstance(value, int):
+            # If the value is a number, it has been converted into an int - but
+            # we want a string here.
+            return str(value)
+        return value

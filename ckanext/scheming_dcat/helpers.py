@@ -16,7 +16,7 @@ import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
 from ckanext.dcat.utils import CONTENT_TYPES, get_endpoint
-
+from ckanext.fluent.validators import (LANG_SUFFIX)
 import logging
 
 log = logging.getLogger(__name__)
@@ -721,7 +721,7 @@ def dataset_display_name(package_or_package_dict):
 @helper
 def dataset_display_field_value(package_or_package_dict, field_name):
     """
-    extracts the correct translation of the dataset name
+    extracts the correct translation of the dataset field
     """    
     return scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_name)
 

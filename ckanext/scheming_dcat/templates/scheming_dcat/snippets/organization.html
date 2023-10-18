@@ -1,0 +1,25 @@
+{% extends "snippets/organization.html" %}
+
+{% set truncate = truncate or 180 %}
+{% set title = h.dataset_display_name(organization) %}
+{% set notes = h.markdown_extract(h.dataset_display_field_value(organization, 'description'), extract_length=truncate) %}
+
+{% block heading %}
+<h1 class="heading">{{ title or organization.name }}
+  {% if organization.state == 'deleted' %}
+    [{{ _('Deleted') }}]
+  {% endif %}
+</h1>
+{% endblock %}
+{% block description %}
+{% if organization.description %}
+  <p class="description">
+    {{ notes }}
+  </p>
+  <p class="read-more">
+    {% link_for _('read more'), controller='organization', action='about', id=organization.name %}
+  </p>
+{% else %}
+  <p class="empty">{{ _('There is no description for this organization') }}</p>
+{% endif %}
+{% endblock %}

@@ -24,6 +24,8 @@ from ckanext.fluent.helpers import (
 from ckanext.fluent.validators import (
     BCP_47_LANGUAGE, fluent_text_output, scheming_language_text, LANG_SUFFIX)
 
+from ckanext.scheming_dcat.utils import parse_json
+
 log = logging.getLogger(__name__)
 
 all_validators = {}
@@ -290,6 +292,8 @@ def scheming_dcat_fluent_text(field, schema):
     "required" to true will make all required_language key required to
     pass validation.
     
+    When type is group or organization and field name is title, the display_name field will be populated with the value of the first required language.
+    
     4. If the value is missing and is required, an error message will be added to the errors list.
     
     5. If the value is missing and is not required, an empty JSON string will be assigned to the data key.
@@ -309,7 +313,6 @@ def scheming_dcat_fluent_text(field, schema):
                 required_langs = [field.get('required_language')]
         alternate_langs = fluent_alternate_languages(field, schema=schema)
 
-
     #log.debug("Start | required_langs: {0}".format(required_langs))
     #log.debug("Start | field: {0}".format(field))
 
@@ -320,6 +323,7 @@ def scheming_dcat_fluent_text(field, schema):
             return
 
         value = data[key]
+        pkg_type = data.get(key[:-1] + ('type',), {})
 
         #log.debug("Start | key: {0}".format(key))
         #log.debug("Start | key: {0} and data:{1}".format(key, data))
@@ -420,6 +424,16 @@ def scheming_dcat_fluent_text(field, schema):
             data[key] = json.dumps(output)
             #log.debug("3 | output: {0}".format(data))
 
+            # group/organizations display_name fields
+            if pkg_type in ('group', 'organization') and 'title' in ''.join(key):
+                try:
+                    lang = required_langs[0] if required_langs else config.get('ckan.locale_default', 'en')
+                    display_name = ('display_name',)
+                    #log.debug('3-group/organization | output[lang]: {0} and data: {1}'.format(output[lang], data))
+                    data[display_name] = output[lang] or ''
+                except ValueError:
+                    data[display_name] = ''
+
         # 4. value is missing and is required
         if (value is missing) and field.get('required'):
             errors[key].append(_('Missing value'))
@@ -430,3 +444,78 @@ def scheming_dcat_fluent_text(field, schema):
             data[key] = {language: "" for language in form_languages}
 
     return validator
+
+@scheming_validator
+@validator
+def scheming_dcat_if_empty_same_as_title(field, schema):
+    """
+    Returns a validator function that sets a value for a core field using a multilingual dict.
+
+    Args:
+        field (dict): The field to validate.
+        schema (dict): The schema for the field.
+
+    Returns:
+        function: A validator function that sets a value for a core field using a multilingual dict.
+    """
+    required_langs = schema.get('required_language', field.get('required_language'))
+    if required_langs and not isinstance(required_langs, list):
+        required_langs = [required_langs]
+    
+    lang = required_langs[0] if required_langs else config.get('ckan.locale_default', 'en')
+
+    def validator(key, data, errors, context):
+        """
+        Return a value for a core field check a multilingual dict.
+        """
+        # title_translated
+        fallback_key = 'title' + LANG_SUFFIX
+        pkg_type = data.get(key[:-1] + ('type',), {})
+        
+        extras = scheming_dcat_get_extras(data, pkg_type)
+        output = json.loads(extras.get(fallback_key, '{}')).get(lang, '')
+
+        data[key] = output
+        #log.debug('scheming_dcat_if_empty_same_as_title | output: {0}'.format(output))
+
+    return validator
+
+@validator
+def multilingual_text_output(value):
+    """
+    Returns a multilingual dictionary representation of the stored JSON value.
+    If the value is already a dictionary, it is returned as is.
+
+    Args:
+        value (str or dict): The value to convert to a multilingual dictionary.
+
+    Returns:
+        dict: A multilingual dictionary representation of the stored JSON value.
+    """
+    if isinstance(value, dict):
+        return value
+    return parse_json(value)
+    
+def scheming_dcat_get_extras(data, pkg_type='dataset'):
+    """
+    Returns the extras for a given package type from the provided data dictionary.
+
+    Args:
+        data (dict): The data dictionary to extract extras from.
+        pkg_type (str, optional): The package type to extract extras for. Defaults to 'dataset'.
+
+    Returns:
+        dict: A dictionary containing the extras for the given package type.
+    """
+    extras = {}
+    try:
+        if pkg_type == 'dataset':
+            extras = data.get(key[:-1] + ('__extras',), {})
+            return extras
+        elif pkg_type in ('group', 'organization'):
+            for key, value in data.items():
+                if isinstance(key, tuple) and key[0] == 'extras' and key[2] == '__extras':
+                    extras[value['key']] = value['value']
+            return extras
+    except:
+        return extras

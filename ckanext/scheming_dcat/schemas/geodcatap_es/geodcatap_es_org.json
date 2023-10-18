@@ -2,21 +2,54 @@
     "scheming_version": 2,
     "organization_type": "organization",
     "about": "Organizations: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements.",
-    "about_url": "https://github.com/mjanez/eikos",
+    "about_url": "https://github.com/mjanez/ckanext-scheming_dcat",
+    "required_language": "es",
+    "form_languages": ["es", "en"],
     "fields": [
         {
-          "field_name": "title",
+          "field_name": "display_name",
+          "label": {
+            "en": "Display name",
+            "de": "Nombre para mostrar"
+          },
+          "preset": "hidden_field",
+          "output_validators": "scheming_dcat_if_empty_same_as_title"
+        },
+        {
+          "field_name": "title_translated",
           "label": {
             "en": "Name",
             "es": "Nombre"
           },
-          "validators": "ignore_missing unicode_safe",
-          "form_snippet": "large_text.html",
-          "form_attrs": {"data-module": "slug-preview-target"},
+          "required": true,
+          "preset": "scheming_dcat_fluent_title_translated",
           "form_placeholder": {
-            "en": "My organization",
-            "es": "Mi organización"
-          }
+            "en": "My group",
+            "es": "Mi grupo"
+          },
+          "form_languages": ["es", "en"],
+          "required_language": "es"
+        },
+        {
+          "field_name": "identifier",
+          "label": {
+            "en": "Identifier of the publisher",
+            "es": "Identificador del publicador"
+          },
+          "required": true,
+          "validators": "not_empty scheming_required",
+          "form_attrs": {
+            "data-module": "slug-preview-target"
+          },
+          "form_placeholder": {
+            "en": "e.g. E05068001 or my-organization-name",
+            "es": "ej. E05068001 o mi-nombre-de-organizacion"
+          },
+          "help_text": {
+            "en": "e.g. Unique identifier of the organisation, for example DIR3 code for Spain (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>).",
+            "es": "ej. Identificador único de la organización, por ejemplo el código DIR3 para España (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)."
+          },
+          "help_allow_html": "True"
         },
         {
           "field_name": "name",
@@ -27,17 +60,18 @@
           "form_placeholder": "my-organization"
         },
         {
-          "field_name": "description",
+          "field_name": "description_translated",
           "label": {
             "en": "Abstract",
             "es": "Resumen"
           },
-          "form_snippet": "markdown.html",
-          "display_snippet": "markdown.html",
+          "preset": "scheming_dcat_fluent_notes_translated",
           "form_placeholder": {
-            "en": "eg. Some useful description about the group.",
-            "es": "ej. Una descripción útil sobre el grupo."
-          }
+            "en": "eg. Some useful description about the organization.",
+            "es": "ej. Una descripción útil sobre la organización."
+          },
+          "form_languages": ["es", "en"],
+          "required_language": "es"
         },
         {
           "field_name": "image_url",
@@ -66,20 +100,6 @@
           },
           "display_snippet": "link.html",
           "form_placeholder": "e.g. http://www.example.org.com/"
-        },
-        {
-          "field_name": "identifier",
-          "label": {
-            "en": "URI of the publisher",
-            "es": "URI del publicador"
-          },
-          "display_snippet": "link.html",
-          "form_placeholder": "e.g. E05068001",
-          "help_text": {
-            "en": "Unique identifier of the organisation, for example DIR3 for Spain (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>).",
-            "es": "Identificador único de la organización, por ejemplo DIR3 para España (<a href='https://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)."
-          },
-          "help_allow_html": "True"
         },
         {
           "field_name": "publisher_type",

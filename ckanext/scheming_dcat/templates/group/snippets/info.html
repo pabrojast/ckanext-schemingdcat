@@ -1,0 +1,24 @@
+{% ckan_extends %}
+
+{% set truncate = truncate or 180 %}
+{% set title = h.dataset_display_name(group) %}
+{% set notes = h.markdown_extract(h.dataset_display_field_value(group, 'description'), extract_length=truncate) %}
+
+{% block heading %}
+<h1 class="heading">
+    {{ title }}
+    {% if group.state == 'deleted' %}
+    [{{ _('Deleted') }}]
+    {% endif %}
+</h1>
+{% endblock %}
+{% block description %}
+{% if notes %}
+    <p class="description">
+    {{ notes }}
+    </p>
+    <p class="read-more">
+    {% link_for _('read more'), named_route='group.about', id=group.name %}
+    </p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% ckan_extends %}
+
+{% set url = h.url_for(type ~ '.read', id=group.name) %}
+{% set truncate = truncate or 80 %}
+{% set title = h.dataset_display_name(group) %}
+{% set notes = h.markdown_extract(h.dataset_display_field_value(group, 'description'), extract_length=truncate) %}
+
+    {% block title %}
+    <h2 class="media-heading">{{ title }}</h2>
+    {% endblock %}
+    {% block description %}
+    {% if notes %}
+        <p class="media-description">{{ notes }}</p>
+    {% endif %}
+    {% endblock %}
+    {% block link %}
+    <a href="{{ url }}" title="{{ _('View {name}').format(name=title) }}" class="media-view">
+    <span>{{ _('View {name}').format(name=title) }}</span>
+    </a>
+    {% endblock %}

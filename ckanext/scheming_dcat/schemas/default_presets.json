@@ -294,6 +294,20 @@
         "validators": "unicode_safe scheming_dcat_fluent_text",
         "output_validators": "fluent_text_output"
       }
+    },
+    {
+      "preset_name": "multilingual_output",
+      "values": {
+        "validators": "ignore",
+        "output_validators": "multilingual_text_output"
+      }
+    },
+    {
+      "preset_name": "hidden_field",
+      "values": {
+        "form_snippet": null,
+        "validators": "ignore"
+      }
     }
   ]
 }
