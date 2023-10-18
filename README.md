@@ -23,7 +23,7 @@ Enhancements:
 - Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
 - Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat)
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
-- Add i18n translations.
+- Add custom i18n translations to `datasets`, `groups`, `organizations` in schemas, e.g: [GeoDCAT-AP (ES)](#geodcat-ap-es).[^1]
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
 - [Update the base theme](#new-theme) of CKAN to use with the enhancements of this extension.
 - Modern UI inspired on [`datopian/ckanext-datopian`](https://github.com/datopian/ckanext-datopian).
@@ -258,3 +258,5 @@ on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 To run the tests:
 
     pytest --ckan-ini=test.ini ckanext/scheming_dcat/tests
+
+[^1]: An improvement to [`ckanext-fluent`] (https://github.com/ckan/ckanext-fluent) to allow more versatility in multilingual schema creation and metadata validation.
