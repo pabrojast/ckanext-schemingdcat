@@ -156,6 +156,11 @@ img {
 }
 
 /* Organizations Page */
+.organization-description {
+  text-align: justify;
+  margin: 0 0 10px;
+}
+
 [role=main],
 .main {
   background: #fff;
