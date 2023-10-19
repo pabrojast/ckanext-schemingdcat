@@ -5,10 +5,22 @@
 {% set notes = h.markdown_extract(h.dataset_display_field_value(organization, 'description'), extract_length=truncate) %}
 
 {% block heading %}
-<h1 class="heading">{{ title or organization.name }}
-  {% if organization.state == 'deleted' %}
-    [{{ _('Deleted') }}]
-  {% endif %}
+<h1 class="heading">
+  <div class="dataset-badges">
+    {% if organization.state.startswith('draft') %}
+    <span class="dataset-draft badge pull-left">
+      <i class="fa fa-book"></i>
+      {{ _('Draft') }}
+    </span>
+    {% endif %}
+    {% if organization.state == 'deleted' %}
+    <span class="dataset-delete badge badge pull-left">
+      <i class="fa fa-trash"></i>
+      {{ _('Deleted') }}
+    </span>
+    {% endif %}
+  </div>
+  {{ title or organization.name }}
 </h1>
 {% endblock %}
 {% block description %}

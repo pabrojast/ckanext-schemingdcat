@@ -5,21 +5,29 @@
 {% block primary_content_inner %}
   {{ super() }}
   {% block package_description %}
-    {% if pkg.private %}
-      <span class="dataset-private badge badge-inverse pull-right">
-        <i class="fa fa-lock"></i>
-        {{ _('Private') }}
+    <div class="dataset-badges">
+      {% if pkg.private %}
+        <span class="dataset-private badge pull-left">
+          <i class="fa fa-lock"></i>
+          {{ _('Private') }}
+        </span>
+      {% endif %}
+      {% if pkg.state.startswith('draft') %}
+      <span class="dataset-draft badge pull-left">
+        <i class="fa fa-book"></i>
+        {{ _('Draft') }}
       </span>
-    {% endif %}
+      {% endif %}
+      {% if pkg.state == 'deleted' %}
+      <span class="dataset-delete badge badge pull-left">
+        <i class="fa fa-trash"></i>
+        {{ _('Deleted') }}
+      </span>
+      {% endif %}
+    </div>
     <h1>
       {% block page_heading %}
         {{ h.dataset_display_name(pkg) }}
-        {% if pkg.state.startswith('draft') %}
-          [{{ _('Draft') }}]
-        {% endif %}
-        {% if pkg.state == 'deleted' %}
-          [{{ _('Deleted') }}]
-        {% endif %}
       {% endblock %}
     </h1>
     {% block package_notes %}

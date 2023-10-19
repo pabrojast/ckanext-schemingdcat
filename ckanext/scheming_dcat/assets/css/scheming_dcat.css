@@ -492,17 +492,55 @@ button.active {
   padding: 0;
 }
 
+.dataset-badges {
+  display: flex;
+  justify-content: flex-end; /* Align to the right */
+}
+
+.dataset-badges > span {
+  margin-left: 10px; /* Adjust the spacing between elements */
+}
+
 .dataset-private {
-  margin-right: 10px;
+  margin-right: 0;
   text-transform: uppercase;
   background-color: #fff6e6;
   border: 1px solid #faae20;
   color: #433f3f;
 }
 
+.dataset-delete {
+  text-transform: uppercase;
+  background-color: #ffe6e6;
+  border: 1px solid #ff4343;
+  color: #433f3f;
+}
+
+.dataset-draft {
+  text-transform: uppercase;
+  background-color: #e2e2e2;
+  border: 1px solid #979b94;
+  color: #433f3f;
+}
+
 .dataset-private.pull-right {
-  margin-right: 0;
-  margin-top: -25px;
+  margin-right: 10px;
+}
+.dataset-delete.pull-right {
+  margin-right: 10px;
+}
+.dataset-draft.pull-right {
+  margin-right: 10px;
+}
+
+.dataset-private.pull-left {
+  margin-left: 10px;
+}
+.dataset-delete.pull-left {
+  margin-left: 10px;
+}
+.dataset-draft.pull-left {
+  margin-left: 10px;
 }
 
 .dataset-heading .label {
@@ -1635,4 +1673,15 @@ a.endpoints_layout1:hover {
 .select2-container .select2-choice {
   height: 34px;
   line-height: 34px;
+}
+
+/* Trash */
+.trash-li-info {
+  font-size: 12px;
+  padding-bottom: 3px;
+}
+
+.trash-dataset-badges {
+  display: flex;
+  justify-content: flex-start; /* Align to the left */
 }
