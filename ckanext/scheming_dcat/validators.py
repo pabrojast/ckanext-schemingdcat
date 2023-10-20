@@ -206,33 +206,37 @@ def scheming_dcat_multiple_text(field, schema):
     return _scheming_multiple_text
 
 
+@scheming_validator
 @validator
-def scheming_dcat_valid_url(value: str) -> str:
-    """
-    Check if the given value is a valid URL string.
+def scheming_dcat_valid_url(field, schema):
+    """Validates a URL field.
+
+    This validator checks if the value of the field is a string and starts with 'http'. If the value is not a string or does not start with 'http', it adds an error message to the errors dictionary.
+
     Args:
-    - value: A string representing the URL.
+        field (dict): The field to validate.
+            A dictionary containing information about the field to be validated.
+        schema (dict): The schema for the field.
+            A dictionary containing the schema for the field to be validated.
 
     Returns:
-    - The URL string if it is valid.
+        function: A validation function that can be used to validate the field.
 
-    Raises:
-    - Invalid: If the URL is not a string or is not valid.
     """
-    def check_url(url):
-        try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc])
-        except ValueError:
-            return False
+    def validator(key, data, errors, context):
+        value = data[key].strip()
+        
+        if value is missing or value is None or value == '':
+            data[key] = value
+            return validator
+        elif not isinstance(value, six.string_types):
+            errors[key].append(_('URL must be a string'))
+        elif not value.startswith('http'):
+            errors[key].append(_('Please provide a valid URL'))
+            
+        data[key] = value
 
-    if not isinstance(value, six.string_types):
-        raise Invalid(_('URL must be a string'))
-    try:
-        if check_url(value):
-            return value
-    except (ValueError) as e:
-        raise Invalid(_('URL must be a string'))
+    return validator
 
 @validator
 def scheming_dcat_clean_identifier(value: str) -> str:
@@ -249,6 +253,27 @@ def scheming_dcat_clean_identifier(value: str) -> str:
         value = value.strip().replace(' ', '-').strip()
     
     return value
+
+@scheming_validator
+@validator
+def name_identifier_validator(field, schema):
+    """Validates and normalizes a name field.
+
+    This validator checks if the value of the field is a URL and, if so, extracts the last part of the URL as the name. If the value is not a URL but starts with 'http', it extracts the last part of the string after splitting it by '-' characters.
+
+    Args:
+        field (dict): The field to validate.
+        schema (dict): The schema for the field.
+    """
+    def validator(key, data, errors, context):        
+        value = data[key]
+                
+        if value.startswith('http'):
+            data[key] = value.split('-')[-1].strip()
+        elif check_url(value):
+            data[key] = value.split('/')[-1].strip()
+
+    return validator
 
 # ckanext-fluent
 @scheming_validator
@@ -574,3 +599,18 @@ def scheming_dcat_get_extras(data, pkg_type='dataset'):
             return extras
     except:
         return extras
+    
+def check_url(url):
+    """Checks if a given URL is valid.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the URL is valid, False otherwise.
+    """
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

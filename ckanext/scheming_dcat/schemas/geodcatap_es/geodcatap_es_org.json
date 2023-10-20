@@ -51,7 +51,7 @@
         {
           "field_name": "name",
           "label": "URL",
-          "validators": "not_empty unicode_safe name_validator group_name_validator",
+          "validators": "not_empty unicode_safe name_validator group_name_validator name_identifier_validator",
           "form_snippet": "slug.html",
           "display_snippet": "link.html",
           "form_placeholder": "my-organization"

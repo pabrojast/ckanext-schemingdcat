@@ -2,7 +2,7 @@ scheming_version: 2
 dataset_type: dataset
 about: "Datasets/Distributions: Adaptation for CKAN of the Data Catalog Vocabulary (DCAT) - Version 3 (https://www.w3.org/TR/vocab-dcat-3/)." 
 about_url: https://github.com/mjanez/ckanext-scheming_dcat
-schema_version: 0.1
+schema_version: 1.0
 schema_date: 2023-08-24
 
 ### Codes in Schema
@@ -433,7 +433,7 @@ dataset_fields:
   label:
     en: Website of the Metadata contact point
     es: Web del punto de contacto de los metadatos
-  display_snippet: scheming_dcat/display_snippets/link.html
+  preset: valid_url
   display_property: vcard:hasURL
   form_placeholder: http://www.example.com
 
@@ -496,8 +496,8 @@ dataset_fields:
     en: Website of the publisher
     es: Web del publicador
   display_property: foaf:homepage
-  display_snippet: scheming_dcat/display_snippets/link.html
   form_placeholder: http://www.example.com
+  preset: valid_url
   help_text:
     en: Esta propiedad se refiere a una página web que actúa como página principal del publicador. URL
     es: Esta propiedad se refiere a una página web que actúa como página principal del publicador. URL
@@ -594,8 +594,8 @@ dataset_fields:
     en: Website of the dataset maintainer
     es: Web del mantenedor
   display_property: foaf:homepage
-  display_snippet: scheming_dcat/display_snippets/link.html
   form_placeholder: http://www.example.com
+  preset: valid_url
   help_text:
     en: This property refers to a web page that acts as the maintainer's homepage. URL
     es: Esta propiedad se refiere a una página web que actúa como página principal del mantenedor. URL
@@ -638,7 +638,7 @@ dataset_fields:
     en: Website of the dataset creator
     es: Web del autor
   display_property: foaf:homepage
-  display_snippet: scheming_dcat/display_snippets/link.html
+  preset: valid_url
   form_placeholder: http://www.example.com
   help_text:
     en: This property refers to a web page that acts as the author's homepage. URL
@@ -926,10 +926,8 @@ dataset_fields:
   label: 
     en: Geographic identifier
     es: Identificador geográfico
-  validators: ignore_missing
-  form_snippet: select.html
+  preset: select_icon
   display_property: dcat:theme
-  display_snippet: scheming_dcat/display_snippets/select_icon.html
   select_size: 10
   sorted_choices: True
   choices:
@@ -1151,7 +1149,7 @@ dataset_fields:
   - label:
       en: Restricted
       es: Restringido
-    value: http://publications.europa.eu/resource/authority/access-right/RESTRICTEDç
+    value: http://publications.europa.eu/resource/authority/access-right/RESTRICTED
   - label:
       en: Sensitive
       es: Sensible
@@ -1188,14 +1186,12 @@ dataset_fields:
     es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
 
 # Dataset validity (O)
-##TODO: To profiles.py
 - field_name: valid
   label: 
     en: Dataset validity
     es: Vigencia del conjunto de datos
   display_property: dct:valid
   preset: date
-
 
 #--Resource/Distribution (dcat:Distribution) fields--#
 resource_fields:
@@ -1488,17 +1484,16 @@ resource_fields:
     value: http://publications.europa.eu/resource/authority/language/GLE
 
 # Byte size (O)
-##TODO: validator integer and default value=Null
-# - field_name: size
-#   label:
-#     en: Byte size
-#     es: Tamaño en bytes
-#   form_placeholder: 305000
-#   required: True
-#   display_property: dcat:byteSize
-#   help_text:
-#     en: 'Integer value.'
-#     es: 'Valor entero.'
+- field_name: size
+  label:
+    en: Byte size
+    es: Tamaño en bytes
+  form_placeholder: 305000
+  preset: file_size
+  display_property: dcat:byteSize
+  help_text:
+    en: 'Integer value.'
+    es: 'Valor entero.'
 
 # Additional format information (O)
 ##TODO: To profiles.py
@@ -1555,7 +1550,7 @@ resource_fields:
   - label:
       en: Restricted
       es: Restringido
-    value: http://publications.europa.eu/resource/authority/access-right/RESTRICTEDç
+    value: http://publications.europa.eu/resource/authority/access-right/RESTRICTED
   - label:
       en: Sensitive
       es: Sensible

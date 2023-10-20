@@ -8,12 +8,12 @@
     <section class="module-content">
       {% set icons_dir = h.schemingdct_get_icons_dir(field_spatial_uri) %}
       {% if icons_dir %}
-        {% set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field_spatial_uri, pkg_dict.spatial_uri), icons_dir) %}
+        {% set icon = h.schemingdct_get_icon(h.schemingdct_get_choice_item(field_spatial_uri, pkg_dict.spatial_uri), icons_dir, None) %}
         {% if icon %}
           {% set img_url= h.url_for_static(icon) %}
         {% endif %}
       {% endif %}
-      {% if img_url and 'no_icon' not in img_url %}
+      {% if img_url %}
         <a href="{{ h.url_for('dataset.search', spatial_uri=pkg_dict.spatial_uri) }}" target="_blank">
           <img src="{{ img_url }}" title="{{ label }}" class="item_icon"></img>
         </a>

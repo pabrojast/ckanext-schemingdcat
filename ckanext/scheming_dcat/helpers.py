@@ -695,7 +695,7 @@ def schemingdct_extract_lang_text(text, current_lang):
         return lang_text
 
     lang_label = f"[#{current_lang}#]"
-    default_lang = p.toolkit.config.get('ckan.locale_default', 'en')
+    default_lang = schemingdct_get_default_lang()
     default_lang_label = f"[#{default_lang}#]"
 
     lang_text = process_language_content(lang_label)
@@ -767,3 +767,17 @@ def scheming_dct_get_localized_value_from_dict(package_or_package_dict, field_na
             package_or_package_dict.get(field_name, None)
 
     return value if value is not None else default
+
+@helper
+def scheming_dct_get_readable_file_size(num, suffix='B'):
+    if not num:
+        return False
+    try:
+        for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+            num = float(num)
+            if abs(num) < 1024.0:
+                return "%3.1f%s%s" % (num, unit, suffix)
+            num /= 1024.0
+        return "%.1f%s%s" % (num, 'Y', suffix)
+    except ValueError:
+        return False

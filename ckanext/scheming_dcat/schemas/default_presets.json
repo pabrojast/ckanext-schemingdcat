@@ -41,6 +41,13 @@
       }
     },
     {
+      "preset_name": "valid_url",
+      "values": {
+        "validators": "ignore_missing scheming_dcat_valid_url",
+        "display_snippet": "scheming_dcat/display_snippets/link.html"
+      }
+    },
+    {
       "preset_name": "dataset_organization",
       "values": {
         "validators": "owner_org_validator unicode_safe",
@@ -142,6 +149,14 @@
         "form_snippet": "scheming_dcat/form_snippets/multiple_text.html",
         "validators": "ignore_missing scheming_dcat_multiple_text",
         "output_validators": "scheming_load_json"
+      }
+    },
+    {
+      "preset_name": "select_icon",
+      "values": {
+        "form_snippet": "scheming_dcat/form_snippets/select_icon.html",
+        "display_snippet": "scheming_dcat/display_snippets/select_icon.html",
+        "validators": "ignore_missing"
       }
     },
     {
@@ -307,6 +322,14 @@
       "values": {
         "form_snippet": null,
         "validators": "ignore"
+      }
+    },
+    {
+      "preset_name": "file_size",
+      "values": {
+        "validators": "default(0) natural_number_validator",
+        "display_snippet": "scheming_dcat/display_snippets/file_size.html",
+        "form_snippet": "scheming_dcat/form_snippets/file_size.html"
       }
     }
   ]
