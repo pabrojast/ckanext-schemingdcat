@@ -12,9 +12,10 @@
 ## Overview
 This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml).
 
->**Warning**<br>
+> [!WARNING] 
 > Requires [mjanez/ckanext-dcat](https://github.com/mjanez/ckanext-dcat), [ckan/ckanext-scheming](https://github.com/ckan/ckanext-scheming) and [ckan/ckanext-spatial](https://github.com/ckan/ckanext-spatial) to work properly.
->
+
+> [!TIP]
 > It is **recommended to use with:** [`ckan-docker`](https://github.com/mjanez/ckan-docker) deployment or only use [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw) to deploy a CSW Catalog.
 
 ![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/6b3d6fd4-7119-4307-8be7-5e17d41292fe)
@@ -60,7 +61,7 @@ Set the plugin:
   # Add the plugin to the list of plugins
   ckan.plugins = ... spatial_metadata ... dcat ... scheming_dcat
   ```
->**Warning**<br>
+> [!WARNING] 
 > When using `scheming_dcat` extension,**`scheming` should not appear in the list of plugins loaded in CKAN.** But `dcat` and `spatial` should.
 
 ### Scheming DCAT
@@ -182,7 +183,7 @@ This two last settings are not mandatory. You can omit one or both (or set them 
       <field name="resource_relation" type="string" uninvertible="false" docValues="true" indexed="true" stored="true" multiValued="true"/>
     ```
 
-    >**Note**<br>
+    > [!NOTE] 
     >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning. 
     >
     >The extra fields depend on your [schema](/ckanext/scheming_dcat/schemas/)
@@ -230,7 +231,7 @@ Are available to use with this extension a number of custom schema, more info: [
 ### GeoDCAT-AP (ES)
 [`schemas/geodcatp_es`](/ckanext/scheming_dcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
 
->**Note**<br>
+> [!NOTE] 
 > RDF to CKAN dataset mapping: [GeoDCAT-AP (ES) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-es)
 
 
@@ -238,19 +239,19 @@ Are available to use with this extension a number of custom schema, more info: [
 [`schemas/dcat`](/ckanext/scheming_dcat/schemas/dcat/dcat_dataset.yaml) based
 on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
->**Note**<br>
+> [!NOTE] 
 > RDF to CKAN dataset mapping: [DCAT to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat)
 
 ### DCAT-AP (EU)
 [`schemas/dcatap`](/ckanext/scheming_dcat/schemas/dcatap/dcatap_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
 
->**Note**<br>
+> [!NOTE] 
 > RDF to CKAN dataset mapping: [DCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat-ap-eu)
 
 ### GeoDCAT-AP (EU)
 [`schemas/geodcatap`](/ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml) based on: [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP) for the european context.
 
->**Note**<br>
+> [!NOTE] 
 > RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-eu)
 
 
