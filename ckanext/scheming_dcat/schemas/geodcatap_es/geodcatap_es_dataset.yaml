@@ -6,6 +6,9 @@ form_languages: ["es", "en"]
 required_language: "es"
 schema_version: 2.0
 schema_date: 2023-10-19
+schema_name: geodcatap_es
+schema_title: GeoDCAT-AP (ES)
+schema_description: "Geospatial extension to the DCAT application profile for data portals in Europe (GeoDCAT-AP). It is adapted to the Spanish context and includes compatibility with the Technical Interoperability Standard (NTI-RISP), the open data profile for Spain: https://datos.gob.es/en/documentacion/guia-de-aplicacion-de-la-norma-tecnica-de-interoperabilidad-de-reutilizacion-de"
 
 ### Codes in Schema
 # (M): Mandatory
@@ -1202,11 +1205,11 @@ dataset_fields:
   sorted_choices: True
   choices:
   - label:
-      en: Meteorological Geographical Features (MF)
+      en: Meteorological geographical features (MF)
       es: Aspectos geográficos de carácter meteorológico (MF)
     value: http://inspire.ec.europa.eu/theme/mf
   - label:
-      en: Atmospheric Conditions (AC)
+      en: Atmospheric conditions (AC)
       es: Condiciones atmosféricas (AC)
     value: http://inspire.ec.europa.eu/theme/ac
   - label:
@@ -1246,7 +1249,7 @@ dataset_fields:
       es: Hábitats y biotopos (HB)
     value: http://inspire.ec.europa.eu/theme/hb
   - label:
-      en: Agricultural and Aquaculture Facilities (AF)
+      en: Agricultural and aquaculture facilities (AF)
       es: Instalaciones agrícolas y de acuicultura (AF)
     value: http://inspire.ec.europa.eu/theme/af
   - label:
@@ -1278,7 +1281,7 @@ dataset_fields:
       es: Rasgos geográficos oceanográficos (OF)
     value: http://inspire.ec.europa.eu/theme/of
   - label:
-      en: Natural resources (ER)
+      en: Energy resources (ER)
       es: Recursos energéticos (ER)
     value: http://inspire.ec.europa.eu/theme/er
   - label:
@@ -1310,7 +1313,7 @@ dataset_fields:
       es: Sistema de cuadrículas geográficas (GG)
     value: http://inspire.ec.europa.eu/theme/gg
   - label:
-      en: Coordinate Reference Systems (RS)
+      en: Coordinate reference systems (RS)
       es: Sistemas de coordenadas de referencia (RS)
     value: http://inspire.ec.europa.eu/theme/rs
   - label:
@@ -1334,7 +1337,7 @@ dataset_fields:
       es: Zonas de riesgos naturales (NZ)
     value: http://inspire.ec.europa.eu/theme/nz
   - label:
-      en: Area Management/Restriction/Regulation Zones and Reporting Units (AM)
+      en: Area management/restriction/regulation zones and reporting units (AM)
       es: Zonas sujetas a ordenación, a restricciones o reglamentaciones y unidades de notificación (AM)
     value: http://inspire.ec.europa.eu/theme/am
 

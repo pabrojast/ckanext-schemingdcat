@@ -26,10 +26,14 @@ setup(
     include_package_data=True,
     entry_points='''
         [ckan.plugins]
-        scheming_dcat=ckanext.scheming_dcat.plugin:FacetSchemingDcatPlugin
-        scheming_dcat_datasets=ckanext.scheming_dcat.plugin:SchemingDcatDatasetsPlugin
-        scheming_dcat_groups=ckanext.scheming_dcat.plugin:SchemingDcatGroupsPlugin
-        scheming_dcat_organizations=ckanext.scheming_dcat.plugin:SchemingDcatOrganizationsPlugin
+        scheming_dcat=ckanext.scheming_dcat.plugin:FacetSchemingDCATPlugin
+        scheming_dcat_datasets=ckanext.scheming_dcat.plugin:SchemingDCATDatasetsPlugin
+        scheming_dcat_groups=ckanext.scheming_dcat.plugin:SchemingDCATGroupsPlugin
+        scheming_dcat_organizations=ckanext.scheming_dcat.plugin:SchemingDCATOrganizationsPlugin
+        
+        
+        scheming_dcat_ckan_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATCKANHarvester
+        scheming_dcat_csw_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATCSWHarvester
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan

@@ -1469,6 +1469,12 @@ a.tag:hover {
   font-size: 0.9em;
 }
 
+.add_to_group_field {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+}
+
 /* Homepage Endpoints */
 .endpoints {
   text-align: center;

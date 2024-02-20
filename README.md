@@ -6,11 +6,12 @@
     <a href="#installation">Installation</a> •
     <a href="#configuration">Configuration</a> •
     <a href="#schemas">Schemas</a> •
+    <a href="#harvesters">Harvesters</a> •
     <a href="#running-the-tests">Running the Tests</a>
 </p>
 
 ## Overview
-This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml).
+This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT and Harvest enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml).
 
 > [!WARNING] 
 > Requires [mjanez/ckanext-dcat](https://github.com/mjanez/ckanext-dcat), [ckan/ckanext-scheming](https://github.com/ckan/ckanext-scheming) and [ckan/ckanext-spatial](https://github.com/ckan/ckanext-spatial) to work properly.
@@ -23,6 +24,7 @@ This CKAN extension provides functions and templates specifically designed to ex
 Enhancements:
 - Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
 - Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat)
+- Add improved harvesters for custom metadata schemas integrated with `ckanext-harvest` in CKAN using [`mjanez/ckan-ogc`](https://github.com/mjanez/ckan-ogc).
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add custom i18n translations to `datasets`, `groups`, `organizations` in schemas, e.g: [GeoDCAT-AP (ES)](#geodcat-ap-es).[^1]
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
@@ -31,28 +33,33 @@ Enhancements:
 - LOD/OGC Endpoints based on avalaible profiles (DCAT) and CSW capabilities with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw).
 
 ## Requirements
-This plugin is compatible with CKAN 2.9 or later.
+This plugin is compatible with CKAN 2.9 or later and needs the following plugins to work properly:
 
+  ```sh
+  # Install latest stable release of:
+  ## ckan/ckanext-scheming: https://github.com/ckan/ckanext-scheming/tags (e.g. release-3.0.0)
+  pip install -e git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
+
+  ## mjanez/ckanext-dcat: https://github.com/mjanez/ckanext-dcat/tags (e.g. 1.2.0-geodcatap)
+  pip install -e git+https://github.com/mjanez/ckanext-dcat.git@1.2.0-geodcatap#egg=ckanext-dcat
+  pip install -r https://raw.githubusercontent.com/mjanez/ckanext-dcat/master/requirements.txt
+
+  ## ckan/ckckanext-spatial: https://github.com/ckan/ckanext-spatial/tags (e.g. v2.1.1)
+  pip install -e git++https://github.com/ckan/ckanext-spatial.git@v2.1.1/#egg=ckanext-spatial#egg=ckanext-spatial
+  pip install -r https://raw.githubusercontent.com/ckan/ckanext-spatial/v2.1.1/requirements.txt
+
+  ## ckan/ckckanext-harvest: https://github.com/ckan/ckanext-harvest/tags (e.g. v1.5.6)
+  pip install -e git++https://github.com/ckan/ckanext-harvest.git@v1.5.6#egg=ckanext-spatial
+  pip install -r https://raw.githubusercontent.com/ckan/ckanext-harvest/v1.5.6/requirements.txt
+  ```
 
 ## Installation
-```sh
-cd $CKAN_VENV/src/
+  ```sh
+  cd $CKAN_VENV/src/
 
-# Install latest stable release of:
-## ckanext-scheming: https://github.com/ckan/ckanext-scheming/tags (e.g. release-3.0.0)
-pip install -e git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
-
-## mjanez/ckanext-dcat: https://github.com/mjanez/ckanext-dcat/tags (e.g. 1.2.0-geodcatap)
-pip install -e git+https://github.com/mjanez/ckanext-dcat.git@1.2.0-geodcatap#egg=ckanext-dcat
-pip install -r https://raw.githubusercontent.com/mjanez/ckanext-dcat/master/requirements.txt
-
-## ckanext-spatial: https://github.com/ckan/ckanext-spatial/tags (e.g. v.2.0.0)
-pip install -e git++https://github.com/ckan/ckanext-spatial.git@v2.0.0#egg=ckanext-spatial
-pip install -r https://raw.githubusercontent.com/ckan/ckanext-spatial/master/requirements.txt
-
-# Install the scheming_dataset plugin
-pip install -e "git+https://github.com/ckan/ckanext-scheming_dcat.git#egg=ckanext-scheming_dcat"
-```
+  # Install the scheming_dataset plugin
+  pip install -e "git+https://github.com/ckan/ckanext-scheming_dcat.git#egg=ckanext-scheming_dcat"
+  ```
 
 ## Configuration
 Set the plugin:
@@ -96,6 +103,13 @@ To use custom schemas in `ckanext-scheming`:
 
   #   The is_fallback setting may be changed as well. Defaults to false:
   scheming.dataset_fallback = false
+  ```
+
+### Harvest
+Add the [custom Harvesters](#harvesters) to the list of plugins as you need:
+
+  ```ini
+  ckan.plugins = ... spatial_metadata ... dcat ... scheming_dcat ... harvest ... scheming_dcat_ckan_harvester scheming_dcat_csw_harvester ...
   ```
 
 ### Endpoints
@@ -253,6 +267,52 @@ on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
 > [!NOTE] 
 > RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-eu)
+
+
+## Harvesters
+### Scheming DCAT CKAN Harvester: CKAN Harvester for custom schemas
+The plugin includes a harvester for remote CKAN instances using the custom schemas provided by `scheming_dcat` and `ckanext-scheming`. This harvester is a subclass of the CKAN Harvester provided by `ckanext-harvest` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CKAN instances.
+
+To use it, you need
+to add the `scheming_dcat_ckan_harvester` plugin to your options file:
+
+	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_ckan_harvester
+
+The Scheming DCAT CKAN Harvester supports the same configuration options as the [CKAN Harvester](https://github.com/ckan/ckanext-harvest#the-ckan-harvester), plus the following additional options:
+
+* `schema`: The name of the schema to use for the harvested datasets. This is the `schema_name` as defined in the scheming file. The remote and local instances must have the same dataset schema. If not provided, the local instance schema will be used.
+* `allow_harvest_datasets`: If `true`, the harvester will create new records even if the package type is from the harvest source. If `false`, the harvester will only create records that originate from the instance. Default is `false`.
+* `remote_orgs`: [WIP]. Only `only_local`.
+* `remote_groups`: [WIP]. Only `only_local`.
+
+And example configuration might look like this:
+
+  ```json
+      {
+      "api_version": 2,
+      "default_tags": [{"name": "inspire"}, {"name": "geodcatap"}],
+      "default_groups": ["transportation", "hb"],
+      "default_extras": {"encoding":"utf8", "harvest_url": "{harvest_source_url}/dataset/{dataset_id}"},
+      "organizations_filter_include": ["remote-organization"],
+      "user":"harverster-user",
+      "api_key":"<REMOTE_API_KEY>",
+      "read_only": true,
+      "remote_groups": "only_local",
+      "remote_orgs": "only_local",
+      "schema": "geodcatap",
+      "allow_harvest_datasets": true
+      }
+  ```
+
+### Scheming DCAT CSW INSPIRE Harvester: CSW Harvester for INSPIRE ISO 19139 metadata
+The plugin includes a harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
+
+To use it, you need
+to add the `scheming_dcat_csw_harvester` plugin to your options file:
+
+	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_csw_harvester
+
+#TODO: Add more info about the configuration options
 
 
 ## Running the Tests

@@ -7,10 +7,11 @@ import re
 import yaml
 from yaml.loader import SafeLoader
 from pathlib import Path
+from functools import lru_cache
 
 from six.moves.urllib.parse import urlencode
 
-from ckanext.scheming.helpers import scheming_choices_label,scheming_language_text
+from ckanext.scheming.helpers import scheming_choices_label,scheming_language_text, scheming_dataset_schemas
 
 import ckanext.scheming_dcat.config as sd_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
@@ -24,6 +25,14 @@ log = logging.getLogger(__name__)
 all_helpers = {}
 
 
+@lru_cache(maxsize=None)
+def get_scheming_dataset_schemas():
+    """
+    Retrieves the dataset schemas using the scheming_dataset_schemas function.
+    Caches the result using the LRU cache decorator for efficient retrieval.
+    """
+    return scheming_dataset_schemas()
+
 def helper(fn):
     """Collect helper functions into the ckanext.scheming_dcat.all_helpers dictionary.
 
@@ -35,6 +44,19 @@ def helper(fn):
     """
     all_helpers[fn.__name__] = fn
     return fn
+
+
+@helper
+def schemingdct_get_schema_names():
+    """
+    Get the names of all the schemas defined for the Scheming DCAT extension.
+    
+    Returns:
+        list: A list of schema names.
+    """
+    schemas = get_scheming_dataset_schemas()
+    
+    return [schema['schema_name'] for schema in schemas.values()]
 
 @helper
 def schemingdct_default_facet_search_operator():
@@ -462,7 +484,7 @@ def schemingdct_get_linked_data(id):
         'display_name': linkeddata_links.get(name, {'display_name': content_type})['display_name'],
         'format': linkeddata_links.get(name, {}).get('format'),
         'image_display_url': linkeddata_links.get(name, {}).get('image_display_url'),
-        'description': linkeddata_links.get(name, {}).get('description') or f"Formats {content_type}",
+        'description': linkeddata_links.get(name, {}).get('description') or f'Formats {content_type}',
         'description_url': linkeddata_links.get(name, {}).get('description_url'),
         'endpoint': 'dcat.read_dataset',
         'endpoint_data': {
@@ -620,7 +642,7 @@ def schemingdct_fluent_form_label(field, lang):
     """
     form_label = field.get('fluent_form_label', {})
     label = scheming_language_text(form_label.get(lang, field['label']))
-    return f"{label} ({lang.upper()})"
+    return f'{label} ({lang.upper()})'
 
 @helper
 def schemingdct_multiple_field_required(field, lang):
@@ -694,9 +716,9 @@ def schemingdct_extract_lang_text(text, current_lang):
                 lang_text.append(line)
         return lang_text
 
-    lang_label = f"[#{current_lang}#]"
+    lang_label = f'[#{current_lang}#]'
     default_lang = schemingdct_get_default_lang()
-    default_lang_label = f"[#{default_lang}#]"
+    default_lang_label = f'[#{default_lang}#]'
 
     lang_text = process_language_content(lang_label)
 
