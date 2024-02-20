@@ -1452,6 +1452,8 @@ a.tag:hover {
 }
 .group .media-heading a {
   color: #003164 !important;
+  font-size: 15px;
+  font-weight: 600;
 }
 .group .dataset-item {
   margin-top: 10px;
@@ -1473,6 +1475,12 @@ a.tag:hover {
     display: flex;
     flex-direction: row;
     align-items: baseline;
+}
+
+.media_item_img {
+  display: flex; 
+  align-items: center; 
+  min-height: 75px;
 }
 
 /* Homepage Endpoints */

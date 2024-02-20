@@ -1,5 +1,6 @@
 from ckan.common import json, c, request, is_flask_request
 from ckan.lib import helpers as ckan_helpers
+import ckan.logic as logic
 from ckan.lib.i18n import get_available_locales, get_lang
 import ckan.plugins as p
 import six
@@ -803,3 +804,17 @@ def scheming_dct_get_readable_file_size(num, suffix='B'):
         return "%.1f%s%s" % (num, 'Y', suffix)
     except ValueError:
         return False
+
+@helper
+def schemingdct_get_group_or_org(id, type='group'):
+    """
+    Retrieve information about a group or organization in CKAN.
+
+    Args:
+        id (str): The ID of the group or organization.
+        type (str, optional): The type of the entity to retrieve. Defaults to 'group'.
+
+    Returns:
+        dict: A dictionary containing information about the group or organization.
+    """
+    return logic.get_action(f'{type}_show')({}, {'id': id})
