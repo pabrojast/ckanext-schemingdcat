@@ -275,6 +275,22 @@ msgstr ""
 msgid "{endpoint_type} Endpoint"
 msgstr ""
 
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:10
+msgid "CSV, Comma Separated Values is a simple format for representing a rectangular array (matrix) of numeric and textual values."
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:14
+msgid "TSV, Tab-Separated Values is a text format whose primary function is to store data in a table structure."
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:18
+msgid "JSON, JavaScript Object Notation is a lightweight, text-based, language-independent data interchange format."
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:22
+msgid "XML, Extensible Markup Language is a simple, very flexible text format derived from SGML (ISO 8879)."
+msgstr ""
+
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/resource_read.html:112
 msgid "Distribution metadata"
 msgstr ""
@@ -836,4 +852,16 @@ msgstr ""
 
 #: ckanext/harvest/templates/source/job/read.html:73
 msgid "Local content"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html:51
+msgid "You can validate the JSON at: "
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/ajax_snippets/scd_api_info.html
+msgid "(<a href=\"{{ url }}\">ckanapi</a> library)"
+msgstr ""
+
+#: ckanext/scheming_dcat/templates/ajax_snippets/scd_api_info.html
+msgid "Query example (results containing 'medio-ambiente')"
 msgstr ""

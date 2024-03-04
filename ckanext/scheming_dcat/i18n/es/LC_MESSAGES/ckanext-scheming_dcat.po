@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: ckanext-scheming_dcat 0.0.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2023-07-04 11:54+0200\n"
-"PO-Revision-Date: 2024-02-19 07:08+0100\n"
+"PO-Revision-Date: 2024-03-01 18:51+0100\n"
 "Last-Translator: mnl.janez@gmail.comLanguage-Team: es <LL@li.org>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -286,6 +286,22 @@ msgstr "Metadatos {metadata_format}"
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/metadata_info.html:5
 msgid "{endpoint_type} Endpoint"
 msgstr "Endpoint {endpoint_type}"
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:10
+msgid "CSV, Comma Separated Values is a simple format for representing a rectangular array (matrix) of numeric and textual values."
+msgstr "CSV, Comma Separated Values es un formato sencillo para representar una matriz rectangular de valores numéricos y textuales."
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:14
+msgid "TSV, Tab-Separated Values is a text format whose primary function is to store data in a table structure."
+msgstr "TSV, Tab-Separated Values es un formato de texto cuya función principal es almacenar datos en una estructura de tabla."
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:18
+msgid "JSON, JavaScript Object Notation is a lightweight, text-based, language-independent data interchange format."
+msgstr "JSON, JavaScript Object Notation es un formato de intercambio de datos ligero, basado en texto e independiente del lenguaje."
+
+#: ckanext/scheming_dcat/templates/scheming_dcat/package/snippets/download_datastore_formats.html:22
+msgid "XML, Extensible Markup Language is a simple, very flexible text format derived from SGML (ISO 8879)."
+msgstr "Extensible Markup Language (XML) es un formato de texto sencillo y muy flexible derivado del SGML (ISO 8879)."
 
 #: ckanext/scheming_dcat/templates/scheming_dcat/snippets/package/snippets/resource_read.html:112
 msgid "Distribution metadata"
@@ -842,3 +858,15 @@ msgstr "Contenido remoto"
 #: ckanext/harvest/templates/source/job/read.html:73
 msgid "Local content"
 msgstr "Contenido local"
+
+#: ckanext/harvest/templates/source/new_source_form.html:51
+msgid "You can validate the JSON at: "
+msgstr "Puedes validar el JSON en: "
+
+#: ckanext/scheming_dcat/templates/ajax_snippets/scd_api_info.html
+msgid "(<a href=\"{{ url }}\">ckanapi</a> library)"
+msgstr "(Librería <a href=\"{{ url }}\">ckanapi</a>)"
+
+#: ckanext/scheming_dcat/templates/ajax_snippets/scd_api_info.html
+msgid "Query example (results containing 'medio-ambiente')"
+msgstr "Consulta ejemplo (resultados que contienen 'medio-ambiente')"
