@@ -3,18 +3,25 @@ from past.builtins import basestring
 import json
 import logging
 from functools import lru_cache
+import re
+from urllib.parse import urlencode
+from ckanext.harvest.model import HarvestObject
+import datetime
+from ckan.plugins import toolkit
+import requests
+from requests.exceptions import HTTPError, RequestException
 
 import ckan.model as model
 import ckan.logic as logic
 
 from ckanext.harvest.harvesters.ckanharvester import CKANHarvester, ContentFetchError, ContentNotFoundError, RemoteResourceError,SearchError
 
-from ckanext.scheming_dcat.harvesters.base import SchemingDCATHarvester
+from ckanext.scheming_dcat.harvesters.base import SchemingDCATHarvester, RemoteSchemaError
 
 log = logging.getLogger(__name__)
 
 
-class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
+class SchemingDCATCKANHarvester(SchemingDCATHarvester):
     """
     A custom CKAN harvester for Scheming DCAT datasets.
     """
@@ -23,11 +30,37 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
         return {
             'name': 'scheming_dcat_ckan',
             'title': 'Scheming DCAT CKAN endpoint',
-            'description': 'Harvester for dataset with custom schema defined in ckanext-scheming_dcat extension.'
+            'description': 'Harvester for dataset with custom schema defined in ckanext-scheming_dcat extension.',
+            'about_url': 'https://github.com/mjanez/ckanext-scheming_dcat?tab=readme-ov-file#scheming-dcat-ckan-harvester'
         }
 
     _names_taken = []
     
+    def _get_action_api_offset(self):
+        return '/api/%d/action' % self.action_api_version
+
+    def _get_search_api_offset(self):
+        return '%s/package_search' % self._get_action_api_offset()
+
+    def _get_schema_api_offset(self, schema_type='dataset'):
+        return f"{self._get_action_api_offset()}/scheming_dataset_schema_show?type={schema_type}"
+
+    def _get_content(self, url):
+        headers = {}
+        api_key = self.config.get('api_key')
+        if api_key:
+            headers['Authorization'] = api_key
+
+        try:
+            http_request = requests.get(url, headers=headers)
+        except HTTPError as e:
+            raise ContentFetchError('HTTP error: %s %s' % (e.response.status_code, e.request.url))
+        except RequestException as e:
+            raise ContentFetchError('Request error: %s' % e)
+        except Exception as e:
+            raise ContentFetchError('HTTP general exception: %s' % e)
+        return http_request.text
+
     def validate_config(self, config):
         """
         Validates the configuration for the SchemingDCATCKANHarvester.
@@ -42,16 +75,10 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
             ValueError: If the schema is not specified or is not supported.
             ValueError: If 'allow_harvest_datasets' is not a boolean.
         """
-        # Call the parent class's method first
-        super(SchemingDCATCKANHarvester, self).validate_config(config)
-
-        # Get local schema
-        self._get_local_schemas_supported()
-
-        if self._local_schema_name is not None and not config:
-            return json.dumps(self._local_schema)
-
-        config_obj = json.loads(config)
+        config_obj = self.get_harvester_basic_info(config)
+        
+        # Check basic validation config
+        self._set_basic_validate_config(config)
 
         # Check if the schema is specified
         if 'schema' in config_obj:
@@ -60,11 +87,13 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
                 raise ValueError('schema must be a string')
 
             # Check if the specified schema is supported
-            if schema.lower() not in self._supported_schemas:
+            if schema.lower().strip() not in self._supported_schemas:
                 if len(self._supported_schemas) > 1:
                     raise ValueError(f'schema should be one of: {", ".join(self._supported_schemas)}. Current dataset schema: {self._local_schema_name}')
                 else:
                     raise ValueError(f'schema should match the local schema: {self._local_schema_name}')
+
+            config = json.dumps({**config_obj, 'schema': schema.lower().strip()})
 
         # If no schema is specified, use the local schema
         else:
@@ -82,7 +111,232 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
         if 'remote_orgs' not in config_obj or config_obj.get('remote_orgs') != 'only_local':
             config = json.dumps({**config_obj, 'remote_orgs': 'only_local'})
 
+        # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema
+        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping']:
+            if mapping_name in config:
+                field_mapping = config_obj[mapping_name]
+                if not isinstance(field_mapping, dict):
+                    raise ValueError(f'{mapping_name} must be a dictionary')
+
+                # Check if the config is a valid mapping
+                for local_field, remote_field in field_mapping.items():
+                    if not isinstance(local_field, basestring):
+                        raise ValueError('"local_field_name" must be a string')
+                    if not isinstance(remote_field, (basestring, dict)):
+                        raise ValueError('"remote_field_name" must be a string or a dictionary')
+                    if isinstance(remote_field, dict):
+                        for lang, remote_field_name in remote_field.items():
+                            if not isinstance(lang, basestring) or not isinstance(remote_field_name, basestring):
+                                raise ValueError('In translated fields, both language and remote_field_name must be strings. eg. "notes_translated": {"es": "notes-es"}')
+                            if not re.match("^[a-z]{2}$", lang):
+                                raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+
+                config = json.dumps({**config_obj, mapping_name: field_mapping})
+
         return config
+    
+    def gather_stage(self, harvest_job):
+        log.debug('In CKANHarvester gather_stage (%s)',
+                  harvest_job.source.url)
+        toolkit.requires_ckan_version(min_version='2.0')
+        get_all_packages = True
+
+        self._set_config(harvest_job.source.config)
+
+        # Get source URL
+        remote_ckan_base_url = harvest_job.source.url.rstrip('/')
+
+        # Filter in/out datasets from particular organizations
+        fq_terms = []
+        org_filter_include = self.config.get('organizations_filter_include', [])
+        org_filter_exclude = self.config.get('organizations_filter_exclude', [])
+        if org_filter_include:
+            fq_terms.append(' OR '.join(
+                'organization:%s' % org_name for org_name in org_filter_include))
+        elif org_filter_exclude:
+            fq_terms.extend(
+                '-organization:%s' % org_name for org_name in org_filter_exclude)
+
+        groups_filter_include = self.config.get('groups_filter_include', [])
+        groups_filter_exclude = self.config.get('groups_filter_exclude', [])
+        if groups_filter_include:
+            fq_terms.append(' OR '.join(
+                'groups:%s' % group_name for group_name in groups_filter_include))
+        elif groups_filter_exclude:
+            fq_terms.extend(
+                '-groups:%s' % group_name for group_name in groups_filter_exclude)
+
+        # Ideally we can request from the remote CKAN only those datasets
+        # modified since the last completely successful harvest.
+        last_error_free_job = self.last_error_free_job(harvest_job)
+        log.debug('Last error-free job: %r', last_error_free_job)
+        if (last_error_free_job and
+                not self.config.get('force_all', False)):
+            get_all_packages = False
+
+            # Request only the datasets modified since
+            last_time = last_error_free_job.gather_started
+            # Note: SOLR works in UTC, and gather_started is also UTC, so
+            # this should work as long as local and remote clocks are
+            # relatively accurate. Going back a little earlier, just in case.
+            get_changes_since = \
+                (last_time - datetime.timedelta(hours=1)).isoformat()
+            log.info('Searching for datasets modified since: %s UTC',
+                     get_changes_since)
+
+            fq_since_last_time = 'metadata_modified:[{since}Z TO *]' \
+                .format(since=get_changes_since)
+
+            try:
+                pkg_dicts = self._search_for_datasets(
+                    remote_ckan_base_url,
+                    fq_terms + [fq_since_last_time])
+            except SearchError as e:
+                log.info('Searching for datasets changed since last time '
+                         'gave an error: %s', e)
+                get_all_packages = True
+
+            if not get_all_packages and not pkg_dicts:
+                log.info('No datasets have been updated on the remote '
+                         'CKAN instance since the last harvest job %s',
+                         last_time)
+                return []
+
+        # Fall-back option - request all the datasets from the remote CKAN
+        if get_all_packages:
+            # Request all remote packages
+            try:
+                pkg_dicts = self._search_for_datasets(remote_ckan_base_url,
+                                                      fq_terms)
+            except SearchError as e:
+                log.info('Searching for all datasets gave an error: %s', e)
+                self._save_gather_error(
+                    'Unable to search remote CKAN for datasets:%s url:%s'
+                    'terms:%s' % (e, remote_ckan_base_url, fq_terms),
+                    harvest_job)
+                return None
+        if not pkg_dicts:
+            self._save_gather_error(
+                'No datasets found at CKAN: %s' % remote_ckan_base_url,
+                harvest_job)
+            return []
+
+        # Create harvest objects for each dataset
+        try:
+            package_ids = set()
+            object_ids = []
+            
+            # Check if the content_dict colnames correspond to the local schema
+            try:
+                remote_dataset_field_mapping = self.config.get("dataset_field_mapping")
+                remote_resource_field_mapping = self.config.get("distribution_field_mapping")
+                self._validate_remote_schema(remote_dataset_field_names=None, remote_ckan_base_url=remote_ckan_base_url, remote_resource_field_names=None, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_resource_field_mapping=remote_resource_field_mapping)
+            except RemoteSchemaError as e:
+                self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
+                return []
+            
+            for pkg_dict in pkg_dicts:
+                if pkg_dict['id'] in package_ids:
+                    log.info('Discarding duplicate dataset %s - probably due '
+                             'to datasets being changed at the same time as '
+                             'when the harvester was paging through',
+                             pkg_dict['id'])
+                    continue
+                package_ids.add(pkg_dict['id'])
+
+                # Set translated fields
+                pkg_dict = self._set_translated_fields(pkg_dict)
+                log.debug('Creating HarvestObject for %s %s',
+                          pkg_dict['name'], pkg_dict['id'])
+                obj = HarvestObject(guid=pkg_dict['id'],
+                                    job=harvest_job,
+                                    content=json.dumps(pkg_dict))
+                obj.save()
+                object_ids.append(obj.id)
+
+            return object_ids
+        except Exception as e:
+            self._save_gather_error('%r' % e.message, harvest_job)
+
+    def _search_for_datasets(self, remote_ckan_base_url, fq_terms=None):
+        '''Does a dataset search on a remote CKAN and returns the results.
+
+        Deals with paging to return all the results, not just the first page.
+        '''
+        base_search_url = remote_ckan_base_url + self._get_search_api_offset()
+        params = {'rows': '100', 'start': '0'}
+        # There is the worry that datasets will be changed whilst we are paging
+        # through them.
+        # * In SOLR 4.7 there is a cursor, but not using that yet
+        #   because few CKANs are running that version yet.
+        # * However we sort, then new names added or removed before the current
+        #   page would cause existing names on the next page to be missed or
+        #   double counted.
+        # * Another approach might be to sort by metadata_modified and always
+        #   ask for changes since (and including) the date of the last item of
+        #   the day before. However if the entire page is of the exact same
+        #   time, then you end up in an infinite loop asking for the same page.
+        # * We choose a balanced approach of sorting by ID, which means
+        #   datasets are only missed if some are removed, which is far less
+        #   likely than any being added. If some are missed then it is assumed
+        #   they will harvested the next time anyway. When datasets are added,
+        #   we are at risk of seeing datasets twice in the paging, so we detect
+        #   and remove any duplicates.
+        params['sort'] = 'id asc'
+        if fq_terms:
+            params['fq'] = ' '.join(fq_terms)
+
+        pkg_dicts = []
+        pkg_ids = set()
+        previous_content = None
+        while True:
+            url = base_search_url + '?' + urlencode(params)
+            log.debug('Searching for CKAN datasets: %s', url)
+            try:
+                content = self._get_content(url)
+            except ContentFetchError as e:
+                raise SearchError(
+                    'Error sending request to search remote '
+                    'CKAN instance %s using URL %r. Error: %s' %
+                    (remote_ckan_base_url, url, e))
+
+            if previous_content and content == previous_content:
+                raise SearchError('The paging doesn\'t seem to work. URL: %s' %
+                                  url)
+            try:
+                response_dict = json.loads(content)
+            except ValueError:
+                raise SearchError('Response from remote CKAN was not JSON: %r'
+                                  % content)
+            try:
+                pkg_dicts_page = response_dict.get('result', {}).get('results',
+                                                                     [])
+            except ValueError:
+                raise SearchError('Response JSON did not contain '
+                                  'result/results: %r' % response_dict)
+
+            # Weed out any datasets found on previous pages (should datasets be
+            # changing while we page)
+            ids_in_page = set(p['id'] for p in pkg_dicts_page)
+            duplicate_ids = ids_in_page & pkg_ids
+            if duplicate_ids:
+                pkg_dicts_page = [p for p in pkg_dicts_page
+                                  if p['id'] not in duplicate_ids]
+            pkg_ids |= ids_in_page
+
+            pkg_dicts.extend(pkg_dicts_page)
+
+            if len(pkg_dicts_page) == 0:
+                break
+
+            params['start'] = str(int(params['start']) + int(params['rows']))
+
+        return pkg_dicts
+
+    def fetch_stage(self, harvest_object):
+        # Nothing to do here - we got the package dict in the search in the
+        # gather stage
+        return True
     
     def modify_package_dict(self, package_dict, harvest_object):
         '''
@@ -250,7 +504,7 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
                     except (SearchError, logic.NotFound):
                         log.error('Could not get local group %s', g)
                         
-            log.debug('Package groups: %s', package_dict['groups'])
+            #log.debug('Package groups: %s', package_dict['groups'])
 
             # Set default extras if needed
             default_extras = self.config.get('default_extras', {})
@@ -303,7 +557,7 @@ class SchemingDCATCKANHarvester(CKANHarvester, SchemingDCATHarvester):
             return result
 
         except logic.ValidationError as e:
-            self._save_object_error('Invalid package with GUID %s: %r' %
+            self._save_object_error('Invalid package with GUID: %s: %r' %
                                     (harvest_object.guid, e.error_dict),
                                     harvest_object, 'Import')
         except Exception as e:

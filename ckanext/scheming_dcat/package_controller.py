@@ -54,10 +54,11 @@ class PackageController():
             data = data_dict.get(facet)
             logging.debug("Datos ({1}) en data: {0}".format(data, facet))
             if data:
-                try:
-                    data_dict[facet] = json.loads(data)
-                except json.decoder.JSONDecodeError:
-                    data_dict[facet] = data
+                if isinstance(data, str):
+                    try:
+                        data_dict[facet] = json.loads(data)
+                    except json.decoder.JSONDecodeError:
+                        data_dict[facet] = data
             else:
                 if facet in data_dict:
                     del data_dict[facet]

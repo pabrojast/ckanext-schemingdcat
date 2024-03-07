@@ -270,16 +270,37 @@ on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
 
 ## Harvesters
+### Basic using
+In production, when `gather` and `consumer` processes are running, the following command are used to start and stop the background processes:
+
+  - `ckan harvester run`: Starts any harvest jobs that have been created by putting them onto
+    the gather queue. Also checks running jobs - if finished it
+    changes their status to Finished.
+
+To testing harvesters in development, you can use the following command:
+  - `ckan harvester run-test {source-id/name}`: This does all the stages of the harvest (creates job, gather, fetch, import) without involving the web UI or the queue backends. This is useful for testing a harvester without having to fire up gather/fetch_consumer processes, as is done in production.
+
+    > [!WARNING]
+    > After running the `run-test` command, you should stop all background processes for `gather` and `consumer` to avoid conflicts.
+
+
 ### Scheming DCAT CKAN Harvester: CKAN Harvester for custom schemas
 The plugin includes a harvester for remote CKAN instances using the custom schemas provided by `scheming_dcat` and `ckanext-scheming`. This harvester is a subclass of the CKAN Harvester provided by `ckanext-harvest` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CKAN instances.
 
-To use it, you need
-to add the `scheming_dcat_ckan_harvester` plugin to your options file:
+To use it, you need to add the `scheming_dcat_ckan_harvester` plugin to your options file:
 
+  ```ini
 	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_ckan_harvester
+  ```
 
 The Scheming DCAT CKAN Harvester supports the same configuration options as the [CKAN Harvester](https://github.com/ckan/ckanext-harvest#the-ckan-harvester), plus the following additional options:
 
+* `dataset_field_mapping`:  Mapping field names from local to remote instance. This is a dictionary with the following keys: 
+  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
+  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
+* `resource_field_mapping`: Mapping field names from local to remote instance. This is a dictionary with the following keys: 
+  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
+  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
 * `schema`: The name of the schema to use for the harvested datasets. This is the `schema_name` as defined in the scheming file. The remote and local instances must have the same dataset schema. If not provided, the local instance schema will be used.
 * `allow_harvest_datasets`: If `true`, the harvester will create new records even if the package type is from the harvest source. If `false`, the harvester will only create records that originate from the instance. Default is `false`.
 * `remote_orgs`: [WIP]. Only `only_local`.
@@ -292,27 +313,91 @@ And example configuration might look like this:
       "api_version": 2,
       "default_tags": [{"name": "inspire"}, {"name": "geodcatap"}],
       "default_groups": ["transportation", "hb"],
-      "default_extras": {"encoding":"utf8", "harvest_url": "{harvest_source_url}/dataset/{dataset_id}"},
+      "default_extras": {"encoding":"utf8", "harvest_description":"Harvesting from Sample Catalog", "harvest_url": "{harvest_source_url}/dataset/{dataset_id}"},
       "organizations_filter_include": ["remote-organization"],
+      "groups_filter_include":[],
+      "override_extras":false,
       "user":"harverster-user",
       "api_key":"<REMOTE_API_KEY>",
       "read_only": true,
       "remote_groups": "only_local",
       "remote_orgs": "only_local",
       "schema": "geodcatap",
-      "allow_harvest_datasets": true
+      "allow_harvest_datasets":false,
+      "dataset_field_mapping": {"notes_translated": {"es": "notes-es"}, "provenance": {"es": "provenance"}, "purpose": {"es": "purpose"}, "title_translated": {"es": "title"}, "maintainer": "maintainer_name"},
       }
   ```
 
-### Scheming DCAT CSW INSPIRE Harvester: CSW Harvester for INSPIRE ISO 19139 metadata
-The plugin includes a harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
 
-To use it, you need
-to add the `scheming_dcat_csw_harvester` plugin to your options file:
+### Scheming DCAT CSW INSPIRE Harvester
+A harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
 
+To use it, you need to add the `scheming_dcat_csw_harvester` plugin to your options file:
+
+  ```ini
 	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_csw_harvester
+  ```
+  ==#TODO:==
 
-#TODO: Add more info about the configuration options
+### Remote XLS/XLSX Metadata Batch Harvester
+A harvester for remote Excel files with Metadata records. This harvester is a subclass of the Scheming DCAT Base Harvester provided by `ckanext-scheming_dcat` to provide a more versatile and customizable harvester for Excel files that have metadata records in them.
+
+To use it, you need to add the `scheming_dcat_xls_harvester` plugin to your options file:
+
+  ```ini
+  ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_xls_harvester
+  ```
+
+The Remote XLS/XLSX Metadata Batch Harvester supports the following options:
+
+* `storage_type` - **Mandatory**: The type of storage to use for the harvested datasets as `onedrive` or `gspread`. Default is `onedrive`.
+* `dataset_sheet` - **Mandatory**: The name of the sheet in the Excel file that contains the dataset records.
+* `dataset_field_mapping`:  Mapping field names from local to remote instance. This is a dictionary with the following keys: 
+  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
+  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
+* `resource_field_mapping`: Mapping field names from local to remote instance. This is a dictionary with the following keys: 
+  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
+  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
+* `auth`: If the remote file is private and requires authentication, the `auth` parameter should be used to provide the authentication credentials. Default is `False`.
+  * `credentials`: If `auth` is `True`, the `credentials` parameter should be used to provide the authentication credentials. The credentials depends on the `storage_type` used. 
+    * For `onedrive`: The credentials parameter should be a dictionary with the following keys: `username`: A string representing the username. `password`: A string representing the password.
+    * For `gspread` or `gdrive`: The credentials parameter should be a string containing the credentials in `JSON` format. You can obtain the credentials by following the instructions provided in the [Google Workspace documentation.](https://developers.google.com/workspace/guides/create-credentials?hl=es-419)
+* `distribution_sheet`: The name of the sheet in the Excel file that contains the distribution records. If not provided, the harvester will only create records for the dataset sheet.
+* `datadictionary_sheet`: The name of the sheet in the Excel file that contains the data dictionary records. If not provided, the harvester will only create records for the dataset sheet.
+* `api_version`: You can force the harvester to use either version 1 or 2 of the CKAN API. Default is `2`.
+* `default_tags`: A list of tags that will be added to all harvested datasets. Tags don't need to previously exist. This field takes a list of tag dicts which allows you to optionally specify a vocabulary. Default is `[]`.
+* `default_groups`: A list of group IDs or names to which the harvested datasets will be added to. The groups must exist in the local instance. Default is `[]`.
+* `default_extras`: A dictionary of key value pairs that will be added to extras of the harvested datasets. You can use the following replacement strings, that will be replaced before creating or updating the datasets:
+    * `{dataset_id}`
+    * `{harvest_source_id}`
+    * `{harvest_source_url}` Will be stripped of trailing forward slashes (/)
+    * `{harvest_source_title}`
+    * `{harvest_job_id}`
+    * `{harvest_object_id}`
+* `override_extras`: Assign default extras even if they already exist in the remote dataset. Default is `False` (only non existing extras are added).
+* `user`: User who will run the harvesting process. Please note that this user needs to have permission for creating packages, and if default groups were defined, the user must have permission to assign packages to these groups.
+* `read_only`: Create harvested packages in read-only mode. Only the user who performed the harvest (the one defined in the previous setting or the 'harvest' sysadmin) will be able to edit and administer the packages created from this harvesting source. Logged in users and visitors will be only able to read them.
+* `force_all`: By default, after the first harvesting, the harvester will gather only the modified packages from the remote site since the last harvesting Setting this property to true will force the harvester to gather all remote packages regardless of the modification date. Default is `False`.
+* `clean_tags`: By default, tags are not stripped of accent characters, spaces and capital letters for display. If this option is set to `True`, accent characters will be replaced by their ascii equivalents, capital letters replaced by lower-case ones, and spaces replaced with dashes. Setting this option to `False` gives the same effect as leaving it unset. Default is `False`.
+
+And example configuration might look like this:
+
+  ```json
+      {
+      "auth": false,
+      "api_version": 2,
+      "dataset_sheet": "Datasets",
+      "dataset_field_mapping": {"notes_translated": {"en": "notes-en", "es": "notes-es"}, "provenance": {"en": "provenance-en", "es": "provenance-es"}, "purpose": {"en": "purpose-en", "es": "purpose-es"}, "title_translated": {"en": "title-en", "es": "title-es"}, "maintainer": "maintainer_name"},
+      "distribution_sheet": "Distributions",
+      "datadictionary_sheet": "DataDictionary",
+      "default_tags": [{"name": "inspire"}, {"name": "geodcatap"}],
+      "default_groups": ["transportation", "hb"],
+      "default_extras": {"encoding":"utf8", "harvest_url": "{harvest_source_url}/dataset/{dataset_id}"},
+      "storage_type": "gspread",
+      "user":"harverster-user",
+      "read_only": true,
+      }
+  ```
 
 
 ## Running the Tests
