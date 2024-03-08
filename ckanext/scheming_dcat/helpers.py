@@ -14,7 +14,7 @@ from six.moves.urllib.parse import urlencode
 
 from ckanext.scheming.helpers import scheming_choices_label,scheming_language_text, scheming_dataset_schemas
 
-import ckanext.scheming_dcat.config as sd_config
+import ckanext.scheming_dcat.config as sdct_config
 from ckanext.scheming_dcat.utils import (get_facets_dict, public_file_exists,
                                           public_dir_exists)
 from ckanext.dcat.utils import CONTENT_TYPES, get_endpoint
@@ -66,7 +66,7 @@ def schemingdct_default_facet_search_operator():
     Returns:
         str: The default facet search operator.
     """
-    facet_operator = sd_config.default_facet_operator
+    facet_operator = sdct_config.default_facet_operator
     if facet_operator and (facet_operator.upper() == 'AND'
                            or facet_operator.upper() == 'OR'):
         facet_operator = facet_operator.upper()
@@ -276,7 +276,7 @@ def schemingdct_get_icons_dir(field):
             return field['icons_dir']
 
         if 'field_name' in field:
-            dir = sd_config.icons_dir + '/' + field['field_name']
+            dir = sdct_config.icons_dir + '/' + field['field_name']
             if public_dir_exists(dir):
                 return dir
         #log.debug("No directory found for {0}".format(field['field_name']))
@@ -446,8 +446,8 @@ def schemingdct_listify_str(values):
     
     return values
 @helper
-def schemingdct_load_yaml(file):
-    """Load a YAML file from the 'config' directory.
+def schemingdct_load_yaml(file, folder='codelists'):
+    """Load a YAML file from the folder, by default 'codelists' directory.
 
     Args:
         file (str): The name of the YAML file to load.
@@ -458,7 +458,7 @@ def schemingdct_load_yaml(file):
     source_path = Path(__file__).resolve(True)
     yaml_data = {}
     try:
-        p = source_path.parent.joinpath('config',file)
+        p = source_path.parent.joinpath(folder,file)
         with open(p,'r') as f:
             yaml_data=yaml.load(f, Loader=SafeLoader )
     except FileNotFoundError:
@@ -478,7 +478,7 @@ def schemingdct_get_linked_data(id):
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
     """
-    linkeddata_links = schemingdct_load_yaml('linkeddata_links.yaml') if sd_config.debug else sd_config.linkeddata_links
+    linkeddata_links = schemingdct_load_yaml('linkeddata_links.yaml') if sdct_config.debug else sdct_config.linkeddata_links
 
     return [{
         'name': name,
@@ -501,7 +501,7 @@ def schemingdct_get_catalog_endpoints():
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
     """
-    endpoints = schemingdct_load_yaml('endpoints.yaml') if sd_config.debug else sd_config.endpoints
+    endpoints = schemingdct_load_yaml('endpoints.yaml') if sdct_config.debug else sdct_config.endpoints
     
     csw_uri = schemingdct_get_geospatial_endpoint('catalog')
     
@@ -534,15 +534,15 @@ def schemingdct_get_geospatial_endpoint(type='dataset'):
     """    
     try:
         
-        if sd_config.geometadata_base_uri:
-            csw_uri = sd_config.geometadata_base_uri
+        if sdct_config.geometadata_base_uri:
+            csw_uri = sdct_config.geometadata_base_uri
         
-        if sd_config.geometadata_base_uri and '/csw' not in sd_config.geometadata_base_uri:
-            csw_uri = sd_config.geometadata_base_uri.rstrip('/') + '/csw'
-        elif sd_config.geometadata_base_uri == '':
+        if sdct_config.geometadata_base_uri and '/csw' not in sdct_config.geometadata_base_uri:
+            csw_uri = sdct_config.geometadata_base_uri.rstrip('/') + '/csw'
+        elif sdct_config.geometadata_base_uri == '':
             csw_uri = '/csw'
         else:
-            csw_uri = sd_config.geometadata_base_uri.rstrip('/')
+            csw_uri = sdct_config.geometadata_base_uri.rstrip('/')
     except:
         csw_uri = '/csw'
 
@@ -558,7 +558,7 @@ def schemingdct_get_geospatial_metadata():
     Returns:
         list: A list of dictionaries containing geospatial metadata for CSW formats.
     """
-    geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if sd_config.debug else sd_config.geometadata_links
+    geometadata_links = schemingdct_load_yaml('geometadata_links.yaml') if sdct_config.debug else sdct_config.geometadata_links
     
     csw_uri = schemingdct_get_geospatial_endpoint('dataset')
 

@@ -5,7 +5,7 @@ import ckan.plugins.toolkit as toolkit
 from ckanext.scheming.plugins import SchemingDatasetsPlugin, SchemingGroupsPlugin, SchemingOrganizationsPlugin
 from ckanext.scheming import logic as scheming_logic
 
-import ckanext.scheming_dcat.config as sd_config
+import ckanext.scheming_dcat.config as sdct_config
 from ckanext.scheming_dcat.faceted import Faceted
 from ckanext.scheming_dcat.utils import init_config
 from ckanext.scheming_dcat.package_controller import PackageController
@@ -41,45 +41,45 @@ class FacetSchemingDCATPlugin(plugins.SingletonPlugin,
         toolkit.add_resource('assets',
                              'ckanext-scheming_dcat')
 
-        sd_config.default_locale = config_.get('ckan.locale_default',
-                                               sd_config.default_locale
+        sdct_config.default_locale = config_.get('ckan.locale_default',
+                                               sdct_config.default_locale
                                                )
 
-        sd_config.default_facet_operator = config_.get(
+        sdct_config.default_facet_operator = config_.get(
             'scheming_dcat.default_facet_operator',
-            sd_config.default_facet_operator
+            sdct_config.default_facet_operator
             )
 
-        sd_config.icons_dir = config_.get(
+        sdct_config.icons_dir = config_.get(
             'scheming_dcat.icons_dir',
-            sd_config.icons_dir
+            sdct_config.icons_dir
             )
 
-        sd_config.organization_custom_facets = toolkit.asbool(
+        sdct_config.organization_custom_facets = toolkit.asbool(
             config_.get('scheming_dcat.organization_custom_facets',
-                        sd_config.organization_custom_facets)
+                        sdct_config.organization_custom_facets)
             )
 
-        sd_config.group_custom_facets = toolkit.asbool(
+        sdct_config.group_custom_facets = toolkit.asbool(
             config_.get('scheming_dcat.group_custom_facets',
-                        sd_config.group_custom_facets
+                        sdct_config.group_custom_facets
                         )
             )
         
-        sd_config.debug = toolkit.asbool(
+        sdct_config.debug = toolkit.asbool(
             config_.get('debug',
-                        sd_config.debug
+                        sdct_config.debug
                         )
             )
 
         # Default value use local ckan instance with /csw
-        sd_config.geometadata_base_uri = config_.get(
+        sdct_config.geometadata_base_uri = config_.get(
             'scheming_dcat.geometadata_base_uri',
             '/csw'
             )
 
         # Load yamls config files, if not in debug mode
-        if not sd_config.debug:
+        if not sdct_config.debug:
             init_config()
 
         # configure Faceted class (parent of this)

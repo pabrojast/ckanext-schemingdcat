@@ -113,7 +113,7 @@ Add the [custom Harvesters](#harvesters) to the list of plugins as you need:
   ```
 
 ### Endpoints
-You can update the [`endpoints.yaml`](./ckanext/scheming_dcat/config/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8.
+You can update the [`endpoints.yaml`](./ckanext/scheming_dcat/codelists/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8.
 
 Examples:
 
