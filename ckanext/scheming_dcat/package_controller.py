@@ -1,7 +1,7 @@
 from ckan.common import request
 import json
 import ckan.plugins as plugins
-import ckanext.scheming_dcat.config as config
+import ckanext.scheming_dcat.config as sdct_config
 import ckanext.scheming_dcat.utils as utils
 
 import logging
@@ -17,7 +17,7 @@ class PackageController():
 
     plugins.implements(plugins.IPackageController)
 
-    default_facet_operator = config.default_facet_operator
+    default_facet_operator = sdct_config.default_facet_operator
 
     def read(self, entity):
         pass
@@ -54,10 +54,11 @@ class PackageController():
             data = data_dict.get(facet)
             logging.debug("Datos ({1}) en data: {0}".format(data, facet))
             if data:
-                try:
-                    data_dict[facet] = json.loads(data)
-                except json.decoder.JSONDecodeError:
-                    data_dict[facet] = data
+                if isinstance(data, str):
+                    try:
+                        data_dict[facet] = json.loads(data)
+                    except json.decoder.JSONDecodeError:
+                        data_dict[facet] = data
             else:
                 if facet in data_dict:
                     del data_dict[facet]

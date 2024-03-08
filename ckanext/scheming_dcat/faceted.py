@@ -1,6 +1,6 @@
 import ckan.plugins as plugins
 from ckan.common import request
-import ckanext.scheming_dcat.config as scheming_dcat_config
+import ckanext.scheming_dcat.config as sdct_config
 from ckanext.scheming_dcat.utils import get_facets_dict
 import logging
 
@@ -16,17 +16,17 @@ class Faceted():
         self.facet_list = facet_list
         #log.debug("Configured facet_list= {0}".format(self.facet_list))
 
-#    Remove group facet
+    # Remove group facet
     def _facets(self, facets_dict):
 
-        #     if 'groups' in facets_dict:
-        #         del facets_dict['groups']
+        # if 'groups' in facets_dict:
+        #   del facets_dict['groups']
         return facets_dict
 
     def dataset_facets(self,
                        facets_dict,
                        package_type):
-        #this patch is necessary to avoid collisions with harvest package type from these plugin (harvest)
+        # This patch is necessary to avoid collisions with the harvest package type from the harvest plugin
         if package_type == "dataset":
             return self._custom_facets(facets_dict, package_type)
         else:
@@ -40,24 +40,23 @@ class Faceted():
 
         _facets_dict = {}
         for facet in self.facet_list:
-            # Busco la etiqueta del campo en el fichero de scheming.
-            # Si no está ahí, en el diccionario por defecto enviado
+            # Look for the field label in the scheming file.
+            # If it's not there, use the default dictionary provided
             scheming_item = get_facets_dict().get(facet)
 
             if scheming_item:
-                # Recupero la etiqueta correspondiente al idioma empleado
+                # Retrieve the corresponding label for the used language
                 _facets_dict[facet] = scheming_item.get(lang_code)
                 if not _facets_dict[facet]:
-                    # Si no existe esa etiqueta intento la del idioma por defecto.
-                    # Y si tampoco, la primera que haya.
-                    raw_label = scheming_item.get(scheming_dcat_config.default_locale,
+                    # If the label doesn't exist, try the default language label.
+                    # And if that doesn't exist either, use the first one available.
+                    raw_label = scheming_item.get(sdct_config.default_locale,
                                                   list(scheming_item.values())[0])
                     if raw_label:
                         _facets_dict[facet] = plugins.toolkit._(raw_label)
                     else:
                         log.warning(
-                            "Ha sido imposible encontrar una etiqueta "
-                            "válida para el campo '{0}' al facetar".format(facet))
+                            "Unable to find a valid label for the field '%s' when faceting" % facet)
 
                 if not _facets_dict[facet]:
                     _facets_dict[facet] = plugins.toolkit._(facet)
@@ -65,9 +64,9 @@ class Faceted():
             else:
                 _facets_dict[facet] = plugins.toolkit._(facets_dict.get(facet))
 
-#        tag_key = 'tags_' + lang_code
-#        facets_dict[tag_key] = plugins.toolkit._('Tag')
-#         FIXME: PARA FACETA COMUN DE TAGS
+        # tag_key = 'tags_' + lang_code
+        # facets_dict[tag_key] = plugins.toolkit._('Tag')
+        #FIXME: FOR COMMON TAG FACET
         #log.debug("dataset_facets._facets_dict: {0}".format(_facets_dict))
         return _facets_dict
 
@@ -76,8 +75,8 @@ class Faceted():
                      group_type,
                      package_type):
 
-        if scheming_dcat_config.group_custom_facets:
-            #log.debug("Facetas personalizadas para grupo")
+        if sdct_config.group_custom_facets:
+            #log.debug("Custom facets for group")
             facets_dict = self._custom_facets(facets_dict, package_type)
         return facets_dict
 
@@ -86,11 +85,11 @@ class Faceted():
                             organization_type,
                             package_type):
 
-        if scheming_dcat_config.group_custom_facets:
+        if sdct_config.group_custom_facets:
             #log.debug("facetas personalizadas para organización")
             facets_dict = self._custom_facets(facets_dict, package_type)
         else:
-            log.debug("facetas por defecto para organización")
+            log.debug("Default facets for Organization")
 
 #        lang_code = pylons.request.environ['CKAN_LANG']
 #        facets_dict.clear()

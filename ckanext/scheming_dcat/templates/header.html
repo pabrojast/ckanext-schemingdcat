@@ -1,5 +1,14 @@
 {% ckan_extends %}
 
+{% block header_account_logged %}
+  <li>
+    <a href="{{ h.url_for('/harvest') }}" title="{{ _('Harvest metadata') }}">
+      <i class="fa fa-cloud-download"></i>
+    </a>
+  </li>
+  {{ super() }}
+{% endblock %}
+
 {% block header_logo %}
     {% if g.site_logo %}
             <a class="logo" href="{{ h.url_for('home.index') }}">

@@ -3,6 +3,7 @@ scheming_dcat-css:
   output: ckanext-scheming_dcat/%(version)s-scheming_dcat.css
   contents:
     - css/scheming_dcat.css
+    - css/ft-syntax-highlight.min.css
 
 scheming-dcat-table-collapsible-rows:
   filter: rjsmin

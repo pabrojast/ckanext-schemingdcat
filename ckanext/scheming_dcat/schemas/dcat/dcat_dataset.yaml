@@ -1,9 +1,12 @@
 scheming_version: 2
-dataset_type: dataset
+dataset_type: document
 about: "Datasets/Distributions: Adaptation for CKAN of the Data Catalog Vocabulary (DCAT) - Version 3 (https://www.w3.org/TR/vocab-dcat-3/)." 
 about_url: https://github.com/mjanez/ckanext-scheming_dcat
 schema_version: 1.0
 schema_date: 2023-08-24
+schema_name: dcat
+schema_title: DCAT
+schema_description: Data Catalog Vocabulary (DCAT)
 
 ### Codes in Schema
 # (M): Mandatory
