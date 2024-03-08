@@ -115,7 +115,7 @@ def init_config():
     sdct_config.endpoints = _load_yaml('endpoints.yaml')
 
 def _load_yaml(file):
-    """Load a YAML file from the 'config' directory.
+    """Load a YAML file from the 'codelists' directory.
 
     Args:
         file (str): The name of the YAML file to load.
@@ -126,7 +126,7 @@ def _load_yaml(file):
     source_path = Path(__file__).resolve(True)
     yaml_data = {}
     try:
-        p = source_path.parent.joinpath('config',file)
+        p = source_path.parent.joinpath('codelists',file)
         with open(p,'r') as f:
             yaml_data=yaml.load(f, Loader=SafeLoader )
     except FileNotFoundError:

@@ -6,7 +6,7 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-version = "1.2.1"
+version = "2.1.0"
 
 # Get the long description from the relevant file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -36,6 +36,7 @@ setup(
         # Harvesters
         scheming_dcat_ckan_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATCKANHarvester
         scheming_dcat_xls_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATXLSHarvester
+        scheming_dcat_ows_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATOWSHarvester
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
