@@ -4,11 +4,13 @@ import json
 import logging
 import re
 import uuid
-import pandas as pd
 import base64
 import traceback
 import six
 import dateutil
+
+import gspread
+import pandas as pd
 
 from ckan.logic import NotFound, get_action
 from ckan import logic
@@ -38,7 +40,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         {
             'name': 'gspread',
             'title': 'Google Sheets',
-            'active': False
+            'active': True
         },
         {
             'name': 'onedrive',
@@ -54,6 +56,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     
     _storage_type = None
     _auth = False
+    _credentials = None
     _names_taken = []
 
     #TODO: Implement the get_harvester_basic_info method
@@ -74,6 +77,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         """
         credentials = {}
 
+        #TODO: Improve the credentials validation for Onedrive
         if storage_type == 'onedrive':
             if 'credentials' in config_obj:
                 credentials = config_obj['credentials']
@@ -91,22 +95,14 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             else:
                 raise ValueError('Credentials for Onedrive: eg. "credentials": {"username": "john", "password": "password"}')
 
-        # TODO: Fix If storage_type is gspread/gdrive, paste a credentials.json data
         elif storage_type == 'gspread' or storage_type == 'gdrive':
             if 'credentials' in config_obj:
                 credentials = config_obj['credentials']
-                if not isinstance(credentials, str):
-                    raise ValueError('credentials must be a string')
-
-                credentials = credentials.strip()
+                if not isinstance(credentials, dict):
+                    raise ValueError('credentials must be a dictionary')
 
             else:
                 raise ValueError('Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account')
-
-            try:
-                credentials = json.loads(credentials)
-            except json.JSONDecodeError:
-                raise ValueError('credentials must be a valid JSON string')
 
         return credentials
     
@@ -122,19 +118,18 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             str: The base URL.
 
         """        
-        try:
-            #TODO: Fix gspread
-            if storage_type == 'gspread':
-                base_url = url[:url.find('/', url.rfind('d/') + 2)]
+        if storage_type == 'gspread':
+            base_url = url[:url.find('/', url.rfind('d/') + 2)]
 
-            elif storage_type == 'onedrive':
-                base_url = url
-        except:
+        elif storage_type == 'onedrive':
+            base_url = url
+            
+        else:
             return url
 
         return base_url
     
-    def _get_storage_url(self, url, storage_type='gspread', auth=False):
+    def _get_storage_url(self, url, storage_type='gspread'):
         """
         Get the remote source URL based on the given URL and storage type.
 
@@ -155,8 +150,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 remote_source_url = f'https://api.onedrive.com/v1.0/shares/u!{data_bytes64_str}/root/content'
 
             elif storage_type == 'gspread':
-                gspread_id = url.split("/d/")[1].split("/")[0]
-                remote_source_url = f'https://www.googleapis.com/drive/v3/files/{gspread_id}/export?mimeType=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                remote_source_url = url
 
             else:
                 raise ValueError(f'Invalid storage_type: {storage_type}')
@@ -166,15 +160,53 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         except Exception as e:
             raise ValueError('Invalid storage_type') from e
  
-    def _read_excel_sheet(self, url, sheet_name, engine='openpyxl'):
+    def _read_excel_sheet(self, url, sheet_name, storage_type, engine='openpyxl'):
+        """
+        Reads an Excel sheet from a given URL and returns the data as a pandas DataFrame.
+
+        Args:
+            url (str): The URL of the Excel file.
+            sheet_name (str): The name of the sheet to read.
+            storage_type (str): The type of storage where the Excel file is located. Supported types are 'onedrive', 'gspread', and 'gdrive'.
+            engine (str, optional): The engine to use for reading the Excel file. Defaults to 'openpyxl'.
+
+        Returns:
+            pandas.DataFrame: The data from the specified sheet as a DataFrame.
+
+        Raises:
+            ReadError: If there is an error reading the sheet.
+
+        """
         try:
-            data = pd.read_excel(url, sheet_name=sheet_name, dtype=str, engine=engine)
+            if storage_type == 'onedrive':
+                if self.auth and self._credentials:
+                    # TODO: Implement the read_excel_sheet method for Onedrive Auth
+                    pass
+                else:
+                    try:
+                        data = pd.read_excel(url, sheet_name=sheet_name, dtype=str, engine=engine)
+                    except pd.errors.ParserError as e:
+                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+
+            elif storage_type in ['gspread', 'gdrive']:
+                if self._auth and self._credentials:
+                    try:
+                        gc = gspread.service_account_from_dict(self._credentials)
+                        sh = gc.open_by_url(url)
+                        worksheet = sh.worksheet(sheet_name)
+                        data = pd.DataFrame(worksheet.get_all_records(), dtype=str)
+                    except gspread.exceptions.APIError as e:
+                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+                else:
+                    raise ValueError('Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account')
+
+            else:
+                raise ValueError(f'Unsupported storage type: {storage_type}')
+
             return data.fillna('')
 
         except Exception as e:
-            raise ReadError(
-                    'Error reading sheet %s using URL %r. Error: %s' %
-                    (sheet_name, url, str(e)))
+            raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
 
     def _clean_table_datasets(self, data):
         """
@@ -579,14 +611,15 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if self.config:
             self._storage_type = self.config.get("storage_type")
             self._auth = self.config.get("auth")
+            self._credentials = self.config.get("credentials")
 
             # Get URLs for remote file
             remote_xls_base_url = self._get_storage_base_url(source_url, self._storage_type)
-            remote_xls_download_url = self._get_storage_url(source_url, self._storage_type, self._auth)
+            remote_xls_download_url = self._get_storage_url(source_url, self._storage_type)
         
         # Check if the remote file is valid
         is_valid = self._check_url(remote_xls_download_url, harvest_job)
-        log.debug('Checks URL %s', remote_xls_download_url)
+        log.debug('URL is accessible: %s', remote_xls_download_url)
 
         # Get the previous guids for this source
         query = \
@@ -615,17 +648,17 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if is_valid:
             try:
                 try:
-                    content_dict['datasets'] = self._read_excel_sheet(remote_xls_download_url, dataset_sheetname)
+                    content_dict['datasets'] = self._read_excel_sheet(remote_xls_download_url, dataset_sheetname, self._storage_type )
                 except RemoteResourceError as e:
                     self._save_gather_error('Error reading the remote Excel datasets sheet: {0}'.format(e), harvest_job)
                     return False
                 
                 if distribution_sheetname:
-                    content_dict['distributions'] = self._read_excel_sheet(remote_xls_download_url, distribution_sheetname)
+                    content_dict['distributions'] = self._read_excel_sheet(remote_xls_download_url, distribution_sheetname, self._storage_type )
                     
                 #TODO: Implement self._load_datadictionaries() method.
                 # if datadictionary_sheetname:
-                #     content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname)
+                #     content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname, self._storage_type )
 
                 # after_download interface
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
@@ -904,7 +937,8 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     err = harvester.after_create(harvest_object, package_dict, harvester_tmp_dict)
 
             except p.toolkit.ValidationError as e:
-                self._save_object_error(f'Validation Error: {six.text_type(e.error_summary)}', harvest_object, 'Import')
+                error_message = ', '.join(f'{k}: {v}' for k, v in e.error_dict.items())
+                self._save_object_error(f'Validation Error: {error_message}', harvest_object, 'Import')
                 return False
 
         elif status == 'change':
@@ -936,7 +970,8 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     log.info('Updated package %s with GUID: %s' % (package_dict["id"], harvest_object.guid))
                     
                 except p.toolkit.ValidationError as e:
-                    self._save_object_error(f'Validation Error: {six.text_type(e.error_summary)}', harvest_object, 'Import')
+                    error_message = ', '.join(f'{k}: {v}' for k, v in e.error_dict.items())
+                    self._save_object_error(f'Validation Error: {error_message}', harvest_object, 'Import')
                     return False
 
         return result
