@@ -15,12 +15,12 @@ OGC2CKAN_HARVESTER_MD_CONFIG = {
     'conformance': [
         'http://inspire.ec.europa.eu/documents/inspire-metadata-regulation','http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
     ],
-    'author': 'ckan-ogc',
-    'author_email': 'admin@localhost',
+    'author': 'ckanext-scheming_dcat',
+    'author_email': 'admin@{ckan_instance}',
     'author_url': '{ckan_instance}/organization/test',
     'author_uri': '{ckan_instance}/organization/test',
-    'contact_name': 'ckan-ogc',
-    'contact_email': 'admin@localhost',
+    'contact_name': 'ckanext-scheming_dcat',
+    'contact_email': 'admin@{ckan_instance}',
     'contact_url': '{ckan_instance}/organization/test',
     'contact_uri': '{ckan_instance}/organization/test',
     'dcat_type': {
@@ -46,17 +46,17 @@ OGC2CKAN_HARVESTER_MD_CONFIG = {
     'language': 'http://publications.europa.eu/resource/authority/language/ENG',
     'license': 'http://creativecommons.org/licenses/by/4.0/',
     'license_id': 'cc-by',
-    'lineage_process_steps': 'ckan-ogc lineage process steps.',
-    'maintainer': 'ckan-ogc',
-    'maintainer_email': 'admin@localhost',
+    'lineage_process_steps': 'ckanext-scheming_dcat lineage process steps.',
+    'maintainer': 'ckanext-scheming_dcat',
+    'maintainer_email': 'admin@{ckan_instance}',
     'maintainer_url': '{ckan_instance}/organization/test',
     'maintainer_uri': '{ckan_instance}/organization/test',
     'metadata_profile': [
         "http://semiceu.github.io/GeoDCAT-AP/releases/2.0.0","http://inspire.ec.europa.eu/document-tags/metadata"
     ],
-    'provenance': 'ckan-ogc provenance statement.',
-    'publisher_name': 'ckan-ogc',
-    'publisher_email': 'admin@localhost',
+    'provenance': 'ckanext-scheming_dcat provenance statement.',
+    'publisher_name': 'ckanext-scheming_dcat',
+    'publisher_email': 'admin@{ckan_instance}',
     'publisher_url': '{ckan_instance}/organization/test',
     'publisher_identifier': '{ckan_instance}/organization/test',
     'publisher_uri': '{ckan_instance}/organization/test',
@@ -73,8 +73,10 @@ OGC2CKAN_HARVESTER_MD_CONFIG = {
         'stereoModel': 'http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/stereoModel',
         'video': 'http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/video',
     },
+    'rights': 'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations',
     'spatial': None,
     'spatial_uri': 'http://datos.gob.es/recurso/sector-publico/territorio/Pais/España',
+    'status': 'http://purl.org/adms/status/UnderDevelopment',
     'temporal_start': None,
     'temporal_end': None,
     'theme': 'http://inspire.ec.europa.eu/theme/hb',
@@ -124,3 +126,49 @@ OGC2CKAN_ISO_MD_ELEMENTS = {
 
 # loose definition of BCP47-like strings
 BCP_47_LANGUAGE = u'^[a-z]{2,8}(-[0-9a-zA-Z]{1,8})*$'
+
+DATE_FIELDS = [
+    {'field_name': 'created', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'issued', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'modified', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'valid', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str}
+]
+
+DATASET_DEFAULT_FIELDS = [
+    {'field_name': 'id', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'title', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'description', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'access_rights', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['access_rights'], 'override': True, 'dtype': str},
+    {'field_name': 'license', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license'], 'override': True, 'dtype': str},
+    {'field_name': 'license_id', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license_id'], 'override': True, 'dtype': str},
+    {'field_name': 'topic', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['topic'], 'override': True, 'dtype': str},
+    {'field_name': 'theme', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme'], 'override': True, 'dtype': str},
+    {'field_name': 'theme_eu', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme_eu'], 'override': True, 'dtype': str},
+    {'field_name': 'status', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['status'], 'override': True, 'dtype': str},
+]
+
+RESOURCE_DEFAULT_FIELDS = [
+    {'field_name': 'url', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'format', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'protocol', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'mimetype', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'description', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'license', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license'], 'override': True, 'dtype': str},
+    {'field_name': 'license_id', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license_id'], 'override': True, 'dtype': str},
+    {'field_name': 'rights', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['rights'], 'override': True, 'dtype': str},
+    {'field_name': 'language', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['language'], 'override': False, 'dtype': str},
+    {'field_name': 'conforms_to', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'size', 'fallback': None, 'default_value': 0, 'override': True, 'dtype': int},
+]
+
+# Custom rules for harvesters.base._update_custom_format()
+CUSTOM_FORMAT_RULES = [
+    {
+        'format_strings': ['esri', 'arcgis'],
+        'url_string': 'viewer.html?url=',
+        'new_format': 'HTML'
+    },
+    # Add more rules here as needed
+]
