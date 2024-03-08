@@ -35,7 +35,6 @@ setup(
         
         # Harvesters
         scheming_dcat_ckan_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATCKANHarvester
-        scheming_dcat_csw_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATCSWHarvester
         scheming_dcat_xls_harvester=ckanext.scheming_dcat.harvesters:SchemingDCATXLSHarvester
 
         [babel.extractors]
