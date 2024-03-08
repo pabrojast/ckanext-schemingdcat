@@ -24,6 +24,8 @@ from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.logic.schema import unicode_safe
 from ckanext.harvest.model import HarvestObject, HarvestObjectExtra
 
+from ckanext.scheming_dcat.config import OGC2CKAN_HARVESTER_MD_CONFIG, OGC2CKAN_MD_FORMATS, DATE_FIELDS, DATASET_DEFAULT_FIELDS, RESOURCE_DEFAULT_FIELDS, CUSTOM_FORMAT_RULES
+
 log = logging.getLogger(__name__)
 
 
@@ -46,7 +48,6 @@ class SchemingDCATHarvester(HarvesterBase):
     action_api_version = 3
     force_import = False
     _site_user = None
-    BCP_47_LANGUAGE = u'^[a-z]{2,8}(-[0-9a-zA-Z]{1,8})*$'
 
     def get_harvester_basic_info(self, config):
         """
@@ -623,7 +624,7 @@ class SchemingDCATHarvester(HarvesterBase):
                             else:
                                 package_dict[local_field_name] = resource.get(remote_field_name, None)
 
-            log.debug('Translated fields: %s', translated_fields)
+            #log.debug('Translated fields: %s', translated_fields)
 
         except Exception as e:
             raise ReadError(
@@ -663,11 +664,18 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             None
         """
-        # Creation/Publication/Revision dates
         issued_date = self._normalize_date(package_dict['issued']) or datetime.now().strftime('%Y-%m-%d')
-        package_dict['created'] = self._normalize_date(package_dict['created']) or issued_date
-        package_dict['modified'] = self._normalize_date(package_dict['modified']) or issued_date
-        package_dict['extras'].append({'key': 'issued', 'value': issued_date})
+
+        for date_field in DATE_FIELDS:
+            if date_field['override']:
+                field_name = date_field['field_name']
+                fallback = date_field['fallback'] or date_field['default_value']
+
+                fallback_date = issued_date if fallback and fallback == 'issued' else self._normalize_date(package_dict.get(fallback))
+                package_dict[field_name] = self._normalize_date(package_dict.get(field_name)) or fallback_date
+
+                if field_name == 'issued':
+                    package_dict['extras'].append({'key': 'issued', 'value': package_dict[field_name]})
         
     @staticmethod
     def _normalize_date(date):
@@ -704,24 +712,39 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             dict: The package_dict with default values set.
         """
-        existing_tag_ids = self._set_ckan_tags(package_dict)
+        package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)      
 
         # Check if 'default_tags' exists       
         default_tags = self.config.get('default_tags', [])
         if default_tags:
             for tag in default_tags:
-                if tag['name'] not in existing_tag_ids:
+                if tag['name'] not in existing_tags_ids:
                     package_dict['tags'].append(tag)
-                    existing_tag_ids.add(tag['name'])
+                    existing_tags_ids.add(tag['name'])
 
         # Local harvest source organization
         source_package_dict = p.toolkit.get_action('package_show')(context.copy(), {'id': harvest_object.source.id})
         local_org = source_package_dict.get('owner_org')
         package_dict['owner_org'] = local_org
 
-
+        #TODO: Better using DATASET_DEFAULT_FIELDS
         # Default license https://creativecommons.org/licenses/by/4.0/
-        package_dict['license_id'] = 'cc-by'
+        package_dict['license_id'] = OGC2CKAN_HARVESTER_MD_CONFIG['license_id']
+        package_dict['license'] = OGC2CKAN_HARVESTER_MD_CONFIG['license']    
+        
+        # Rights and status
+        if 'access_rights' not in package_dict or not package_dict['access_rights']:
+            package_dict['access_rights'] = OGC2CKAN_HARVESTER_MD_CONFIG['access_rights']
+        if 'status' not in package_dict or not package_dict['status']:
+            package_dict['status'] = OGC2CKAN_HARVESTER_MD_CONFIG['status']
+
+        # Default topic and themes
+        if 'topic' not in package_dict or not package_dict['topic']:
+            package_dict['topic'] = OGC2CKAN_HARVESTER_MD_CONFIG['topic']
+        if 'theme' not in package_dict or not package_dict['theme']:
+            package_dict['theme'] = OGC2CKAN_HARVESTER_MD_CONFIG['theme']
+        if 'theme_eu' not in package_dict or not package_dict['theme_eu']:
+            package_dict['theme_eu'] = OGC2CKAN_HARVESTER_MD_CONFIG['theme_eu']
 
         # Prepare groups
         cleaned_groups = self._set_ckan_groups(package_dict.get('groups', []))
@@ -763,10 +786,44 @@ class SchemingDCATHarvester(HarvesterBase):
 
                 package_dict['extras'].append({'key': key, 'value': value})
                 
-                
+        # Resources defaults
+        if package_dict['resources']:
+            package_dict['resources'] = [
+                self._update_resource_dict(resource) for resource in package_dict['resources']
+            ]
+
         #log.debug('package_dict default values: %s', package_dict)
         return package_dict
 
+    def _update_resource_dict(self, resource):
+        """
+        Update the given resource dictionary with default values and normalize date fields.
+
+        Args:
+            resource (dict): The resource dictionary to be updated.
+
+        Returns:
+            dict: The updated resource dictionary in CKAN format.
+        """
+        for field in RESOURCE_DEFAULT_FIELDS:
+            field_name = field['field_name']
+            fallback = field['fallback'] or field['default_value']
+
+            if field_name == 'size' and field_name is not None:
+                if isinstance(resource['size'], str):
+                    resource['size'] = resource['size'].replace('.', '')
+                    resource['size'] = int(resource['size']) if resource['size'].isdigit() else 0
+
+            if field_name not in resource or resource[field_name] is None:
+                resource[field_name] = fallback
+
+        for field in DATE_FIELDS:
+            if field['override']:
+                field_name = field['field_name']
+                if field_name in resource and resource[field_name]:
+                    resource[field_name] = self._normalize_date(resource[field_name])
+
+        return self._get_ckan_format(resource)
 
     def _set_ckan_tags(self, package_dict, tag_fields=['tag_string', 'keywords']):
         """
@@ -782,17 +839,31 @@ class SchemingDCATHarvester(HarvesterBase):
         if 'tags' not in package_dict:
             package_dict['tags'] = []
 
-        existing_tag_ids = set(t['name'] for t in package_dict['tags'])
+        existing_tags_ids = set(t['name'] for t in package_dict['tags'])
 
         for source in tag_fields:
             if source in package_dict:
-                cleaned_tags = self._clean_keywords(package_dict[source])
+                tags = package_dict.get(source, [])
+                if isinstance(tags, dict):
+                    tags = tags
+                elif isinstance(tags, list):
+                    tags = [{'name': tag} for tag in tags]
+                elif isinstance(tags, str):
+                    tags = [{'name': tags}]
+                else:
+                    raise ValueError("Unsupported type for tags")
+                cleaned_tags = self._clean_tags(tags)
+                
                 for tag in cleaned_tags:
-                    if tag['name'] not in existing_tag_ids:
+                    if tag['name'] not in existing_tags_ids:
                         package_dict['tags'].append(tag)
-                        existing_tag_ids.add(tag['name'])
-
-        return existing_tag_ids                                     
+                        existing_tags_ids.add(tag['name'])
+        
+        # Remove tag_fields from package_dict
+        for field in tag_fields:
+            package_dict.pop(field, None)
+        
+        return package_dict, existing_tags_ids                                    
 
     @staticmethod
     def _set_ckan_groups(groups):
@@ -818,34 +889,72 @@ class SchemingDCATHarvester(HarvesterBase):
         ckan_groups = [{'name': g.lower().replace(" ", "-").strip()} for g in groups]
 
         return ckan_groups
-    
-    def _clean_keywords(self, keywords):
-        """
-        Cleans the names of keywords.
 
-        If the input is a string, it is split into a list by commas.
-        If the input is neither a list nor a string, an empty list is returned.
-        Each keyword is then cleaned by removing non-alphanumeric characters, 
+    @staticmethod
+    def _update_custom_format(res_format, url=None, **args):
+        """Update the custom format based on custom rules.
+        
+        The function checks the format and URL against a set of custom rules (CUSTOM_FORMAT_RULES). If a rule matches,
+        the format is updated according to that rule. This function is designed to be easily
+        extendable with new rules.
+        
+        Args:
+            res_format (str): The custom format to update.
+            url (str, optional): The URL to check. Defaults to None.
+            **args: Additional arguments that are ignored.
+            
+        Returns:
+            str: The updated custom format.
+        """
+        for rule in CUSTOM_FORMAT_RULES:
+            if any(string in res_format for string in rule['format_strings']) or rule['url_string'] in url:
+                res_format = rule['new_format']
+                break
+
+        return res_format.upper()
+
+    def _get_ckan_format(self, resource):
+        """Get the CKAN format information for a distribution.
+
+        Args:
+            resource (dict): A dictionary containing information about the distribution.
+
+        Returns:
+            dict: The updated distribution information.
+        """
+        
+        if isinstance(resource['format'], str):
+            informat = resource['format'].lower()
+        else:
+            informat = ''.join(str(value) for key, value in resource.items() if key in ['title', 'url', 'description'] and isinstance(value, str)).lower()
+            informat = next((key for key in OGC2CKAN_MD_FORMATS if key.lower() in informat), resource.get('url', '').lower())
+          
+        # Check if _update_custom_format
+        informat = self._update_custom_format(informat.lower(), resource.get('url', ''))
+        
+        if informat is not None:
+            resource['format'] = informat
+
+        return resource
+    
+    def _clean_tags(self, tags):
+        """
+        Cleans the names of tags.
+
+        Each keyword is cleaned by removing non-alphanumeric characters, 
         allowing only: a-z, ñ, 0-9, _, -, ., and spaces, and truncating to a 
         maximum length of 100 characters.
 
         Args:
-            keywords (str or list): The keywords to be cleaned.
+            tags (list): The tags to be cleaned. Each keyword is a 
+            dictionary with a 'name' key.
 
         Returns:
             list: A list of dictionaries with cleaned keyword names.
         """
-        # Normalize keywords for CKAN
-        if isinstance(keywords, str):
-            # If keywords is a string, split it into a list
-            keywords = keywords.split(',')
-        elif not isinstance(keywords, list):
-            # If keywords is neither a list nor a string, return an empty list
-            return []
+        cleaned_tags = [{'name': self._clean_name(k['name']), 'display_name': k['name']} for k in tags if k and 'name' in k]
 
-        cleaned_keywords = [{'name': self._clean_name(k)} for k in keywords if k]
-
-        return cleaned_keywords
+        return cleaned_tags
 
     @staticmethod
     def _clean_name(name):
@@ -864,9 +973,9 @@ class SchemingDCATHarvester(HarvesterBase):
             'ü': 'u', 'ñ': 'ñ'
         }
 
-        # Replace accented and special characters with their unaccented equivalents or _
+        # Replace accented and special characters with their unaccented equivalents or -
         name = ''.join(accent_map.get(c, c) for c in name)
-        name = re.sub(r'[^a-zñ0-9_.-]', '_', name.lower().strip())
+        name = re.sub(r'[^a-zñ0-9_.-]', '-', name.lower().strip())
 
         # Truncate the name to 40 characters
         name = name[:40]
@@ -947,7 +1056,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 'ignore_auth': True,
             }
 
-            if self.config and self.config.get('clean_tags', False):
+            if self.config and self.config.get('clean_tags', True):
                 tags = package_dict.get('tags', [])
                 package_dict['tags'] = self._clean_tags(tags)
 
@@ -983,7 +1092,8 @@ class SchemingDCATHarvester(HarvesterBase):
                         package_id = p.toolkit.get_action('package_update')(context, package_dict)
                         log.info('Updated package: %s with GUID: %s', package_id, harvest_object.guid)
                     except p.toolkit.ValidationError as e:
-                        self._save_object_error('Validation Error: %s' % six.text_type(e.error_summary), harvest_object, 'Import')
+                        error_message = ', '.join(f'{k}: {v}' for k, v in e.error_dict.items())
+                        self._save_object_error(f'Validation Error: {error_message}', harvest_object, 'Import')
                         return False
 
                 else:
@@ -1023,9 +1133,10 @@ class SchemingDCATHarvester(HarvesterBase):
 
                 try:
                     new_package = p.toolkit.get_action('package_create')(context, package_dict)
-                    log.info('Created new package: %s with GUID: %s', new_package['title'], harvest_object.guid)
+                    log.info('Created new package: %s with GUID: %s', new_package['name'], harvest_object.guid)
                 except p.toolkit.ValidationError as e:
-                    self._save_object_error('Validation Error: %s' % six.text_type(e.error_summary), harvest_object, 'Import')
+                    error_message = ', '.join(f'{k}: {v}' for k, v in e.error_dict.items())
+                    self._save_object_error(f'Validation Error: {error_message}', harvest_object, 'Import')
                     return False
 
             Session.commit()
