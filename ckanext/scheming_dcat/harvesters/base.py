@@ -751,11 +751,13 @@ class SchemingDCATHarvester(HarvesterBase):
         default_groups = self.config.get('default_groups', [])
         if default_groups:
             cleaned_default_groups = self._set_ckan_groups(default_groups)
+            log.debug('cleaned_default_groups: %s', cleaned_default_groups)
             existing_group_ids = set(g['name'] for g in cleaned_groups)
             for group in cleaned_default_groups:
                 if group['name'] not in existing_group_ids:
                     cleaned_groups.append(group)
-            package_dict['groups'] = cleaned_groups
+        
+        package_dict['groups'] = cleaned_groups
                 
         # Set default extras if needed
         default_extras = self.config.get('default_extras', {})
