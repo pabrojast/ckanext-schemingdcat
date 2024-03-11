@@ -383,6 +383,9 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
         try:
             package_dict = json.loads(harvest_object.content)
+            
+            # Add default values: tags, groups, etc.
+            package_dict = self._set_package_dict_default_values(package_dict, harvest_object, base_context)
 
             # Check if the dataset is a harvest source and we are not allowed to harvest it
             if package_dict.get('type') == 'harvest' and self.config.get('allow_harvest_datasets', False) is False:
