@@ -1,5 +1,5 @@
 name: Prueba de flake8
-run-name: ${{ github.actor }} probando scheming_dcat-test
+run-name: ${{ github.actor }} probando schemingdcat-test
 on: [push, pull_request]
 
 jobs:

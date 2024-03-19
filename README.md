@@ -1,4 +1,4 @@
-<h1 align="center">ckanext-scheming_dcat. LOD/INSPIRE metadata enhancement for ckanext-scheming</h1>
+<h1 align="center">ckanext-schemingdcat. LOD/INSPIRE metadata enhancement for ckanext-scheming</h1>
 <p align="center">
 
 <p align="center">
@@ -11,7 +11,7 @@
 </p>
 
 ## Overview
-This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT and Harvest enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml).
+This CKAN extension provides functions and templates specifically designed to extend `ckanext-scheming` and includes DCAT and Harvest enhancements to adapt CKAN Schema to [GeoDCAT-AP](./ckanext/schemingdcat/schemas/geodcatap/geodcatap_dataset.yaml).
 
 > [!WARNING] 
 > Requires [mjanez/ckanext-dcat](https://github.com/mjanez/ckanext-dcat), [ckan/ckanext-scheming](https://github.com/ckan/ckanext-scheming) and [ckan/ckanext-spatial](https://github.com/ckan/ckanext-spatial) to work properly.
@@ -19,11 +19,11 @@ This CKAN extension provides functions and templates specifically designed to ex
 > [!TIP]
 > It is **recommended to use with:** [`ckan-docker`](https://github.com/mjanez/ckan-docker) deployment or only use [`ckan-pycsw`](https://github.com/mjanez/ckan-pycsw) to deploy a CSW Catalog.
 
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/6b3d6fd4-7119-4307-8be7-5e17d41292fe)
+![image](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/6b3d6fd4-7119-4307-8be7-5e17d41292fe)
 
 Enhancements:
-- Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml)
-- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-scheming_dcat`](https://github.com/mjanez/ckanext-scheming_dcat)
+- Could use schemas for `ckanext-scheming` in the plugin like [CKAN GeoDCAT-AP schema](ckanext/schemingdcat/schemas/geodcatap/geodcatap_datasets.yaml)
+- Improve the search functionality in CKAN for custom schemas. It uses the fields defined in a scheming file to provide a set of tools to use these fields for scheming, and a way to include icons in their labels when displaying them. More info: [`ckanext-schemingdcat`](https://github.com/mjanez/ckanext-schemingdcat)
 - Add improved harvesters for custom metadata schemas integrated with `ckanext-harvest` in CKAN using [`mjanez/ckan-ogc`](https://github.com/mjanez/ckan-ogc).
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add custom i18n translations to `datasets`, `groups`, `organizations` in schemas, e.g: [GeoDCAT-AP (ES)](#geodcat-ap-es).[^1]
@@ -58,7 +58,7 @@ This plugin is compatible with CKAN 2.9 or later and needs the following plugins
   cd $CKAN_VENV/src/
 
   # Install the scheming_dataset plugin
-  pip install -e "git+https://github.com/ckan/ckanext-scheming_dcat.git#egg=ckanext-scheming_dcat"
+  pip install -e "git+https://github.com/ckan/ckanext-schemingdcat.git#egg=ckanext-schemingdcat"
   ```
 
 ## Configuration
@@ -66,23 +66,23 @@ Set the plugin:
 
   ```ini
   # Add the plugin to the list of plugins
-  ckan.plugins = ... spatial_metadata ... dcat ... scheming_dcat
+  ckan.plugins = ... spatial_metadata ... dcat ... schemingdcat
   ```
 > [!WARNING] 
-> When using `scheming_dcat` extension,**`scheming` should not appear in the list of plugins loaded in CKAN.** But `dcat` and `spatial` should.
+> When using `schemingdcat` extension,**`scheming` should not appear in the list of plugins loaded in CKAN.** But `dcat` and `spatial` should.
 
 ### Scheming DCAT
 Set the schemas you want to use with configuration options:
 
   ```ini
   # Each of the plugins is optional depending on your use
-  ckan.plugins = scheming_dcat_datasets scheming_dcat_groups scheming_dcat_organizations
+  ckan.plugins = schemingdcat_datasets schemingdcat_groups schemingdcat_organizations
   ```
 
-To use CSW Endpoint in `ckanext-scheming_dcat`:
+To use CSW Endpoint in `ckanext-schemingdcat`:
 
   ```ini
-  scheming_dcat.geometadata_base_uri = http://localhost:81/csw
+  schemingdcat.geometadata_base_uri = http://localhost:81/csw
   ckanext.dcat.base_uri = http://localhost:81/catalog
   ```
 
@@ -90,16 +90,16 @@ To use custom schemas in `ckanext-scheming`:
 
   ```ini
   # module-path:file to schemas being used
-  scheming.dataset_schemas = ckanext.scheming_dcat:schemas/geodcatap/geodcatap_dataset.yaml
-  scheming.group_schemas = ckanext.scheming_dcat:schemas/geodcatap/geodcatap_group.json
-  scheming.organization_schemas = ckanext.scheming_dcat:schemas/geodcatap/geodcatap_org.json
+  scheming.dataset_schemas = ckanext.schemingdcat:schemas/geodcatap/geodcatap_dataset.yaml
+  scheming.group_schemas = ckanext.schemingdcat:schemas/geodcatap/geodcatap_group.json
+  scheming.organization_schemas = ckanext.schemingdcat:schemas/geodcatap/geodcatap_org.json
 
   #   URLs may also be used, e.g:
   #
   # scheming.dataset_schemas = http://example.com/spatialx_schema.yaml
 
   #   Preset files may be included as well. The default preset setting is:
-  scheming.presets = ckanext.scheming_dcat:schemas/geodcatap/geodcatap_presets.json
+  scheming.presets = ckanext.schemingdcat:schemas/geodcatap/geodcatap_presets.json
 
   #   The is_fallback setting may be changed as well. Defaults to false:
   scheming.dataset_fallback = false
@@ -109,11 +109,11 @@ To use custom schemas in `ckanext-scheming`:
 Add the [custom Harvesters](#harvesters) to the list of plugins as you need:
 
   ```ini
-  ckan.plugins = ... spatial_metadata ... dcat ... scheming_dcat ... harvest ... scheming_dcat_ckan_harvester scheming_dcat_csw_harvester ...
+  ckan.plugins = ... spatial_metadata ... dcat ... schemingdcat ... harvest ... schemingdcat_ckan_harvester schemingdcat_csw_harvester ...
   ```
 
 ### Endpoints
-You can update the [`endpoints.yaml`](./ckanext/scheming_dcat/codelists/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8.
+You can update the [`endpoints.yaml`](./ckanext/schemingdcat/codelists/endpoints.yaml) file to add your custom OGC/LOD endpoints, only has 2 types of endpoints: `lod` and `ogc`, and the `profile` avalaible in [`ckanext-dcat`](https://github.com/mjanez/ckanext-dcat) Preferably between 4 and 8.
 
 Examples:
 
@@ -147,23 +147,23 @@ Examples:
 To configure facets, there are no mandatory sets in the config file for this extension. The following sets can be used:
 
   ```ini
-  scheming_dcat.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
-  scheming_dcat.default_facet_operator: [AND|OR]  # OR if not defined
+  schemingdcat.facet_list: [list of fields]      # List of fields in scheming file to use to faceting. Use ckan defaults if not provided.
+  schemingdcat.default_facet_operator: [AND|OR]  # OR if not defined
 
-   scheming_dcat.icons_dir: (dir)                  # images/icons if not defined
+   schemingdcat.icons_dir: (dir)                  # images/icons if not defined
   ```
 
 As an example for facet list, we could suggest:
 
   ```ini
-  scheming_dcat.facet_list = "theme groups theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to spatial_uri"
+  schemingdcat.facet_list = "theme groups theme_es dcat_type owner_org res_format publisher_name publisher_type frequency tags tag_uri conforms_to spatial_uri"
   ```
 
 The same custom fields for faceting can be used when browsing organizations and groups data:
 
   ```ini
-  scheming_dcat.organization_custom_facets = true
-  scheming_dcat.group_custom_facets = true
+  schemingdcat.organization_custom_facets = true
+  schemingdcat.group_custom_facets = true
   ```
 
 This two last settings are not mandatory. You can omit one or both (or set them to `false`), and the default fields for faceting will be used instead.
@@ -200,7 +200,7 @@ This two last settings are not mandatory. You can omit one or both (or set them 
     > [!NOTE] 
     >You can ommit any field you're not going to use for faceting, but the best policy could be to add all values at the beginning. 
     >
-    >The extra fields depend on your [schema](/ckanext/scheming_dcat/schemas/)
+    >The extra fields depend on your [schema](/ckanext/schemingdcat/schemas/)
    	
 	**Be sure to restart Solr after modify the schema.**
 	
@@ -215,10 +215,10 @@ This two last settings are not mandatory. You can omit one or both (or set them 
 	Ckan needs to "fix" multivalued fields to be able to recover values correctly for faceting, so this step must be done in order to use faceting with multivalued fields. 
 
 ### Icons
-Icons for each field option in the [`scheming file`](ckanext/scheming_dcat/schemas/geodcatap/geodcatap_datasets.yaml) can be set in multiple ways:
+Icons for each field option in the [`scheming file`](ckanext/schemingdcat/schemas/geodcatap/geodcatap_datasets.yaml) can be set in multiple ways:
 
 - Set a root directory path for icons for each field using the `icons_dir` key in the scheming file.
-- If `icons_dir` is not defined, the directory path is guessed starting from the value provided for the `scheming_dcat.icons_dir` parameter in the CKAN config file, adding the name of the field as an additional step to the path (`public/images/icons/{field_name`).
+- If `icons_dir` is not defined, the directory path is guessed starting from the value provided for the `schemingdcat.icons_dir` parameter in the CKAN config file, adding the name of the field as an additional step to the path (`public/images/icons/{field_name`).
 - For each option, use the `icon` setting to provide the last steps of the icon path from the field's root path defined before. This value may be just a file name or include a path to add to the icon's root directory.
 - If `icon` is not used, a directory and file name are guessed from the option's value.
 - Icons files are tested for existence when using `schemingdct_schema_icon` function to get them. If the file doesn't exist, the function returns `None`. Icons can be provided by any CKAN extension in its `public` directory.
@@ -227,46 +227,46 @@ Icons for each field option in the [`scheming file`](ckanext/scheming_dcat/schem
 ## New theme
 Update the base theme of CKAN to use with the enhancements of this extension.
 
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/97b91bdc-b1ec-402a-9750-cfe30ca3201b)
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/48b63c9e-1ab2-4504-b991-2ac63a8875c8)
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/213def6f-5d4c-4786-9d5b-24fed010d307)
+![image](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/97b91bdc-b1ec-402a-9750-cfe30ca3201b)
+![image](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/48b63c9e-1ab2-4504-b991-2ac63a8875c8)
+![image](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/213def6f-5d4c-4786-9d5b-24fed010d307)
 
-![screenshot 1695622478](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/bb522849-1319-49cd-ab93-5c3fa5784587)
-![screenshot 1695622650](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/7244f9c2-416d-4489-aee8-41cf91ae25a5)
-![image](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/5325df04-0ee7-48c3-a924-c8875fc8e2ad)
-![screenshot 1695622687](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/054ff4e5-56a3-4683-9492-1aa0659ee536)
-![screenshot 1695622719](https://github.com/mjanez/ckanext-scheming_dcat/assets/96422458/1ecb14c9-9946-4802-8e02-7a51e2911226)
+![screenshot 1695622478](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/bb522849-1319-49cd-ab93-5c3fa5784587)
+![screenshot 1695622650](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/7244f9c2-416d-4489-aee8-41cf91ae25a5)
+![image](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/5325df04-0ee7-48c3-a924-c8875fc8e2ad)
+![screenshot 1695622687](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/054ff4e5-56a3-4683-9492-1aa0659ee536)
+![screenshot 1695622719](https://github.com/mjanez/ckanext-schemingdcat/assets/96422458/1ecb14c9-9946-4802-8e02-7a51e2911226)
 
 ## Schemas
 With this plugin, you can customize the group, organization, and dataset entities in CKAN. Adding and enabling a schema will modify the forms used to update and create each entity, indicated by the respective `type` property at the root level. Such as `group_type`, `organization_type`, and `dataset_type`. Non-default types are supported properly as is indicated throughout the examples.
 
-Are available to use with this extension a number of custom schema, more info: [`schemas/README.md`](./ckanext/scheming_dcat/schemas/README.md)
+Are available to use with this extension a number of custom schema, more info: [`schemas/README.md`](./ckanext/schemingdcat/schemas/README.md)
 
 ### GeoDCAT-AP (ES)
-[`schemas/geodcatp_es`](/ckanext/scheming_dcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
+[`schemas/geodcatp_es`](/ckanext/schemingdcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
 
 > [!NOTE] 
-> RDF to CKAN dataset mapping: [GeoDCAT-AP (ES) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-es)
+> RDF to CKAN dataset mapping: [GeoDCAT-AP (ES) to CKAN](ckanext/schemingdcat/schemas/README.md#geodcat-ap-es)
 
 
 ### DCAT 
-[`schemas/dcat`](/ckanext/scheming_dcat/schemas/dcat/dcat_dataset.yaml) based
+[`schemas/dcat`](/ckanext/schemingdcat/schemas/dcat/dcat_dataset.yaml) based
 on: [DCAT](https://www.w3.org/TR/vocab-dcat-3/).
 
 > [!NOTE] 
-> RDF to CKAN dataset mapping: [DCAT to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat)
+> RDF to CKAN dataset mapping: [DCAT to CKAN](ckanext/schemingdcat/schemas/README.md#dcat)
 
 ### DCAT-AP (EU)
-[`schemas/dcatap`](/ckanext/scheming_dcat/schemas/dcatap/dcatap_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
+[`schemas/dcatap`](/ckanext/schemingdcat/schemas/dcatap/dcatap_dataset.yaml) based on: [DCAT-AP](https://op.europa.eu/en/web/eu-vocabularies/dcat-ap) for the european context.
 
 > [!NOTE] 
-> RDF to CKAN dataset mapping: [DCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#dcat-ap-eu)
+> RDF to CKAN dataset mapping: [DCAT-AP (EU) to CKAN](ckanext/schemingdcat/schemas/README.md#dcat-ap-eu)
 
 ### GeoDCAT-AP (EU)
-[`schemas/geodcatap`](/ckanext/scheming_dcat/schemas/geodcatap/geodcatap_dataset.yaml) based on: [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP) for the european context.
+[`schemas/geodcatap`](/ckanext/schemingdcat/schemas/geodcatap/geodcatap_dataset.yaml) based on: [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP) for the european context.
 
 > [!NOTE] 
-> RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](ckanext/scheming_dcat/schemas/README.md#geodcat-ap-eu)
+> RDF to CKAN dataset mapping: [GeoDCAT-AP (EU) to CKAN](ckanext/schemingdcat/schemas/README.md#geodcat-ap-eu)
 
 
 ## Harvesters
@@ -285,12 +285,12 @@ To testing harvesters in development, you can use the following command:
 
 
 ### Scheming DCAT CKAN Harvester: CKAN Harvester for custom schemas
-The plugin includes a harvester for remote CKAN instances using the custom schemas provided by `scheming_dcat` and `ckanext-scheming`. This harvester is a subclass of the CKAN Harvester provided by `ckanext-harvest` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CKAN instances.
+The plugin includes a harvester for remote CKAN instances using the custom schemas provided by `schemingdcat` and `ckanext-scheming`. This harvester is a subclass of the CKAN Harvester provided by `ckanext-harvest` and is designed to work with the `schemingdcat` plugin to provide a more versatile and customizable harvester for CKAN instances.
 
-To use it, you need to add the `scheming_dcat_ckan_harvester` plugin to your options file:
+To use it, you need to add the `schemingdcat_ckan_harvester` plugin to your options file:
 
   ```ini
-	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_ckan_harvester
+	ckan.plugins = harvest schemingdcat schemingdcat_datasets ... schemingdcat_ckan_harvester
   ```
 
 The Scheming DCAT CKAN Harvester supports the same configuration options as the [CKAN Harvester](https://github.com/ckan/ckanext-harvest#the-ckan-harvester), plus the following additional options:
@@ -330,22 +330,22 @@ And example configuration might look like this:
 
 
 ### Scheming DCAT CSW INSPIRE Harvester
-A harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `scheming_dcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
+A harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `schemingdcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
 
-To use it, you need to add the `scheming_dcat_csw_harvester` plugin to your options file:
+To use it, you need to add the `schemingdcat_csw_harvester` plugin to your options file:
 
   ```ini
-	ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_csw_harvester
+	ckan.plugins = harvest schemingdcat schemingdcat_datasets ... schemingdcat_csw_harvester
   ```
   ==#TODO:==
 
 ### Remote XLS/XLSX Metadata Batch Harvester
-A harvester for remote Excel files with Metadata records. This harvester is a subclass of the Scheming DCAT Base Harvester provided by `ckanext-scheming_dcat` to provide a more versatile and customizable harvester for Excel files that have metadata records in them.
+A harvester for remote Excel files with Metadata records. This harvester is a subclass of the Scheming DCAT Base Harvester provided by `ckanext-schemingdcat` to provide a more versatile and customizable harvester for Excel files that have metadata records in them.
 
-To use it, you need to add the `scheming_dcat_xls_harvester` plugin to your options file:
+To use it, you need to add the `schemingdcat_xls_harvester` plugin to your options file:
 
   ```ini
-  ckan.plugins = harvest scheming_dcat scheming_dcat_datasets ... scheming_dcat_xls_harvester
+  ckan.plugins = harvest schemingdcat schemingdcat_datasets ... schemingdcat_xls_harvester
   ```
 
 The Remote XLS/XLSX Metadata Batch Harvester supports the following options:
@@ -403,6 +403,6 @@ And example configuration might look like this:
 ## Running the Tests
 To run the tests:
 
-    pytest --ckan-ini=test.ini ckanext/scheming_dcat/tests
+    pytest --ckan-ini=test.ini ckanext/schemingdcat/tests
 
 [^1]: An improvement to [`ckanext-fluent`] (https://github.com/ckan/ckanext-fluent) to allow more versatility in multilingual schema creation and metadata validation.

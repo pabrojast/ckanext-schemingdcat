@@ -1,5 +1,5 @@
-name: scheming_dcat-test
-run-name: ${{ github.actor }} probando scheming_dcat-test
+name: schemingdcat-test
+run-name: ${{ github.actor }} probando schemingdcat-test
 on: [workflow_dispatch]
 jobs:
   lint:
