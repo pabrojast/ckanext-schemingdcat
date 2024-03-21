@@ -221,8 +221,8 @@ Icons for each field option in the [`scheming file`](ckanext/schemingdcat/schema
 - If `icons_dir` is not defined, the directory path is guessed starting from the value provided for the `schemingdcat.icons_dir` parameter in the CKAN config file, adding the name of the field as an additional step to the path (`public/images/icons/{field_name`).
 - For each option, use the `icon` setting to provide the last steps of the icon path from the field's root path defined before. This value may be just a file name or include a path to add to the icon's root directory.
 - If `icon` is not used, a directory and file name are guessed from the option's value.
-- Icons files are tested for existence when using `schemingdct_schema_icon` function to get them. If the file doesn't exist, the function returns `None`. Icons can be provided by any CKAN extension in its `public` directory.
-- Set a `default icon` for a field using the default_icon setting in the scheming file. You can get it using `schemingdct_schema_get_default_icon` function, and it is your duty to decide when and where to get and use it in a template.
+- Icons files are tested for existence when using `schemingdcat_schema_icon` function to get them. If the file doesn't exist, the function returns `None`. Icons can be provided by any CKAN extension in its `public` directory.
+- Set a `default icon` for a field using the default_icon setting in the scheming file. You can get it using `schemingdcat_schema_get_default_icon` function, and it is your duty to decide when and where to get and use it in a template.
 
 ## New theme
 Update the base theme of CKAN to use with the enhancements of this extension.

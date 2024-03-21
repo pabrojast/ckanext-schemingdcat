@@ -1,6 +1,6 @@
 from ckantoolkit import side_effect_free
 
-from ckanext.schemingdcat.helpers import schemingdct_get_schema_names
+from ckanext.schemingdcat.helpers import schemingdcat_get_schema_names
 
 
 @side_effect_free
@@ -15,4 +15,4 @@ def schemingdcat_dataset_schema_name(context, data_dict):
     Returns:
         list: A list of schema names.
     """
-    return schemingdct_get_schema_names()
+    return schemingdcat_get_schema_names()

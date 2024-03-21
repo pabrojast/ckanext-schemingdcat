@@ -2,7 +2,11 @@ from ckan.lib.plugins import DefaultTranslation
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 
-from ckanext.scheming.plugins import SchemingDatasetsPlugin, SchemingGroupsPlugin, SchemingOrganizationsPlugin
+from ckanext.scheming.plugins import (
+    SchemingDatasetsPlugin,
+    SchemingGroupsPlugin,
+    SchemingOrganizationsPlugin,
+)
 from ckanext.scheming import logic as scheming_logic
 
 import ckanext.schemingdcat.config as sdct_config
@@ -16,11 +20,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class FacetSchemingDCATPlugin(plugins.SingletonPlugin,
-                           Faceted, 
-                           PackageController, 
-                           DefaultTranslation):
-
+class FacetSchemingDCATPlugin(
+    plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
+):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IFacets)
@@ -29,75 +31,65 @@ class FacetSchemingDCATPlugin(plugins.SingletonPlugin,
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IBlueprint)
 
-
     # IConfigurer
     def update_config(self, config_):
-        toolkit.add_template_directory(config_, 'templates')
-        toolkit.add_public_directory(config_, 'public')
+        toolkit.add_template_directory(config_, "templates")
+        toolkit.add_public_directory(config_, "public")
 
-        #toolkit.add_resource('fanstatic',
+        # toolkit.add_resource('fanstatic',
         #                     'schemingdcat')
 
-        toolkit.add_resource('assets',
-                             'ckanext-schemingdcat')
+        toolkit.add_resource("assets", "ckanext-schemingdcat")
 
-        sdct_config.default_locale = config_.get('ckan.locale_default',
-                                               sdct_config.default_locale
-                                               )
+        sdct_config.default_locale = config_.get(
+            "ckan.locale_default", sdct_config.default_locale
+        )
 
         sdct_config.default_facet_operator = config_.get(
-            'schemingdcat.default_facet_operator',
-            sdct_config.default_facet_operator
-            )
+            "schemingdcat.default_facet_operator", sdct_config.default_facet_operator
+        )
 
         sdct_config.icons_dir = config_.get(
-            'schemingdcat.icons_dir',
-            sdct_config.icons_dir
-            )
+            "schemingdcat.icons_dir", sdct_config.icons_dir
+        )
 
         sdct_config.organization_custom_facets = toolkit.asbool(
-            config_.get('schemingdcat.organization_custom_facets',
-                        sdct_config.organization_custom_facets)
+            config_.get(
+                "schemingdcat.organization_custom_facets",
+                sdct_config.organization_custom_facets,
             )
+        )
 
         sdct_config.group_custom_facets = toolkit.asbool(
-            config_.get('schemingdcat.group_custom_facets',
-                        sdct_config.group_custom_facets
-                        )
+            config_.get(
+                "schemingdcat.group_custom_facets", sdct_config.group_custom_facets
             )
-        
-        sdct_config.debug = toolkit.asbool(
-            config_.get('debug',
-                        sdct_config.debug
-                        )
-            )
+        )
+
+        sdct_config.debug = toolkit.asbool(config_.get("debug", sdct_config.debug))
 
         # Default value use local ckan instance with /csw
         sdct_config.geometadata_base_uri = config_.get(
-            'schemingdcat.geometadata_base_uri',
-            '/csw'
-            )
+            "schemingdcat.geometadata_base_uri", "/csw"
+        )
 
         # Load yamls config files, if not in debug mode
         if not sdct_config.debug:
             init_config()
 
         # configure Faceted class (parent of this)
-        self.facet_load_config(config_.get(
-            'schemingdcat.facet_list',
-            '').split())
-        
-        
+        self.facet_load_config(config_.get("schemingdcat.facet_list", "").split())
+
     def get_helpers(self):
         respuesta = dict(helpers.all_helpers)
         return respuesta
-    
+
     def get_validators(self):
         return dict(validators.all_validators)
 
-    #IBlueprint
+    # IBlueprint
     def get_blueprint(self):
-        return blueprint.schemingdct
+        return blueprint.schemingdcat
 
 
 class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
@@ -109,20 +101,21 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IValidators)
 
     def read_template(self):
-        return 'schemingdcat/package/read.html'
-    
+        return "schemingdcat/package/read.html"
+
     def resource_template(self):
-        return 'schemingdcat/package/resource_read.html'
+        return "schemingdcat/package/resource_read.html"
 
     def package_form(self):
-        return 'schemingdcat/package/snippets/package_form.html'
+        return "schemingdcat/package/snippets/package_form.html"
 
     def get_actions(self):
         return {
-            'schemingdcat_dataset_schema_name': logic.schemingdcat_dataset_schema_name,
-            'scheming_dataset_schema_list': scheming_logic.scheming_dataset_schema_list,
-            'scheming_dataset_schema_show': scheming_logic.scheming_dataset_schema_show,
+            "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,
+            "scheming_dataset_schema_list": scheming_logic.scheming_dataset_schema_list,
+            "scheming_dataset_schema_show": scheming_logic.scheming_dataset_schema_show,
         }
+
 
 class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -132,7 +125,8 @@ class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
     plugins.implements(plugins.IValidators)
 
     def about_template(self):
-        return 'schemingdcat/group/about.html'
+        return "schemingdcat/group/about.html"
+
 
 class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -140,8 +134,6 @@ class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
     plugins.implements(plugins.IGroupForm, inherit=True)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IValidators)
-    
-    def about_template(self):
-        return 'schemingdcat/organization/about.html'
 
-    
+    def about_template(self):
+        return "schemingdcat/organization/about.html"

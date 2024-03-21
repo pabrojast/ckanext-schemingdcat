@@ -229,9 +229,9 @@
     {
       "preset_name": "schemingdcat_fluent_title_translated",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_text.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_text.html",
         "display_snippet": "fluent_text.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "if_empty_same_as(name) unicode_safe not_empty scheming_required schemingdcat_fluent_text",
         "output_validators": "schemingdcat_fluent_core_translated_output"
       }
@@ -239,9 +239,9 @@
     {
       "preset_name": "schemingdcat_fluent_notes_translated",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_markdown.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_markdown.html",
         "display_snippet": "fluent_markdown.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "unicode_safe schemingdcat_fluent_text",
         "output_validators": "schemingdcat_fluent_core_translated_output"
       }
@@ -249,9 +249,9 @@
     {
       "preset_name": "schemingdcat_fluent_core_translated_txt",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_text.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_text.html",
         "display_snippet": "fluent_text.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "schemingdcat_fluent_text",
         "output_validators": "schemingdcat_fluent_core_translated_output"
       }
@@ -259,9 +259,9 @@
     {
       "preset_name": "schemingdcat_fluent_core_translated_md",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_markdown.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_markdown.html",
         "display_snippet": "fluent_markdown.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "unicode_safe not_empty schemingdcat_fluent_text",
         "output_validators": "schemingdcat_fluent_core_translated_output"
       }
@@ -269,9 +269,9 @@
     {
       "preset_name": "schemingdcat_fluent_text",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_text.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_text.html",
         "display_snippet": "fluent_text.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "unicode_safe schemingdcat_fluent_text",
         "output_validators": "fluent_text_output"
       }
@@ -279,9 +279,9 @@
     {
       "preset_name": "schemingdcat_fluent_tags",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_tags.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_tags.html",
         "display_snippet": "fluent_tags.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "fluent_tags",
         "output_validators": "fluent_tags_output",
         "form_attrs": {
@@ -293,9 +293,9 @@
     {
       "preset_name": "schemingdcat_fluent_markdown",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_markdown.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_markdown.html",
         "display_snippet": "fluent_markdown.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "unicode_safe schemingdcat_fluent_text",
         "output_validators": "fluent_text_output"
       }
@@ -303,9 +303,9 @@
     {
       "preset_name": "schemingdcat_fluent_link",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/schemingdct_fluent_text.html",
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_fluent_text.html",
         "display_snippet": "fluent_link.html",
-        "error_snippet": "schemingdcat/error_snippets/schemingdct_fluent_text.html",
+        "error_snippet": "schemingdcat/error_snippets/schemingdcat_fluent_text.html",
         "validators": "unicode_safe schemingdcat_fluent_text",
         "output_validators": "fluent_text_output"
       }

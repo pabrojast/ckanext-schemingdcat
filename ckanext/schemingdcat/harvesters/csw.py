@@ -25,7 +25,7 @@ class SchemingDCATCSWHarvester(CSWHarvester, SchemingDCATHarvester):
             'title': 'Scheming DCAT INSPIRE CSW endpoint',
             'description': 'Harvester for CSW INSPIRE-GeoDCAT-AP dataset descriptions ' +
                            'serialized as XML metadata according to the INSPIRE ISO 19139 standard.',
-            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#scheming-dcat-csw-inspire-harvester'
+            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#schemingdcat-csw-inspire-harvester'
         }
         
     csw = None

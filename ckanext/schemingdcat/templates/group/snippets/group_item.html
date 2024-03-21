@@ -1,6 +1,6 @@
 {% ckan_extends %}
 
-{% set group_info = h.schemingdct_get_group_or_org(h.dataset_display_field_value(group, 'id'), 'group') %}
+{% set group_info = h.schemingdcat_get_group_or_org(h.dataset_display_field_value(group, 'id'), 'group') %}
 
 {% set url = h.url_for(type ~ '.read', id=group.name) %}
 {% set truncate = truncate or 40 %}

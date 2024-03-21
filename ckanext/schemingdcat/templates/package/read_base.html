@@ -6,7 +6,7 @@
   {% block package_info %}
     {% if pkg.organization %}
       {% set org = h.get_organization(pkg.organization.id) %}
-      {% snippet 'schemingdcat/snippets/schemingdct_info.html', pkg_dict=pkg, dataset_type=dataset_type, organization=org %}
+      {% snippet 'schemingdcat/snippets/schemingdcat_info.html', pkg_dict=pkg, dataset_type=dataset_type, organization=org %}
     {% endif %}
   {% endblock %}
 
@@ -41,6 +41,6 @@
   {% endblock %}
 
   {% block package_social %}
-    {% snippet "schemingdcat/snippets/schemingdct_social.html", pkg_dict=pkg %}
+    {% snippet "schemingdcat/snippets/schemingdcat_social.html", pkg_dict=pkg %}
   {% endblock %}
 {% endblock %}

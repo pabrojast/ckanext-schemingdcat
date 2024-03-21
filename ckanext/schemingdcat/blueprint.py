@@ -12,10 +12,10 @@ from logging import getLogger
 logger = getLogger(__name__)
 get_action = logic.get_action
 
-schemingdct = Blueprint(u'schemingdcat', __name__)
+schemingdcat = Blueprint(u'schemingdcat', __name__)
 
 
-@schemingdct.route(u'/dataset/linked_data/<id>')
+@schemingdcat.route(u'/dataset/linked_data/<id>')
 def index(id):
     context = {
         u'model': model,
@@ -40,7 +40,7 @@ def index(id):
             u'data_list': get_linked_data(id),
         })
 
-@schemingdct.route(u'/dataset/geospatial_metadata/<id>')
+@schemingdcat.route(u'/dataset/geospatial_metadata/<id>')
 def geospatial_metadata(id):
     context = {
         u'model': model,
