@@ -1,0 +1,26 @@
+schemingdcat-css:
+  filter: cssrewrite
+  output: ckanext-schemingdcat/%(version)s-schemingdcat.css
+  contents:
+    - css/schemingdcat.css
+    - css/ft-syntax-highlight.min.css
+
+schemingdcat-table-collapsible-rows:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_table_collapsible_rows.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - vendor/mustache/mustache.js
+    - vendor/jquery/jquery.js
+    - js/modules/schemingdcat-table-collapsible-rows.js
+
+schemingdcat-permanent-url:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_permanent_url.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-permanent-url.js

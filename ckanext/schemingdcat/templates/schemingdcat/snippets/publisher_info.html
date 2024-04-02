@@ -1,0 +1,50 @@
+{% if pkg_dict.publisher_name %}
+  {% set dataset_fields = h.scheming_get_dataset_schema(dataset_type).dataset_fields %}
+  {% set field_spatial_uri = h.scheming_field_by_name(dataset_fields, 'spatial_uri') %}
+  {% set field_publisher_type = h.scheming_field_by_name(dataset_fields, 'publisher_type') %}
+
+  <section class="module module-narrow module-shallow publisher_info">
+    <h2 class="module-heading"><i class="fa fa-address-book-o"></i> {{ _('Publicador') }}</h2>
+    <section class="module-content">
+      {% set icons_dir = h.schemingdcat_get_icons_dir(field_spatial_uri) %}
+      {% if icons_dir %}
+        {% set icon = h.schemingdcat_get_icon(h.schemingdcat_get_choice_item(field_spatial_uri, pkg_dict.spatial_uri), icons_dir, None) %}
+        {% if icon %}
+          {% set img_url= h.url_for_static(icon) %}
+        {% endif %}
+      {% endif %}
+      {% if img_url %}
+        <a href="{{ h.url_for('dataset.search', spatial_uri=pkg_dict.spatial_uri) }}" target="_blank">
+          <img src="{{ img_url }}" title="{{ label }}" class="item_icon"></img>
+        </a>
+      {% endif %}
+      <a class="item_heading" href="{{ h.url_for('dataset.search', publisher_name=pkg_dict.publisher_name) }}" target="_blank"> {{ pkg_dict.publisher_name }}</a>
+
+      <ul class="nav nav-simple">
+        {% if pkg_dict.publisher_email %}
+          <li class="nav-item">
+            <a href="{{ 'mailto:' + pkg_dict.publisher_email }}" target="_blank"><i class="fa fa-envelope"></i> {{ pkg_dict.publisher_email | truncate(26) }}</a>
+          </li>
+        {% endif %}
+        {% if pkg_dict.publisher_url %}
+          <li class="nav-item">
+            <a href="{{ pkg_dict.publisher_url }}" target="_blank"><i class="fa fa-external-link"></i> {{  h.schemingdcat_prettify_url(pkg_dict.publisher_url) | truncate(26) }}</a>
+          </li>
+        {% endif %}
+        {% if pkg_dict.publisher_identifier %}
+          {%  set url_name = h.schemingdcat_prettify_url_name(pkg_dict.publisher_identifier) %} 
+          <li class="nav-item">
+            <a href="{{ pkg_dict.publisher_identifier }}" target="_blank"><i class="fa fa-user-circle-o"></i> {{ url_name }}</a>
+          </li>
+        {% endif %}
+        {% if pkg_dict.publisher_type %}
+          {% set choices = h.scheming_field_choices(field_publisher_type) %}
+          {% set publisher_type_label = h.scheming_choices_label(choices, pkg_dict.publisher_type) %}
+          <li class="nav-item">
+            <a href="{{ pkg_dict.publisher_type }}" target="_blank"><i class="fa fa-university"></i> {{ publisher_type_label }}</a>
+          </li>
+      {% endif %}
+      </ul>
+    </section>
+  </section>
+{% endif %}

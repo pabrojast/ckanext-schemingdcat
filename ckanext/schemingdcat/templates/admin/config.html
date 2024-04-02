@@ -1,0 +1,50 @@
+{% ckan_extends %}
+{% block secondary_content %}
+  <div class="module module-narrow module-shallow">
+    <h2 class="module-heading">
+      <i class="fa fa-info-circle"></i>
+      {{ _('CKAN config options') }}
+    </h2>
+    <div class="module-content">
+      {% block admin_form_help %}
+        {% set about_url = h.url_for(controller='home', action='about') %}
+        {% set home_url = h.url_for(controller='home', action='index') %}
+        {% set iso639_url = h.url_for_static_or_external ('https://en.wikipedia.org/wiki/ISO_639-1')%}
+        {% set docs_url = "http://docs.ckan.org/en/{0}/theming".format(g.ckan_doc_version) %}
+          <h3>{{ _('Frontpage intro text') }}</h3>
+          <p><strong>{{ _('Intro Text') }}:</strong>
+            {{ _( 'If this text is set, it will appear as intro text on the Homepage, see') }}:
+            <a href="{{ home_url }}">
+              {{ _('Homepage') }}
+            </a>
+          </p>
+        <p><strong>{{ _('Multilang intro text') }}:</strong> {{ _('Add the tag with the lang code: <code>[#{iso639-1}#]</code> before the introductory text. Add as many tags as you want for each language.') }}
+        <a href="{{ iso639_url }}">
+            {{ _('ISO 639-1 codes') }}
+        </a>
+        </p>
+            <code>[#en#]</code><br>
+            <code>Welcome to the CKAN Open Data Portal.</code><br>
+            <code>[#es#]</code><br>
+            <code>Bienvenido al portal de datos abiertos CKAN.</code>
+            <br>
+        <h3>{{ _('Standard CKAN settings') }}</h3>
+        <p><strong>{{ _('Site Title') }}:</strong>
+          {{ _('This is the title of this CKAN instance. It appears in various places throughout CKAN.') }}</p>
+        <p><strong>{{ _('Style') }}:</strong>
+          {{ _('Choose from a list of simple variations of the main colour scheme to get a very quick custom theme working.') }}
+        </p>
+        <p><strong>{{ _('Site Tag Logo') }}:</strong>
+        {{ _('This is the logo that appears in the header of all the CKAN instance templates.') }}</p>
+        <p><strong>{{ _('About') }}:</strong>
+          {{ _('This text will appear on this CKAN instances, see ') }}
+          <a href="{{ about_url }}">{{ _('About page') }}</a>.</p>
+        <p><strong>{{ _('Custom CSS') }}:</strong>
+        {{ _('This can be used for custom CSS on a CKAN site.') }}
+        </p>
+        <p><strong>{{ _('Homepage') }}:</strong>
+          {{ _('This is for choosing a predefined layout for the modules that appear on your homepage.') }}</p>
+      {% endblock %}
+    </div>
+  </div>
+{% endblock %}

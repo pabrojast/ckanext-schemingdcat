@@ -1,0 +1,79 @@
+{% set inspire_metadata_values = [
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset',
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series',
+    'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service'
+] %}
+
+{% set endpoints = h.schemingdcat_get_catalog_endpoints() %}
+{% set profiles = [] %}
+{% for endpoint in endpoints if endpoint.get('type') == 'lod' %}
+  {% set profile = endpoint.get('profile') %}
+  {% set profile_label = endpoint.get('profile_label') %}
+  {% if {'profile': profile, 'profile_label': profile_label} not in profiles %}
+    {% set _ = profiles.append({'profile': profile, 'profile_label': profile_label}) %}
+  {% endif %}
+{% endfor %}
+
+{% block package_download_metadata %}
+    {% set metadata_profile_lod_eu = '<a href="https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe" target="_blank">DCAT-AP</a>' %}
+    {% set metadata_profile_lod_es = '<a href="https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe" target="_blank">DCAT-AP</a>/<a href="https://datos.gob.es/es/documentacion/guia-de-aplicacion-de-la-norma-tecnica-de-interoperabilidad-de-reutilizacion-de" target="_blank">NTI-RISP</a>' %}
+    {% set metadata_profile_geo = '<a href="https://inspire.ec.europa.eu/metadata/6541" target="_blank">INSPIRE</a>' %}
+
+    <div class="download-links pull-right">
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{{ h.url_for('api.action', ver=3, logic_function='package_show', _external=True, id=pkg.name) }}" target="_blank"><i class="fa fa-download"></i> {{ _('Download') }}</a>
+            <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                {% set linked_data_links = h.schemingdcat_get_all_metadata(pkg.id) %}
+                {% if pkg.dcat_type in inspire_metadata_values %}
+                    <li class="dropdown-header" title="{{ _('CSW Endpoint') }}"><i class="fa fa-globe"></i> CSW - {{ _('Geospatial data') }}</li>
+                    {% for link in linked_data_links %}
+                        {% if link.endpoint_type == 'csw' %}
+                            {% set url = link.url.format(id=pkg.identifier) %}
+                            {% set format_label = '<strong>' + link.format + '</strong>' %}
+                            <li>
+                                <a href="{{ url }}" target="_blank">
+                                    <span class="metadata-download_info_label">{{ _('{metadata_format} Metadata').format(metadata_format=format_label|safe) }}</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                {% for profile in profiles %}
+                    {% if profile.profile == 'euro_dcat_ap_2' or (pkg.theme_es and profile.profile == 'spain_dcat') %}
+                        <li class="dropdown-header" title="{{ _('RDF DCAT Endpoint') }}"><i class="fa fa-share-alt"></i> {{ profile.profile_label }} - {{ _('Linked Data') }}</li>
+            
+                        {% for link in linked_data_links %}
+                            {% if link.endpoint_type == 'dcat' %}
+                                {% set url = h.url_for(link.endpoint, profiles=profile.profile, **link.endpoint_data) %}
+                                {% set format_label = '<strong>' + link.format + '</strong>' %}
+                                <li>
+                                    <a href="{{ url }}" target="_blank">
+                                        <span class="metadata-download_info_label">{{ _('{metadata_format} Metadata').format(metadata_format=format_label|safe) }}</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %} 
+                    {% endif %}      
+                {% endfor %} 
+            </ul>
+        </div>
+
+        {% if pkg.dcat_type in inspire_metadata_values %}
+            <div class="metadata-label pull-left">
+                <span>{{ metadata_profile_geo|safe }}</span> <i class="fa fa-check-circle"></i>
+            </div>
+        {% endif %}
+        {% if pkg.theme_es %}
+           {% set metadata_profile_lod = metadata_profile_lod_es %}
+        {% else %}
+           {% set metadata_profile_lod = metadata_profile_lod_eu %}
+        {% endif %}
+        <div class="metadata-label pull-left">
+            <span>{{ metadata_profile_lod|safe }}</span> <i class="fa fa-check-circle"></i>
+        </div>
+    </div>
+{% endblock %}
