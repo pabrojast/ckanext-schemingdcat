@@ -902,7 +902,7 @@ class SchemingDCATHarvester(HarvesterBase):
         default_groups = self.config.get("default_groups", [])
         if default_groups:
             cleaned_default_groups = self._set_ckan_groups(default_groups)
-            log.debug("cleaned_default_groups: %s", cleaned_default_groups)
+            #log.debug("cleaned_default_groups: %s", cleaned_default_groups)
             existing_group_ids = set(g["name"] for g in cleaned_groups)
             for group in cleaned_default_groups:
                 if group["name"] not in existing_group_ids:
@@ -936,7 +936,7 @@ class SchemingDCATHarvester(HarvesterBase):
                         harvest_source_title=harvest_object.job.source.title,
                         harvest_job_id=harvest_object.job.id,
                         harvest_object_id=harvest_object.id,
-                        package_dict_id=package_dict["id"],
+                        dataset_id=package_dict["id"],
                     )
 
                 package_dict["extras"].append({"key": key, "value": value})
@@ -948,7 +948,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 for resource in package_dict["resources"]
             ]
 
-        # log.debug('package_dict default values: %s', package_dict)
+        log.debug('package_dict default values: %s', package_dict)
         return package_dict
 
     def _update_resource_dict(self, resource):
