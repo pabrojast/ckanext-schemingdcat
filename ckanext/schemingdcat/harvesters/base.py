@@ -948,7 +948,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 for resource in package_dict["resources"]
             ]
 
-        log.debug('package_dict default values: %s', package_dict)
+        # log.debug('package_dict default values: %s', package_dict)
         return package_dict
 
     def _update_resource_dict(self, resource):
@@ -966,7 +966,7 @@ class SchemingDCATHarvester(HarvesterBase):
             fallback = field["fallback"] or field["default_value"]
 
             if field_name == "size" and field_name is not None:
-                if isinstance(resource["size"], str):
+                if "size" in resource and isinstance(resource["size"], str):
                     resource["size"] = resource["size"].replace(".", "")
                     resource["size"] = (
                         int(resource["size"]) if resource["size"].isdigit() else 0
@@ -1039,7 +1039,12 @@ class SchemingDCATHarvester(HarvesterBase):
         if isinstance(groups, str):
             # If groups is a string, split it into a list
             groups = groups.split(",")
-        elif not isinstance(groups, list):
+        elif isinstance(groups, list):
+            # If groups is a list of dictionaries, extract 'name' from each dictionary
+            if all(isinstance(item, dict) for item in groups):
+                groups = [group.get('name', '') for group in groups]
+            # If groups is a list but not of dictionaries, keep it as it is
+        else:
             # If groups is neither a list nor a string, return an empty list
             return []
 
