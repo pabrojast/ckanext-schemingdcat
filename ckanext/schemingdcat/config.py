@@ -172,3 +172,29 @@ CUSTOM_FORMAT_RULES = [
     },
     # Add more rules here as needed
 ]
+
+DATADICTIONARY_DEFAULT_SCHEMA = [
+    'id',
+    'type',
+    'label',
+    'notes',
+    'type_override'
+    ]
+
+# Common date formats for parsing. https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes
+COMMON_DATE_FORMATS = [
+    '%Y-%m-%d',
+    '%d-%m-%Y',
+    '%m-%d-%Y',
+    '%Y/%m/%d',
+    '%d/%m/%Y',
+    '%m/%d/%Y',
+    '%Y-%m-%d %H:%M:%S',  # Date with time
+    '%d-%m-%Y %H:%M:%S',  # Date with time
+    '%m-%d-%Y %H:%M:%S',  # Date with time
+    '%Y/%m/%d %H:%M:%S',  # Date with time
+    '%d/%m/%Y %H:%M:%S',  # Date with time
+    '%m/%d/%Y %H:%M:%S',  # Date with time
+    '%Y-%m-%dT%H:%M:%S',  # ISO 8601 format
+    '%Y-%m-%dT%H:%M:%SZ',  # ISO 8601 format with Zulu time indicator
+]

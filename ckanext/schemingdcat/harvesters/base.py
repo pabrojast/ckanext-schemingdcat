@@ -31,6 +31,7 @@ from ckanext.schemingdcat.config import (
     DATASET_DEFAULT_FIELDS,
     RESOURCE_DEFAULT_FIELDS,
     CUSTOM_FORMAT_RULES,
+    DATADICTIONARY_DEFAULT_SCHEMA
 )
 
 log = logging.getLogger(__name__)
@@ -802,7 +803,7 @@ class SchemingDCATHarvester(HarvesterBase):
             None
         """
         issued_date = self._normalize_date(
-            package_dict["issued"]
+            package_dict["issued"], self._source_date_format
         ) or datetime.now().strftime("%Y-%m-%d")
 
         for date_field in DATE_FIELDS:
@@ -813,10 +814,11 @@ class SchemingDCATHarvester(HarvesterBase):
                 fallback_date = (
                     issued_date
                     if fallback and fallback == "issued"
-                    else self._normalize_date(package_dict.get(fallback))
+                    else self._normalize_date(package_dict.get(fallback), self._source_date_format)
                 )
+                log.debug(['%s: %s', field_name, package_dict[field_name]])
                 package_dict[field_name] = (
-                    self._normalize_date(package_dict.get(field_name)) or fallback_date
+                    self._normalize_date(package_dict.get(field_name), self._source_date_format) or fallback_date
                 )
 
                 if field_name == "issued":
@@ -825,26 +827,35 @@ class SchemingDCATHarvester(HarvesterBase):
                     )
 
     @staticmethod
-    def _normalize_date(date):
+    def _normalize_date(date, source_date_format=None):
         """
         Normalize the given date to the format 'YYYY-MM-DD'.
 
         Args:
             date (str or datetime): The date to be normalized.
+            source_date_format (str): The format of the source date.
 
         Returns:
             str: The normalized date in the format 'YYYY-MM-DD', or None if the date cannot be normalized.
 
         """
+        if date is None:
+            return None
+
         if isinstance(date, str):
             try:
-                date = parse(date).strftime("%Y-%m-%d")
+                #log.debug('normalize_date STR: %s', date)
+                if source_date_format:
+                    date = datetime.strptime(date, source_date_format).strftime("%Y-%m-%d")
+                else:
+                    date = parse(date).strftime("%Y-%m-%d")
             except ValueError:
+                log.error('normalize_date failed for: %s', date)
                 return None
         elif isinstance(date, datetime):
             date = date.strftime("%Y-%m-%d")
-        else:
-            return None
+        
+        #log.debug('normalize_date: %s', date)
         return date
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
@@ -979,7 +990,7 @@ class SchemingDCATHarvester(HarvesterBase):
             if field["override"]:
                 field_name = field["field_name"]
                 if field_name in resource and resource[field_name]:
-                    resource[field_name] = self._normalize_date(resource[field_name])
+                    resource[field_name] = self._normalize_date(resource[field_name], self._source_date_format)
 
         return self._get_ckan_format(resource)
 
@@ -1272,16 +1283,32 @@ class SchemingDCATHarvester(HarvesterBase):
                     # Update package
                     context.update({"id": package_dict["id"]})
 
-                    # Avoid adding resources if a resource with the same url already exists
-                    existing_resource_ids = {
-                        resource["url"]
+                    # Map existing resource URLs to their resources
+                    existing_resources = {
+                        resource["url"]: resource["modified"]
                         for resource in existing_package_dict.get("resources", [])
+                        if "modified" in resource
                     }
-                    package_dict["resources"] = [
-                        resource
-                        for resource in package_dict.get("resources", [])
-                        if resource["url"] not in existing_resource_ids
-                    ]
+
+                    new_resources = existing_package_dict.get("resources", []).copy()
+                    for resource in package_dict.get("resources", []):
+                        # If the resource URL is in existing_resources and the resource's
+                        # modification date is more recent, update the resource in new_resources
+                        if (
+                            "url" in resource
+                            and resource["url"] in existing_resources
+                            and "modified" in resource
+                            and parse(resource["modified"]) > parse(existing_resources[resource["modified"]])
+                        ):
+                            # Find the index of the existing resource in new_resources
+                            index = next(i for i, r in enumerate(new_resources) if r["url"] == resource["url"])
+                            # Replace the existing resource with the new resource
+                            new_resources[index] = resource
+                        # If the resource URL is not in existing_resources, add the resource to new_resources
+                        elif "url" in resource and resource["url"] not in existing_resources:
+                            new_resources.append(resource)
+
+                    package_dict["resources"] = new_resources
 
                     for field in p.toolkit.aslist(
                         config.get("ckan.harvest.not_overwrite_fields")
