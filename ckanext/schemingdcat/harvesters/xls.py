@@ -21,6 +21,10 @@ from ckanext.harvest.model import HarvestObject, HarvestObjectExtra
 from ckanext.schemingdcat.harvesters.base import SchemingDCATHarvester, RemoteResourceError, ReadError, RemoteSchemaError
 from ckanext.schemingdcat.interfaces import ISchemingDCATHarvester
 
+from ckanext.schemingdcat.config import (
+    COMMON_DATE_FORMATS
+)
+
 log = logging.getLogger(__name__)
 
 
@@ -58,6 +62,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     _auth = False
     _credentials = None
     _names_taken = []
+    _source_date_format = None
 
     #TODO: Implement the get_harvester_basic_info method
     def _set_config_credentials(self, storage_type, config_obj):
@@ -548,6 +553,13 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         # Check if 'allow_harvest_datasets' is not in the config_obj or is not a boolean
         if 'allow_harvest_datasets' not in config_obj or not isinstance(config_obj['allow_harvest_datasets'], bool):
             config = json.dumps({**config_obj, 'allow_harvest_datasets': False})
+            
+        # Check if source_date_format exists, is a string and is a valid date format
+        source_date_format = config_obj.get('source_date_format', '%Y-%m-%d')
+        if not isinstance(source_date_format, str):
+            raise ValueError('source_date_format must be a string')
+        if source_date_format not in COMMON_DATE_FORMATS:
+            raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {", ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
 
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
         for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping']:
@@ -657,8 +669,8 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     content_dict['distributions'] = self._read_excel_sheet(remote_xls_download_url, distribution_sheetname, self._storage_type )
                     
                 #TODO: Implement self._load_datadictionaries() method.
-                # if datadictionary_sheetname:
-                #     content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname, self._storage_type )
+                if datadictionary_sheetname:
+                    content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname, self._storage_type )
 
                 # after_download interface
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
@@ -681,6 +693,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             remote_resource_field_mapping = self.config.get("distribution_field_mapping")
             remote_resource_field_names = set(content_dict['distributions'].columns)
             self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_resource_field_mapping=remote_resource_field_mapping)
+                        
         except RemoteSchemaError as e:
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
             return []
@@ -690,7 +703,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             clean_datasets = self._process_content(content_dict, remote_xls_base_url)
             log.debug('XLS file cleaned successfully.')
             clean_datasets = self._update_dict_lists(clean_datasets)
-            log.debug('Update dict string lists.')
+            log.debug('Update dict string lists. Number of datasets imported: %s', len(clean_datasets))
             
         except Exception as e:
             self._save_gather_error('Error cleaning the XLSX file: {0}'.format(e), harvest_job)
@@ -894,6 +907,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             harvest_object.add()
 
         # Update dates
+        self._source_date_format = self.config.get('source_date_format', None)
         self._set_basic_dates(dataset)
 
         harvest_object.metadata_modified_date = dataset['modified']
