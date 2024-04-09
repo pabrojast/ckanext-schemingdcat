@@ -1,6 +1,7 @@
 from ckan.common import json, c, request, is_flask_request
 from ckan.lib import helpers as ckan_helpers
 import ckan.logic as logic
+from ckan import model
 from ckan.lib.i18n import get_available_locales, get_lang
 import ckan.plugins as p
 import six
@@ -16,6 +17,13 @@ from ckanext.scheming.helpers import (
     scheming_choices_label,
     scheming_language_text,
     scheming_dataset_schemas,
+)
+
+from ckanext.harvest.helpers import (
+    get_harvest_source
+)
+from ckanext.harvest.utils import (
+    DATASET_TYPE_NAME
 )
 
 import ckanext.schemingdcat.config as sdct_config
@@ -834,7 +842,7 @@ def dataset_display_name(package_or_package_dict):
     """
     field_name = "title" if "title" in package_or_package_dict else "name"
 
-    return scheming_dct_get_localized_value_from_dict(
+    return schemingdcat_get_localized_value_from_dict(
         package_or_package_dict, field_name
     )
 
@@ -851,13 +859,13 @@ def dataset_display_field_value(package_or_package_dict, field_name):
     Returns:
         str: The localized value for the given field name.
     """
-    return scheming_dct_get_localized_value_from_dict(
+    return schemingdcat_get_localized_value_from_dict(
         package_or_package_dict, field_name
     )
 
 
 @helper
-def scheming_dct_get_localized_value_from_dict(
+def schemingdcat_get_localized_value_from_dict(
     package_or_package_dict, field_name, default=""
 ):
     """
@@ -895,7 +903,7 @@ def scheming_dct_get_localized_value_from_dict(
 
 
 @helper
-def scheming_dct_get_readable_file_size(num, suffix="B"):
+def schemingdcat_get_readable_file_size(num, suffix="B"):
     if not num:
         return False
     try:
@@ -922,3 +930,72 @@ def schemingdcat_get_group_or_org(id, type="group"):
         dict: A dictionary containing information about the group or organization.
     """
     return logic.get_action(f"{type}_show")({}, {"id": id})
+
+@helper
+def schemingdcat_package_list_for_source(source_id):
+    '''
+    Creates a dataset list with the ones belonging to a particular harvest
+    source.
+
+    It calls the package_list snippet and the pager.
+    '''
+    limit = 20
+    page = int(request.args.get('page', 1))
+    fq = '+harvest_source_id:"{0}"'.format(source_id)
+    search_dict = {
+        'fq': fq,
+        'rows': limit,
+        'sort': 'metadata_modified desc',
+        'start': (page - 1) * limit,
+        'include_private': True
+    }
+
+    context = {'model': model, 'session': model.Session}
+    harvest_source = get_harvest_source(source_id)
+    owner_org = harvest_source.get('owner_org', '')
+    if owner_org:
+        user_member_of_orgs = [org['id'] for org
+                               in ckan_helpers.organizations_available('read')]
+        if (harvest_source and owner_org in user_member_of_orgs):
+            context['ignore_capacity_check'] = True
+
+    query = logic.get_action('package_search')(context, search_dict)
+
+    base_url = ckan_helpers.url_for(
+        '{0}.read'.format(DATASET_TYPE_NAME),
+        id=harvest_source['name']
+    )
+
+    def pager_url(q=None, page=None):
+        url = base_url
+        if page:
+            url += '?page={0}'.format(page)
+        return url
+
+    pager = ckan_helpers.Page(
+        collection=query['results'],
+        page=page,
+        url=pager_url,
+        item_count=query['count'],
+        items_per_page=limit
+    )
+    pager.items = query['results']
+
+    if query['results']:
+        out = ckan_helpers.snippet('snippets/package_list.html', packages=query['results'])
+        out += pager.pager()
+    else:
+        out = ckan_helpers.snippet('snippets/package_list_empty.html')
+
+    return out
+@helper
+def schemingdcat_package_count_for_source(source_id):
+    '''
+    Returns the current package count for datasets associated with the given
+    source id
+    '''
+    fq = '+harvest_source_id:"{0}"'.format(source_id)
+    search_dict = {'fq': fq, 'include_private': True}
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    return result.get('count', 0)

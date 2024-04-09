@@ -502,7 +502,7 @@ button.active {
 }
 
 .dataset-private {
-  margin-right: 0;
+  margin-right: 5px;
   text-transform: uppercase;
   background-color: #fff6e6;
   border: 1px solid #faae20;
