@@ -62,7 +62,6 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     _auth = False
     _credentials = None
     _names_taken = []
-    _source_date_format = None
 
     #TODO: Implement the get_harvester_basic_info method
     def _set_config_credentials(self, storage_type, config_obj):
@@ -559,7 +558,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if not isinstance(source_date_format, str):
             raise ValueError('source_date_format must be a string')
         if source_date_format not in COMMON_DATE_FORMATS:
-            raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {", ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
+            raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {" | ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
 
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
         for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping']:
