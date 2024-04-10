@@ -343,9 +343,10 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         pkg_dicts = []
         pkg_ids = set()
         previous_content = None
+        url = base_search_url + "?" + urlencode(params)
+        log.debug("Searching for CKAN datasets: %s", url)
+
         while True:
-            url = base_search_url + "?" + urlencode(params)
-            log.debug("Searching for CKAN datasets: %s", url)
             try:
                 content = self._get_content(url)
             except ContentFetchError as e:

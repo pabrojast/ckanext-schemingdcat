@@ -57,6 +57,7 @@ class SchemingDCATHarvester(HarvesterBase):
     action_api_version = 3
     force_import = False
     _site_user = None
+    _source_date_format = None
 
     def get_harvester_basic_info(self, config):
         """
@@ -872,6 +873,9 @@ class SchemingDCATHarvester(HarvesterBase):
         """
         package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
 
+        #TODO: Fix existing_tags_ids
+        log.debug('TODO:existing_tags_ids: %s', existing_tags_ids)
+        
         # Check if 'default_tags' exists
         default_tags = self.config.get("default_tags", [])
         if default_tags:
