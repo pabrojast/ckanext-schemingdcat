@@ -60,14 +60,10 @@ class PackageController():
                     new_fq = self._facet_search_operator(search_params.get('fq', ''), field)
                     if new_fq and isinstance(new_fq, str):
                         search_params.update({'fq': new_fq})
-                    else:
-                        log.debug("new_fq generate a invalid value: %s", new_fq)
             elif isinstance(facet_field, str):
                 new_fq = self._facet_search_operator(search_params.get('fq', ''), facet_field)
                 if new_fq and isinstance(new_fq, str):
                     search_params.update({'fq': new_fq})
-                else:
-                    log.debug("new_fq generate a invalid value: %s", new_fq)
         except Exception as e:
             log.error("[before_search] error: %s", e)
         return search_params
@@ -88,7 +84,7 @@ class PackageController():
         """
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
-            log.debug("Data ({1}) in facet: {0}".format(data, facet))
+            #log.debug("Data ({1}) in facet: {0}".format(data, facet))
             if data:
                 if isinstance(data, str):
                     try:
