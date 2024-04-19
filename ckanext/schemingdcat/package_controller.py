@@ -38,21 +38,57 @@ class PackageController():
         pass
 
     def before_search(self, search_params):
-        facet_field = search_params.get('facet.field', '')
-        if facet_field is not None and len(facet_field) > 0:
-            new_fq = self._facet_search_operator(
-                (search_params.get('fq', '')), facet_field)
-            search_params.update({'fq': new_fq})
+        """Modifies search parameters before executing a search.
 
+        This method adjusts the 'fq' (filter query) parameter based on the 'facet.field' value in the search parameters. If 'facet.field' is a list, it iterates through each field, applying the '_facet_search_operator' to modify 'fq'. If 'facet.field' is a string, it directly applies the '_facet_search_operator'. If 'facet.field' is not present or is invalid, no modification is made.
+
+        Args:
+            search_params (dict): The search parameters to be modified. Expected to contain 'facet.field' and 'fq'.
+
+        Returns:
+            dict: The modified search parameters.
+
+        Raises:
+            Exception: Captures and logs any exception that occurs during the modification of search parameters.
+        """
+        try:
+            facet_field = search_params.get('facet.field', '')
+            if not facet_field:
+                return search_params
+            elif isinstance(facet_field, list):
+                for field in facet_field:
+                    new_fq = self._facet_search_operator(search_params.get('fq', ''), field)
+                    if new_fq and isinstance(new_fq, str):
+                        search_params.update({'fq': new_fq})
+                    else:
+                        log.debug("new_fq generate a invalid value: %s", new_fq)
+            elif isinstance(facet_field, str):
+                new_fq = self._facet_search_operator(search_params.get('fq', ''), facet_field)
+                if new_fq and isinstance(new_fq, str):
+                    search_params.update({'fq': new_fq})
+                else:
+                    log.debug("new_fq generate a invalid value: %s", new_fq)
+        except Exception as e:
+            log.error("[before_search] error: %s", e)
         return search_params
 
     def after_search(self, search_results, search_params):
         return search_results
 
     def before_index(self, data_dict):
+        """Processes the data dictionary before indexing.
+
+        Iterates through each facet defined in the system's facets dictionary. For each facet present in the data dictionary, it attempts to parse its value as JSON. If the value is a valid JSON string, it replaces the original string value with the parsed JSON object. If the value cannot be parsed as JSON (e.g., because it's not a valid JSON string), it leaves the value unchanged. Facets present in the data dictionary but not containing any data are removed.
+
+        Args:
+            data_dict (dict): The data dictionary to be processed. It's expected to contain keys corresponding to facet names with their associated data as values.
+
+        Returns:
+            dict: The processed data dictionary with JSON strings parsed into objects where applicable and empty facets removed.
+        """
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
-            logging.debug("Datos ({1}) en data: {0}".format(data, facet))
+            log.debug("Data ({1}) in facet: {0}".format(data, facet))
             if data:
                 if isinstance(data, str):
                     try:
@@ -116,7 +152,7 @@ class PackageController():
                         facet_operator = 'OR'
 
             except Exception as e:
-                log.warn("[_facet_search_operator]exception:%r: " % e)
+                log.error("[_facet_search_operator] error:%r: " % e)
                 facet_operator = self.default_facet_operator
 
             #log.debug(u'facet_operator {0}'.format(facet_operator))
