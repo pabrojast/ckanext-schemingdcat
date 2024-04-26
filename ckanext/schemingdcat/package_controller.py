@@ -65,7 +65,7 @@ class PackageController():
                 if new_fq and isinstance(new_fq, str):
                     search_params.update({'fq': new_fq})
         except Exception as e:
-            log.error("[before_search] error: %s", e)
+            log.error("[before_search] Error: %s", e)
         return search_params
 
     def after_search(self, search_results, search_params):
@@ -84,7 +84,7 @@ class PackageController():
         """
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
-            #log.debug("Data ({1}) in facet: {0}".format(data, facet))
+            #log.debug("[before_index] Data ({1}) in facet: {0}".format(data, facet))
             if data:
                 if isinstance(data, str):
                     try:
@@ -119,81 +119,41 @@ class PackageController():
         self.default_facet_operator = default_facet_operator
 
     def _facet_search_operator(self, fq, facet_field):
-        """Return a version of fq where all filters are joined by the OR operator.
-
-        If information for the facets operator is included in the request and defined as OR,
-        a version of fq is returned where all filters are joined by the OR operator.
+        """Modifies the query filter (fq) to use the OR operator among the specified facet filters.
 
         Args:
-            fq (str): The filter query to modify.
-            facet_field (list): A list of facet fields.
+            fq (str): The current query filter.
+            facet_field (list): List of facet fields to consider for the OR operation.
 
         Returns:
-            str: A modified version of fq where all filters are joined by the OR operator.
+            str: The modified query filter.
         """
         new_fq = fq
-        facets_group = ""
-        no_facets_group = ""
         try:
             facet_operator = self.default_facet_operator
-            try:
-                if request is not None and \
-                        request.params and \
-                        request.params.items():
+            # Determine the facet operator based on request parameters
+            if request.params.get(FACET_OPERATOR_PARAM_NAME) == 'OR':
+                facet_operator = 'OR'
+            elif request.params.get(FACET_OPERATOR_PARAM_NAME) == 'AND':
+                facet_operator = 'AND'
 
-                    #log.debug('request.params %r' % request.params)
-                    if (FACET_OPERATOR_PARAM_NAME, 'AND') in request.params.items():
-                        facet_operator = 'AND'
-                    elif (FACET_OPERATOR_PARAM_NAME, 'OR') in request.params.items():
-                        facet_operator = 'OR'
+            if facet_operator == 'OR' and facet_field:
+                # Split the original fq into conditions, assuming they are separated by " AND "
+                conditions = fq.split(' AND ')
+                # Filter and group conditions that correspond to facet fields
+                facet_conditions = [cond for cond in conditions if any(fld in cond for fld in facet_field)]
+                non_facet_conditions = [cond for cond in conditions if not any(fld in cond for fld in facet_field)]
+                # Reconstruct fq using " OR " to join facet conditions and " AND " for the rest
+                if facet_conditions:
+                    new_fq = ' OR '.join(facet_conditions)
+                    if non_facet_conditions:
+                        new_fq = f"({new_fq}) AND {' AND '.join(non_facet_conditions)}"
+                else:
+                    new_fq = ' AND '.join(non_facet_conditions)
 
-            except Exception as e:
-                log.error("[_facet_search_operator] error:%r: " % e)
-                facet_operator = self.default_facet_operator
-
-            #log.debug(u'facet_operator {0}'.format(facet_operator))
-
-            if (facet_operator == 'OR'):
-                fq_split = fq.split('" ')
-                faceted = False
-                first_facet = True
-                first_no_facet = True
-                if facet_field is not None and len(facet_field) > 0:
-                    #log.debug(u'facet_field {0}'.format(facet_field))
-                    for fq_s in fq_split:
-                        faceted = False
-                        for facet in facet_field:
-                            if fq_s.startswith('%s:' % facet):
-                                faceted = True
-                                if first_facet:
-                                    facets_group = '%s' % fq_s
-                                    first_facet = False
-                                else:
-                                    facets_group = ('%s" OR %s' %
-                                                    (facets_group, fq_s))
-                        if not faceted:
-                            if first_no_facet:
-                                no_facets_group = '%s' % fq_s
-                                first_no_facet = False
-                            else:
-                                no_facets_group = ('%s" AND %s' %
-                                                (no_facets_group, fq_s))
-                    if faceted:
-                        if not first_no_facet:
-                            no_facets_group = '%s"' % no_facets_group
-                    elif not first_facet:
-                        facets_group = '(%s") AND ' % facets_group
-
-                    new_fq = '%s %s' % (facets_group, no_facets_group)
-
-                    #log.debug(u'temp2 new_fq {0}'.format(new_fq))
-                    #log.info('#### fq = %s' % fq)
-                    #log.info('#### new_fq = %s' % new_fq)
-
-        except UnicodeEncodeError as e:
-            log.warn('UnicodeDecodeError %s  %s' % (e.errno, e.strerror))
-        except Exception:
-            log.warn("Unexpected error:%r: " % sys.exc_info()[0])
+        except Exception as e:
+            log.error("[_facet_search_operator] Error modifying the query filter: %s", e)
+            # In case of error, return the original fq
             new_fq = fq
-        #log.debug(u'new fq {0}'.format(new_fq))
+
         return new_fq
