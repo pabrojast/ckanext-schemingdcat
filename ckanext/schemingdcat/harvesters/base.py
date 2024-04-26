@@ -817,7 +817,7 @@ class SchemingDCATHarvester(HarvesterBase):
                     if fallback and fallback == "issued"
                     else self._normalize_date(package_dict.get(fallback), self._source_date_format)
                 )
-                log.debug(['%s: %s', field_name, package_dict[field_name]])
+
                 package_dict[field_name] = (
                     self._normalize_date(package_dict.get(field_name), self._source_date_format) or fallback_date
                 )
@@ -826,6 +826,12 @@ class SchemingDCATHarvester(HarvesterBase):
                     package_dict["extras"].append(
                         {"key": "issued", "value": package_dict[field_name]}
                     )
+                    
+                # Update resource dates
+                for resource in package_dict['resources']:
+                    if resource.get(field_name) is not None:
+                        self._normalize_date(resource.get(field_name), self._source_date_format) or fallback_date
+
 
     @staticmethod
     def _normalize_date(date, source_date_format=None):
@@ -844,19 +850,20 @@ class SchemingDCATHarvester(HarvesterBase):
             return None
 
         if isinstance(date, str):
+            date = date.strip()
+            if not date:
+                return None
             try:
-                #log.debug('normalize_date STR: %s', date)
                 if source_date_format:
                     date = datetime.strptime(date, source_date_format).strftime("%Y-%m-%d")
                 else:
                     date = parse(date).strftime("%Y-%m-%d")
             except ValueError:
-                log.error('normalize_date failed for: %s', date)
+                log.error('normalize_date failed')
                 return None
         elif isinstance(date, datetime):
             date = date.strftime("%Y-%m-%d")
         
-        #log.debug('normalize_date: %s', date)
         return date
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
@@ -1094,6 +1101,25 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return res_format.upper()
 
+    @staticmethod
+    def _secret_properties(input_dict, secrets=None):
+        """
+        Obfuscates specified properties of a dict, returning a copy with the obfuscated values.
+
+        Args:
+            input_dict (dict): The dictionary whose properties are to be obfuscated.
+            secrets (list, optional): List of properties that should be obfuscated. If None, a default list will be used.
+
+        Returns:
+            dict: A copy of the original dictionary with the specified properties obfuscated.
+        """
+        # Default properties to be obfuscated if no specific list is provided
+        secrets = secrets or ['password', 'secret', 'credentials', 'private_key']
+        default_secret_value = '****'
+
+        # Use dictionary comprehension to create a copy and obfuscate in one step
+        return {key: (default_secret_value if key in secrets else value) for key, value in input_dict.items()}
+
     def _get_ckan_format(self, resource):
         """Get the CKAN format information for a distribution.
 
@@ -1161,28 +1187,11 @@ class SchemingDCATHarvester(HarvesterBase):
         """
         # Define a dictionary to map accented characters to their unaccented equivalents except ñ
         accent_map = {
-            "á": "a",
-            "à": "a",
-            "ä": "a",
-            "â": "a",
-            "ã": "a",
-            "é": "e",
-            "è": "e",
-            "ë": "e",
-            "ê": "e",
-            "í": "i",
-            "ì": "i",
-            "ï": "i",
-            "î": "i",
-            "ó": "o",
-            "ò": "o",
-            "ö": "o",
-            "ô": "o",
-            "õ": "o",
-            "ú": "u",
-            "ù": "u",
-            "ü": "u",
-            "û": "u",
+            "á": "a", "à": "a", "ä": "a", "â": "a", "ã": "a",
+            "é": "e", "è": "e", "ë": "e", "ê": "e",
+            "í": "i", "ì": "i", "ï": "i", "î": "i",
+            "ó": "o", "ò": "o", "ö": "o", "ô": "o", "õ": "o",
+            "ú": "u", "ù": "u", "ü": "u", "û": "u",
             "ñ": "ñ",
         }
 
@@ -1321,8 +1330,10 @@ class SchemingDCATHarvester(HarvesterBase):
                             "url" in resource
                             and resource["url"] in existing_resources
                             and "modified" in resource
-                            and parse(resource["modified"]) > parse(existing_resources[resource["modified"]])
+                            and parse(resource["modified"]) > parse(existing_resources[resource["url"]])
                         ):
+                            log.info('Resource dates - Harvest date: %s and Previous date: %s', resource["modified"], existing_resources[resource["url"]])
+
                             # Find the index of the existing resource in new_resources
                             index = next(i for i, r in enumerate(new_resources) if r["url"] == resource["url"])
                             # Replace the existing resource with the new resource
