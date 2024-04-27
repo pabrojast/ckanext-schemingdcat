@@ -390,13 +390,14 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             value (str): The comma-separated string to convert.
 
         Returns:
-            list: A list of items, with leading and trailing whitespace removed from each item.
+            list: A list of items, with leading and trailing whitespace removed from each item,
+                  and leading dashes from each item.
 
         Example:
-            >>> _set_string_to_list('apple, banana, orange')
+            >>> _set_string_to_list('apple, banana, -orange')
             ['apple', 'banana', 'orange']
         """
-        return [x.strip().lstrip('-').strip() for x in value.split(',') if x.strip()]
+        return [x.strip(" -") for x in value.split(',') if x.strip()]
 
     def _update_dict_lists(self, data):
         """
@@ -617,7 +618,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             datadictionary_sheetname = self.config.get("datadictionary_sheet")
             self.get_harvester_basic_info(harvest_job.source.config)
         
-        log.debug('Using config: %r', self.config)
+        log.debug('Using config: %r', self._secret_properties(self.config))
         
         if self.config:
             self._storage_type = self.config.get("storage_type")
@@ -958,10 +959,11 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
             # Check if the modified date is more recent
             if not self.force_import and previous_object and dateutil.parser.parse(harvest_object.metadata_modified_date) <= previous_object.metadata_modified_date:
-
                 log.info('Package with GUID: %s unchanged, skipping...' % harvest_object.guid)
                 return 'unchanged'
             else:
+                log.info("Dataset dates - Harvest date: %s and Previous date: %s", harvest_object.metadata_modified_date, previous_object.metadata_modified_date)
+
                 package_schema = logic.schema.default_update_package_schema()
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
                     package_schema = harvester.update_package_schema_for_update(package_schema)
