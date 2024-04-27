@@ -13,6 +13,7 @@ from requests.exceptions import HTTPError, RequestException
 
 import ckan.model as model
 import ckan.logic as logic
+import uuid
 
 from ckanext.harvest.harvesters.ckanharvester import (
     CKANHarvester,
@@ -452,91 +453,6 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 package_dict, harvest_object, base_context
             )
 
-            # Check if the dataset is a harvest source and we are not allowed to harvest it
-            if (
-                package_dict.get("type") == "harvest"
-                and self.config.get("allow_harvest_datasets", False) is False
-            ):
-                log.warn(
-                    "Remote dataset is a harvest source and allow_harvest_datasets is False, ignoring..."
-                )
-                return True
-
-            # Set default tags if needed
-            default_tags = self.config.get("default_tags", [])
-            if default_tags:
-                if "tags" not in package_dict:
-                    package_dict["tags"] = []
-                package_dict["tags"].extend(
-                    [t for t in default_tags if t not in package_dict["tags"]]
-                )
-
-            # Set default groups if needed
-            remote_groups = self.config.get("remote_groups", None)
-            if remote_groups not in ("only_local", "create"):
-                # Ignore remote groups
-                package_dict.pop("groups", None)
-            else:
-                if "groups" not in package_dict:
-                    package_dict["groups"] = []
-
-                # check if remote groups exist locally, otherwise remove
-                validated_groups = []
-
-                for group_ in package_dict["groups"]:
-                    try:
-                        try:
-                            if "id" in group_:
-                                data_dict = {"id": group_["id"]}
-                                group = logic.get_action("group_show")(
-                                    base_context.copy(), data_dict
-                                )
-                            else:
-                                raise logic.NotFound
-
-                        except logic.NotFound:
-                            if "name" in group_:
-                                data_dict = {"id": group_["name"]}
-                                group = logic.get_action("group_show")(
-                                    base_context.copy(), data_dict
-                                )
-                            else:
-                                raise logic.NotFound
-                        # Found local group
-                        validated_groups.append(
-                            {"id": group["id"], "name": group["name"]}
-                        )
-
-                    except logic.NotFound:
-                        log.info("Group %s is not available", group_)
-                        if remote_groups == "create":
-                            try:
-                                group = self._get_group(
-                                    harvest_object.source.url, group_
-                                )
-                            except RemoteResourceError:
-                                log.error("Could not get remote group %s", group_)
-                                continue
-
-                            for key in [
-                                "packages",
-                                "created",
-                                "users",
-                                "groups",
-                                "tags",
-                                "extras",
-                                "display_name",
-                            ]:
-                                group.pop(key, None)
-
-                            logic.get_action("group_create")(base_context.copy(), group)
-                            log.info("Group %s has been newly created", group_)
-                            validated_groups.append(
-                                {"id": group["id"], "name": group["name"]}
-                            )
-
-                package_dict["groups"] = validated_groups
-
             log.debug("Go to source_dataset")
 
             # Local harvest source organization
@@ -603,55 +519,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
                 package_dict["owner_org"] = validated_org or local_org
 
-            # Set default groups if needed
-            default_groups = self.config.get("default_groups", [])
-            if default_groups:
-                base_context_copy = base_context.copy()
-                package_dict["groups"] = []
-                for g in default_groups:
-                    try:
-                        data_dict = {"id": g}
-                        group = logic.get_action("group_show")(
-                            base_context_copy, data_dict
-                        )
-                        package_dict["groups"].append(
-                            {"id": group["id"], "name": group["name"]}
-                        )
-                    except (SearchError, logic.NotFound):
-                        log.error("Could not get local group %s", g)
-
             # log.debug('Package groups: %s', package_dict['groups'])
-
-            # Set default extras if needed
-            default_extras = self.config.get("default_extras", {})
-
-            def get_extra(key, package_dict):
-                for extra in package_dict.get("extras", []):
-                    if extra["key"] == key:
-                        return extra
-
-            if default_extras:
-                override_extras = self.config.get("override_extras", False)
-                if "extras" not in package_dict:
-                    package_dict["extras"] = []
-                for key, value in default_extras.items():
-                    existing_extra = get_extra(key, package_dict)
-                    if existing_extra and not override_extras:
-                        continue  # no need for the default
-                    if existing_extra:
-                        package_dict["extras"].remove(existing_extra)
-                    # Look for replacement strings
-                    if isinstance(value, str):
-                        value = value.format(
-                            harvest_source_id=harvest_object.job.source.id,
-                            harvest_source_url=harvest_object.job.source.url.strip("/"),
-                            harvest_source_title=harvest_object.job.source.title,
-                            harvest_job_id=harvest_object.job.id,
-                            harvest_object_id=harvest_object.id,
-                            dataset_id=package_dict["id"],
-                        )
-
-                    package_dict["extras"].append({"key": key, "value": value})
 
             for resource in package_dict.get("resources", []):
                 # Clear remote url_type for resources (eg datastore, upload) as
@@ -684,3 +552,26 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
             )
         except Exception as e:
             self._save_object_error("%s" % e, harvest_object, "Import")
+
+    def get_package_dict(self, harvest_object, context, package_dict=None):
+        """
+        Returns a dictionary representing the CKAN package to be created or updated.
+
+        Args:
+            harvest_object (HarvestObject): The harvest object being processed.
+            context (dict): The context of the harvest process.
+            package_dict (dict, optional): The initial package dictionary (dataset). Defaults to None.
+
+        Returns:
+            dict: The package dictionary with translated fields and default values set.
+        """
+        # Add default values: tags, groups, etc.
+        package_dict = self._set_package_dict_default_values(package_dict, harvest_object, context)
+
+        # Update unique ids
+        for resource in package_dict['resources']:
+            resource['alternate_identifier'] = resource['id']
+            resource['id'] = str(uuid.uuid4())
+            resource.pop('dataset_id', None)
+
+        return package_dict

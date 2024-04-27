@@ -878,12 +878,28 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             dict: The package_dict with default values set.
         """
+        # Add default values: tags, groups, etc.
         package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
+
+        harvester_info = self.info()
+        extras = {
+            'harvester_name': harvester_info['name'],
+        }
+
+        # Check if the dataset is a harvest source and we are not allowed to harvest it
+        if (
+            package_dict.get("type") == "harvest"
+            and self.config.get("allow_harvest_datasets", False) is False
+        ):
+            log.warn(
+                "Remote dataset is a harvest source and allow_harvest_datasets is False, ignoring..."
+            )
+            return True
 
         #TODO: Fix existing_tags_ids
         log.debug('TODO:existing_tags_ids: %s', existing_tags_ids)
         
-        # Check if 'default_tags' exists
+        # Set default tags if needed
         default_tags = self.config.get("default_tags", [])
         if default_tags:
             for tag in default_tags:
@@ -932,36 +948,32 @@ class SchemingDCATHarvester(HarvesterBase):
 
         package_dict["groups"] = cleaned_groups
 
-        # Set default extras if needed
-        default_extras = self.config.get("default_extras", {})
-
-        def get_extra(key, package_dict):
-            for extra in package_dict.get("extras", []):
-                if extra["key"] == key:
-                    return extra
-
+        # Add default_extras from config
+        default_extras = self.config.get('default_extras',{})
         if default_extras:
-            override_extras = self.config.get("override_extras", False)
-            if "extras" not in package_dict:
-                package_dict["extras"] = []
-            for key, value in default_extras.items():
-                existing_extra = get_extra(key, package_dict)
-                if existing_extra and not override_extras:
-                    continue  # no need for the default
-                if existing_extra:
-                    package_dict["extras"].remove(existing_extra)
-                # Look for replacement strings
-                if isinstance(value, str):
+           override_extras = self.config.get('override_extras',False)
+           for key,value in default_extras.items():
+              log.debug('Processing extra %s', key)
+              if not key in extras or override_extras:
+                 # Look for replacement strings
+                 if isinstance(value,six.string_types):
                     value = value.format(
-                        harvest_source_id=harvest_object.job.source.id,
-                        harvest_source_url=harvest_object.job.source.url.strip("/"),
-                        harvest_source_title=harvest_object.job.source.title,
-                        harvest_job_id=harvest_object.job.id,
-                        harvest_object_id=harvest_object.id,
-                        dataset_id=package_dict["id"],
-                    )
+                            harvest_source_id=harvest_object.job.source.id,
+                            harvest_source_url=harvest_object.job.source.url.strip('/'),
+                            harvest_source_title=harvest_object.job.source.title,
+                            harvest_job_id=harvest_object.job.id,
+                            harvest_object_id=harvest_object.id,
+                            dataset_id=package_dict["id"],)
+                 extras[key] = value
 
-                package_dict["extras"].append({"key": key, "value": value})
+        extras_as_dict = []
+        for key, value in extras.items():
+            if isinstance(value, (list, dict)):
+                extras_as_dict.append({'key': key, 'value': json.dumps(value)})
+            else:
+                extras_as_dict.append({'key': key, 'value': value})
+
+        package_dict['extras'] = extras_as_dict
 
         # Resources defaults
         if package_dict["resources"]:
@@ -1286,7 +1298,8 @@ class SchemingDCATHarvester(HarvesterBase):
                 package_dict["tags"] = self._clean_tags(tags)
 
             # Check if package exists. Can be overridden if necessary
-            existing_package_dict = self._check_existing_package_by_ids(package_dict)
+            #existing_package_dict = self._check_existing_package_by_ids(package_dict)
+            existing_package_dict = None
 
             # Flag this object as the current one
             harvest_object.current = True
