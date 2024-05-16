@@ -4,8 +4,8 @@ about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata s
 about_url: https://github.com/mjanez/ckanext-schemingdcat,
 form_languages: ["es", "en"]
 required_language: "es"
-schema_version: 2.0
-schema_date: 2023-10-19
+schema_version: 2.1
+schema_date: 2024-05-01
 schema_name: geodcatap_es
 schema_title: GeoDCAT-AP (ES)
 schema_description: "Geospatial extension to the DCAT application profile for data portals in Europe (GeoDCAT-AP). It is adapted to the Spanish context and includes compatibility with the Technical Interoperability Standard (NTI-RISP), the open data profile for Spain: https://datos.gob.es/en/documentacion/guia-de-aplicacion-de-la-norma-tecnica-de-interoperabilidad-de-reutilizacion-de"
@@ -530,6 +530,45 @@ dataset_fields:
     es: Ej. Identificador único de recurso (UUID).
   help_allow_html: True
 
+# High-value dataset category (R)
+- field_name: hvd_category
+  label: 
+    en: High-value dataset category
+    es: Categoría del conjunto de alto valor (HVD)
+  preset: select
+  display_property: dcatap:hvdCategory
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  help_text:
+    en: 'More info: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">High-value datasets - Overview</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocab - EU Publications</a> and <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Implementing Act</a>  (European Commission)'
+    es: 'Referencias: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">Conjuntos de alto valor - Visión generale</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocabulario - EU Publications</a> y <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Reglamento de Implementación</a>  (Comisión Europea)'
+  help_allow_html: True
+  sorted_choices: True
+  choices:
+  - label:
+      en: Meteorological
+      es: Meteorología
+    value: http://data.europa.eu/bna/c_164e0bf5
+  - label:
+      en: Companies and company ownership
+      es: Sociedades y propiedad de sociedades
+    value: http://data.europa.eu/bna/c_a9135398
+  - label:
+      en: Geospatial
+      es: Geospacial
+    value: http://data.europa.eu/bna/c_ac64a52d
+  - label:
+      en: Mobility
+      es: Movilidad
+    value: http://data.europa.eu/bna/c_b79e35eb
+  - label:
+      en: Earth observation and environment
+      es: Observación de la Tierra y medio ambiente
+    value: http://data.europa.eu/bna/c_dd313021
+  - label:
+      en: Statistics
+      es: Estadística
+    value: http://data.europa.eu/bna/c_e1da4e07
+
 # Metadata file language (M)
 - field_name: language
   label:
@@ -551,27 +590,147 @@ dataset_fields:
       en: English
       es: Inglés
     value: http://publications.europa.eu/resource/authority/language/ENG
+  - label:
+      en: German
+      es: Alemán
+    value: http://publications.europa.eu/resource/authority/language/DEU
+  - label:
+      en: French
+      es: Francés
+    value: http://publications.europa.eu/resource/authority/language/FRA
+  - label:
+      en: Italian
+      es: Italiano
+    value: http://publications.europa.eu/resource/authority/language/ITA
+  - label:
+      en: Dutch
+      es: Neerlandés
+    value: http://publications.europa.eu/resource/authority/language/NLD
+  - label:
+      en: Danish
+      es: Danés
+    value: http://publications.europa.eu/resource/authority/language/DAN
+  - label:
+      en: Greek
+      es: Griego
+    value: http://publications.europa.eu/resource/authority/language/ELL
+  - label:
+      en: Portuguese
+      es: Portugués
+    value: http://publications.europa.eu/resource/authority/language/POR
+  - label:
+      en: Finnish
+      es: Finés
+    value: http://publications.europa.eu/resource/authority/language/FIN
+  - label:
+      en: Swedish
+      es: Sueco
+    value: http://publications.europa.eu/resource/authority/language/SWE
+  - label:
+      en: Czech
+      es: Checo
+    value: http://publications.europa.eu/resource/authority/language/CES
+  - label:
+      en: Estonian
+      es: Estonio
+    value: http://publications.europa.eu/resource/authority/language/EST
+  - label:
+      en: Croatian
+      es: Croata
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Hungarian
+      es: Húngaro
+    value: http://publications.europa.eu/resource/authority/language/HUN
+  - label:
+      en: Latvian
+      es: Letón
+    value: http://publications.europa.eu/resource/authority/language/LAV
+  - label:
+      en: Lithuanian
+      es: Lituano
+    value: http://publications.europa.eu/resource/authority/language/LIT
+  - label:
+      en: Maltese
+      es: Maltés
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Slovak
+      es: Eslovaco
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Romanian
+      es: Rumano
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+    value: http://publications.europa.eu/resource/authority/language/GLE
+  - label:
+      en: Croatian
+      es: Croata
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Luxembourgish
+      es: Luxemburgués
+    value: http://publications.europa.eu/resource/authority/language/LTZ
+  - label:
+      en: Slovak
+      es: Eslovaco
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Maltese
+      es: Maltés
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Romanian
+      es: Rumano
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+    value: http://publications.europa.eu/resource/authority/language/GLE
 
 # Date of creation (O)
 - field_name: created
   label: 
     en: Date of creation
     es: Fecha de creación
-  validators: not_empty scheming_required
   display_property: dct:created
-  required: True
-  preset: date
+  preset: date_created
 
 # Date of last revision (O)
 - field_name: modified
   label: 
     en: Date of last revision
     es: Fecha de última modificación
-    validators: not_empty scheming_required
   display_snippet: schemingdcat/display_snippets/last_update.html
   display_property: dct:modified
-  required: True
-  preset: date
+  preset: date_modified
 
 # ISO 19115 topic category (M)
 ## Recommended  (GeoDCAT-AP)  / INSPIRE Mandatory as topic
@@ -925,7 +1084,7 @@ dataset_fields:
     es: 'Un identificador alternativo en un contexto particular, puede expresar otros identificadores acuñados localmente o identificadores externos, como DOI, ELI, arΧiv para obras creativas y ORCID, VIAF, ISNI para actores como autores y editores, siempre que los identificadores sean globalmente únicos y estables.'
   help_allow_html: True
 
-# # Lineage statement (M)
+# Lineage statement (M)
 - field_name: provenance
   label: 
     en: Lineage statement
@@ -1153,7 +1312,7 @@ dataset_fields:
     en: 'URI identifying the related resource. You can include as many properties as you know of references.'
     es: 'URI que identifica al recurso relacionado. Se pueden incluir tantas propiedades como referencias se conozcan.'
 
-# # Purpose (O)
+# Purpose (O)
 - field_name: purpose
   label:
     en: Purpose
@@ -2093,7 +2252,7 @@ resource_fields:
     en: Date of creation
     es: Fecha de creación
   display_property: dct:created
-  preset: date
+  preset: date_created
 
 # Date of last revision (M)
 - field_name: modified
@@ -2101,7 +2260,7 @@ resource_fields:
     en: Date of last revision
     es: Fecha de última modificación
   display_property: dct:modified
-  preset: date
+  preset: date_modified
 
 # Resource status (O)
 - field_name: availability
@@ -2219,6 +2378,130 @@ resource_fields:
       en: English
       es: Inglés
     value: http://publications.europa.eu/resource/authority/language/ENG
+  - label:
+      en: German
+      es: Alemán
+    value: http://publications.europa.eu/resource/authority/language/DEU
+  - label:
+      en: French
+      es: Francés
+    value: http://publications.europa.eu/resource/authority/language/FRA
+  - label:
+      en: Italian
+      es: Italiano
+    value: http://publications.europa.eu/resource/authority/language/ITA
+  - label:
+      en: Dutch
+      es: Neerlandés
+    value: http://publications.europa.eu/resource/authority/language/NLD
+  - label:
+      en: Danish
+      es: Danés
+    value: http://publications.europa.eu/resource/authority/language/DAN
+  - label:
+      en: Greek
+      es: Griego
+    value: http://publications.europa.eu/resource/authority/language/ELL
+  - label:
+      en: Portuguese
+      es: Portugués
+    value: http://publications.europa.eu/resource/authority/language/POR
+  - label:
+      en: Finnish
+      es: Finés
+    value: http://publications.europa.eu/resource/authority/language/FIN
+  - label:
+      en: Swedish
+      es: Sueco
+    value: http://publications.europa.eu/resource/authority/language/SWE
+  - label:
+      en: Czech
+      es: Checo
+    value: http://publications.europa.eu/resource/authority/language/CES
+  - label:
+      en: Estonian
+      es: Estonio
+    value: http://publications.europa.eu/resource/authority/language/EST
+  - label:
+      en: Croatian
+      es: Croata
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Hungarian
+      es: Húngaro
+    value: http://publications.europa.eu/resource/authority/language/HUN
+  - label:
+      en: Latvian
+      es: Letón
+    value: http://publications.europa.eu/resource/authority/language/LAV
+  - label:
+      en: Lithuanian
+      es: Lituano
+    value: http://publications.europa.eu/resource/authority/language/LIT
+  - label:
+      en: Maltese
+      es: Maltés
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Slovak
+      es: Eslovaco
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Romanian
+      es: Rumano
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+    value: http://publications.europa.eu/resource/authority/language/GLE
+  - label:
+      en: Croatian
+      es: Croata
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Luxembourgish
+      es: Luxemburgués
+    value: http://publications.europa.eu/resource/authority/language/LTZ
+  - label:
+      en: Slovak
+      es: Eslovaco
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Maltese
+      es: Maltés
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Romanian
+      es: Rumano
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+    value: http://publications.europa.eu/resource/authority/language/GLE
 
 # Byte size (O)
 - field_name: size

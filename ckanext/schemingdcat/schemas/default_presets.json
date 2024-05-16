@@ -114,8 +114,24 @@
       "preset_name": "date",
       "values": {
         "form_snippet": "date.html",
-        "display_snippet": "date.html",
+        "display_snippet": "schemingdcat/display_snippets/date_localised.html",
         "validators": "scheming_required isodate convert_to_json_if_date"
+      }
+    },
+    {
+      "preset_name": "date_modified",
+      "values": {
+        "form_snippet": null,
+        "display_snippet": "schemingdcat/display_snippets/date_localised.html",
+        "validators": "schemingdcat_update_modified scheming_required isodate convert_to_json_if_date"
+      }
+    },
+    {
+      "preset_name": "date_created",
+      "values": {
+        "form_snippet": "date.html",
+        "display_snippet": "schemingdcat/display_snippets/date_localised.html",
+        "validators": "schemingdcat_if_empty_datenow scheming_required isodate convert_to_json_if_date"
       }
     },
     {

@@ -2,8 +2,10 @@ scheming_version: 2
 dataset_type: dataset
 about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. European context (EU27)"
 about_url: https://github.com/mjanez/ckanext-schemingdcat
-schema_version: 1.0
-schema_date: 2023-08-24
+form_languages: ["en", "en"]
+required_language: "en"
+schema_version: 2.1
+schema_date: 2024-05-01
 schema_name: geodcatap
 schema_title: GeoDCAT-AP
 schema_description: Geospatial extension for the DCAT application profile for data portals in Europe (GeoDCAT-AP)
@@ -26,18 +28,19 @@ dataset_fields:
       en: Basic metadata identification and reference information.
       es: Información básica de identificación y referencia de los metadatos.
 
-# Dataset title (M)
-  field_name: title
+# Dataset title translated (M)
+  field_name: title_translated
   label: 
     en: Dataset title
     es: Título del conjunto de datos
-  preset: title
-  validators: not_empty scheming_required
+  preset: schemingdcat_fluent_title_translated
   required: True
   display_property: dct:title
   form_placeholder:
     en: eg. A descriptive title.
     es: ej. Un título descriptivo.
+  form_languages: ["en", "es"]
+  required_language: "en"
 
 # Dataset locator (O)
 ## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset) 
@@ -73,18 +76,22 @@ dataset_fields:
     en: "Graphic that provides an illustration of the dataset."
     es: "Gráfico que ilustra el conjunto de datos."
 
-# Dataset abstract (M)
-- field_name: notes
+# # Dataset abstract translated (M)
+- field_name: notes_translated
   label: 
     en: Abstract 
     es: Resumen
-  form_snippet: markdown.html
-  display_property: dct:description
-  validators: not_empty scheming_required
+  preset: schemingdcat_fluent_notes_translated
   required: True
+  display_property: dct:description
   form_placeholder:
     en: eg. Some useful description about the dataset.
     es: ej. Una descripción útil sobre el conjunto de datos.
+  form_languages: ["en", "es"]
+  required_language: "en"
+  default_values: 
+    en: Default abstract of the {dataset}.
+    es: Resumen por defecto del conjunto de datos {dataset}.
 
 # Dataset type (M)
 - field_name: dcat_type
@@ -234,6 +241,45 @@ dataset_fields:
     en: Eg. Unique resource identifier (UUID).
     es: Ej. Identificador único de recurso (UUID).
   help_allow_html: True
+
+# High-value dataset category (R)
+- field_name: hvd_category
+  label: 
+    en: High-value dataset category
+    es: Categoría del conjunto de alto valor (HVD)
+  preset: select
+  display_property: dcatap:hvdCategory
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  help_text:
+    en: 'More info: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">High-value datasets - Overview</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocab - EU Publications</a> and <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Implementing Act</a>  (European Commission)'
+    es: 'Referencias: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">Conjuntos de alto valor - Visión generale</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocabulario - EU Publications</a> y <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Reglamento de Implementación</a>  (Comisión Europea)'
+  help_allow_html: True
+  sorted_choices: True
+  choices:
+  - label:
+      en: Meteorological
+      es: Meteorología
+    value: http://data.europa.eu/bna/c_164e0bf5
+  - label:
+      en: Companies and company ownership
+      es: Sociedades y propiedad de sociedades
+    value: http://data.europa.eu/bna/c_a9135398
+  - label:
+      en: Geospatial
+      es: Geospacial
+    value: http://data.europa.eu/bna/c_ac64a52d
+  - label:
+      en: Mobility
+      es: Movilidad
+    value: http://data.europa.eu/bna/c_b79e35eb
+  - label:
+      en: Earth observation and environment
+      es: Observación de la Tierra y medio ambiente
+    value: http://data.europa.eu/bna/c_dd313021
+  - label:
+      en: Statistics
+      es: Estadística
+    value: http://data.europa.eu/bna/c_e1da4e07
 
 # Metadata file language (M)
 - field_name: language
@@ -386,21 +432,17 @@ dataset_fields:
   label: 
     en: Date of creation
     es: Fecha de creación
-  validators: not_empty scheming_required
   display_property: dct:created
-  required: True
-  preset: date
+  preset: date_created
 
 # Date of last revision (O)
 - field_name: modified
   label: 
     en: Date of last revision
     es: Fecha de última modificación
-    validators: not_empty scheming_required
   display_snippet: schemingdcat/display_snippets/last_update.html
   display_property: dct:modified
-  required: True
-  preset: date
+  preset: date_modified
 
 # ISO 19115 topic category (M)
 ## Recommended  (GeoDCAT-AP)  / INSPIRE Mandatory as topic
@@ -759,11 +801,12 @@ dataset_fields:
   label: 
     en: Lineage statement
     es: Declaración de linaje
-  form_snippet: markdown.html
+  preset: schemingdcat_fluent_markdown
   display_property: dct:provenance
   form_placeholder:
     en: Means the history of a data set, and the life cycle from collection and acquisition through compilation and derivation to its current form, in accordance with EN ISO-19101.
     es: Historia de un conjunto de datos y su ciclo de vida desde su recogida y adquisición hasta su compilación y derivación hasta su forma actual, con arreglo a la norma EN ISO-19101.
+  form_languages: ["en", "es"]
 
 # Conformity (M)
 - field_name: conforms_to
@@ -987,10 +1030,11 @@ dataset_fields:
     en: Purpose
     es: Propósito
   form_placeholder: 'Environment management.'
-  form_snippet: markdown.html
+  preset: schemingdcat_fluent_text
   help_text: 
     en: 'Summary of the intentions for which the dataset was developed (ISO 19115).'
     es: 'Resumen de las intenciones para las que se desarrolló el conjunto de datos (ISO 19115).'
+    form_languages: ["en", "es"]
 
 # Character encoding (C)
 - field_name: encoding
@@ -1514,11 +1558,12 @@ dataset_fields:
   help_text:
     en: A description of the differences between this version and a previous version of the Dataset.
     es: Una descripción de las diferencias entre esta versión y una versión anterior del Dataset.
+  preset: schemingdcat_fluent_markdown
   display_property: adms:versionNotes
-  form_snippet: markdown.html
   form_placeholder:
     en: eg. Some useful version notes about the dataset.
     es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
+  form_languages: ["en", "es"]
 
 # Dataset validity (O)
 - field_name: valid
@@ -1540,7 +1585,7 @@ resource_fields:
   display_property: dcat:accessURL
   display_snippet: schemingdcat/display_snippets/link.html
 
-# Resource title (M)
+#FIX: Resource title (M) -- name_translated field dont work
 - field_name: name
   label:
     en: Distribution title
@@ -1550,7 +1595,7 @@ resource_fields:
     es: ej. Web Map Service
   display_property: dct:title
 
-# Resource abstract (M)
+#FIX: Resource abstract (M) -- description_translated field dont work
 - field_name: description
   label:
     en: Distribution abstract
@@ -1567,7 +1612,7 @@ resource_fields:
     en: Date of creation
     es: Fecha de creación
   display_property: dct:created
-  preset: date
+  preset: date_created
 
 # Date of last revision (M)
 - field_name: modified
@@ -1575,7 +1620,7 @@ resource_fields:
     en: Date of last revision
     es: Fecha de última modificación
   display_property: dct:modified
-  preset: date
+  preset: date_modified
 
 # Resource status (O)
 - field_name: availability

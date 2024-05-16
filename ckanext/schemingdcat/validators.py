@@ -16,6 +16,8 @@ from ckantoolkit import (
     unicode_safe,
 )
 
+import datetime
+
 import logging
 from wsgiref.validate import validator
 from ckanext.fluent.helpers import (
@@ -557,6 +559,53 @@ def schemingdcat_if_empty_same_as_title(field, schema):
 
         data[key] = output
         #log.debug('schemingdcat_if_empty_same_as_title | output: {0}'.format(output))
+
+    return validator
+
+@scheming_validator
+@validator
+def schemingdcat_if_empty_datenow(field, schema):
+    """
+    Returns a validator function that sets the current datetime as the value for a field if it's empty.
+
+    This validator checks if the value of the field is missing, None, or an empty string. If so, it sets the current datetime in ISO format as the value of the field.
+
+    Args:
+        field (dict): The field to validate.
+            A dictionary containing information about the field to be validated.
+        schema (dict): The schema for the field.
+            A dictionary containing the schema for the field to be validated.
+
+    Returns:
+        function: A validation function that can be used to validate the field and set the current datetime if it's empty.
+    """
+    def validator(key, data, errors, context):
+        value = data[key]
+        
+        if value is missing or value is None or value == '':
+            data[key] = datetime.datetime.now().isoformat()
+
+    return validator
+
+@scheming_validator
+@validator
+def schemingdcat_update_modified(field, schema):
+    """
+    Returns a validator function that always sets the current datetime as the value for a field.
+
+    This validator does not check the current value of the field. It always sets the current datetime in ISO format as the value of the field.
+
+    Args:
+        field (dict): The field to update.
+            A dictionary containing information about the field to be updated.
+        schema (dict): The schema for the field.
+            A dictionary containing the schema for the field to be updated.
+
+    Returns:
+        function: A validation function that can be used to update the field with the current datetime.
+    """
+    def validator(key, data, errors, context):
+        data[key] = datetime.datetime.now().isoformat()
 
     return validator
 
