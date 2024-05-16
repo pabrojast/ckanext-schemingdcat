@@ -106,13 +106,37 @@ dataset_fields:
   display_snippet: schemingdcat/display_snippets/link_schema.html
   choices:
   - label:
+      en: Spatial data set
+      es: Conjunto de datos espacial
+    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset
+  - label:
+      en: Article
+      es: Artículo
+    value: http://id.loc.gov/vocabulary/marcgt/art
+  - label:
+      en: Bibliographic data
+      es: Datos bibliográficos
+    value: http://id.loc.gov/vocabulary/marcgt/bda
+  - label:
       en: Collection
       es: Colección
     value: http://purl.org/dc/dcmitype/Collection
   - label:
+      en: Database
+      es: Base de datos
+    value: http://id.loc.gov/vocabulary/marcgt/dtb
+  - label:
+      en: Document (computer)
+      es: Documento (informático)
+    value: http://id.loc.gov/vocabulary/marcgt/doc
+  - label:
       en: Event
       es: Evento
     value: http://purl.org/dc/dcmitype/Event
+  - label:
+      en: Government publication
+      es: Publicación gubernamental
+    value: http://id.loc.gov/vocabulary/marcgt/gov
   - label:
       en: Image
       es: Imagen
@@ -122,6 +146,14 @@ dataset_fields:
       es: Imagen fija
     value: http://purl.org/dc/dcmitype/StillImage
   - label:
+      en: Journal
+      es: Revista
+    value: http://id.loc.gov/vocabulary/marcgt/jou
+  - label:
+      en: Legislation
+      es: Legislación
+    value: http://id.loc.gov/vocabulary/marcgt/leg
+  - label:
       en: Moving Image
       es: Imagen en movimiento
     value: http://purl.org/dc/dcmitype/MovingImage
@@ -130,13 +162,25 @@ dataset_fields:
       es: Objeto físico
     value: http://purl.org/dc/dcmitype/PhysicalObject
   - label:
+      en: Reporting
+      es: Informe
+    value: http://id.loc.gov/vocabulary/marcgt/rpt
+  - label:
       en: Interactive Resource
       es: Recurso interactivo
     value: http://purl.org/dc/dcmitype/InteractiveResource
   - label:
+      en: Spatial data set series
+      es: Series de datos espaciales
+    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series
+  - label:
       en: Service
       es: Servicio
     value: http://purl.org/dc/dcmitype/Service
+  - label:
+      en: Spatial data service
+      es: Servicio de datos espaciales
+    value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service
   - label:
       en: Sound
       es: Sonido
@@ -145,6 +189,14 @@ dataset_fields:
       en: Software
       es: Software
     value: http://purl.org/dc/dcmitype/Software
+  - label:
+      en: Standard or specification
+      es: Norma o especificación
+    value: http://id.loc.gov/vocabulary/marcgt/stp
+  - label:
+      en: Technical report
+      es: Informe técnico
+    value: http://id.loc.gov/vocabulary/marcgt/ter
   - label:
       en: Text
       es: Texto
@@ -947,7 +999,7 @@ dataset_fields:
   label: 
     en: Geographic identifier
     es: Identificador geográfico
-  preset: select_icon
+  preset: select_spatial_icon
   display_property: dcat:theme
   select_size: 10
   sorted_choices: True

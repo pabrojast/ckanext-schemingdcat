@@ -176,6 +176,14 @@
       }
     },
     {
+      "preset_name": "select_spatial_icon",
+      "values": {
+        "form_snippet": "schemingdcat/form_snippets/select_icon.html",
+        "display_snippet": "schemingdcat/display_snippets/select_spatial_icon.html",
+        "validators": "ignore_missing"
+      }
+    },
+    {
       "preset_name": "multiple_choice_icon",
       "values": {
         "form_snippet": "schemingdcat/form_snippets/multiple_select_icon.html",
