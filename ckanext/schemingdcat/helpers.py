@@ -10,6 +10,7 @@ import yaml
 from yaml.loader import SafeLoader
 from pathlib import Path
 from functools import lru_cache
+import datetime
 
 from six.moves.urllib.parse import urlencode
 
@@ -999,3 +1000,32 @@ def schemingdcat_package_count_for_source(source_id):
     context = {'model': model, 'session': model.Session}
     result = logic.get_action('package_search')(context, search_dict)
     return result.get('count', 0)
+
+@helper
+def schemingdcat_parse_localised_date(date_=None):
+    '''Parse a datetime object or timestamp string as a localised date.
+    If timestamp is badly formatted, then None is returned.
+
+    :param date_: the date
+    :type date_: datetime or date or ISO string format
+    :rtype: date
+    '''
+    if not date_:
+        return None
+    if isinstance(date_, str):
+        try:
+            date_ = ckan_helpers.date_str_to_datetime(date_)
+        except (TypeError, ValueError):
+            return None
+    # check we are now a datetime or date
+    if isinstance(date_, datetime.datetime):
+        date_ = date_.date()
+    elif not isinstance(date_, datetime.date):
+        return None
+
+    # Format date based on locale
+    locale = schemingdcat_get_current_lang()
+    if locale == 'es':
+        return date_.strftime('%d-%m-%Y')
+    else:
+        return date_.strftime('%Y-%m-%d')
