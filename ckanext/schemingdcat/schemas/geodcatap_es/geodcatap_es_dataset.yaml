@@ -1542,7 +1542,7 @@ dataset_fields:
   label: 
     en: Geographic identifier
     es: Identificador geográfico
-  preset: select_icon
+  preset: select_spatial_icon
   display_property: dcat:theme
   select_size: 10
   sorted_choices: True
