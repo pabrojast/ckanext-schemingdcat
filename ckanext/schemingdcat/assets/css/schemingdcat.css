@@ -24,6 +24,13 @@
       max-width:250px;
   }
 
+.debug {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  z-index: 10;
+}
+
 body {
   font-family: 'Poppins', sans-serif;
   background: #fff;
@@ -1180,8 +1187,18 @@ img.item_image {
 }
 
 /* dataset form */
+.card-header {
+  background-color: #ebebeb;
+}
+
 .form-actions {
   overflow:hidden;
+}
+
+.slug-preview {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: -30px 0 30px 20px;
 }
 
 /* metadata_info */

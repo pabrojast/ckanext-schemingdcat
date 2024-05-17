@@ -17,7 +17,7 @@
       "preset_name": "dataset_slug",
       "values": {
         "validators": "not_empty unicode_safe name_validator package_name_validator",
-        "form_snippet": "slug.html"
+        "form_snippet": "schemingdcat/form_snippets/schemingdcat_slug.html"
       }
     },
     {
@@ -244,10 +244,7 @@
     {
       "preset_name": "schemingdcat_identifier",
       "values": {
-        "validators": "not_empty scheming_required schemingdcat_clean_identifier",
-        "form_attrs": {
-          "data-module": "slug-preview-target"
-        }
+        "validators": "not_empty scheming_required schemingdcat_clean_identifier"
       }
     },
     {
