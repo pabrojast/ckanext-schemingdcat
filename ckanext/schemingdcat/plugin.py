@@ -109,6 +109,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def package_form(self):
         return "schemingdcat/package/snippets/package_form.html"
 
+    def resource_form(self):
+        return "schemingdcat/package/snippets/resource_form.html"
+
     def get_actions(self):
         return {
             "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,

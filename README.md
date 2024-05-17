@@ -242,6 +242,16 @@ With this plugin, you can customize the group, organization, and dataset entitie
 
 Are available to use with this extension a number of custom schema, more info: [`schemas/README.md`](./ckanext/schemingdcat/schemas/README.md)
 
+**Schema Enhancements:**
+We've made several improvements to our schema to provide a better metadata and metadata group management. Here are some of the key changes:
+
+- **Form Pages and Form Groups:** We've introduced the use of `form_groups` and improve `form_pages` in our schemas. This allows us to group related fields into the same form, making it easier to navigate and manage metadata.
+- **Metadata Management Improvements:** We've improved how we manage metadata in our schema. It's now easier to add, remove, and modify metadata, allowing us to keep our data more organized and accessible.
+- **Metadata Group Updates:** We've made changes to how we handle metadata groups (`form_groups`). It's now easier to group related metadata, helping us keep our data more organized and making it easier to find specific information.
+
+For more details on these enhancements, please refer to the schema files in [`ckanext/schemingdcat/schemas`](ckanext/schemingdcat/schemas).
+
+
 ### GeoDCAT-AP (ES)
 [`schemas/geodcatp_es`](/ckanext/schemingdcat/schemas/geodcatap_es/geodcatap_es_dataset.yaml) with specific extensions for spatial data and [GeoDCAT-AP](https://github.com/SEMICeu/GeoDCAT-AP)/[INSPIRE](https://github.com/INSPIRE-MIF/technical-guidelines) metadata [profiles](https://en.wikipedia.org/wiki/Geospatial_metadata). 
 

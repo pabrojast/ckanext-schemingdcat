@@ -1029,3 +1029,21 @@ def schemingdcat_parse_localised_date(date_=None):
         return date_.strftime('%d-%m-%Y')
     else:
         return date_.strftime('%Y-%m-%d')
+    
+@helper
+def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
+    """
+    Return a list of schema metadata groups for this form.
+
+    1. return schema['schema_form_groups'] if it is defined
+    2. get schema from entity_type + object_type then
+       return schema['schema_form_groups'] if they are defined
+    """
+    if schema and "schema_form_groups" in schema:
+        return schema["schema_form_groups"]
+    elif entity_type and object_type:
+        from ckanext.scheming.helpers import scheming_get_schema
+        schema = scheming_get_schema(entity_type, object_type)
+        return schema["schema_form_groups"] if schema and "schema_form_groups" in schema else None
+    else:
+        return None
