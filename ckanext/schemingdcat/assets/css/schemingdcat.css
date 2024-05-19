@@ -1215,10 +1215,10 @@ img.item_image {
 }
 
 .card:hover .card-header, .card:focus-within .card-header {
-  background-color: #003164; 
-  color:#fff;
+  background-color: #c1dffe;
+  color: #003164;
   font-weight: normal;
-  border-bottom: 1px solid #4c537f;
+  border-bottom: 1px solid #003164;
 }
 
 .card-header {
