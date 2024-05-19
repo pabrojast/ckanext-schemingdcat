@@ -24,11 +24,12 @@
       max-width:250px;
   }
 
-.debug {
+.custom-debug {
   position: fixed;
-  top: 0px;
-  left: 0px;
+  top: 50px;
+  left: 20px;
   z-index: 10;
+  color: #003164 !important;
 }
 
 body {
@@ -1070,7 +1071,7 @@ img.item_image {
 }
 
 .thead-normal_table {
-  background-color: #f0f0f0; 
+  background-color: #e8e8e8; 
   border: 1px solid #ddd; 
   padding: 5px;
   text-align: center;
@@ -1137,6 +1138,11 @@ img.item_image {
   color: #2a6ebb;
 }
 
+.js .table .toggle-show td {
+  background: #ededed;
+  text-align: center;
+}
+
 /* dataset_extent */ 
 .additional_info_map {
   border: 1px solid #e3e3e3;
@@ -1187,8 +1193,50 @@ img.item_image {
 }
 
 /* dataset form */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  margin: 1rem;
+  color: #9d9d9d;
+}
+
+.card:hover, .card:focus-within, .card:active, .card:focus {
+  opacity: 1; 
+  color: #000;
+}
+
+.card:hover .card-header, .card:focus-within .card-header {
+  background-color: #003164; 
+  color:#fff;
+  font-weight: normal;
+  border-bottom: 1px solid #4c537f;
+}
+
 .card-header {
-  background-color: #ebebeb;
+  background-color: #d7d7d7;
+  color: #9d9d9d;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-body {
+  flex: 1 1 auto;
+  padding: 1rem 1rem;
+}
+
+.card-header h3 {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .form-actions {
