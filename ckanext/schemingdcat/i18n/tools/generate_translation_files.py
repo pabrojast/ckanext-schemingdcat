@@ -4,6 +4,14 @@ import os
 import shutil
 
 def append_to_file(file_path, data, lang=None):
+    """
+    Appends translation data to a file.
+
+    Args:
+        file_path (str): The path to the file.
+        data (dict): The translation data.
+        lang (str, optional): The language of the translation. Defaults to None.
+    """
     field_name = data["field_name"]
     with open(f'./output/{field_name}/{file_path}', 'a') as file:
         # Check if "label" and "en" keys exist in data
@@ -13,7 +21,7 @@ def append_to_file(file_path, data, lang=None):
             file.write(f'\n\n# Schema field_name: {data["field_name"]}\n')
         for choice in data['choices']:
             value = extract_value(choice['value'])
-            file.write(f'nmsgid "{value}"\n')  # Add a newline at the beginning
+            file.write(f'msgid "{value}"\n')  # Add a newline at the beginning
             if lang:
                 label = choice['label'].get(lang, '')
                 file.write(f'msgstr "{label}"\n\n')
@@ -21,15 +29,41 @@ def append_to_file(file_path, data, lang=None):
                 file.write('msgstr ""\n\n')
 
 def read_yaml(file_path):
+    """
+    Reads a YAML file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        dict: The data from the YAML file.
+    """
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
 def extract_value(value):
+    """
+    Extracts the value from a URL.
+
+    Args:
+        value (str): The URL.
+
+    Returns:
+        str: The extracted value.
+    """
     if value.startswith('http'):
         return urlparse(value).path.split('/')[-1]
     return value
 
 def write_to_file(file_path, data, lang=None):
+    """
+    Writes translation data to a file.
+
+    Args:
+        file_path (str): The path to the file.
+        data (dict): The translation data.
+        lang (str, optional): The language of the translation. Defaults to None.
+    """
     field_name = data["field_name"]
     os.makedirs(f'output/{field_name}', exist_ok=True)
     with open(f'output/{field_name}/{file_path}', 'w') as file:
@@ -48,10 +82,26 @@ def write_to_file(file_path, data, lang=None):
                 file.write('msgstr ""\n\n')
 
 def create_directories(langs, field_name):
+    """
+    Creates directories for each language.
+
+    Args:
+        langs (list): The list of languages.
+        field_name (str): The field name.
+    """
     for lang in langs:
         os.makedirs(f'output/{field_name}/{lang}/LC_MESSAGES', exist_ok=True)
 
 def get_languages(data):
+    """
+    Gets the languages from the data.
+
+    Args:
+        data (dict): The translation data.
+
+    Returns:
+        set: The set of languages.
+    """
     return set(lang for choice in data['choices'] for lang in choice['label'])
 
 def main():
