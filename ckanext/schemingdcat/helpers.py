@@ -1076,3 +1076,42 @@ def get_inspire_themes(*args, **kwargs) -> typing.List[typing.Dict[str, str]]:
     except p.toolkit.ObjectNotFound:
         inspire_themes = []
     return [{"value": t, "label": t} for t in inspire_themes] 
+
+@helper
+def get_ckan_cleaned_name(name):
+    """
+    Cleans a name by removing accents, special characters, and spaces.
+
+    Args:
+        name (str): The name to clean.
+
+    Returns:
+        str: The cleaned name.
+    """
+    MAX_TAG_LENGTH = 100
+    MIN_TAG_LENGTH = 2
+    # Define a dictionary to map accented characters to their unaccented equivalents except ñ
+    accent_map = {
+        "á": "a", "à": "a", "ä": "a", "â": "a", "ã": "a",
+        "é": "e", "è": "e", "ë": "e", "ê": "e",
+        "í": "i", "ì": "i", "ï": "i", "î": "i",
+        "ó": "o", "ò": "o", "ö": "o", "ô": "o", "õ": "o",
+        "ú": "u", "ù": "u", "ü": "u", "û": "u",
+        "ñ": "ñ",
+    }
+
+    # Convert the name to lowercase
+    name = name.lower()
+
+    # Replace accented and special characters with their unaccented equivalents or -
+    name = "".join(accent_map.get(c, c) for c in name)
+    name = re.sub(r"[^a-zñ0-9_.-]", "-", name.strip())
+
+    # Truncate the name to MAX_TAG_LENGTH characters
+    name = name[:MAX_TAG_LENGTH]
+
+    # If the name is shorter than MIN_TAG_LENGTH, pad it with underscores
+    if len(name) < MIN_TAG_LENGTH:
+        name = name.ljust(MIN_TAG_LENGTH, '_')
+
+    return name

@@ -83,7 +83,7 @@ def create_vocab(vocab_name, schema_name="dataset", lang="en"):
     if vocab_field:
         for tag_name in sh.scheming_field_choices(vocab_field):
             if tag_name['value'] != "":
-                vocab_value = tag_name['value'].split('/')[-1]
+                vocab_value = helpers.get_ckan_cleaned_name(tag_name['value'].split('/')[-1])
                 vocab_label = sh.scheming_language_text(tag_name['label'], lang)
                 already_exists = vocab_value in [tag["name"] for tag in vocabulary["tags"]]
                 if not already_exists:
@@ -94,7 +94,7 @@ def create_vocab(vocab_name, schema_name="dataset", lang="en"):
                         )
                     )
                     tk.get_action("tag_create")(
-                        context, {"name": vocab_value, "display_name": vocab_label, "vocabulary_id": vocabulary["id"]}
+                        context, {"name": vocab_value, "vocabulary_id": vocabulary["id"]}
                     )
                 else:
                     log.info(
