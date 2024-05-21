@@ -1,3 +1,5 @@
+import typing
+
 # Default values
 default_facet_operator = 'OR'
 icons_dir = 'images/icons'
@@ -198,3 +200,8 @@ COMMON_DATE_FORMATS = [
     '%Y-%m-%dT%H:%M:%S',  # ISO 8601 format
     '%Y-%m-%dT%H:%M:%SZ',  # ISO 8601 format with Zulu time indicator
 ]
+# Vocabs
+SCHEMINGDCAT_DEFAULT_DATASET_SCHEMA_NAME: typing.Final[str] = "dataset"
+SCHEMINGDCAT_INSPIRE_THEMES_VOCAB: typing.Final[str] = "theme"
+SCHEMINGDCAT_DCAT_THEMES_VOCAB: typing.Final[list] = ["theme_es", "theme_eu"]
+SCHEMINGDCAT_ISO19115_TOPICS_VOCAB: typing.Final[list] = "topic"

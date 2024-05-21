@@ -1064,3 +1064,15 @@ def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, sche
         return schema["schema_form_groups"] if schema and "schema_form_groups" in schema else None
     else:
         return None
+
+# Vocabs
+@helper
+def get_inspire_themes(*args, **kwargs) -> typing.List[typing.Dict[str, str]]:
+    log.debug(f"inside get_inspire_themes {args=} {kwargs=}")
+    try:
+        inspire_themes = p.toolkit.get_action("tag_list")(
+            data_dict={"vocabulary_id": sdct_config.SCHEMINGDCAT_INSPIRE_THEMES_VOCAB}
+        )
+    except p.toolkit.ObjectNotFound:
+        inspire_themes = []
+    return [{"value": t, "label": t} for t in inspire_themes] 

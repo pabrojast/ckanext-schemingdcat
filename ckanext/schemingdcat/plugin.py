@@ -9,6 +9,7 @@ from ckanext.scheming.plugins import (
 )
 from ckanext.scheming import logic as scheming_logic
 
+import ckanext.schemingdcat.cli as cli
 import ckanext.schemingdcat.config as sdct_config
 from ckanext.schemingdcat.faceted import Faceted
 from ckanext.schemingdcat.utils import init_config
@@ -20,7 +21,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class FacetSchemingDCATPlugin(
+class SchemingDCATPlugin(
     plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
 ):
     plugins.implements(plugins.IConfigurer)
@@ -30,6 +31,7 @@ class FacetSchemingDCATPlugin(
     plugins.implements(plugins.ITranslation)
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IClick)
 
     # IConfigurer
     def update_config(self, config_):
@@ -91,6 +93,9 @@ class FacetSchemingDCATPlugin(
     def get_blueprint(self):
         return blueprint.schemingdcat
 
+    # IClick
+    def get_commands(self):
+        return cli.get_commands()
 
 class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IConfigurer)
