@@ -16,6 +16,12 @@
     {
       "preset_name": "dataset_slug",
       "values": {
+        "validators": "not_empty unicode_safe name_validator package_name_validator"
+      }
+    },
+    {
+      "preset_name": "schemingdcat_dataset_slug",
+      "values": {
         "validators": "not_empty unicode_safe name_validator package_name_validator",
         "form_snippet": "schemingdcat/form_snippets/schemingdcat_slug.html"
       }
@@ -192,7 +198,7 @@
         "output_validators": "scheming_multiple_choice_output"
       }
     },
-    {
+        {
       "preset_name": "multiple_text_links",
       "values": {
         "form_snippet": "schemingdcat/form_snippets/multiple_text.html",
@@ -244,7 +250,10 @@
     {
       "preset_name": "schemingdcat_identifier",
       "values": {
-        "validators": "not_empty scheming_required schemingdcat_clean_identifier"
+        "validators": "not_empty scheming_required schemingdcat_clean_identifier",
+        "form_attrs": {
+          "data-module": "slug-preview-target"
+        }
       }
     },
     {

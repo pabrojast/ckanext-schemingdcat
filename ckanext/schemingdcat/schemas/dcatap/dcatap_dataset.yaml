@@ -216,18 +216,18 @@ dataset_fields:
   form_group_id: identification
 
 # Dataset locator (O)
-## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset)
+## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset).
 - field_name: name
   label: 
     en: URL
     es: URL
-  preset: dataset_slug
+  preset: schemingdcat_dataset_slug
   display_property: dcat:landingPage
   form_placeholder:
     en: URL title Dataset
     es: Título de la URL del Dataset
-  form_group_id: identification
   form_slug_related: identifier
+  form_group_id: identification
 
 # Dataset type (M)
 - field_name: dcat_type
