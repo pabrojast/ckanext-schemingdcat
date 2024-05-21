@@ -28,7 +28,7 @@ setup(
     include_package_data=True,
     entry_points='''
         [ckan.plugins]
-        schemingdcat=ckanext.schemingdcat.plugin:FacetSchemingDCATPlugin
+        schemingdcat=ckanext.schemingdcat.plugin:SchemingDCATPlugin
         schemingdcat_datasets=ckanext.schemingdcat.plugin:SchemingDCATDatasetsPlugin
         schemingdcat_groups=ckanext.schemingdcat.plugin:SchemingDCATGroupsPlugin
         schemingdcat_organizations=ckanext.schemingdcat.plugin:SchemingDCATOrganizationsPlugin

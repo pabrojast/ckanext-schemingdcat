@@ -1,0 +1,39 @@
+# High-value dataset category (R)
+  field_name: hvd_category
+  label: 
+    en: High-value dataset category
+    es: Categoría del conjunto de alto valor (HVD)
+  preset: select
+  display_property: dcatap:hvdCategory
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  help_text:
+    en: 'More info: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">High-value datasets - Overview</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocab - EU Publications</a> and <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Implementing Act</a>  (European Commission)'
+    es: 'Referencias: <a href="http://data.europa.eu/bna/c_a9135398" target="_blank" rel="noopener">Conjuntos de alto valor - Visión generale</a>, <a href="http://data.europa.eu/bna/asd487ae75" target="_blank" rel="noopener">Vocabulario - EU Publications</a> y <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=PI_COM:C(2022)9562" target="_blank" rel="noopener">Reglamento de Implementación</a>  (Comisión Europea)'
+  help_allow_html: True
+  sorted_choices: True
+  choices:
+  - label:
+      en: Meteorological
+      es: Meteorología
+    value: http://data.europa.eu/bna/c_164e0bf5
+  - label:
+      en: Companies and company ownership
+      es: Sociedades y propiedad de sociedades
+    value: http://data.europa.eu/bna/c_a9135398
+  - label:
+      en: Geospatial
+      es: Geospacial
+    value: http://data.europa.eu/bna/c_ac64a52d
+  - label:
+      en: Mobility
+      es: Movilidad
+    value: http://data.europa.eu/bna/c_b79e35eb
+  - label:
+      en: Earth observation and environment
+      es: Observación de la Tierra y medio ambiente
+    value: http://data.europa.eu/bna/c_dd313021
+  - label:
+      en: Statistics
+      es: Estadística
+    value: http://data.europa.eu/bna/c_e1da4e07
+  form_group_id: identification

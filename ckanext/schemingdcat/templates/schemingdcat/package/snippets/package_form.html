@@ -2,6 +2,20 @@
 
 {% set exclude_fields = [] %}
 
+{% block secondary %}
+<aside class="secondary col-sm-3">
+{% block secondary_content %}
+  {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+  {%- set form_groups = h.schemingdcat_get_schema_form_groups(entity_type, object_type, schema) -%}
+  <ul>
+    {%- for form_group in form_groups -%}
+      <li><a href="#{{ form_group.form_group_id }}">{{ h.scheming_language_text(form_group.label) }}</a></li>
+    {%- endfor -%}
+  </ul>
+{% endblock %}
+</aside>
+{% endblock %}
+
 {% block stages %}
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages -%}

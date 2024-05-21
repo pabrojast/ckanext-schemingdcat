@@ -47,3 +47,8 @@ docs/_build/
 # Eclipse
 .project/
 .pydevproject/
+
+# i18n tools output
+ckanext/schemingdcat/i18n/tools/output/*
+ckanext/schemingdcat/i18n/tools/input/*
+ckanext/schemingdcat/i18n/tools/input/input.yaml

@@ -11,6 +11,7 @@ from yaml.loader import SafeLoader
 from pathlib import Path
 from functools import lru_cache
 import datetime
+import typing
 
 from six.moves.urllib.parse import urlencode
 
@@ -1029,7 +1030,23 @@ def schemingdcat_parse_localised_date(date_=None):
         return date_.strftime('%d-%m-%Y')
     else:
         return date_.strftime('%Y-%m-%d')
-    
+
+@lru_cache(maxsize=None)
+@helper
+def get_dataset_schema(schema_type="dataset"):
+    """
+    Retrieves the schema for the dataset instance and caches it using the LRU cache decorator for efficient retrieval.
+
+    Args:
+        schema_type (str, optional): The type of schema to retrieve. Defaults to 'dataset'.
+
+    Returns:
+        dict: The schema of the dataset instance.
+    """
+    return logic.get_action("scheming_dataset_schema_show")(
+        {}, {"type": schema_type}
+    )   
+
 @helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
     """
@@ -1047,3 +1064,15 @@ def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, sche
         return schema["schema_form_groups"] if schema and "schema_form_groups" in schema else None
     else:
         return None
+
+# Vocabs
+@helper
+def get_inspire_themes(*args, **kwargs) -> typing.List[typing.Dict[str, str]]:
+    log.debug(f"inside get_inspire_themes {args=} {kwargs=}")
+    try:
+        inspire_themes = p.toolkit.get_action("tag_list")(
+            data_dict={"vocabulary_id": sdct_config.SCHEMINGDCAT_INSPIRE_THEMES_VOCAB}
+        )
+    except p.toolkit.ObjectNotFound:
+        inspire_themes = []
+    return [{"value": t, "label": t} for t in inspire_themes] 

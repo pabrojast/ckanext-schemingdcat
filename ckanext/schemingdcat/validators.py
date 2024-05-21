@@ -36,7 +36,7 @@ FORM_EXTRAS = ('__extras',)
 
 def validator(fn):
     """
-    collect helper functions into ckanext.schemingdcat.all_helpers dict
+    collect validator functions into ckanext.schemingdcat.all_validators dict
     """
     all_validators[fn.__name__] = fn
     return fn
@@ -648,7 +648,112 @@ def schemingdcat_get_extras(data, pkg_type='dataset'):
             return extras
     except:
         return extras
+
+@scheming_validator
+@validator
+def schemingdcat_multiple_choice_custom_tag_string(field, schema):
+    """
+    Accept zero or more values from a list of choices and convert
+    to a json list for storage. Also act like scheming_required to check for at least one non-empty string when required is true:
+    1. a list of strings, eg.:
+       ["choice-a", "choice-b"]
+    2. a single string for single item selection in form submissions:
+       "choice-a"
+    """
+    static_choice_values = None
+    if 'choices' in field:
+        static_choice_order = [c['value'] for c in field['choices']]
+        static_choice_values = set(static_choice_order)
+    def validator(key, data, errors, context):
+        # if there was an error before calling our validator
+        # don't bother with our validation
+        if errors[key]:
+            return
+
+        value = data[key]
+        
+        # 1. single string to List or 2. List to string comma separated
+        if value is not missing:
+            if isinstance(value, six.string_types):
+                if "," not in value:
+                    # If there are no commas, treat the whole string as one value
+                    value = [value]
+                elif "[" not in value:
+                    # If there are commas but no brackets, split on commas
+                    value = value.split(",")
+                else:
+                    # If there are brackets, assume it's a JSON array
+                    value = json.loads(value)
+            if not isinstance(value, list):
+                errors[key].append(_('expecting list of strings'))
+                raise StopOnError
+        else:
+            value = []
+        choice_values = static_choice_values
+        if not choice_values:
+            choice_order = [
+                choice['value']
+                for choice in sh.scheming_field_choices(field)
+            ]
+            choice_values = set(choice_order)
+        selected = set()
+        for element in value:
+            if element in choice_values:
+                selected.add(element)
+                continue
+            errors[key].append(_('unexpected choice "%s"') % element)
+
+        if not errors[key]:
+            # Return as a comma-separated string of values
+            data[key] = ','.join([v for v in
+                (static_choice_order if static_choice_values else choice_order)
+                if v in selected])
+
+            if field.get('required') and not selected:
+                errors[key].append(_('Select at least one'))
     
+    return validator
+
+@validator
+def schemingdcat_multiple_choice_custom_tag_output(value):
+    """
+    Output validator that returns a list of values for a field.
+    
+    This function takes a value and checks if it is a list. If it is, it returns the list as is.
+    If the value is a string that can be loaded as a JSON, it does so and returns the result.
+    If the value is a string containing commas, it splits the string into a list of strings.
+    If the value is a string without commas, it returns a list containing the string.
+    
+    Args:
+    - value: The value to be processed.
+    
+    Returns:
+    - A list of values derived from the input value.
+    """
+    if isinstance(value, list):
+        return value
+    try:
+        return json.loads(value)
+    except ValueError:
+        if ',' in value:
+            return [tag_string.strip() for tag_string in value.split(',') if tag_string.strip()]
+        else:
+            return [value]
+
+@validator
+def copy_from(copy_key):
+    def validator(key, data, errors, context):
+        current_value = data.get(key)
+        if current_value and current_value is not missing:
+            return
+        value = data.pop((copy_key, ), None)
+        if not value:
+            value = data.get(('__extras', ), {}).get(copy_key)
+        if value is not missing:
+            data[key] = value
+
+    return validator
+
 def check_url(url):
     """Checks if a given URL is valid.
 

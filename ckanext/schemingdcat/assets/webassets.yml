@@ -24,3 +24,12 @@ schemingdcat-permanent-url:
       - base/main
   contents:
     - js/modules/schemingdcat-permanent-url.js
+
+main:
+  filters: rjsmin
+  output: base/%(version)s_main.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - plugins/jquery.schemingdcat-slug-preview.js
