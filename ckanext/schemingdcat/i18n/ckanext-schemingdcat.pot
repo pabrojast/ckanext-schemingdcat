@@ -865,3 +865,184 @@ msgstr ""
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html
 msgid "Query example (results containing 'medio-ambiente')"
 msgstr ""
+
+# Themes (NTI-RISP) - Schema field_name: theme_es
+msgid "ciencia-tecnologia"
+msgstr ""
+
+msgid "comercio"
+msgstr ""
+
+msgid "cultura-ocio"
+msgstr ""
+
+msgid "demografia"
+msgstr ""
+
+msgid "deporte"
+msgstr ""
+
+msgid "economia"
+msgstr ""
+
+msgid "educacion"
+msgstr ""
+
+msgid "empleo"
+msgstr ""
+
+msgid "energia"
+msgstr ""
+
+msgid "hacienda"
+msgstr ""
+
+msgid "industria"
+msgstr ""
+
+msgid "legislacion-justicia"
+msgstr ""
+
+msgid "medio-ambiente"
+msgstr ""
+
+msgid "medio-rural-pesca"
+msgstr ""
+
+msgid "salud"
+msgstr ""
+
+msgid "sector-publico"
+msgstr ""
+
+msgid "seguridad"
+msgstr ""
+
+msgid "sociedad-bienestar"
+msgstr ""
+
+msgid "transporte"
+msgstr ""
+
+msgid "turismo"
+msgstr ""
+
+msgid "urbanismo-infraestructuras"
+msgstr ""
+
+msgid "vivienda"
+msgstr ""
+
+# ISO 19115 topic category - Schema field_name: topic
+msgid "biota"
+msgstr "biota"
+
+msgid "boundaries"
+msgstr "boundaries"
+
+msgid "climatologyMeteorologyAtmosphere"
+msgstr "climatologyMeteorologyAtmosphere"
+
+msgid "economy"
+msgstr "economy"
+
+msgid "elevation"
+msgstr "elevation"
+
+msgid "environment"
+msgstr "environment"
+
+msgid "farming"
+msgstr "farming"
+
+msgid "geoscientificInformation"
+msgstr "geoscientificInformation"
+
+msgid "health"
+msgstr "health"
+
+msgid "imageryBaseMapsEarthCover"
+msgstr "imageryBaseMapsEarthCover"
+
+msgid "inlandWaters"
+msgstr "inlandWaters"
+
+msgid "intelligenceMilitary"
+msgstr "intelligenceMilitary"
+
+msgid "location"
+msgstr "location"
+
+msgid "oceans"
+msgstr "oceans"
+
+msgid "planningCadastre"
+msgstr "planningCadastre"
+
+msgid "society"
+msgstr "society"
+
+msgid "structure"
+msgstr "structure"
+
+msgid "transportation"
+msgstr "transportation"
+
+msgid "utilitiesCommunication"
+msgstr "utilitiesCommunication"
+
+# High-value dataset category - Schema field_name: hvd_category
+msgid "c_164e0bf5"
+msgstr ""
+
+msgid "c_a9135398"
+msgstr ""
+
+msgid "c_ac64a52d"
+msgstr ""
+
+msgid "c_b79e35eb"
+msgstr ""
+
+msgid "c_dd313021"
+msgstr ""
+
+msgid "c_e1da4e07"
+msgstr ""
+
+# Themes (DCAT-AP) - Schema field_name: theme_eu
+msgid "AGRI"
+msgstr ""
+
+msgid "ECON"
+msgstr ""
+
+msgid "EDUC"
+msgstr ""
+
+msgid "ENER"
+msgstr ""
+
+msgid "ENVI"
+msgstr ""
+
+msgid "GOVE"
+msgstr ""
+
+msgid "HEAL"
+msgstr ""
+
+msgid "INTR"
+msgstr ""
+
+msgid "JUST"
+msgstr ""
+
+msgid "REGI"
+msgstr ""
+
+msgid "SOCI"
+msgstr ""
+
+msgid "TECH"
+msgstr ""

@@ -861,3 +861,184 @@ msgstr "(<a href=\"{{ url }}\">ckanapi</a> library)"
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html
 msgid "Query example (results containing 'medio-ambiente')"
 msgstr "Query example (results containing 'medio-ambiente')"
+
+# Themes (NTI-RISP) - Schema field_name: theme_es
+msgid "ciencia-tecnologia"
+msgstr "Science and technology"
+
+msgid "comercio"
+msgstr "Commerce"
+
+msgid "cultura-ocio"
+msgstr "Culture and leisure"
+
+msgid "demografia"
+msgstr "Demography"
+
+msgid "deporte"
+msgstr "Sport"
+
+msgid "economia"
+msgstr "Economy"
+
+msgid "educacion"
+msgstr "Education"
+
+msgid "empleo"
+msgstr "Employment"
+
+msgid "energia"
+msgstr "Energy"
+
+msgid "hacienda"
+msgstr "Treasury"
+
+msgid "industria"
+msgstr "Industry"
+
+msgid "legislacion-justicia"
+msgstr "Legislation and justice"
+
+msgid "medio-ambiente"
+msgstr "Environment"
+
+msgid "medio-rural-pesca"
+msgstr "Rural environment"
+
+msgid "salud"
+msgstr "Healthcare"
+
+msgid "sector-publico"
+msgstr "Public sector"
+
+msgid "seguridad"
+msgstr "Security"
+
+msgid "sociedad-bienestar"
+msgstr "Society and welfare"
+
+msgid "transporte"
+msgstr "Transport"
+
+msgid "turismo"
+msgstr "Tourism"
+
+msgid "urbanismo-infraestructuras"
+msgstr "Town planning and infrastructures"
+
+msgid "vivienda"
+msgstr "Housing"
+
+# ISO 19115 topic category - Schema field_name: topic
+msgid "biota"
+msgstr "biota"
+
+msgid "boundaries"
+msgstr "boundaries"
+
+msgid "climatologyMeteorologyAtmosphere"
+msgstr "climatologyMeteorologyAtmosphere"
+
+msgid "economy"
+msgstr "economy"
+
+msgid "elevation"
+msgstr "elevation"
+
+msgid "environment"
+msgstr "environment"
+
+msgid "farming"
+msgstr "farming"
+
+msgid "geoscientificInformation"
+msgstr "geoscientificInformation"
+
+msgid "health"
+msgstr "health"
+
+msgid "imageryBaseMapsEarthCover"
+msgstr "imageryBaseMapsEarthCover"
+
+msgid "inlandWaters"
+msgstr "inlandWaters"
+
+msgid "intelligenceMilitary"
+msgstr "intelligenceMilitary"
+
+msgid "location"
+msgstr "location"
+
+msgid "oceans"
+msgstr "oceans"
+
+msgid "planningCadastre"
+msgstr "planningCadastre"
+
+msgid "society"
+msgstr "society"
+
+msgid "structure"
+msgstr "structure"
+
+msgid "transportation"
+msgstr "transportation"
+
+msgid "utilitiesCommunication"
+msgstr "utilitiesCommunication"
+
+# High-value dataset category - Schema field_name: hvd_category
+msgid "c_164e0bf5"
+msgstr "Meteorological"
+
+msgid "c_a9135398"
+msgstr "Companies and company ownership"
+
+msgid "c_ac64a52d"
+msgstr "Geospatial"
+
+msgid "c_b79e35eb"
+msgstr "Mobility"
+
+msgid "c_dd313021"
+msgstr "Earth observation and environment"
+
+msgid "c_e1da4e07"
+msgstr "Statistics"
+
+# Themes (DCAT-AP) - Schema field_name: theme_eu
+msgid "AGRI"
+msgstr "Agriculture, fisheries, forestry and food"
+
+msgid "ECON"
+msgstr "Economy and finance"
+
+msgid "EDUC"
+msgstr "Education, culture and sport"
+
+msgid "ENER"
+msgstr "Energy"
+
+msgid "ENVI"
+msgstr "Environment"
+
+msgid "GOVE"
+msgstr "Government and public sector"
+
+msgid "HEAL"
+msgstr "Health"
+
+msgid "INTR"
+msgstr "International issues"
+
+msgid "JUST"
+msgstr "Justice, legal system and public safety"
+
+msgid "REGI"
+msgstr "Regions and cities"
+
+msgid "SOCI"
+msgstr "Population and society"
+
+msgid "TECH"
+msgstr "Science and technology"
