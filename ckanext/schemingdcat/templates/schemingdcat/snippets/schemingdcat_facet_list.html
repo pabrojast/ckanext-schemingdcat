@@ -102,7 +102,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
               {% else %}
                 {% set label_truncated = label %}
               {% endif %} 
-                  <span class="item-label">{{ label_truncated }}</span>
+                  <span class="item-label">{{ _(label_truncated) }}</span>
                   <span class="hidden separator"> - </span>
                   <span class="item-count badge">{{ count }}</span>
                 </a>
