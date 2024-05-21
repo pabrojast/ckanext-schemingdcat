@@ -14,19 +14,43 @@ def append_to_file(file_path, data, lang=None):
     """
     field_name = data["field_name"]
     with open(f'./output/{field_name}/{file_path}', 'a') as file:
-        # Check if "label" and "en" keys exist in data
         if "label" in data and "en" in data["label"]:
             file.write(f'\n\n# {data["label"]["en"]} - Schema field_name: {data["field_name"]}\n')
         else:
             file.write(f'\n\n# Schema field_name: {data["field_name"]}\n')
         for choice in data['choices']:
             value = extract_value(choice['value'])
-            file.write(f'msgid "{value}"\n')  # Add a newline at the beginning
-            if lang:
+            file.write(f'msgid "{value}"\n')
+            if lang and isinstance(choice['label'], dict):
                 label = choice['label'].get(lang, '')
-                file.write(f'msgstr "{label}"\n\n')
             else:
-                file.write('msgstr ""\n\n')
+                label = ''
+            file.write(f'msgstr "{label}"\n\n')
+
+def write_to_file(file_path, data, lang=None):
+    """
+    Writes translation data to a file.
+
+    Args:
+        file_path (str): The path to the file.
+        data (dict): The translation data.
+        lang (str, optional): The language of the translation. Defaults to None.
+    """
+    field_name = data["field_name"]
+    os.makedirs(f'output/{field_name}', exist_ok=True)
+    with open(f'output/{field_name}/{file_path}', 'w') as file:
+        if "label" in data and "en" in data["label"]:
+            file.write(f'# {data["label"]["en"]} - Schema field_name: {data["field_name"]}\n')
+        else:
+            file.write(f'# Schema field_name: {data["field_name"]}\n')
+        for choice in data['choices']:
+            value = extract_value(choice['value'])
+            file.write(f'msgid "{value}"\n')
+            if lang and isinstance(choice['label'], dict):
+                label = choice['label'].get(lang, '')
+            else:
+                label = ''
+            file.write(f'msgstr "{label}"\n\n')
 
 def read_yaml(file_path):
     """
@@ -55,32 +79,6 @@ def extract_value(value):
         return urlparse(value).path.split('/')[-1]
     return value
 
-def write_to_file(file_path, data, lang=None):
-    """
-    Writes translation data to a file.
-
-    Args:
-        file_path (str): The path to the file.
-        data (dict): The translation data.
-        lang (str, optional): The language of the translation. Defaults to None.
-    """
-    field_name = data["field_name"]
-    os.makedirs(f'output/{field_name}', exist_ok=True)
-    with open(f'output/{field_name}/{file_path}', 'w') as file:
-        # Check if "label" and "en" keys exist in data
-        if "label" in data and "en" in data["label"]:
-            file.write(f'# {data["label"]["en"]} - Schema field_name: {data["field_name"]}\n')
-        else:
-            file.write(f'# Schema field_name: {data["field_name"]}\n')
-        for choice in data['choices']:
-            value = extract_value(choice['value'])
-            file.write(f'msgid "{value}"\n')
-            if lang:
-                label = choice['label'].get(lang, '')
-                file.write(f'msgstr "{label}"\n\n')
-            else:
-                file.write('msgstr ""\n\n')
-
 def create_directories(langs, field_name):
     """
     Creates directories for each language.
@@ -102,7 +100,13 @@ def get_languages(data):
     Returns:
         set: The set of languages.
     """
-    return set(lang for choice in data['choices'] for lang in choice['label'])
+    languages = set()
+    for choice in data['choices']:
+        if isinstance(choice['label'], dict):
+            languages.update(choice['label'].keys())
+        else:
+            languages.update(['en', 'es'])
+    return languages
 
 def main():
     # Change working directory to the location of this script
@@ -113,9 +117,13 @@ def main():
     langs = get_languages(data)
     create_directories(langs, field_name)
     for lang in langs:
-        # Copy existing file to output directory
-        shutil.copy(f'../{lang}/LC_MESSAGES/ckanext-schemingdcat.po', f'./output/{field_name}/{lang}/LC_MESSAGES/ckanext-schemingdcat.po')
-        append_to_file(f'{lang}/LC_MESSAGES/ckanext-schemingdcat.po', data, lang)
+        # Check if the file exists before copying
+        if os.path.isfile(f'../{lang}/LC_MESSAGES/ckanext-schemingdcat.po'):
+            # Copy existing file to output directory
+            shutil.copy(f'../{lang}/LC_MESSAGES/ckanext-schemingdcat.po', f'./output/{field_name}/{lang}/LC_MESSAGES/ckanext-schemingdcat.po')
+            append_to_file(f'{lang}/LC_MESSAGES/ckanext-schemingdcat.po', data, lang)
+        else:
+            print(f"File '../{lang}/LC_MESSAGES/ckanext-schemingdcat.po' does not exist, skipping.")
     # Copy existing .pot file to output directory
     shutil.copy('../ckanext-schemingdcat.pot', f'./output/{field_name}/ckanext-schemingdcat.pot')
     append_to_file('ckanext-schemingdcat.pot', data)
