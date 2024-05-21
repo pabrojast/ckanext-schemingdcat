@@ -198,7 +198,15 @@
         "output_validators": "scheming_multiple_choice_output"
       }
     },
-        {
+    {
+      "preset_name": "multiple_choice_custom_tag",
+      "values": {
+        "form_snippet": "schemingdcat/form_snippets/multiple_custom_tag.html",
+        "validators": "ignore_missing schemingdcat_multiple_choice_custom_tag_string tag_string_convert",
+        "output_validators": "schemingdcat_multiple_choice_custom_tag_output"
+      }
+    },
+    {
       "preset_name": "multiple_text_links",
       "values": {
         "form_snippet": "schemingdcat/form_snippets/multiple_text.html",
