@@ -357,6 +357,7 @@ button.active {
 .stages li.active .highlight {
   color: #fff;
   background: #003164 !important;
+  border-radius: 10px;
 }
 
 .stages li.active:after {
@@ -993,8 +994,9 @@ img.item_image {
 }
 
 .info_text {
-  font-size: 14px;
-  font-weight: 100;
+  font-size: 13px !important;
+  font-weight: 400;
+  color: #364b5f !important;
 }
 
 .info_text_bold {
