@@ -91,7 +91,7 @@ class SchemingDCATPlugin(
 
     # IBlueprint
     def get_blueprint(self):
-        return blueprint.schemingdcat
+        return [blueprint.schemingdcat]
 
     # IClick
     def get_commands(self):

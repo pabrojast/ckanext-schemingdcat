@@ -871,6 +871,42 @@ msgstr "(Librería <a href=\"{{ url }}\">ckanapi</a>)"
 msgid "Query example (results containing 'medio-ambiente')"
 msgstr "Consulta ejemplo (resultados que contienen 'medio-ambiente')"
 
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "What are Endpoints?"
+msgstr "¿Qué son los Endpoints?"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Endpoints are access points to an API that allow interaction between different software systems. In the context of CKAN, endpoints are essential for enabling access to the data and metadata stored on the platform."
+msgstr "Los Puntos finales (o Endpoints) son puntos de acceso a una API que permiten la interacción entre diferentes sistemas de software. En el contexto de CKAN, los puntos finales son esenciales para permitir el acceso a los datos y metadatos almacenados en la plataforma."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "We have several endpoints available on our CKAN instance:"
+msgstr "Están disponibles varios puntos finales en nuestra instancia de CKAN:"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Open Data in RDF: This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
+msgstr "Datos Abiertos en RDF: Este endpoint permite el acceso a los datos en formato RDF (Resource Description Framework), un estándar para el intercambio de datos en la web."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Turtle: This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
+msgstr "Turtle: Este endpoint proporciona datos en formato Turtle, una sintaxis compacta y fácil de leer para RDF."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "JSON-LD: This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
+msgstr "JSON-LD: Este endpoint ofrece datos en formato JSON-LD, una representación de datos RDF en JSON que permite la interoperabilidad entre diferentes servicios de datos."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Geographic Metadata (CSW INSPIRE): This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+msgstr "Metadatos Geográficos (CSW INSPIRE): Este endpoint permite el acceso a los metadatos geográficos de acuerdo con la normativa INSPIRE, a través del estándar CSW (Catalog Service for the Web)."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Open Data in"
+msgstr "Datos Abiertos en"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Geographic Metadata (CSW INSPIRE)"
+msgstr "Metadatos Geográficos (CSW INSPIRE)"
+
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
 msgstr "Ciencia y tecnología"

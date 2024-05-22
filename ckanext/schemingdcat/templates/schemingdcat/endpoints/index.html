@@ -1,0 +1,88 @@
+{% extends 'page.html' %}
+
+{% block styles %}
+  {{ super() }}
+  {% asset 'pages/index-css' %}
+{% endblock %}
+
+{% block breadcrumb_content %}
+
+<li class="active"><a href="{{ h.url_for('schemingdcat.endpoint_index') }}" title="{{ _('Catalog endpoints') }}">{{ _('Catalog endpoints') }}</a></li>
+
+{% endblock %}
+
+{% block secondary_content %}
+
+  <div class="module module-narrow module-shallow">
+    <h2 class="module-heading">
+      <i class="fa fa-info-circle icon-info-sign"></i>
+      {{ _('What are Endpoints?') }}
+    </h2>
+    <div class="module-content">
+      <p>{{ _("Endpoints are access points to an API that allow interaction between different software systems. In the context of CKAN, endpoints are essential for enabling access to the data and metadata stored on the platform.") }}</p>
+
+      <p>{{ _("We have several endpoints available on our CKAN instance:") }}</p>
+
+      <ul>
+        <li><strong>{{ _("Open Data in") }} RDF: </strong> {{ _("This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web.") }}</li>
+        <li><strong>{{ _("Open Data in") }} Turtle: </strong> {{ _("This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF.") }}</li>
+        <li><strong>{{ _("Open Data in") }} JSON-LD: </strong> {{ _("This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services.") }}</li>
+        <li><strong>{{ _("Geographic Metadata (CSW INSPIRE)") }}: </strong> {{ _("This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard.") }}</li>
+      </ul>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block primary_content %}
+
+<div class="box">
+    <div class="inner">
+        <h1>{{ _('Catalog endpoints') }}</h1>   
+        <div class="addons">
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="mb-0"><i class="fa fa-globe" style="padding-right:5px;"></i>{{ _('Geospatial Metadata') }}</h3>
+              </div>
+                <div class="card-body">
+                    {% for endpoint in endpoints %}
+                        {% if endpoint.type == 'ogc' %}
+                            {% if h.is_url(endpoint.endpoint) %}
+                                {% set csw_uri = h.url_for_static_or_external(endpoint.endpoint) %}
+                            {% else %}
+                                {% set csw_uri = h.get_site_protocol_and_host()[0] +'://' + h.get_site_protocol_and_host()[1] + '/' + endpoint.endpoint %}
+                            {% endif %}
+                            <a class="tag endpoints_index" href="{{ csw_uri }}"><i class="fa fa-globe"> </i> {{ endpoint.display_name  }}  <img src="{{ h.url_for_static(endpoint.image_display_url) }}" alt="{{ endpoint.display_name }}"></a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="mb-0"><i class="fa fa-share-alt-square" style="padding-right:5px;"></i>{{ _('Linked Data') }}</h3>
+              </div>
+                <div class="card-body">
+                    {% for endpoint in endpoints %}
+                        {% if endpoint.type == 'lod' %}
+                            <a class="tag endpoints_index" href="{{ h.url_for(endpoint.endpoint, **endpoint.endpoint_data) }}"><i class="fa fa-share-alt"> </i> {{ endpoint.display_name }}  <img src="{{ h.url_for_static(endpoint.image_display_url) }}" alt="{{ endpoint.display_name }}"></a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="mb-0"><i class="fa fa-asterisk" style="padding-right:5px;"></i>{{ _('CKAN') }}</h3>
+              </div>
+                <div class="card-body">
+                      <a class="tag endpoints_index" href="{{ h.url_for('api.action', ver=3, logic_function='status_show', qualified=True) }}"><i class="fa fa-cogs"> </i> CKAN API  <img src="{{ h.url_for_static("/images/icons/endpoints/euro_dcat_ap_2.svg") }}" alt="CKAN API"></a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

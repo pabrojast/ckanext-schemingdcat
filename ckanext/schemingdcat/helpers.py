@@ -1115,3 +1115,27 @@ def get_ckan_cleaned_name(name):
         name = name.ljust(MIN_TAG_LENGTH, '_')
 
     return name
+
+@helper
+def get_featured_datasets(count=1):
+    """
+    This helper function retrieves a specified number of featured datasets from the CKAN instance. 
+    It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
+    
+    Parameters:
+    count (int): The number of featured datasets to retrieve. Default is 1.
+
+    Returns:
+    list: A list of dictionaries, each representing a featured dataset.
+    """
+    fq = '+featured:true'
+    search_dict = {
+        'fq': fq, 
+        'sort': 'metadata_modified desc',
+        'fl': 'id,name,title,notes,state,metadata_modified,type,extras_featured,extras_graphic_overview',
+        'rows': count
+    }
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    
+    return result['results']

@@ -1600,6 +1600,28 @@ a.endpoints_layout1:hover {
   border-color: #ffffff;
 }
 
+/* Index Endpoints */
+a.endpoints_index {
+  text-align: center;
+  background-color: transparent;
+  border-color: #2e88a3;
+  color: #2e88a3;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  width: 100%;
+  font-size: 16px;
+}
+
+a.endpoints_index:hover {
+  background-color: #2e88a3;
+  border-color: #ffffff;
+}
+
+a.endpoints_index:hover {
+  background-color: #2e88a3;
+  border-color: #ffffff;
+}
+
 /* Homepage Organizations */
 .organization {
   background-color: #f5f5f5;
