@@ -1078,3 +1078,10 @@ msgstr "Population and society"
 
 msgid "TECH"
 msgstr "Science and technology"
+
+# Spatial Datasets / Non-spatial Datasets
+msgid "Non-spatial datasets"
+msgstr "Non-spatial datasets"
+
+msgid "Spatial datasets"
+msgstr "Spatial datasets"

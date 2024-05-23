@@ -1962,3 +1962,29 @@ input#lang-r ~ div .example-r {
 input#lang-r:checked ~ div .example-r {
   display: block;
 }
+
+/* Header endpoints */ 
+.header-catalog li {
+  display: inline-block;
+  margin: 0 0 0 5px;
+}
+
+.header-catalog {
+  list-style-image: initial;
+}
+
+.header-page-title {
+  margin: 0 20px 20px 0px;
+  line-height: 1.2;
+  border-left: 10px solid #003164;
+  padding-left: 10px;
+}
+
+.header-catalog-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 42px 0 0 !important;
+  background-color: white;
+  z-index: 100;
+}

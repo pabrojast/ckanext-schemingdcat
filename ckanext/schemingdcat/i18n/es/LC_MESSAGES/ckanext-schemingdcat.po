@@ -285,7 +285,7 @@ msgstr "Metadatos {metadata_format}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package/snippets/metadata_info.html:5
 msgid "{endpoint_type} Endpoint"
-msgstr "Endpoint {endpoint_type}"
+msgstr "Punto final {endpoint_type}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:10
 msgid "CSV, Comma Separated Values is a simple format for representing a rectangular array (matrix) of numeric and textual values."
@@ -1087,3 +1087,10 @@ msgstr "Población y sociedad"
 
 msgid "TECH"
 msgstr "Ciencia y tecnología"
+
+# Spatial Datasets / Non-spatial Datasets
+msgid "Non-spatial datasets"
+msgstr "Conjuntos de datos no espaciales"
+
+msgid "Spatial datasets"
+msgstr "Conjuntos de datos espaciales"

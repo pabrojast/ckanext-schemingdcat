@@ -536,6 +536,9 @@ def schemingdcat_get_linked_data(id):
             "image_display_url": linkeddata_links.get(name, {}).get(
                 "image_display_url"
             ),
+            "endpoint_icon": linkeddata_links.get(name, {}).get(
+                "endpoint_icon"
+            ),
             "description": linkeddata_links.get(name, {}).get("description")
             or f"Formats {content_type}",
             "description_url": linkeddata_links.get(name, {}).get("description_url"),
@@ -570,6 +573,7 @@ def schemingdcat_get_catalog_endpoints():
             "display_name": item["display_name"],
             "format": item["format"],
             "image_display_url": item["image_display_url"],
+            "endpoint_icon": item["endpoint_icon"],
             "description": item["description"],
             "type": item["type"],
             "profile": item["profile"],
@@ -645,6 +649,7 @@ def schemingdcat_get_geospatial_metadata():
             "display_name": item["display_name"],
             "format": item["format"],
             "image_display_url": item["image_display_url"],
+            "endpoint_icon": item["endpoint_icon"],
             "description": item["description"],
             "description_url": item["description_url"],
             "url": csw_uri.format(
@@ -1133,6 +1138,29 @@ def get_featured_datasets(count=1):
         'fq': fq, 
         'sort': 'metadata_modified desc',
         'fl': 'id,name,title,notes,state,metadata_modified,type,extras_featured,extras_graphic_overview',
+        'rows': count
+    }
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    
+    return result['results']
+
+@helper
+def get_spatial_datasets(count=10):
+    """
+    This helper function retrieves a specified number of featured datasets from the CKAN instance. 
+    It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
+    
+    Parameters:
+    count (int): The number of featured datasets to retrieve. Default is 1.
+
+    Returns:
+    list: A list of dictionaries, each representing a featured dataset.
+    """
+    fq = '+dcat_type:*inspire*'
+    search_dict = {
+        'fq': fq, 
+        'fl': 'extras_dcat_type',
         'rows': count
     }
     context = {'model': model, 'session': model.Session}

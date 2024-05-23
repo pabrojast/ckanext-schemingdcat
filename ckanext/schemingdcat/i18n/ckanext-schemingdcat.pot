@@ -1086,3 +1086,10 @@ msgstr ""
 
 msgid "TECH"
 msgstr ""
+
+# Spatial Datasets / Non-spatial Datasets
+msgid "Non-spatial datasets"
+msgstr ""
+
+msgid "Spatial datasets"
+msgstr ""
