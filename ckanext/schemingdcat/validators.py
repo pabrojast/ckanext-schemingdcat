@@ -768,3 +768,28 @@ def check_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+    
+@scheming_validator
+@validator
+def schemingdcat_non_spatial_dataset(field, schema):
+    """
+    Returns a validator function that checks if 'inspire' is in 'dcat_type'. If 'inspire' is present, it sets the value of the field to False. Otherwise, it sets the value to True. If 'dcat_type' does not exist, it also sets the value to True.
+
+    Args:
+        field (dict): Information about the field to be updated.
+        schema (dict): The schema for the field to be updated.
+
+    Returns:
+        function: A validation function that can be used to update the field based on the presence of 'inspire' in 'dcat_type'.
+    """
+    def validator(key, data, errors, context):
+        try:
+            log.debug("schemingdcat_non_spatial_dataset" + data.get(('dcat_type', ), {}))
+            if 'inspire' in data.get(('dcat_type', ), {}):
+                data[key] = False
+            else:
+                data[key] = True
+        except KeyError:
+            data[key] = True
+
+    return validator

@@ -175,6 +175,27 @@ dataset_fields:
   required_language: "en"
   form_group_id: title
 
+# Non-spatial Datasets
+- field_name: non_spatial_dataset
+  label:
+    en: Non-spatial dataset
+    es: Conjunto de datos no espacial
+  preset: non_spatial_dataset
+  required: False
+  choices:
+    - label:
+        en: "Yes"
+        es: "Si"
+      value: True
+    - label:
+        en: "No"
+        es: "No"
+      value: False
+  help_text:
+    en: Grouped non-spatial datasets.
+    es: Conjuntos de datos no espaciales agrupados.
+  form_group_id: general_info
+
 # CKAN Organization (M) // Dataset privacy (M)
 - field_name: owner_org
   label:

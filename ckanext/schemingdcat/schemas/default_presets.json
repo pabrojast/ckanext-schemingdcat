@@ -117,6 +117,15 @@
       }
     },
     {
+      "preset_name": "non_spatial_dataset",
+      "values": {
+        "form_snippet": null,
+        "display_snippet": null,
+        "validators": "schemingdcat_non_spatial_dataset boolean_validator",
+        "output_validators": "boolean_validator"
+      }
+    },
+    {
       "preset_name": "date",
       "values": {
         "form_snippet": "date.html",
