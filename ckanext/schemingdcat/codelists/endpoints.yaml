@@ -5,6 +5,7 @@ catalog_endpoints:
     format: rdf
     image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
     endpoint_icon: /images/endpoints/catalog-rdf-eu.png
+    fa_icon: fa-share-alt
     description: RDF DCAT-AP Endpoint for european data portals.
     profile: euro_dcat_ap_2
     profile_label: DCAT-AP
@@ -16,6 +17,7 @@ catalog_endpoints:
     format: jsonld
     image_display_url: /images/icons/endpoints/euro_dcat_ap_2.svg
     endpoint_icon: /images/endpoints/catalog-jsonld-eu.png
+    fa_icon: fa-share-alt
     description: RDF DCAT-AP Endpoint for european data portals.
     profile: euro_dcat_ap_2
     profile_label: DCAT-AP
@@ -27,6 +29,7 @@ catalog_endpoints:
     format: rdf
     image_display_url: /images/icons/endpoints/spain_dcat.svg
     endpoint_icon: /images/endpoints/catalog-rdf-es.png
+    fa_icon: fa-share-alt
     description: RDF NTI-RISP Endpoint for spanish data portals.
     profile: spain_dcat
     profile_label: NTI-RISP
@@ -38,6 +41,7 @@ catalog_endpoints:
     format: jsonld
     image_display_url: /images/icons/endpoints/spain_dcat.svg
     endpoint_icon: /images/endpoints/catalog-jsonld-es.png
+    fa_icon: fa-share-alt
     description: JSON-LD NTI-RISP Endpoint for spanish data portals.
     profile: spain_dcat
     profile_label: NTI-RISP
@@ -49,6 +53,7 @@ catalog_endpoints:
     format: xml
     image_display_url: /images/icons/endpoints/csw_inspire.svg
     endpoint_icon: /images/endpoints/catalog-csw-eu.png
+    fa_icon: fa-globe
     description: OGC-INSPIRE Endpoint for spatial metadata.
     profile: spain_dcat
     profile_label: INSPIRE
@@ -60,7 +65,32 @@ catalog_endpoints:
     format: xml
     image_display_url: /images/icons/endpoints/csw_inspire.svg
     endpoint_icon: /images/endpoints/catalog-csw-eu.png
+    fa_icon: fa-globe
     description: OGC-INSPIRE Endpoint for spatial metadata.
     profile: spain_dcat
     profile_label: INSPIRE
     version: 3.0.0
+
+  - name: sparql
+    display_name: SPARQL
+    type: sparql
+    format: sparql
+    image_display_url: /images/icons/endpoints/w3c.svg
+    endpoint_icon: /images/endpoints/catalog-sparql.png
+    fa_icon: fa-share-alt
+    description: SPARQL Endpoint for querying RDF data.
+    profile: sparql
+    profile_label: SPARQL
+    version: null
+
+  - name: ckan
+    display_name: CKAN API
+    type: ckan
+    format: json
+    image_display_url: /images/icons/endpoints/global.svg
+    endpoint_icon: /images/endpoints/catalog-ckan.png
+    fa_icon: fa-cogs
+    description: CKAN’s Action API is a powerful RPC-style API.
+    profile: ckan
+    profile_label: CKAN-API
+    version: 3

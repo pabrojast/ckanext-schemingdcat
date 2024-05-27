@@ -1988,3 +1988,13 @@ input#lang-r:checked ~ div .example-r {
   background-color: white;
   z-index: 100;
 }
+
+.endpoint-image {
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+  filter: grayscale(1);
+}
+
+.endpoint-image:hover {
+  filter: none;
+}
