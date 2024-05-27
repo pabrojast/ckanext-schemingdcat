@@ -785,12 +785,11 @@ def schemingdcat_dataset_scope(field, schema):
     """
     schema_data = helpers.schemingdcat_get_dataset_schema()
     dcat_type_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'dcat_type'), None)
-    choices = {item["value"]: item.get('non_spatial_dataset', 'non_spatial_dataset') for item in dcat_type_field['choices']} if dcat_type_field else {}
-        
+    choices = dcat_type_field['choices'] if dcat_type_field else []
+    choices_dict = {item["value"]: item.get('dataset_scope', 'non_spatial_dataset') for item in choices}
+
     def validator(key, data, errors, context):
         dcat_type = data.get(('dcat_type', ))
-        log.debug(f'dcat_type: {dcat_type}')
-        log.debug(f'choices.get(dcat_type: {choices.get(dcat_type)}')
-        data[key] = choices.get(dcat_type, 'non_spatial_dataset')
+        data[key] = choices_dict.get(dcat_type, 'non_spatial_dataset')
 
     return validator
