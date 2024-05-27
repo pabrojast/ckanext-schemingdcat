@@ -5,7 +5,7 @@
 {% block secondary %}
 <aside class="secondary col-sm-3">
 {% block secondary_content %}
-  {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+  {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
   {%- set form_groups = h.schemingdcat_get_schema_form_groups(entity_type, object_type, schema) -%}
   <ul>
     {%- for form_group in form_groups -%}
@@ -61,7 +61,7 @@
 
 {% block errors %}
   {%- if errors -%}
-    {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+    {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
     {%- snippet 'scheming/snippets/errors.html',
       errors=errors, fields=schema.dataset_fields,
       entity_type='dataset', object_type=dataset_type -%}
@@ -76,7 +76,7 @@
     </p>
   {%- endif -%}
 
-  {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+  {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- set form_groups = h.schemingdcat_get_schema_form_groups(entity_type, object_type, schema) -%}
 

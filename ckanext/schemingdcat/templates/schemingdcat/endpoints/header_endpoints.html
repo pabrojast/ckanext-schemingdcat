@@ -8,12 +8,16 @@
         {% else %}
             {% set endpoint_url = site_protocol_and_host[0] +'://' + site_protocol_and_host[1] + '/' + endpoint.endpoint %}
         {% endif %}
+    {% elif endpoint.type == 'ckan' %}
+        {% set endpoint_url = h.url_for('api.action', ver=3, logic_function='status_show', qualified=True) %}
     {% elif endpoint.type == 'lod' %}
         {% set endpoint_url = h.url_for(endpoint.endpoint, **endpoint.endpoint_data) %}
+    {% elif endpoint.type == 'sparql' %}
+        {% set endpoint_url = h.url_for('/sparql') %}
     {% endif %}
     <li>
         <a href="{{ endpoint_url }}" target="_blank" rel="noopener noreferrer" title="{{ endpoint_title }}">
-            <img src="{{ endpoint_icon }}" alt="{{ endpoint.display_name }}">
+            <img class="endpoint-image" src="{{ endpoint_icon }}" alt="{{ endpoint.display_name }}">
         </a>
     </li>
 {% endmacro %}
@@ -29,10 +33,5 @@
     {% for endpoint in endpoints %}
         {{ render_endpoint(endpoint, site_protocol_and_host) }}
     {% endfor %}
-    <li>
-        <a href="{{ h.url_for('api.action', ver=3, logic_function='status_show', qualified=True) }}" target="_blank" rel="noopener noreferrer" title="{{ _('{endpoint_type} Endpoint').format(endpoint_type="CKAN API"|safe) }}">
-            <img src="{{ h.url_for_static("/images/endpoints/catalog-ckan.png") }}" alt="CKAN API">
-        </a>
-    </li>
     </ul>
 </div>

@@ -173,7 +173,7 @@ msgstr "ordenar por resultados"
 
 #: ckanext/schemingdcat/templates/snippets/schemingdcat_facet_list.html:111
 msgid "Show more {facet_type}"
-msgstr "Mostrar Más {facet_type}"
+msgstr "Mostrar más {facet_type}"
 
 #: ckanext/schemingdcat/templates/snippets/schemingdcat_facet_list.html:114
 msgid "Display only the first {facet_type}"
@@ -884,24 +884,40 @@ msgid "We have several endpoints available on our CKAN instance:"
 msgstr "Están disponibles varios puntos finales en nuestra instancia de CKAN:"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Open Data in RDF: This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
-msgstr "Datos Abiertos en RDF: Este endpoint permite el acceso a los datos en formato RDF (Resource Description Framework), un estándar para el intercambio de datos en la web."
+msgid "This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
+msgstr "Este punto final permite acceder a datos en formato RDF (Resource Description Framework), un estándar para el intercambio de datos en la web"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Turtle: This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
-msgstr "Turtle: Este endpoint proporciona datos en formato Turtle, una sintaxis compacta y fácil de leer para RDF."
+msgid "This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
+msgstr "Este punto final proporciona datos en formato Turtle, una sintaxis compacta y fácil de leer para RDF."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "JSON-LD: This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
-msgstr "JSON-LD: Este endpoint ofrece datos en formato JSON-LD, una representación de datos RDF en JSON que permite la interoperabilidad entre diferentes servicios de datos."
+msgid "This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
+msgstr "Este punto final ofrece datos en formato JSON-LD, una representación de datos RDF en JSON que permite la interoperabilidad entre distintos servicios de datos."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Geographic Metadata (CSW INSPIRE): This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
-msgstr "Metadatos Geográficos (CSW INSPIRE): Este endpoint permite el acceso a los metadatos geográficos de acuerdo con la normativa INSPIRE, a través del estándar CSW (Catalog Service for the Web)."
+msgid "This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+msgstr "Este punto final permite el acceso a metadatos geográficos de acuerdo con la normativa INSPIRE, a través del estándar CSW (Catalog Service for the Web)."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint provides programmatic access to the CKAN instance's data and functionality, allowing for operations like data search, package creation, and more."
+msgstr "Este punto final proporciona acceso programático a los datos y funcionalidades de la instancia CKAN, permitiendo operaciones como búsqueda de datos, creación de paquetes, etc.."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint allows querying of RDF data using the SPARQL query language. It enables complex queries over the data."
+msgstr "Este punto final permite la consulta de datos RDF utilizando el lenguaje de consulta SPARQL. Permite realizar consultas complejas sobre los datos."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Open Data in"
 msgstr "Datos Abiertos en"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "CKAN API"
+msgstr "API de CKAN"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "SPARQL Endpoint"
+msgstr "Punto final SPARQL"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Geographic Metadata (CSW INSPIRE)"

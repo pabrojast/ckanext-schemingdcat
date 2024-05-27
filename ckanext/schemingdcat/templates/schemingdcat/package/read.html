@@ -1,6 +1,6 @@
 {% extends "package/read_base.html" %}
 
-{%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+{%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
 
 {% block primary_content_inner %}
   {{ super() }}

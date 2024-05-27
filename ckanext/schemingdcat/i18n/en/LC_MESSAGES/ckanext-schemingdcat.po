@@ -172,7 +172,7 @@ msgstr "order by datasets found"
 
 #: ckanext/schemingdcat/templates/snippets/schemingdcat_facet_list.html:111
 msgid "Show more {facet_type}"
-msgstr "Show More {facet_type}"
+msgstr "Show more {facet_type}"
 
 #: ckanext/schemingdcat/templates/snippets/schemingdcat_facet_list.html:114
 msgid "Display only the first {facet_type}"
@@ -875,24 +875,40 @@ msgid "We have several endpoints available on our CKAN instance:"
 msgstr "We have several endpoints available on our CKAN instance:"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Open Data in RDF: This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
-msgstr "Open Data in RDF: This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
+msgid "This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
+msgstr "This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Turtle: This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
-msgstr "Turtle: This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
+msgid "This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
+msgstr "This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "JSON-LD: This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
-msgstr "JSON-LD: This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
+msgid "This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
+msgstr "This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
-msgid "Geographic Metadata (CSW INSPIRE): This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
-msgstr "Geographic Metadata (CSW INSPIRE): This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+msgid "This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+msgstr "This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint provides programmatic access to the CKAN instance's data and functionality, allowing for operations like data search, package creation, and more."
+msgstr "This endpoint provides programmatic access to the CKAN instance's data and functionality, allowing for operations like data search, package creation, and more."
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint allows querying of RDF data using the SPARQL query language. It enables complex queries over the data."
+msgstr "This endpoint allows querying of RDF data using the SPARQL query language. It enables complex queries over the data."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Open Data in"
 msgstr "Open Data in"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "CKAN API"
+msgstr "CKAN API"
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "SPARQL Endpoint"
+msgstr "SPARQL Endpoint"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Geographic Metadata (CSW INSPIRE)"

@@ -72,7 +72,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
       {% endblock %}
 
       {%  block facet_list_items %}
-        {%  set field = h.scheming_field_by_name(h.scheming_get_dataset_schema('dataset').dataset_fields,name) %}
+        {%  set field = h.scheming_field_by_name(h.schemingdcat_get_dataset_schema('dataset').dataset_fields,name) %}
         {%  set icons_dir = h.schemingdcat_get_icons_dir(field) %}
         {%  with items = items or h.schemingdcat_get_facet_items_dict(name, search_facets or c.search_facets,scheming_choices=scheming_choices) %}
           {% if items %}
