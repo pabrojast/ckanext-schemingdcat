@@ -3,6 +3,7 @@ import re
 import six
 
 import ckanext.scheming.helpers as sh
+import ckanext.schemingdcat.helpers as helpers
 import ckan.lib.helpers as h
 from urllib.parse import urlparse
 from ckantoolkit import (
@@ -771,25 +772,25 @@ def check_url(url):
     
 @scheming_validator
 @validator
-def schemingdcat_non_spatial_dataset(field, schema):
+def schemingdcat_dataset_scope(field, schema):
     """
-    Returns a validator function that checks if 'inspire' is in 'dcat_type'. If 'inspire' is present, it sets the value of the field to False. Otherwise, it sets the value to True. If 'dcat_type' does not exist, it also sets the value to True.
+    Returns a validator function that checks if the 'dcat_type' value exists in the choices. If it exists, it sets the value of the field to the value of 'non_spatial_dataset' in the choice. Otherwise, it sets the value to 'non_spatial_dataset'.
 
     Args:
         field (dict): Information about the field to be updated.
         schema (dict): The schema for the field to be updated.
 
     Returns:
-        function: A validation function that can be used to update the field based on the presence of 'inspire' in 'dcat_type'.
+        function: A validation function that can be used to update the field based on the presence of 'non_spatial_dataset' in the choice corresponding to 'dcat_type'.
     """
+    schema_data = helpers.schemingdcat_get_dataset_schema()
+    dcat_type_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'dcat_type'), None)
+    choices = {item["value"]: item.get('non_spatial_dataset', 'non_spatial_dataset') for item in dcat_type_field['choices']} if dcat_type_field else {}
+        
     def validator(key, data, errors, context):
-        try:
-            log.debug("schemingdcat_non_spatial_dataset" + data.get(('dcat_type', ), {}))
-            if 'inspire' in data.get(('dcat_type', ), {}):
-                data[key] = False
-            else:
-                data[key] = True
-        except KeyError:
-            data[key] = True
+        dcat_type = data.get(('dcat_type', ))
+        log.debug(f'dcat_type: {dcat_type}')
+        log.debug(f'choices.get(dcat_type: {choices.get(dcat_type)}')
+        data[key] = choices.get(dcat_type, 'non_spatial_dataset')
 
     return validator

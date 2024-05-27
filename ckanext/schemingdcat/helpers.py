@@ -19,6 +19,7 @@ from ckanext.scheming.helpers import (
     scheming_choices_label,
     scheming_language_text,
     scheming_dataset_schemas,
+    scheming_get_schema
 )
 
 from ckanext.harvest.helpers import (
@@ -289,6 +290,15 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
 
     return url
 
+@helper
+def schemingdcat_get_facet_list_limit():
+    """
+    Retrieves the limit for the facet list from the scheming DCAT configuration.
+
+    Returns:
+        int: The limit for the facet list.
+    """
+    return sdct_config.facet_list_limit
 
 @helper
 def schemingdcat_get_icons_dir(field):
@@ -574,6 +584,7 @@ def schemingdcat_get_catalog_endpoints():
             "format": item["format"],
             "image_display_url": item["image_display_url"],
             "endpoint_icon": item["endpoint_icon"],
+            "fa_icon": item["fa_icon"],
             "description": item["description"],
             "type": item["type"],
             "profile": item["profile"],
@@ -1038,7 +1049,7 @@ def schemingdcat_parse_localised_date(date_=None):
 
 @lru_cache(maxsize=None)
 @helper
-def get_dataset_schema(schema_type="dataset"):
+def schemingdcat_get_dataset_schema(schema_type="dataset"):
     """
     Retrieves the schema for the dataset instance and caches it using the LRU cache decorator for efficient retrieval.
 
@@ -1064,7 +1075,6 @@ def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, sche
     if schema and "schema_form_groups" in schema:
         return schema["schema_form_groups"]
     elif entity_type and object_type:
-        from ckanext.scheming.helpers import scheming_get_schema
         schema = scheming_get_schema(entity_type, object_type)
         return schema["schema_form_groups"] if schema and "schema_form_groups" in schema else None
     else:

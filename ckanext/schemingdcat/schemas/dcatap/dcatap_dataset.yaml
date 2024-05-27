@@ -175,25 +175,22 @@ dataset_fields:
   required_language: "en"
   form_group_id: title
 
-# Non-spatial Datasets
-- field_name: non_spatial_dataset
+# Non-spatial Dataset (Hidden field, based on dcat_type)
+- field_name: dataset_scope
   label:
-    en: Non-spatial dataset
-    es: Conjunto de datos no espacial
-  preset: non_spatial_dataset
+    en: Scope of the data
+    es: Alcance de los datos
+  preset: dataset_scope
   required: False
   choices:
     - label:
-        en: "Yes"
-        es: "Si"
-      value: True
+        en: "Non-spatial dataset"
+        es: "Conjunto de datos no espaciales"
+      value: non_spatial_dataset
     - label:
-        en: "No"
-        es: "No"
-      value: False
-  help_text:
-    en: Grouped non-spatial datasets.
-    es: Conjuntos de datos no espaciales agrupados.
+        en: "Spatial dataset"
+        es: "Conjunto de datos espaciales"
+      value: spatial_dataset
   form_group_id: general_info
 
 # CKAN Organization (M) // Dataset privacy (M)
@@ -266,98 +263,122 @@ dataset_fields:
       en: Spatial data set
       es: Conjunto de datos espacial
     value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset
+    dataset_scope: spatial_dataset
   - label:
       en: Article
       es: Artículo
     value: http://id.loc.gov/vocabulary/marcgt/art
+    dataset_scope: non_spatial_dataset
   - label:
       en: Bibliographic data
       es: Datos bibliográficos
     value: http://id.loc.gov/vocabulary/marcgt/bda
+    dataset_scope: non_spatial_dataset
   - label:
       en: Collection
       es: Colección
     value: http://purl.org/dc/dcmitype/Collection
+    dataset_scope: non_spatial_dataset
   - label:
       en: Database
       es: Base de datos
     value: http://id.loc.gov/vocabulary/marcgt/dtb
+    dataset_scope: non_spatial_dataset
   - label:
       en: Document (computer)
       es: Documento (informático)
     value: http://id.loc.gov/vocabulary/marcgt/doc
+    dataset_scope: non_spatial_dataset
   - label:
       en: Event
       es: Evento
     value: http://purl.org/dc/dcmitype/Event
+    dataset_scope: non_spatial_dataset 
   - label:
       en: Government publication
       es: Publicación gubernamental
     value: http://id.loc.gov/vocabulary/marcgt/gov
+    dataset_scope: non_spatial_dataset
   - label:
       en: Image
       es: Imagen
     value: http://purl.org/dc/dcmitype/Image
+    dataset_scope: non_spatial_dataset
   - label:
       en: Still Image
       es: Imagen fija
     value: http://purl.org/dc/dcmitype/StillImage
+    dataset_scope: non_spatial_dataset
   - label:
       en: Journal
       es: Revista
     value: http://id.loc.gov/vocabulary/marcgt/jou
+    dataset_scope: non_spatial_dataset
   - label:
       en: Legislation
       es: Legislación
     value: http://id.loc.gov/vocabulary/marcgt/leg
+    dataset_scope: non_spatial_dataset
   - label:
       en: Moving Image
       es: Imagen en movimiento
     value: http://purl.org/dc/dcmitype/MovingImage
+    dataset_scope: non_spatial_dataset
   - label:
       en: Physical Object
       es: Objeto físico
     value: http://purl.org/dc/dcmitype/PhysicalObject
+    dataset_scope: non_spatial_dataset
   - label:
       en: Reporting
       es: Informe
     value: http://id.loc.gov/vocabulary/marcgt/rpt
+    dataset_scope: non_spatial_dataset
   - label:
       en: Interactive Resource
       es: Recurso interactivo
     value: http://purl.org/dc/dcmitype/InteractiveResource
+    dataset_scope: non_spatial_dataset
   - label:
       en: Spatial data set series
       es: Series de datos espaciales
     value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/series
+    dataset_scope: spatial_dataset
   - label:
       en: Service
       es: Servicio
     value: http://purl.org/dc/dcmitype/Service
+    dataset_scope: non_spatial_dataset
   - label:
       en: Spatial data service
       es: Servicio de datos espaciales
     value: http://inspire.ec.europa.eu/metadata-codelist/ResourceType/service
+    dataset_scope: spatial_dataset
   - label:
       en: Sound
       es: Sonido
     value: http://purl.org/dc/dcmitype/Sound
+    dataset_scope: non_spatial_dataset
   - label:
       en: Software
       es: Software
     value: http://purl.org/dc/dcmitype/Software
+    dataset_scope: non_spatial_dataset
   - label:
       en: Standard or specification
       es: Norma o especificación
     value: http://id.loc.gov/vocabulary/marcgt/stp
+    dataset_scope: non_spatial_dataset
   - label:
       en: Technical report
       es: Informe técnico
     value: http://id.loc.gov/vocabulary/marcgt/ter
+    dataset_scope: non_spatial_dataset
   - label:
       en: Text
       es: Texto
     value: http://purl.org/dc/dcmitype/Text
+    dataset_scope: non_spatial_dataset
   form_group_id: identification
 
 # MDR Themes (M)

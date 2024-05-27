@@ -117,12 +117,11 @@
       }
     },
     {
-      "preset_name": "non_spatial_dataset",
+      "preset_name": "dataset_scope",
       "values": {
         "form_snippet": null,
         "display_snippet": null,
-        "validators": "schemingdcat_non_spatial_dataset boolean_validator",
-        "output_validators": "boolean_validator"
+        "validators": "default(non_spatial_dataset) schemingdcat_dataset_scope"
       }
     },
     {
