@@ -3,9 +3,11 @@ import ckan.model as model
 import ckan.lib.base as base
 import ckan.logic as logic
 from flask import Blueprint
-from ckanext.schemingdcat.utils import get_linked_data, get_geospatial_metadata
 
 from ckan.plugins.toolkit import render, g
+
+import ckanext.schemingdcat.utils as sdct_utils
+import ckanext.schemingdcat.helpers as sdct_helpers
 
 from logging import getLogger
 
@@ -14,6 +16,12 @@ get_action = logic.get_action
 
 schemingdcat = Blueprint(u'schemingdcat', __name__)
 
+def endpoints():
+    return render('schemingdcat/endpoints/index.html',extra_vars={
+            u'endpoints': sdct_helpers.schemingdcat_get_catalog_endpoints(),
+        })
+
+schemingdcat.add_url_rule("/endpoints/", view_func=endpoints, endpoint="endpoint_index", strict_slashes=False)
 
 @schemingdcat.route(u'/dataset/linked_data/<id>')
 def index(id):
@@ -37,7 +45,7 @@ def index(id):
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
             u'endpoint': 'dcat.read_dataset',
-            u'data_list': get_linked_data(id),
+            u'data_list': sdct_utils.get_linked_data(id),
         })
 
 @schemingdcat.route(u'/dataset/geospatial_metadata/<id>')
@@ -61,5 +69,5 @@ def geospatial_metadata(id):
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
             u'id': id,
-            u'data_list': get_geospatial_metadata(),
+            u'data_list': sdct_utils.get_geospatial_metadata(),
         })

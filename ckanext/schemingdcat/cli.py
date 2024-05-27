@@ -76,7 +76,7 @@ def create_vocab(vocab_name, schema_name="dataset", lang="en"):
             context, {"name": vocab_name}
         )
 
-    schema = sh.scheming_get_dataset_schema(schema_name)
+    schema = helpers.schemingdcat_get_dataset_schema(schema_name)
     vocab_field = next((field for field in schema["dataset_fields"] if field['field_name'] == vocab_name), None)
 
     #log.debug(sh.scheming_field_choices(vocab_field))

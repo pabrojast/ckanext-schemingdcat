@@ -10,6 +10,7 @@ debug = False
 linkeddata_links = None
 geometadata_links = None
 endpoints = None
+facet_list_limit= 6
 
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {

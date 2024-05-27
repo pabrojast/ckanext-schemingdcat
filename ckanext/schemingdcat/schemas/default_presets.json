@@ -117,6 +117,14 @@
       }
     },
     {
+      "preset_name": "dataset_scope",
+      "values": {
+        "form_snippet": null,
+        "display_snippet": null,
+        "validators": "default(non_spatial_dataset) schemingdcat_dataset_scope"
+      }
+    },
+    {
       "preset_name": "date",
       "values": {
         "form_snippet": "date.html",

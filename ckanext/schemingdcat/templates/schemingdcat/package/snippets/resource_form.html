@@ -28,7 +28,7 @@
 
 {% block errors %}
   {%- if errors -%}
-    {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+    {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
     {%- snippet 'scheming/snippets/errors.html',
       errors=errors, fields=schema.resource_fields,
       entity_type='dataset', object_type=dataset_type -%}
@@ -43,7 +43,7 @@
     </p>
   {%- endif -%}
 
-  {%- set schema = h.scheming_get_dataset_schema(dataset_type) -%}
+  {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
   {%- set form_groups = h.schemingdcat_get_schema_form_groups(entity_type, object_type, schema) -%}
 
   {# Render fields #}

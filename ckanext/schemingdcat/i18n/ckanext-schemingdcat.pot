@@ -866,6 +866,62 @@ msgstr ""
 msgid "Query example (results containing 'medio-ambiente')"
 msgstr ""
 
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "What are Endpoints?"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "What are Endpoints?"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Endpoints are access points to an API that allow interaction between different software systems. In the context of CKAN, endpoints are essential for enabling access to the data and metadata stored on the platform."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "We have several endpoints available on our CKAN instance:"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint allows access to data in RDF (Resource Description Framework) format, a standard for data exchange on the web."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint provides data in Turtle format, a compact and easy-to-read syntax for RDF."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint offers data in JSON-LD format, a representation of RDF data in JSON that allows interoperability between different data services."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint allows access to geographic metadata in accordance with the INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint provides programmatic access to the CKAN instance's data and functionality, allowing for operations like data search, package creation, and more."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "This endpoint allows querying of RDF data using the SPARQL query language. It enables complex queries over the data."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Open Data in"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "CKAN API"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "SPARQL Endpoint"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
+msgid "Geographic Metadata (CSW INSPIRE)"
+msgstr ""
+
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
 msgstr ""
@@ -1045,4 +1101,11 @@ msgid "SOCI"
 msgstr ""
 
 msgid "TECH"
+msgstr ""
+
+# Spatial Datasets / Non-spatial Datasets
+msgid "Non-spatial datasets"
+msgstr ""
+
+msgid "Spatial datasets"
 msgstr ""

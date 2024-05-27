@@ -19,6 +19,7 @@ from ckanext.scheming.helpers import (
     scheming_choices_label,
     scheming_language_text,
     scheming_dataset_schemas,
+    scheming_get_schema
 )
 
 from ckanext.harvest.helpers import (
@@ -289,6 +290,15 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
 
     return url
 
+@helper
+def schemingdcat_get_facet_list_limit():
+    """
+    Retrieves the limit for the facet list from the scheming DCAT configuration.
+
+    Returns:
+        int: The limit for the facet list.
+    """
+    return sdct_config.facet_list_limit
 
 @helper
 def schemingdcat_get_icons_dir(field):
@@ -536,6 +546,9 @@ def schemingdcat_get_linked_data(id):
             "image_display_url": linkeddata_links.get(name, {}).get(
                 "image_display_url"
             ),
+            "endpoint_icon": linkeddata_links.get(name, {}).get(
+                "endpoint_icon"
+            ),
             "description": linkeddata_links.get(name, {}).get("description")
             or f"Formats {content_type}",
             "description_url": linkeddata_links.get(name, {}).get("description_url"),
@@ -570,6 +583,8 @@ def schemingdcat_get_catalog_endpoints():
             "display_name": item["display_name"],
             "format": item["format"],
             "image_display_url": item["image_display_url"],
+            "endpoint_icon": item["endpoint_icon"],
+            "fa_icon": item["fa_icon"],
             "description": item["description"],
             "type": item["type"],
             "profile": item["profile"],
@@ -645,6 +660,7 @@ def schemingdcat_get_geospatial_metadata():
             "display_name": item["display_name"],
             "format": item["format"],
             "image_display_url": item["image_display_url"],
+            "endpoint_icon": item["endpoint_icon"],
             "description": item["description"],
             "description_url": item["description_url"],
             "url": csw_uri.format(
@@ -1033,7 +1049,7 @@ def schemingdcat_parse_localised_date(date_=None):
 
 @lru_cache(maxsize=None)
 @helper
-def get_dataset_schema(schema_type="dataset"):
+def schemingdcat_get_dataset_schema(schema_type="dataset"):
     """
     Retrieves the schema for the dataset instance and caches it using the LRU cache decorator for efficient retrieval.
 
@@ -1059,7 +1075,6 @@ def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, sche
     if schema and "schema_form_groups" in schema:
         return schema["schema_form_groups"]
     elif entity_type and object_type:
-        from ckanext.scheming.helpers import scheming_get_schema
         schema = scheming_get_schema(entity_type, object_type)
         return schema["schema_form_groups"] if schema and "schema_form_groups" in schema else None
     else:
@@ -1115,3 +1130,50 @@ def get_ckan_cleaned_name(name):
         name = name.ljust(MIN_TAG_LENGTH, '_')
 
     return name
+
+@helper
+def get_featured_datasets(count=1):
+    """
+    This helper function retrieves a specified number of featured datasets from the CKAN instance. 
+    It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
+    
+    Parameters:
+    count (int): The number of featured datasets to retrieve. Default is 1.
+
+    Returns:
+    list: A list of dictionaries, each representing a featured dataset.
+    """
+    fq = '+featured:true'
+    search_dict = {
+        'fq': fq, 
+        'sort': 'metadata_modified desc',
+        'fl': 'id,name,title,notes,state,metadata_modified,type,extras_featured,extras_graphic_overview',
+        'rows': count
+    }
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    
+    return result['results']
+
+@helper
+def get_spatial_datasets(count=10):
+    """
+    This helper function retrieves a specified number of featured datasets from the CKAN instance. 
+    It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
+    
+    Parameters:
+    count (int): The number of featured datasets to retrieve. Default is 1.
+
+    Returns:
+    list: A list of dictionaries, each representing a featured dataset.
+    """
+    fq = '+dcat_type:*inspire*'
+    search_dict = {
+        'fq': fq, 
+        'fl': 'extras_dcat_type',
+        'rows': count
+    }
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    
+    return result['results']
