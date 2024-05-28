@@ -48,6 +48,9 @@
 .category-theme_es[data-icon="economia"] {
 	background-image: url(../../images/icons/theme_es/sector/economia.png);
 }
+.category-theme_es[data-icon="educacion"] {
+	background-image: url(../../images/icons/theme_es/sector/educacion.png);
+}
 .category-theme_es[data-icon="empleo"] {
 	background-image: url(../../images/icons/theme_es/sector/empleo.png);
 }
@@ -65,6 +68,21 @@
 }
 .category-theme_es[data-icon="medio-ambiente"] {
 	background-image: url(../../images/icons/theme_es/sector/medio-ambiente.png);
+}
+.category-theme_es[data-icon="medio-rural-pesca"] {
+	background-image: url(../../images/icons/theme_es/sector/medio-rural-pesca.png);
+}
+.category-theme_es[data-icon="salud"] {
+	background-image: url(../../images/icons/theme_es/sector/salud.png);
+}
+.category-theme_es[data-icon="sector-publico"] {
+	background-image: url(../../images/icons/theme_es/sector/sector-publico.png);
+}
+.category-theme_es[data-icon="seguridad"] {
+	background-image: url(../../images/icons/theme_es/sector/seguridad.png);
+}
+.category-theme_es[data-icon="sociedad-bienestar"] {
+	background-image: url(../../images/icons/theme_es/sector/sociedad-bienestar.png);
 }
 .category-theme_es[data-icon="transporte"] {
 	background-image: url(../../images/icons/theme_es/sector/transporte.png);
@@ -296,8 +314,8 @@
 .category-spatial_uri[data-icon="comunitat-valenciana"] {
 	background-image: url(../../images/icons/spatial_uri/autonomia/comunitat-valenciana.jpg);
 }
-.category-spatial_uri[data-icon="espana"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/espana.jpg);
+.category-spatial_uri[data-icon="españa"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/españa.jpg);
 }
 .category-spatial_uri[data-icon="extremadura"] {
 	background-image: url(../../images/icons/spatial_uri/autonomia/extremadura.jpg);
