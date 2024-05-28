@@ -20,7 +20,9 @@
 
     Example:
 
-      {% include 'schemingdcat_dataset_categories.html' with package=package %}
+    {% block dataset_categories %}
+      {% snippet 'schemingdcat/snippets/schemingdcat_dataset_categories.html', package=package %}
+    {% endblock %}
 #}
 
 {% asset 'ckanext-schemingdcat/schemingdcat-icons' %}
