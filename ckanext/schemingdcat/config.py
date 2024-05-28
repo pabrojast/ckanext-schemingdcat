@@ -11,6 +11,8 @@ linkeddata_links = None
 geometadata_links = None
 endpoints = None
 facet_list_limit= 6
+default_package_item_icon = 'theme'
+default_package_item_show_spatial = True
 
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {

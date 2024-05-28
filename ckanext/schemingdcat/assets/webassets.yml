@@ -25,6 +25,11 @@ schemingdcat-permanent-url:
   contents:
     - js/modules/schemingdcat-permanent-url.js
 
+schemingdcat-icons:
+  contents:
+    - css/categories/schemingdcat-icons.css
+  output: schemingdcat_icons/%(version)s_schemingdcat_icons.css
+
 main:
   filters: rjsmin
   output: base/%(version)s_main.js
