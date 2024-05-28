@@ -1234,3 +1234,23 @@ def get_spatial_datasets(count=10):
     result = logic.get_action('package_search')(context, search_dict)
     
     return result['results']
+
+@lru_cache(maxsize=None)
+@helper
+def get_header_endpoint_url(endpoint, site_protocol_and_host):
+    url_for = ckan_helpers.url_for
+    endpoint_type = endpoint['type']
+    endpoint_value = endpoint['endpoint']
+
+    if endpoint_type == 'ogc':
+        if ckan_helpers.is_url(endpoint_value):
+            return ckan_helpers.url_for_static_or_external(endpoint_value)
+        else:
+            protocol, host = site_protocol_and_host
+            return f"{protocol}://{host}/{endpoint_value}"
+    elif endpoint_type == 'ckan':
+        return url_for('api.action', ver=3, logic_function='status_show', qualified=True)
+    elif endpoint_type == 'lod':
+        return url_for(endpoint_value, **endpoint['endpoint_data'])
+    elif endpoint_type == 'sparql':
+        return url_for('/sparql')
