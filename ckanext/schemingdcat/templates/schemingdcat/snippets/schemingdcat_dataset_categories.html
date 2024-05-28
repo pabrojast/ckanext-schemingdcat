@@ -33,13 +33,13 @@
 <div class="col-md-2 d-flex flex-row justify-content-center align-items-center">
   {% if theme_field %}
     <div class="dataset-categories">
-      <a href="{{ h.url_for('dataset.search', **{h.schemingdcat_get_default_package_item_icon():theme_value}) }}" target="_blank" rel="noopener noreferrer" class="category-{{ theme_field }}" data-icon="{{ theme_value|lower }}"></a>
+      <a href="{{ h.url_for('dataset.search', **{theme_field:theme_value}) }}" target="_blank" rel="noopener noreferrer" class="category-{{ theme_field }}" data-icon="{{ theme_value|lower }}"></a>
     </div>
   {% endif %}
   {% if package.spatial_uri %}
     {% set spatial_uri_value = package.spatial_uri.split('/')[-1] %}
     <div class="dataset-categories">
-      <a href="{{ h.url_for('dataset.search', **{'spatial_uri':package.spatial_uri}) }}" target="_blank" rel="noopener noreferrer" class="category-spatial_uri" data-icon="{{ spatial_uri_value|lower }}" spatial_uri"></a>
+      <a href="{{ h.url_for('dataset.search', **{'spatial_uri':package.spatial_uri}) }}" target="_blank" rel="noopener noreferrer" class="category-spatial_uri" data-icon="{{ spatial_uri_value|lower }}"></a>
     </div>
   {% endif %}
 </div>
