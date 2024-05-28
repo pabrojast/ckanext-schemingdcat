@@ -301,14 +301,24 @@ def schemingdcat_get_facet_list_limit():
     return sdct_config.facet_list_limit
 
 @helper
-def schemingdcat_get_icons_dir(field):
-    """Return the defined icons directory for a scheming field definition.
+def schemingdcat_get_icons_dir(field=None, field_name=None):
+    """
+    Returns the defined icons directory for a given scheming field definition or field name.
+
+    This function is used to retrieve the icons directory associated with a 
+    specific field in a scheming dataset or directly by field name. If no icons directory is defined, 
+    the function will return None.
 
     Args:
-        field (dict): The scheming field definition.
+        field (dict, optional): A dictionary representing the scheming field definition. 
+                                This should include all the properties of the field, 
+                                including the icons directory if one is defined.
+        field_name (str, optional): The name of the field. If provided, the function will 
+                                     look for an icons directory with this name.
 
     Returns:
-        str: The defined icons directory, or None if not found.
+        str: A string representing the icons directory for the field or field name. 
+             If no icons directory is defined or found, the function will return None.
     """
     if field:
         if "icons_dir" in field:
@@ -318,10 +328,13 @@ def schemingdcat_get_icons_dir(field):
             dir = sdct_config.icons_dir + "/" + field["field_name"]
             if public_dir_exists(dir):
                 return dir
-        # log.debug("No directory found for {0}".format(field['field_name']))
+
+    elif field_name:
+        dir = sdct_config.icons_dir + "/" + field_name
+        if public_dir_exists(dir):
+            return dir    
 
     return None
-
 
 @helper
 def schemingdcat_get_default_icon(field):
@@ -335,46 +348,90 @@ def schemingdcat_get_default_icon(field):
     """
     if "default_icon" in field:
         return field["default_icon"]
+    
+@helper
+def schemingdcat_get_default_package_item_icon():
+    """
+    Returns the default icon defined for a given scheming field definition.
+
+    This function is used to retrieve the default icon associated with a 
+    specific field in a scheming dataset. If no default icon is defined, 
+    the function will return None.
+
+    Args:
+        field (dict): A dictionary representing the scheming field definition. 
+                      This should include all the properties of the field, 
+                      including the default icon if one is defined.
+
+    Returns:
+        str: A string representing the default icon for the field. This could 
+             be a URL, a data URI, or any other string format used to represent 
+             images. If no default icon is defined for the field, the function 
+             will return None.
+    """
+    return sdct_config.default_package_item_icon
+
+@helper
+def schemingdcat_get_default_package_item_show_spatial():
+    """
+    Returns the default icon defined for a given scheming field definition.
+
+    This function is used to retrieve the default icon associated with a 
+    specific field in a scheming dataset. If no default icon is defined, 
+    the function will return None.
+
+    Args:
+        field (dict): A dictionary representing the scheming field definition. 
+                      This should include all the properties of the field, 
+                      including the default icon if one is defined.
+
+    Returns:
+        str: A string representing the default icon for the field. This could 
+             be a URL, a data URI, or any other string format used to represent 
+             images. If no default icon is defined for the field, the function 
+             will return None.
+    """
+    return sdct_config.default_package_item_show_spatial
 
 
 @helper
 def schemingdcat_get_icon(
-    choice, icons_dir=None, default="/images/default/no_icon.svg"
+    choice=None, icons_dir=None, default="/images/default/no_icon.svg", choice_value=None
 ):
     """Return the relative URL to the icon for the item.
 
     Args:
-        choice (dict): The choice selected for the field.
+        choice (dict, optional): The choice selected for the field.
         icons_dir (str, optional): The path to search for the icon. Usually the common path for icons for this field.
         default (str, optional): The default value to return if no icon is found.
+        choice_value (str, optional): The value of the choice selected for the field. If provided, it will be used instead of choice['value'].
 
     Returns:
         str: The relative URL to the icon, or the default value if not found.
     """
-    extensions = [".svg", ".png", ".jpg", ".gif"]
+    extensions = [".svg", ".png", ".jpg", ".jpeg", ".gif"]
     icon_name = None
-    # log.debug("Field value: {0}".format(choice))
 
-    if choice:
-        if "icon" in choice:
-            return (icons_dir + "/" if icons_dir else "") + choice["icon"]
+    if choice_value is None and choice:
+        choice_value = choice.get("icon") or choice.get("value")
 
-        if ckan_helpers.is_url(choice["value"]):
-            url_parts = choice["value"].split("/")
+    if choice_value:
+        if ckan_helpers.is_url(choice_value):
+            url_parts = choice_value.split("/")
 
             if len(url_parts) == 1:
                 icon_name = url_parts[-1].lower()
             else:
                 icon_name = url_parts[-2].lower() + "/" + url_parts[-1].lower()
         else:
-            icon_name = choice["value"]
+            icon_name = choice_value
 
         url_path = (icons_dir + "/" if icons_dir else "") + icon_name
-        # log.debug("Searching for: {0}".format(url_path))
 
         for extension in extensions:
             if public_file_exists(url_path + extension):
                 return url_path + extension
+
     return default
 
 

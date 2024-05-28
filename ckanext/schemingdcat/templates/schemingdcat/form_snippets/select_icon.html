@@ -20,7 +20,7 @@
   {%  if field.get('sorted_choices') %}
     {%  set choices = choices|sort(case_sensitive=false, attribute=1) %}
   {%  endif %}
-  {% set icons_dir = h.schemingdcat_get_icons_dir(field) %}
+  {% set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
   <select
       size="{{ field.get('select_size', field.choices|length) }}"
       style="display: block"

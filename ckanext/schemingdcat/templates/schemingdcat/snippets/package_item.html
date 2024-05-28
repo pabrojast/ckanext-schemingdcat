@@ -13,66 +13,74 @@
     {% snippet 'snippets/package_item.html', package=c.datasets[0] %}
   
   #}
+
   {% set truncate = truncate or 180 %}
   {% set truncate_title = truncate_title or 80 %}
   {% set title = h.dataset_display_name(package) %}
   {% set notes = h.markdown_extract(h.dataset_display_field_value(package, 'notes'), extract_length=truncate) %}
   
   {% block package_item %}
-    <li class="{{ item_class or "dataset-item" }}">
-      {% block content %}
-        <div class="dataset-content">
-          {% block heading %}
-            <h2 class="dataset-heading">
-              {% block heading_private %}
-                {% if package.private %}
-                  <span class="dataset-private badge bg-secondary">
-                      <i class="fa fa-lock"></i>
-                      {{ _('Private') }}
-                  </span>
+  <li class="{{ item_class or "dataset-item" }}">
+    <div class="row">
+      <div class="col-md-10">
+        {% block content %}
+            <div class="dataset-content">
+              {% block heading %}
+                <h2 class="dataset-heading">
+                  {% block heading_private %}
+                    {% if package.private %}
+                      <span class="dataset-private badge bg-secondary">
+                          <i class="fa fa-lock"></i>
+                          {{ _('Private') }}
+                      </span>
+                    {% endif %}
+                  {% endblock %}
+                  {% block heading_title %}
+                    {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % package.type, id=package.name)) }}
+                  {% endblock %}
+                  {% block heading_meta %}
+                    {% if package.get('state', '').startswith('draft') %}
+                      <span class="badge badge-info">{{ _('Draft') }}</span>
+                    {% elif package.get('state', '').startswith('deleted') %}
+                      <span class="badge badge-danger">{{ _('Deleted') }}</span>
+                    {% endif %}
+                    {{ h.popular('recent views', package.tracking_summary.recent, min=10) if package.tracking_summary }}
+                  {% endblock %}
+                </h2>
+              {% endblock %}
+              {% block banner %}
+                {% if banner %}
+                  <span class="banner">{{ _('Popular') }}</span>
                 {% endif %}
               {% endblock %}
-              {% block heading_title %}
-      {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % package.type, id=package.name)) }}
-              {% endblock %}
-              {% block heading_meta %}
-                {% if package.get('state', '').startswith('draft') %}
-                  <span class="badge badge-info">{{ _('Draft') }}</span>
-                {% elif package.get('state', '').startswith('deleted') %}
-                  <span class="badge badge-danger">{{ _('Deleted') }}</span>
+              {% block notes %}
+                {% if notes %}
+                  <div>{{ notes|urlize }}</div>
+                {% else %}
+                  <p class="empty">{{ _("This dataset has no description") }}</p>
                 {% endif %}
-                {{ h.popular('recent views', package.tracking_summary.recent, min=10) if package.tracking_summary }}
               {% endblock %}
-            </h2>
-          {% endblock %}
-          {% block banner %}
-            {% if banner %}
-              <span class="banner">{{ _('Popular') }}</span>
-            {% endif %}
-          {% endblock %}
-          {% block notes %}
-            {% if notes %}
-              <div>{{ notes|urlize }}</div>
-            {% else %}
-              <p class="empty">{{ _("This dataset has no description") }}</p>
-            {% endif %}
+              {% block resources %}
+                {% if package.resources and not hide_resources %}
+                  {% block resources_outer %}
+                    <ul class="dataset-resources list-unstyled">
+                      {% block resources_inner %}
+                        {% for resource in h.dict_list_reduce(package.resources, 'format') %}
+                        <li>
+                          <a href="{{ h.url_for(package.type ~ '.read', id=package.name) }}" class="label badge-label" data-format="{{ resource.lower() }}">{{ resource }}</a>
+                        </li>
+                        {% endfor %}
+                      {% endblock %}
+                    </ul>
+                  {% endblock %}
+                {% endif %}
+              {% endblock %}
+            </div>
           {% endblock %}
         </div>
-        {% block resources %}
-          {% if package.resources and not hide_resources %}
-            {% block resources_outer %}
-              <ul class="dataset-resources list-unstyled">
-                {% block resources_inner %}
-                  {% for resource in h.dict_list_reduce(package.resources, 'format') %}
-                  <li>
-                    <a href="{{ h.url_for(package.type ~ '.read', id=package.name) }}" class="label badge-label" data-format="{{ resource.lower() }}">{{ resource }}</a>
-                  </li>
-                  {% endfor %}
-                {% endblock %}
-              </ul>
-            {% endblock %}
-          {% endif %}
+        {% block dataset_categories %}
+          {% snippet 'schemingdcat/snippets/schemingdcat_dataset_categories.html', package=package %}
         {% endblock %}
-      {% endblock %}
+      </div>
     </li>
   {% endblock %}

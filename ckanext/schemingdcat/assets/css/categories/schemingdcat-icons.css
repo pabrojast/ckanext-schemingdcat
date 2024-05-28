@@ -1,0 +1,515 @@
+.dataset-categories {
+    display: flex;
+	margin-left: 5px;
+    margin-right: 5px;
+}
+
+@media all and (min-width: 60em){
+	.dataset-categories a{display:block;overflow:hidden;text-indent:-9999px;height:40px;width:40px;background-repeat:no-repeat;background-position:center center;background-size:100% 100%;font-size:1em;}
+	.category-spatial_uri {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+}
+
+@media all and (max-width: 770px){
+	.dataset-categories a, .category-spatial_uri {
+		display: none;
+	}
+}
+
+/* theme_es: theme_es-last_part_of_uri */
+.category-theme_es{
+	background-repeat:no-repeat;
+	background-size:30px auto;
+	background-position:15px 7px;
+	width:40px;
+	height:40px;
+	filter: sepia(0.4);
+}
+
+.category-theme_es:hover, .category-theme_es:focus {
+	filter: brightness(0.9) saturate(1.2);
+}
+
+.category-theme_es[data-icon="ciencia-tecnologia"] {
+	background-image: url(../../images/icons/theme_es/sector/ciencia-tecnologia.png);
+}
+.category-theme_es[data-icon="comercio"] {
+	background-image: url(../../images/icons/theme_es/sector/comercio.png);
+}
+.category-theme_es[data-icon="cultura-ocio"] {
+	background-image: url(../../images/icons/theme_es/sector/cultura-ocio.png);
+}
+.category-theme_es[data-icon="deporte"] {
+	background-image: url(../../images/icons/theme_es/sector/deporte.png);
+}
+.category-theme_es[data-icon="economia"] {
+	background-image: url(../../images/icons/theme_es/sector/economia.png);
+}
+.category-theme_es[data-icon="empleo"] {
+	background-image: url(../../images/icons/theme_es/sector/empleo.png);
+}
+.category-theme_es[data-icon="energia"] {
+	background-image: url(../../images/icons/theme_es/sector/energia.png);
+}
+.category-theme_es[data-icon="hacienda"] {
+	background-image: url(../../images/icons/theme_es/sector/hacienda.png);
+}
+.category-theme_es[data-icon="industria"] {
+	background-image: url(../../images/icons/theme_es/sector/industria.png);
+}
+.category-theme_es[data-icon="legislacion-justicia"] {
+	background-image: url(../../images/icons/theme_es/sector/legislacion-justicia.png);
+}
+.category-theme_es[data-icon="medio-ambiente"] {
+	background-image: url(../../images/icons/theme_es/sector/medio-ambiente.png);
+}
+.category-theme_es[data-icon="transporte"] {
+	background-image: url(../../images/icons/theme_es/sector/transporte.png);
+}
+.category-theme_es[data-icon="turismo"] {
+	background-image: url(../../images/icons/theme_es/sector/turismo.png);
+}
+.category-theme_es[data-icon="urbanismo-infraestructuras"] {
+	background-image: url(../../images/icons/theme_es/sector/urbanismo-infraestructuras.png);
+}
+.category-theme_es[data-icon="vivienda"] {
+	background-image: url(../../images/icons/theme_es/sector/vivienda.png);
+}
+
+/* theme: theme-last_part_of_uri */
+.category-theme{
+	background-repeat:no-repeat;
+	background-size:30px auto;
+	background-position:15px 7px;
+	width:40px;
+	height:40px;
+	filter: sepia(0.4);
+}
+
+.category-theme:hover, .category-theme:focus {
+    filter: brightness(0.9) saturate(1.2);
+}
+
+
+.category-theme[data-icon="ac"] {
+    background-image: url(../../images/icons/theme/theme/ac.svg);
+}
+.category-theme[data-icon="ad"] {
+    background-image: url(../../images/icons/theme/theme/ad.svg);
+}
+.category-theme[data-icon="af"] {
+    background-image: url(../../images/icons/theme/theme/af.svg);
+}
+.category-theme[data-icon="am"] {
+    background-image: url(../../images/icons/theme/theme/am.svg);
+}
+.category-theme[data-icon="au"] {
+    background-image: url(../../images/icons/theme/theme/au.svg);
+}
+.category-theme[data-icon="br"] {
+    background-image: url(../../images/icons/theme/theme/br.svg);
+}
+.category-theme[data-icon="bu"] {
+    background-image: url(../../images/icons/theme/theme/bu.svg);
+}
+.category-theme[data-icon="cp"] {
+    background-image: url(../../images/icons/theme/theme/cp.svg);
+}
+.category-theme[data-icon="ef"] {
+    background-image: url(../../images/icons/theme/theme/ef.svg);
+}
+.category-theme[data-icon="el"] {
+    background-image: url(../../images/icons/theme/theme/el.svg);
+}
+.category-theme[data-icon="er"] {
+    background-image: url(../../images/icons/theme/theme/er.svg);
+}
+.category-theme[data-icon="ge"] {
+    background-image: url(../../images/icons/theme/theme/ge.svg);
+}
+.category-theme[data-icon="gg"] {
+    background-image: url(../../images/icons/theme/theme/gg.svg);
+}
+.category-theme[data-icon="gn"] {
+    background-image: url(../../images/icons/theme/theme/gn.svg);
+}
+.category-theme[data-icon="hb"] {
+    background-image: url(../../images/icons/theme/theme/hb.svg);
+}
+.category-theme[data-icon="hh"] {
+    background-image: url(../../images/icons/theme/theme/hh.svg);
+}
+.category-theme[data-icon="hy"] {
+    background-image: url(../../images/icons/theme/theme/hy.svg);
+}
+.category-theme[data-icon="lc"] {
+    background-image: url(../../images/icons/theme/theme/lc.svg);
+}
+.category-theme[data-icon="lu"] {
+    background-image: url(../../images/icons/theme/theme/lu.svg);
+}
+.category-theme[data-icon="mf"] {
+    background-image: url(../../images/icons/theme/theme/mf.svg);
+}
+.category-theme[data-icon="mr"] {
+    background-image: url(../../images/icons/theme/theme/mr.svg);
+}
+.category-theme[data-icon="nz"] {
+    background-image: url(../../images/icons/theme/theme/nz.svg);
+}
+.category-theme[data-icon="of"] {
+    background-image: url(../../images/icons/theme/theme/of.svg);
+}
+.category-theme[data-icon="oi"] {
+    background-image: url(../../images/icons/theme/theme/oi.svg);
+}
+.category-theme[data-icon="pd"] {
+    background-image: url(../../images/icons/theme/theme/pd.svg);
+}
+.category-theme[data-icon="pf"] {
+    background-image: url(../../images/icons/theme/theme/pf.svg);
+}
+.category-theme[data-icon="ps"] {
+    background-image: url(../../images/icons/theme/theme/ps.svg);
+}
+.category-theme[data-icon="rs"] {
+    background-image: url(../../images/icons/theme/theme/rs.svg);
+}
+.category-theme[data-icon="sd"] {
+    background-image: url(../../images/icons/theme/theme/sd.svg);
+}
+.category-theme[data-icon="so"] {
+    background-image: url(../../images/icons/theme/theme/so.svg);
+}
+.category-theme[data-icon="sr"] {
+    background-image: url(../../images/icons/theme/theme/sr.svg);
+}
+.category-theme[data-icon="su"] {
+    background-image: url(../../images/icons/theme/theme/su.svg);
+}
+.category-theme[data-icon="tn"] {
+    background-image: url(../../images/icons/theme/theme/tn.svg);
+}
+.category-theme[data-icon="us"] {
+    background-image: url(../../images/icons/theme/theme/us.svg);
+}
+
+/* theme_eu: theme_eu-data-theme */
+.category-theme_eu{
+	background-repeat:no-repeat;
+	background-size:30px auto;
+	background-position:15px 7px;
+	width:40px;
+	height:40px;
+	filter: sepia(0.4);
+}
+.category-theme_eu:hover, .category-theme_eu:focus {
+	filter: brightness(0.9) saturate(1.2);
+}
+.category-theme_eu[data-icon="agri"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/agri.png);
+}
+.category-theme_eu[data-icon="econ"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/econ.png);
+}
+.category-theme_eu[data-icon="educ"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/educ.png);
+}
+.category-theme_eu[data-icon="ener"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/ener.png);
+}
+.category-theme_eu[data-icon="envi"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/envi.png);
+}
+.category-theme_eu[data-icon="gove"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/gove.png);
+}
+.category-theme_eu[data-icon="heal"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/heal.png);
+}
+.category-theme_eu[data-icon="intr"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/intr.png);
+}
+.category-theme_eu[data-icon="just"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/just.png);
+}
+.category-theme_eu[data-icon="regi"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/regi.png);
+}
+.category-theme_eu[data-icon="soci"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/soci.png);
+}
+.category-theme_eu[data-icon="tech"] {
+	background-image: url(../../images/icons/theme_eu/data-theme/tech.png);
+}
+
+
+/* spatial_uri: spatial_uri-last_part_of_uri */
+.category-spatial_uri {
+	background-repeat: no-repeat;
+	background-size: 30px auto;
+	background-position: 15px 7px;
+	width: 40px;
+	height: 40px;
+	border-radius: 30%;
+	filter: sepia(0.4);
+}
+.category-spatial_uri:hover, .category-spatial_uri:focus {
+	filter: brightness(1) saturate(1);
+}
+
+
+/* spain/autonomia */
+.category-spatial_uri[data-icon="andalucia"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/andalucia.jpg);
+}
+.category-spatial_uri[data-icon="aragon"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/aragon.jpg);
+}
+.category-spatial_uri[data-icon="canarias"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/canarias.jpg);
+}
+.category-spatial_uri[data-icon="cantabria"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/cantabria.jpg);
+}
+.category-spatial_uri[data-icon="castilla-la-mancha"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/castilla-la-mancha.jpg);
+}
+.category-spatial_uri[data-icon="castilla-leon"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/castilla-leon.jpg);
+}
+.category-spatial_uri[data-icon="cataluna"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/cataluna.jpg);
+}
+.category-spatial_uri[data-icon="ceuta"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/ceuta.jpg);
+}
+.category-spatial_uri[data-icon="comunidad-foral-navarra"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-foral-navarra.jpg);
+}
+.category-spatial_uri[data-icon="comunidad-madrid"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-madrid.jpg);
+}
+.category-spatial_uri[data-icon="comunitat-valenciana"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/comunitat-valenciana.jpg);
+}
+.category-spatial_uri[data-icon="espana"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/espana.jpg);
+}
+.category-spatial_uri[data-icon="extremadura"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/extremadura.jpg);
+}
+.category-spatial_uri[data-icon="galicia"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/galicia.jpg);
+}
+.category-spatial_uri[data-icon="illes-balears"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/illes-balears.jpg);
+}
+.category-spatial_uri[data-icon="la-rioja"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/la-rioja.jpg);
+}
+.category-spatial_uri[data-icon="melilla"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/melilla.jpg);
+}
+.category-spatial_uri[data-icon="pais-vasco"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/pais-vasco.jpg);
+}
+.category-spatial_uri[data-icon="principado-asturias"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/principado-asturias.jpg);
+}
+.category-spatial_uri[data-icon="region-murcia"] {
+	background-image: url(../../images/icons/spatial_uri/autonomia/region-murcia.jpg);
+}
+
+/* spain/pais */
+.category-spatial_uri[data-icon="españa"] {
+	background-image: url(../../images/icons/spatial_uri/pais/españa.jpg);
+}
+
+/* country */
+.category-spatial_uri[data-icon="1a0"] {
+    background-image: url(../../images/icons/spatial_uri/country/1a0.svg);
+}
+.category-spatial_uri[data-icon="alb"] {
+    background-image: url(../../images/icons/spatial_uri/country/alb.svg);
+}
+.category-spatial_uri[data-icon="and"] {
+    background-image: url(../../images/icons/spatial_uri/country/and.svg);
+}
+.category-spatial_uri[data-icon="arg"] {
+    background-image: url(../../images/icons/spatial_uri/country/arg.svg);
+}
+.category-spatial_uri[data-icon="arm"] {
+    background-image: url(../../images/icons/spatial_uri/country/arm.svg);
+}
+.category-spatial_uri[data-icon="aus"] {
+    background-image: url(../../images/icons/spatial_uri/country/aus.svg);
+}
+.category-spatial_uri[data-icon="aut"] {
+    background-image: url(../../images/icons/spatial_uri/country/aut.svg);
+}
+.category-spatial_uri[data-icon="aze"] {
+    background-image: url(../../images/icons/spatial_uri/country/aze.svg);
+}
+.category-spatial_uri[data-icon="bel"] {
+    background-image: url(../../images/icons/spatial_uri/country/bel.svg);
+}
+.category-spatial_uri[data-icon="bgr"] {
+    background-image: url(../../images/icons/spatial_uri/country/bgr.svg);
+}
+.category-spatial_uri[data-icon="bih"] {
+    background-image: url(../../images/icons/spatial_uri/country/bih.svg);
+}
+.category-spatial_uri[data-icon="blr"] {
+    background-image: url(../../images/icons/spatial_uri/country/blr.svg);
+}
+.category-spatial_uri[data-icon="bra"] {
+    background-image: url(../../images/icons/spatial_uri/country/bra.svg);
+}
+.category-spatial_uri[data-icon="can"] {
+    background-image: url(../../images/icons/spatial_uri/country/can.svg);
+}
+.category-spatial_uri[data-icon="che"] {
+    background-image: url(../../images/icons/spatial_uri/country/che.svg);
+}
+.category-spatial_uri[data-icon="chn"] {
+    background-image: url(../../images/icons/spatial_uri/country/chn.svg);
+}
+.category-spatial_uri[data-icon="cyp"] {
+    background-image: url(../../images/icons/spatial_uri/country/cyp.svg);
+}
+.category-spatial_uri[data-icon="cze"] {
+    background-image: url(../../images/icons/spatial_uri/country/cze.svg);
+}
+.category-spatial_uri[data-icon="deu"] {
+    background-image: url(../../images/icons/spatial_uri/country/deu.svg);
+}
+.category-spatial_uri[data-icon="dnk"] {
+    background-image: url(../../images/icons/spatial_uri/country/dnk.svg);
+}
+.category-spatial_uri[data-icon="esp"] {
+    background-image: url(../../images/icons/spatial_uri/country/esp.svg);
+}
+.category-spatial_uri[data-icon="est"] {
+    background-image: url(../../images/icons/spatial_uri/country/est.svg);
+}
+.category-spatial_uri[data-icon="eur"] {
+    background-image: url(../../images/icons/spatial_uri/country/eur.svg);
+}
+.category-spatial_uri[data-icon="fin"] {
+    background-image: url(../../images/icons/spatial_uri/country/fin.svg);
+}
+.category-spatial_uri[data-icon="fra"] {
+    background-image: url(../../images/icons/spatial_uri/country/fra.svg);
+}
+.category-spatial_uri[data-icon="fro"] {
+    background-image: url(../../images/icons/spatial_uri/country/fro.svg);
+}
+.category-spatial_uri[data-icon="gbr"] {
+    background-image: url(../../images/icons/spatial_uri/country/gbr.svg);
+}
+.category-spatial_uri[data-icon="geo"] {
+    background-image: url(../../images/icons/spatial_uri/country/geo.svg);
+}
+.category-spatial_uri[data-icon="grc"] {
+    background-image: url(../../images/icons/spatial_uri/country/grc.svg);
+}
+.category-spatial_uri[data-icon="grl"] {
+    background-image: url(../../images/icons/spatial_uri/country/grl.svg);
+}
+.category-spatial_uri[data-icon="hrv"] {
+    background-image: url(../../images/icons/spatial_uri/country/hrv.svg);
+}
+.category-spatial_uri[data-icon="hun"] {
+    background-image: url(../../images/icons/spatial_uri/country/hun.svg);
+}
+.category-spatial_uri[data-icon="irl"] {
+    background-image: url(../../images/icons/spatial_uri/country/irl.svg);
+}
+.category-spatial_uri[data-icon="isl"] {
+    background-image: url(../../images/icons/spatial_uri/country/isl.svg);
+}
+.category-spatial_uri[data-icon="isr"] {
+    background-image: url(../../images/icons/spatial_uri/country/isr.svg);
+}
+.category-spatial_uri[data-icon="ita"] {
+    background-image: url(../../images/icons/spatial_uri/country/ita.svg);
+}
+.category-spatial_uri[data-icon="jpn"] {
+    background-image: url(../../images/icons/spatial_uri/country/jpn.svg);
+}
+.category-spatial_uri[data-icon="lie"] {
+    background-image: url(../../images/icons/spatial_uri/country/lie.svg);
+}
+.category-spatial_uri[data-icon="ltu"] {
+    background-image: url(../../images/icons/spatial_uri/country/ltu.svg);
+}
+.category-spatial_uri[data-icon="lux"] {
+    background-image: url(../../images/icons/spatial_uri/country/lux.svg);
+}
+.category-spatial_uri[data-icon="lva"] {
+    background-image: url(../../images/icons/spatial_uri/country/lva.svg);
+}
+.category-spatial_uri[data-icon="mda"] {
+    background-image: url(../../images/icons/spatial_uri/country/mda.svg);
+}
+.category-spatial_uri[data-icon="mex"] {
+    background-image: url(../../images/icons/spatial_uri/country/mex.svg);
+}
+.category-spatial_uri[data-icon="mkd"] {
+    background-image: url(../../images/icons/spatial_uri/country/mkd.svg);
+}
+.category-spatial_uri[data-icon="mlt"] {
+    background-image: url(../../images/icons/spatial_uri/country/mlt.svg);
+}
+.category-spatial_uri[data-icon="mne"] {
+    background-image: url(../../images/icons/spatial_uri/country/mne.svg);
+}
+.category-spatial_uri[data-icon="nld"] {
+    background-image: url(../../images/icons/spatial_uri/country/nld.svg);
+}
+.category-spatial_uri[data-icon="nor"] {
+    background-image: url(../../images/icons/spatial_uri/country/nor.svg);
+}
+.category-spatial_uri[data-icon="nzl"] {
+    background-image: url(../../images/icons/spatial_uri/country/nzl.svg);
+}
+.category-spatial_uri[data-icon="pol"] {
+    background-image: url(../../images/icons/spatial_uri/country/pol.svg);
+}
+.category-spatial_uri[data-icon="prt"] {
+    background-image: url(../../images/icons/spatial_uri/country/prt.svg);
+}
+.category-spatial_uri[data-icon="rou"] {
+    background-image: url(../../images/icons/spatial_uri/country/rou.svg);
+}
+.category-spatial_uri[data-icon="rus"] {
+    background-image: url(../../images/icons/spatial_uri/country/rus.svg);
+}
+.category-spatial_uri[data-icon="srb"] {
+    background-image: url(../../images/icons/spatial_uri/country/srb.svg);
+}
+.category-spatial_uri[data-icon="svk"] {
+    background-image: url(../../images/icons/spatial_uri/country/svk.svg);
+}
+.category-spatial_uri[data-icon="svn"] {
+    background-image: url(../../images/icons/spatial_uri/country/svn.svg);
+}
+.category-spatial_uri[data-icon="swe"] {
+    background-image: url(../../images/icons/spatial_uri/country/swe.svg);
+}
+.category-spatial_uri[data-icon="tur"] {
+    background-image: url(../../images/icons/spatial_uri/country/tur.svg);
+}
+.category-spatial_uri[data-icon="ukr"] {
+    background-image: url(../../images/icons/spatial_uri/country/ukr.svg);
+}
+.category-spatial_uri[data-icon="usa"] {
+    background-image: url(../../images/icons/spatial_uri/country/usa.svg);
+}
+.category-spatial_uri[data-icon="vat"] {
+    background-image: url(../../images/icons/spatial_uri/country/vat.svg);
+}

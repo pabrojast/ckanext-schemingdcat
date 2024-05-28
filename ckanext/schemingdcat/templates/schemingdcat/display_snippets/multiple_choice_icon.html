@@ -4,7 +4,7 @@
 
 {% set _class = _class or 'scheming-icon-list' %}
 {% set values = data[field.field_name] %}
-{% set icons_dir = h.schemingdcat_get_icons_dir(field) %}
+{% set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
 
   <ul class="{{ _class }} multiple_choice_icon">
     {%  for choice in h.scheming_field_choices(field) %}
@@ -19,7 +19,7 @@
         {%  endif %}
           <li>
             {%  if img_url %}
-               <img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon"></img>
+               <img src="{{ img_url }}" title="{{ label }}" class="{{ _class }}-icon" loading="lazy"></img>
             {%  endif %}
                <a href="{{ val }}"> {{ label }}</a>
           </li>

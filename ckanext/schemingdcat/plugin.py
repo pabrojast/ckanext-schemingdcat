@@ -67,6 +67,15 @@ class SchemingDCATPlugin(
                 "schemingdcat.group_custom_facets", sdct_config.group_custom_facets
             )
         )
+        
+        sdct_config.default_package_item_icon = config_.get(
+                "schemingdcat.default_package_item_icon", sdct_config.default_package_item_icon
+            )
+
+        sdct_config.default_package_item_show_spatial = config_.get(
+                "schemingdcat.default_package_item_show_spatial", sdct_config.default_package_item_show_spatial
+            )
+
 
         sdct_config.debug = toolkit.asbool(config_.get("debug", sdct_config.debug))
 

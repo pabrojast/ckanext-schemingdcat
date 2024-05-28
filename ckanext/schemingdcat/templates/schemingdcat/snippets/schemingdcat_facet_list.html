@@ -73,7 +73,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
 
       {%  block facet_list_items %}
         {%  set field = h.scheming_field_by_name(h.schemingdcat_get_dataset_schema('dataset').dataset_fields,name) %}
-        {%  set icons_dir = h.schemingdcat_get_icons_dir(field) %}
+        {%  set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
         {%  with items = items or h.schemingdcat_get_facet_items_dict(name, search_facets or c.search_facets,scheming_choices=scheming_choices) %}
           {% if items %}
             {% set nav_class = 'nav nav-simple nav-facet '+name %}
@@ -95,7 +95,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
               <li class="{{ 'nav-item' }}{% if item.active %} active{% endif %}">
                 <a href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
               {%  if img_url %}
-                  <img src="{{ img_url }}" title="{{ label }}" class="facet-icon"></img>
+                  <img src="{{ img_url }}" title="{{ label }}" class="facet-icon" loading="lazy"></img>
               {%  endif %}    
               {% if h.is_url(label_truncated) %}
                 {% set label_truncated = h.schemingdcat_prettify_url_name(label).strip(']["') or label %}
