@@ -56,7 +56,6 @@ def create_vocab(vocab_name, schema_name="dataset", lang="en"):
     user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
     context = {"user": user["name"]}
     vocab_list = tk.get_action("vocabulary_list")(context)
-    log.debug(f'vocab_list: {vocab_list}')
     for voc in vocab_list:
         if voc["name"] == vocab_name:
             vocabulary = voc

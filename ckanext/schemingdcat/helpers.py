@@ -1249,7 +1249,7 @@ def get_header_endpoint_url(endpoint, site_protocol_and_host):
             protocol, host = site_protocol_and_host
             return f"{protocol}://{host}/{endpoint_value}"
     elif endpoint_type == 'ckan':
-        return url_for('api.action', ver=3, logic_function='status_show', qualified=True)
+        return url_for('api.action', ver=3, logic_function='package_list', qualified=True)
     elif endpoint_type == 'lod':
         return url_for(endpoint_value, **endpoint['endpoint_data'])
     elif endpoint_type == 'sparql':
