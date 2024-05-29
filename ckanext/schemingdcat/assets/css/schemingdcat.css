@@ -1998,3 +1998,8 @@ input#lang-r:checked ~ div .example-r {
 .endpoint-image:hover {
   filter: none;
 }
+
+/* featured datasets */
+.dataset-featured-icon {
+  color:#2f88a3;
+}

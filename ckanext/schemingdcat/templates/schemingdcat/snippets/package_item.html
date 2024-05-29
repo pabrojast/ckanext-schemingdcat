@@ -37,6 +37,9 @@
                   {% endblock %}
                   {% block heading_title %}
                     {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % package.type, id=package.name)) }}
+                    {% if package.featured %}
+                      <i class="fa fa-star dataset-featured-icon" title="{{ ngettext('Featured dataset', 'Featured datasets', 1) }}"></i>
+                    {% endif %}
                   {% endblock %}
                   {% block heading_meta %}
                     {% if package.get('state', '').startswith('draft') %}

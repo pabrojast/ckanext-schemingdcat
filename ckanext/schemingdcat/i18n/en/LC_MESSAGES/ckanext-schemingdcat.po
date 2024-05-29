@@ -914,6 +914,21 @@ msgstr "SPARQL Endpoint"
 msgid "Geographic Metadata (CSW INSPIRE)"
 msgstr "Geographic Metadata (CSW INSPIRE)"
 
+msgid "Featured organization"
+msgid_plural "Featured organizations"
+msgstr[0] "Featured organization"
+msgstr[1] "Featured organizations"
+
+msgid "Featured group"
+msgid_plural "Featured groups"
+msgstr[0] "Featured group"
+msgstr[1] "Featured groups"
+
+msgid "Featured dataset"
+msgid_plural "Featured datasets"
+msgstr[0] "Featured dataset"
+msgstr[1] "Featured datasets"
+
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
 msgstr "Science and technology"
