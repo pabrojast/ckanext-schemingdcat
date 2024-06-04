@@ -8,6 +8,7 @@ from datetime import datetime
 from dateutil.parser import parse
 import six
 import hashlib
+import pandas as pd
 
 import urllib.request
 from urllib.error import URLError, HTTPError
@@ -47,6 +48,7 @@ class SchemingDCATHarvester(HarvesterBase):
     _mapped_schema = {}
     _local_schema = None
     _local_required_lang = None
+    _field_mapping_schema_versions = [1,2]
     _remote_schema = None
     _local_schema_name = None
     _remote_schema_name = None
@@ -58,6 +60,8 @@ class SchemingDCATHarvester(HarvesterBase):
     force_import = False
     _site_user = None
     _source_date_format = None
+    _dataset_default_values = {}
+    _distribution_default_values = {}
 
     def get_harvester_basic_info(self, config):
         """
@@ -381,6 +385,125 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return guid
 
+    def _map_dataframe_columns_to_spreadsheet_format(self, df):
+        """
+        Maps the column positions of a DataFrame to spreadsheet column names.
+
+        This function assigns the column names from 'A' to 'Z' for the first 26 columns,
+        and then 'AA', 'AB', etc. for additional columns. It can handle an unlimited number
+        of columns.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame whose columns to rename.
+
+        Returns:
+            pandas.DataFrame: The DataFrame with renamed columns.
+        """
+        col_names = []
+        for i in range(len(df.columns)):
+            col_name = ""
+            j = i
+            while j >= 0:
+                col_name = chr(j % 26 + 65) + col_name
+                j = j // 26 - 1
+            col_names.append(col_name)
+        df.columns = col_names
+        return df
+
+    def _standardize_field_mapping(self, field_mapping):
+        """
+        Standardizes the field_mapping based on the schema version.
+
+        Args:
+            field_mapping (dict): A dictionary mapping the current column names to the desired column names.
+
+        Returns:
+            dict: The standardized field_mapping.
+        """
+        if field_mapping is not None:
+            schema_version = self.config.get("field_mapping_schema_version", 2)
+            if schema_version not in self._field_mapping_schema_versions:
+                raise ValueError(f"Unsupported schema version: {schema_version}")
+
+            if schema_version == 1:
+                return self._standardize_field_mapping_v1(field_mapping)
+            else:
+                # If the schema version is the latest, return the field_mapping as is
+                return field_mapping
+        
+        return field_mapping
+
+    def _standardize_field_mapping_v1(self, field_mapping):
+        """
+        Standardizes the field_mapping for the first version of the schema.
+
+        In the first version of the schema, the field_mapping is a dictionary where each key is a field_name and the value
+        is either a field_name or a dictionary mapping language codes to field_names.
+
+        Args:
+            field_mapping (dict): A dictionary mapping the current column names to the desired column names.
+
+        Returns:
+            dict: The standardized field_mapping.
+        """
+        standardized_mapping = {}
+        for key, value in field_mapping.items():
+            if isinstance(value, dict):
+                # If the value is a dictionary, it is a multilingual field
+                standardized_mapping[key] = {'languages': {}}
+                for lang, field_name in value.items():
+                    standardized_mapping[key]['languages'][lang] = {'field_name': field_name}
+            else:
+                # If the value is not a dictionary, it is a single-language field
+                standardized_mapping[key] = {'field_name': value}
+                log.debug('standardized_mapping: %s', standardized_mapping)
+        return standardized_mapping
+
+    def _standardize_df_fields_from_field_mapping(self, df, field_mapping):
+        """
+        Standardizes the DataFrame columns based on the field_mapping.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to standardize.
+            field_mapping (dict): A dictionary mapping the current column names to the desired column names.
+        """
+
+        def rename_and_update(df, old_name, new_name, value_dict):
+            df.rename(columns={old_name: new_name}, inplace=True)
+            value_dict['field_name'] = new_name
+
+        if field_mapping is not None:
+            # Check if any field mapping contains 'field_position'
+            if any('field_position' in value for value in field_mapping.values()):
+                # Map the DataFrame columns to spreadsheet format
+                df = self._map_dataframe_columns_to_spreadsheet_format(df)
+
+            for key, value in field_mapping.items():
+                if 'field_position' in value:
+                    rename_and_update(df, value['field_position'], key, value)
+                elif 'field_name' in value:
+                    rename_and_update(df, value['field_name'], key, value)
+                elif isinstance(value, list):
+                    # Merge fields
+                    merged_field = df[value].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
+                    df[key] = merged_field
+                    df.drop(value, axis=1, inplace=True)
+                    value['field_name'] = key
+                elif isinstance(value, dict) and 'languages' in value:
+                    for lang, lang_value in value['languages'].items():
+                        if 'field_position' in lang_value:
+                            rename_and_update(df, lang_value['field_position'], f"{key}-{lang}", lang_value)
+                        elif 'field_name' in lang_value:
+                            rename_and_update(df, lang_value['field_name'], f"{key}-{lang}", lang_value)
+                        elif isinstance(lang_value, list):
+                            # Merge fields
+                            merged_field = df[lang_value].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
+                            df[f"{key}-{lang}"] = merged_field
+                            df.drop(lang_value, axis=1, inplace=True)
+                            lang_value['field_name'] = f"{key}-{lang}"
+
+        return df, field_mapping
+
     def _validate_remote_schema(
         self,
         remote_ckan_base_url=None,
@@ -406,6 +529,18 @@ class SchemingDCATHarvester(HarvesterBase):
             RemoteSchemaError: If there is an error validating the remote schema.
 
         """
+        def simplify_colnames(colnames):
+            """
+            Simplifies column names by removing language suffixes.
+
+            Args:
+                colnames (list): A list of column names.
+
+            Returns:
+                set: A set of simplified column names.
+            """
+            return set(name.split('-')[0] for name in colnames)
+        
         try:
             if self._local_schema is None:
                 self._local_schema = self._get_local_schema()
@@ -441,24 +576,24 @@ class SchemingDCATHarvester(HarvesterBase):
                 remote_datasets_colnames = remote_dataset_field_names
                 remote_distributions_colnames = remote_resource_field_names
 
-            datasets_diff = local_datasets_colnames - remote_datasets_colnames
+            datasets_diff = local_datasets_colnames - simplify_colnames(remote_datasets_colnames)
             distributions_diff = (
-                local_distributions_colnames - remote_distributions_colnames
+                local_distributions_colnames - simplify_colnames(remote_distributions_colnames)
             )
 
             def get_mapped_fields(fields, field_mapping):
                 return [
                     {
                         "local_field_name": field["field_name"],
-                        "remote_field_name": field_mapping.get(
-                            field["field_name"], field["field_name"]
-                        )
-                        if field_mapping
-                        else field["field_name"],
+                        "remote_field_name": (
+                            field_mapping.get(field["field_name"], field["field_name"])
+                            if field_mapping and isinstance(field_mapping.get(field["field_name"]), str)
+                            else field["field_name"]
+                        ),
                         "modified": field["field_name"]
                         != (
                             field_mapping.get(field["field_name"], field["field_name"])
-                            if field_mapping
+                            if field_mapping and isinstance(field_mapping.get(field["field_name"]), str)
                             else field["field_name"]
                         ),
                         **(
@@ -518,13 +653,14 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return dataset_dict
 
-    def _check_url(self, url, harvest_job):
+    def _check_url(self, url, harvest_job, auth=False):
         """
         Check if the given URL is valid and accessible.
 
         Args:
             url (str): The URL to check.
             harvest_job (HarvestJob): The harvest job associated with the URL.
+            auth (bool): Whether authentication is expected.
 
         Returns:
             bool: True if the URL is valid and accessible, False otherwise.
@@ -547,9 +683,14 @@ class SchemingDCATHarvester(HarvesterBase):
             return True
 
         except HTTPError as e:
-            msg = f"Could not get content from {url} because the connection timed out. {e}"
-            self._save_gather_error(msg, harvest_job)
-            return False
+            if auth and e.code == 401:
+                msg = f"Authorisation required, remember 'config.credentials' needed for: {url}"
+                log.info(msg)
+                return True
+            else:
+                msg = f"Could not get content from {url} because the connection timed out. {e}"
+                self._save_gather_error(msg, harvest_job)
+                return False
         except URLError as e:
             msg = """Could not get content from %s because a
                                 connection error occurred. %s""" % (url, e)
@@ -719,6 +860,7 @@ class SchemingDCATHarvester(HarvesterBase):
         ):
             return package_dict
         try:
+            #TODO: Apply the new versions schema self.config.get("field_mapping_schema_version")
             translated_fields = {"dataset_fields": [], "resource_fields": []}
             for field in self._mapped_schema["dataset_fields"]:
                 if field.get("modified", True):
@@ -727,18 +869,18 @@ class SchemingDCATHarvester(HarvesterBase):
 
                     translated_fields["dataset_fields"].append(local_field_name)
 
-                    if isinstance(remote_field_name, dict):
+                    if isinstance(remote_field_name, dict) and 'languages' in remote_field_name:
                         package_dict[local_field_name] = {
-                            lang: package_dict.get(name, None)
-                            for lang, name in remote_field_name.items()
+                            lang: package_dict.get(name['field_name'], None)
+                            for lang, name in remote_field_name['languages'].items()
                         }
                     else:
-                        package_dict[local_field_name] = package_dict.get(
-                            remote_field_name, None
-                        )
+                        if remote_field_name not in package_dict:
+                            raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
+                        package_dict[local_field_name] = package_dict.get(remote_field_name, None)
 
             if package_dict["resources"]:
-                for resource in package_dict["resources"]:
+                for i, resource in enumerate(package_dict["resources"]):
                     for field in self._mapped_schema["resource_fields"]:
                         if field.get("modified", True):
                             local_field_name = field["local_field_name"]
@@ -748,15 +890,18 @@ class SchemingDCATHarvester(HarvesterBase):
                                 local_field_name
                             )
 
-                            if isinstance(remote_field_name, dict):
-                                package_dict[local_field_name] = {
-                                    lang: resource.get(name, None)
-                                    for lang, name in remote_field_name.items()
+                            if isinstance(remote_field_name, dict) and 'languages' in remote_field_name:
+                                resource[local_field_name] = {
+                                    lang: resource.get(name['field_name'], None)
+                                    for lang, name in remote_field_name['languages'].items()
                                 }
                             else:
-                                package_dict[local_field_name] = resource.get(
-                                    remote_field_name, None
-                                )
+                                if remote_field_name not in resource:
+                                    raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
+                                resource[local_field_name] = resource.get(remote_field_name, None)
+
+                    # Update the resource in package_dict
+                    package_dict["resources"][i] = resource
 
             # log.debug('Translated fields: %s', translated_fields)
 
@@ -865,6 +1010,35 @@ class SchemingDCATHarvester(HarvesterBase):
             date = date.strftime("%Y-%m-%d")
         
         return date
+
+    def _update_package_dict_with_config_mapping_default_values(self, package_dict):
+        """
+        Update the package dictionary with default values.
+
+        This method updates the package dictionary with default values from
+        `self._dataset_default_values` and `self._distribution_default_values` (config property: *_field_mapping).
+        If a key from the default values does not exist in the package dictionary,
+        it is added with its corresponding default value. The same process is applied
+        to each resource in `package_dict["resources"]` with `self._distribution_default_values`.
+
+        Args:
+            package_dict (dict): The package dictionary to be updated.
+
+        Returns:
+            dict: The updated package dictionary.
+        """
+        if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
+            for key, value in self._dataset_default_values.items():
+                if key not in package_dict:
+                    package_dict[key] = value
+
+        if self._distribution_default_values and isinstance(self._distribution_default_values, dict):
+            for i in range(len(package_dict["resources"])):
+                for key, value in self._distribution_default_values.items():
+                    if key not in package_dict["resources"][i]:
+                        package_dict["resources"][i][key] = value
+
+        return package_dict
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
         """
@@ -981,6 +1155,9 @@ class SchemingDCATHarvester(HarvesterBase):
                 self._update_resource_dict(resource)
                 for resource in package_dict["resources"]
             ]
+
+        # Using self._dataset_default_values and self._distribution_default_values based on config mappings
+        package_dict = self._update_package_dict_with_config_mapping_default_values(package_dict)
 
         # log.debug('package_dict default values: %s', package_dict)
         return package_dict

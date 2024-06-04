@@ -2,6 +2,20 @@ from ckan.plugins.interfaces import Interface
 
 
 class ISchemingDCATHarvester(Interface):
+    '''
+    This is a common harvesting interface for SchemingDCATHarvester that provides a set of methods to be implemented by a harvester. 
+    The methods are designed to be called at different stages of the harvesting process, allowing for 
+    customization and extension of the default behavior. 
+
+    The methods include hooks before and after the download of the remote sheet file, before and after the 
+    cleaning process, after the parsing of the sheet file, and before and after the creation and update of 
+    the dataset. 
+
+    Additionally, there are methods to modify the dataset dict that will be created or updated, and to 
+    update the package schema for the creation and update actions.
+
+    Each method is documented with its purpose, parameters, and return values.
+    '''
 
     def before_download(self, url, harvest_job):
         '''
@@ -78,6 +92,34 @@ class ISchemingDCATHarvester(Interface):
         '''
         return content, []
 
+    def before_cleaning(self, content_dict):
+        '''
+        This method is called before the cleaning process starts. It takes a dictionary of content as input.
+
+        :param content_dict: The content to be cleaned.
+        :type content_dict: dict
+
+        :returns: A tuple with two items:
+                    * The remote sheet content with all datasets, distributions and datadictionaries dicts.
+                    * A list of error messages. These will get stored as gather errors by the harvester.
+        :rtype: tuple
+        '''
+        return content_dict, []
+
+    def after_cleaning(self, clean_datasets):
+        '''
+        This method is called after the cleaning process ends. It takes a list of cleaned datasets as input.
+
+        :param clean_datasets: The cleaned datasets.
+        :type clean_datasets: list
+
+        :returns: A tuple with two items:
+                    * The cleaned datasets list of dictionaries.
+                    * A list of error messages. These will get stored as gather errors by the harvester.
+        :rtype: tuple
+        '''
+        return clean_datasets, []
+
     def after_parsing(self, rdf_parser, harvest_job):
         '''
         Called just after the content from the remote RDF file has been parsed
@@ -145,7 +187,6 @@ class ISchemingDCATHarvester(Interface):
         :rtype: dict
         '''
         return data_dict['package_dict']
-
 
     def before_update(self, harvest_object, dataset_dict, temp_dict):
         '''

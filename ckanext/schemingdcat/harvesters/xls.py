@@ -35,9 +35,9 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     def info(self):
         return {
             'name': 'schemingdcat_xls',
-            'title': 'Remote XLS/XLSX Metadata Batch Harvester',
-            'description': 'A harvester for remote Excel files with Metadata records.',
-            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-xlsxlsx-metadata-batch-harvester'
+            'title': 'Remote Google Sheet/Onedrive Excel metadata upload Harvester',
+            'description': 'A harvester for remote sheets files with Metadata records. Google Sheets or Onedrive Excel files.',
+            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester'
         }
 
     _storage_types_supported = [
@@ -164,7 +164,41 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         except Exception as e:
             raise ValueError('Invalid storage_type') from e
  
-    def _read_excel_sheet(self, url, sheet_name, storage_type, engine='openpyxl'):
+    @staticmethod
+    def _transform_column_names(content_dict, field_mapping):
+        transformed_content_dict = content_dict.copy()
+        for key, value in field_mapping.items():
+            if value['field_position'] in transformed_content_dict.columns:
+                transformed_content_dict.rename(columns={value['field_position']: key}, inplace=True)
+        return transformed_content_dict
+ 
+    @staticmethod
+    def _map_dataframe_columns_to_spreadsheet_format(df):
+        """
+        Maps the column positions of a DataFrame to spreadsheet column names.
+
+        This function assigns the column names from 'A' to 'Z' for the first 26 columns,
+        and then 'AA', 'AB', etc. for additional columns. It can handle an unlimited number
+        of columns.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame whose columns to rename.
+
+        Returns:
+            pandas.DataFrame: The DataFrame with renamed columns.
+        """
+        col_names = []
+        for i in range(len(df.columns)):
+            col_name = ""
+            j = i
+            while j >= 0:
+                col_name = chr(j % 26 + 65) + col_name
+                j = j // 26 - 1
+            col_names.append(col_name)
+        df.columns = col_names
+        return df
+   
+    def _read_remote_sheet(self, url, sheet_name, storage_type, engine='openpyxl', harvest_job=None):
         """
         Reads an Excel sheet from a given URL and returns the data as a pandas DataFrame.
 
@@ -190,7 +224,9 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     try:
                         data = pd.read_excel(url, sheet_name=sheet_name, dtype=str, engine=engine)
                     except pd.errors.ParserError as e:
-                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+                        error_msg = f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}'
+                        self._save_gather_error(error_msg, harvest_job)
+                        raise ReadError(error_msg)
 
             elif storage_type in ['gspread', 'gdrive']:
                 if self._auth and self._credentials:
@@ -200,12 +236,18 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                         worksheet = sh.worksheet(sheet_name)
                         data = pd.DataFrame(worksheet.get_all_records(), dtype=str)
                     except gspread.exceptions.APIError as e:
-                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+                        msg_error = f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}. If the file is an XLS file, it needs to be converted to a Google Sheet.'
+                        self._save_gather_error(msg_error, harvest_job)
+                        raise ReadError(msg_error)
                 else:
-                    raise ValueError('Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account')
+                    msg_error = 'Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account'
+                    self._save_gather_error(msg_error, harvest_job)
+                    raise ValueError(msg_error)
 
             else:
-                raise ValueError(f'Unsupported storage type: {storage_type}')
+                msg_error = f'Unsupported storage type: {storage_type}'
+                self._save_gather_error(msg_error, harvest_job)
+                raise ValueError(msg_error)
 
             return data.fillna('')
 
@@ -468,7 +510,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         else:
             raise ValueError(f'storage_type should be one of: {supported_types}')
 
-        # Check the name of the dataset sheet in the XLS/XLSX file
+        # Check the name of the dataset sheet in the remote table
         if 'dataset_sheet' in config:
             dataset_sheet = config_obj['dataset_sheet']
             if not isinstance(dataset_sheet, basestring):
@@ -479,7 +521,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         else:
             raise ValueError('The name of the datasets sheet is required. eg. "dataset_sheet": "Dataset"')
 
-        # Check the name of the distribution and data dictionary (resourcedictionary) sheets in the XLS/XLSX file
+        # Check the name of the distribution and data dictionary (resourcedictionary) sheets in the remote table
         if 'distribution_sheet' in config:
             distribution_sheet = config_obj['distribution_sheet']
             if not isinstance(distribution_sheet, basestring):
@@ -561,25 +603,63 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if source_date_format not in COMMON_DATE_FORMATS:
             raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {" | ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
 
+        # Check if 'field_mapping_schema_version' exists in the config
+        if 'field_mapping_schema_version' not in config_obj:
+            raise ValueError(f'Insert the schema version: "field_mapping_schema_version: <version>", one of {self._field_mapping_schema_versions} . More info: https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester')
+        else:
+            # If it exists, check if it's an integer and in the allowed versions
+            if not isinstance(config_obj['field_mapping_schema_version'], int) or config_obj['field_mapping_schema_version'] not in self._field_mapping_schema_versions:
+                raise ValueError(f'field_mapping_schema_version must be an integer and one of {self._field_mapping_schema_versions}. Check the extension README for more info.')
+
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
-        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping']:
+        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping', 'resourcedictionary_field_mapping']:
             if mapping_name in config:
                 field_mapping = config_obj[mapping_name]
                 if not isinstance(field_mapping, dict):
                     raise ValueError(f'{mapping_name} must be a dictionary')
 
-                # Check if the config is a valid mapping
-                for local_field, remote_field in field_mapping.items():
-                    if not isinstance(local_field, basestring):
-                        raise ValueError('"local_field_name" must be a string')
-                    if not isinstance(remote_field, (basestring, dict)):
-                        raise ValueError('"remote_field_name" must be a string or a dictionary')
-                    if isinstance(remote_field, dict):
-                        for lang, remote_field_name in remote_field.items():
-                            if not isinstance(lang, basestring) or not isinstance(remote_field_name, basestring):
-                                raise ValueError('In translated fields, both language and remote_field_name must be strings. eg. "notes_translated": {"es": "notes-es"}')
-                            if not re.match("^[a-z]{2}$", lang):
-                                raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                schema_version = config_obj['field_mapping_schema_version']
+
+                if schema_version == 1:
+                    # Check if the config is a valid mapping for schema version 1
+                    for local_field, remote_field in field_mapping.items():
+                        if not isinstance(local_field, str):
+                            raise ValueError('"local_field_name" must be a string')
+                        if not isinstance(remote_field, (str, dict)):
+                            raise ValueError('"remote_field_name" must be a string or a dictionary')
+                        if isinstance(remote_field, dict):
+                            for lang, remote_field_name in remote_field.items():
+                                if not isinstance(lang, str) or not isinstance(remote_field_name, str):
+                                    raise ValueError('In translated fields, both language and remote_field_name must be strings. eg. "notes_translated": {"es": "notes-es"}')
+                                if not re.match("^[a-z]{2}$", lang):
+                                    raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                else:
+                    # Check if the config is a valid mapping for schema version 2
+                    for local_field, field_config in field_mapping.items():
+                        if not isinstance(local_field, str):
+                            raise ValueError('"local_field_name" must be a string')
+                        if not isinstance(field_config, dict):
+                            raise ValueError('"field_config" must be a dictionary')
+
+                        # Check field properties
+                        for prop, value in field_config.items():
+                            if prop not in ['field_value', 'field_position', 'field_name', 'languages']:
+                                raise ValueError(f'Invalid property "{prop}" in field_config. Check: https://github.com/mjanez/ckanext-schemingdcat?tab=field-mapping-structure')
+                            if prop in ['field_value', 'field_position', 'field_name'] and not isinstance(value, (str, list)):
+                                raise ValueError(f'"{prop}" must be a string: "value_1" or a list: "["value_1", "value_2"]')
+                            if prop == 'languages':
+                                if not isinstance(value, dict):
+                                    raise ValueError('"languages" must be a dictionary')
+                                for lang, lang_config in value.items():
+                                    if not isinstance(lang, str) or not re.match("^[a-z]{2}$", lang):
+                                        raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                                    if not isinstance(lang_config, dict):
+                                        raise ValueError('Language config must be a dictionary')
+                                    for lang_prop, lang_value in lang_config.items():
+                                        if lang_prop not in ['field_value', 'field_position', 'field_name']:
+                                            raise ValueError(f'Invalid property "{lang_prop}" in language config')
+                                        if not isinstance(lang_value, (str, list)):
+                                            raise ValueError(f'"{lang_prop}" must be a string or a list')
 
                 config = json.dumps({**config_obj, mapping_name: field_mapping})
 
@@ -594,7 +674,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
     def gather_stage(self, harvest_job):
         """
-        Performs the gather stage of the SchemingDCATXLSHarvester. This method is responsible for downloading the remote XLS/XLSX file and reading its contents. The contents are then processed, cleaned, and added to the database.
+        Performs the gather stage of the SchemingDCATXLSHarvester. This method is responsible for downloading the remote remote table and reading its contents. The contents are then processed, cleaned, and added to the database.
 
         Args:
             harvest_job (HarvestJob): The harvest job object.
@@ -627,11 +707,12 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
             # Get URLs for remote file
             remote_xls_base_url = self._get_storage_base_url(source_url, self._storage_type)
-            remote_xls_download_url = self._get_storage_url(source_url, self._storage_type)
+            remote_sheet_download_url = self._get_storage_url(source_url, self._storage_type)
         
         # Check if the remote file is valid
-        is_valid = self._check_url(remote_xls_download_url, harvest_job)
-        log.debug('URL is accessible: %s', remote_xls_download_url)
+        is_valid = self._check_url(remote_sheet_download_url, harvest_job, self._auth)
+        log.debug('URL is accessible: %s', remote_sheet_download_url)
+        log.debug('Storage type: %s', self._storage_type)
 
         # Get the previous guids for this source
         query = \
@@ -648,7 +729,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
         # before_download interface
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-            remote_xls_download_url, before_download_errors = harvester.before_download(remote_xls_download_url, harvest_job)
+            remote_sheet_download_url, before_download_errors = harvester.before_download(remote_sheet_download_url, harvest_job)
         
             for error_msg in before_download_errors:
                 self._save_gather_error(error_msg, harvest_job)
@@ -660,17 +741,17 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if is_valid:
             try:
                 try:
-                    content_dict['datasets'] = self._read_excel_sheet(remote_xls_download_url, dataset_sheetname, self._storage_type )
+                    content_dict['datasets'] = self._read_remote_sheet(remote_sheet_download_url, dataset_sheetname, self._storage_type )
                 except RemoteResourceError as e:
                     self._save_gather_error('Error reading the remote Excel datasets sheet: {0}'.format(e), harvest_job)
                     return False
                 
                 if distribution_sheetname:
-                    content_dict['distributions'] = self._read_excel_sheet(remote_xls_download_url, distribution_sheetname, self._storage_type )
+                    content_dict['distributions'] = self._read_remote_sheet(remote_sheet_download_url, distribution_sheetname, self._storage_type, harvest_job)
                     
                 #TODO: Implement self._load_datadictionaries() method.
                 if datadictionary_sheetname:
-                    content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname, self._storage_type )
+                    content_dict['datadictionaries'] = self._read_remote_sheet(remote_sheet_download_url, datadictionary_sheetname, self._storage_type, harvest_job)
 
                 # after_download interface
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
@@ -683,20 +764,46 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     return []
 
             except Exception as e:
-                self._save_gather_error('Could not read Excel file: %s' % str(e), harvest_job)
+                self._save_gather_error('Could not read remote sheet file: %s' % str(e), harvest_job)
                 return False
+    
+        # Create default values dict from config mappings.
+        try:
+            self._dataset_default_values = {key: value['field_value'] for key, value in (self.config.get("dataset_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
+            self._distribution_default_values = {key: value['field_value'] for key, value in (self.config.get("distribution_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
+
+            if not self._dataset_default_values:
+                log.info('No default values for dataset.')
+            if not self._distribution_default_values:
+                log.info('No default values for distribution.')
+        except ReadError as e:
+            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
     
         # Check if the content_dict colnames correspond to the local schema
         try:
-            remote_dataset_field_mapping = self.config.get("dataset_field_mapping")
+            # Standardizes the field_mapping
+            remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
+            remote_resource_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
+
+            # Standardizes the field names
+            content_dict['datasets'], remote_dataset_field_mapping = self._standardize_df_fields_from_field_mapping(content_dict['datasets'], remote_dataset_field_mapping)
+            content_dict['distributions'], remote_resource_field_mapping = self._standardize_df_fields_from_field_mapping(content_dict['distributions'], remote_resource_field_mapping)
+            
+            # Validate field names
             remote_dataset_field_names = set(content_dict['datasets'].columns)
-            remote_resource_field_mapping = self.config.get("distribution_field_mapping")
             remote_resource_field_names = set(content_dict['distributions'].columns)
+            
             self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_resource_field_mapping=remote_resource_field_mapping)
                         
         except RemoteSchemaError as e:
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
             return []
+
+        for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+            content_dict, before_cleaning_errors = harvester.before_cleaning(content_dict, harvest_job)
+
+            for error_msg in before_cleaning_errors:
+                self._save_gather_error(error_msg, harvest_job)
 
         # Clean tables
         try:
@@ -706,11 +813,12 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             log.debug('Update dict string lists. Number of datasets imported: %s', len(clean_datasets))
             
         except Exception as e:
-            self._save_gather_error('Error cleaning the XLSX file: {0}'.format(e), harvest_job)
+            #TODO: AQUI Error cleaning the remote table: 'dataset_id'
+            self._save_gather_error('Error cleaning the remote table: {0}'.format(e), harvest_job)
             return []
     
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-            clean_datasets, after_cleaning_errors = harvester.after_cleaning(clean_datasets, harvest_job)
+            clean_datasets, after_cleaning_errors = harvester.after_cleaning(clean_datasets)
 
             for error_msg in after_cleaning_errors:
                 self._save_gather_error(error_msg, harvest_job)
@@ -721,7 +829,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             datasets_to_harvest = {}
             source_dataset = model.Package.get(harvest_job.source.id)
             for dataset in clean_datasets:
-                # Using name as identifier. XLS datasets doesnt have identifier
+                # Using name as identifier. Remote table datasets doesnt have identifier
                 try:
                     if not dataset.get('name'):
                         dataset['name'] = self._gen_new_name(dataset['title'])
@@ -979,7 +1087,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                         err = harvester.after_update(harvest_object, package_dict, harvester_tmp_dict)
 
                         if err:
-                            self._save_object_error(f'XLSHarvester plugin error: {err}', harvest_object, 'Import')
+                            self._save_object_error(f'TableHarvester plugin error: {err}', harvest_object, 'Import')
                             return False
 
                     log.info('Updated package %s with GUID: %s' % (package_dict["id"], harvest_object.guid))
