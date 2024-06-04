@@ -793,3 +793,29 @@ def schemingdcat_dataset_scope(field, schema):
         data[key] = choices_dict.get(dcat_type, 'non_spatial_dataset')
 
     return validator
+
+@scheming_validator
+@validator
+def schemingdcat_spatial_uri_validator(field, schema):
+    """
+    Returns a validator function that checks if the 'spatial_uri' value exists in the choices. If it exists, it sets the value of the field to the value of 'spatial' in the choice. Otherwise, it sets the value to ''.
+
+    Args:
+        field (dict): Information about the field to be updated.
+        schema (dict): The schema for the field to be updated.
+
+    Returns:
+        function: A validation function that can be used to update the field based on the presence of 'spatial' in the choice corresponding to 'spatial_uri'.
+    """
+    schema_data = helpers.schemingdcat_get_dataset_schema()
+    spatial_uri_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'spatial_uri'), None)
+    choices = spatial_uri_field['choices'] if spatial_uri_field else []
+
+    def validator(key, data, errors, context):
+        if (data[key] is missing or data[key] == ''):
+            spatial_uri = data.get(('spatial_uri', ))
+            choice = next((item for item in choices if item["value"] == spatial_uri), None)
+            data[key] = choice.get('spatial', '') if choice else ''
+
+    return validator
+

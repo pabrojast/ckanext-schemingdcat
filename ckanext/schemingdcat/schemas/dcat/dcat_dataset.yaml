@@ -1182,17 +1182,15 @@ dataset_fields:
       es: Información sobre las capacidades espaciales.
 
 # Geographic bounding box (M)
-  field_name: spatial
+- field_name: spatial
   label: 
     en: Bounding Box
     es: Extensión espacial
-  form_snippet: json.html
-  validators: ignore_missing schemingdcat_valid_json_object
-  display_property: dct:spatial
+  preset: spatial
   form_placeholder: '{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}'
   help_text:
-    en: '<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value. eg. {"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</a> Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
-    es: '<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates". ej. {"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}. </a> Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    en: 'If a <strong>Geographic identifier</strong> is selected and this element is empty, it will be filled in automatically.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value..</a> eg. <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    es: 'Sí se selecciona un <strong>Identificador geográfico</strong> y este elemento esta vacío, se rellena automáticamente.<br><br><a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates".</a> ej: <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
   help_allow_html: True
   form_group_id: spatial_info
 
@@ -1221,156 +1219,230 @@ dataset_fields:
   sorted_choices: True
   choices:
   - label:
-      es: España
       en: Spain
+      es: España
+    spatial: '{"type": "Polygon", "coordinates": [[[-18.17, 27.64], [4.32, 27.64],
+      [4.32, 43.76], [-18.17, 43.76], [-18.17, 27.64]]]}'
     value: http://publications.europa.eu/resource/authority/country/ESP
   - label:
-      es: Alemania
       en: Germany
+      es: Alemania
+    spatial: '{"type": "Polygon", "coordinates": [[[5.87, 47.27], [15.03, 47.27],
+      [15.03, 55.06], [5.87, 55.06], [5.87, 47.27]]]}'
     value: http://publications.europa.eu/resource/authority/country/DEU
   - label:
-      es: Austria
       en: Austria
+      es: Austria
+    spatial: '{"type": "Polygon", "coordinates": [[[9.53, 46.41], [17.17, 46.41],
+      [17.17, 49.02], [9.53, 49.02], [9.53, 46.41]]]}'
     value: http://publications.europa.eu/resource/authority/country/AUT
   - label:
-      es: Bélgica
       en: Belgium
+      es: Bélgica
+    spatial: '{"type": "Polygon", "coordinates": [[[2.54, 49.51], [6.4, 49.51], [6.4,
+      51.5], [2.54, 51.5], [2.54, 49.51]]]}'
     value: http://publications.europa.eu/resource/authority/country/BEL
   - label:
-      es: Bulgaria
       en: Bulgaria
+      es: Bulgaria
+    spatial: '{"type": "Polygon", "coordinates": [[[22.37, 41.24], [28.61, 41.24],
+      [28.61, 44.22], [22.37, 44.22], [22.37, 41.24]]]}'
     value: http://publications.europa.eu/resource/authority/country/BGR
   - label:
-      es: Chipre
       en: Cyprus
+      es: Chipre
+    spatial: '{"type": "Polygon", "coordinates": [[[32.27, 34.64], [34.59, 34.64],
+      [34.59, 35.69], [32.27, 35.69], [32.27, 34.64]]]}'
     value: http://publications.europa.eu/resource/authority/country/CYP
   - label:
-      es: Croacia
       en: Croatia
+      es: Croacia
+    spatial: '{"type": "Polygon", "coordinates": [[[13.5, 42.4], [19.43, 42.4], [19.43,
+      46.54], [13.5, 46.54], [13.5, 42.4]]]}'
     value: http://publications.europa.eu/resource/authority/country/HRV
   - label:
-      es: Dinamarca
       en: Denmark
+      es: Dinamarca
+    spatial: '{"type": "Polygon", "coordinates": [[[8.09, 54.56], [15.15, 54.56],
+      [15.15, 57.75], [8.09, 57.75], [8.09, 54.56]]]}'
     value: http://publications.europa.eu/resource/authority/country/DNK
   - label:
-      es: Eslovaquia
       en: Slovakia
+      es: Eslovaquia
+    spatial: '{"type": "Polygon", "coordinates": [[[16.84, 47.74], [22.56, 47.74],
+      [22.56, 49.6], [16.84, 49.6], [16.84, 47.74]]]}'
     value: http://publications.europa.eu/resource/authority/country/SVK
   - label:
-      es: Eslovenia
       en: Slovenia
+      es: Eslovenia
+    spatial: '{"type": "Polygon", "coordinates": [[[13.38, 45.43], [16.61, 45.43],
+      [16.61, 46.88], [13.38, 46.88], [13.38, 45.43]]]}'
     value: http://publications.europa.eu/resource/authority/country/SVN
   - label:
-      es: Estonia
       en: Estonia
+      es: Estonia
+    spatial: '{"type": "Polygon", "coordinates": [[[21.84, 57.52], [28.19, 57.52],
+      [28.19, 59.66], [21.84, 59.66], [21.84, 57.52]]]}'
     value: http://publications.europa.eu/resource/authority/country/EST
   - label:
-      es: Finlandia
       en: Finland
+      es: Finlandia
+    spatial: '{"type": "Polygon", "coordinates": [[[19.51, 59.81], [31.58, 59.81],
+      [31.58, 70.09], [19.51, 70.09], [19.51, 59.81]]]}'
     value: http://publications.europa.eu/resource/authority/country/FIN
   - label:
-      es: Francia
       en: France
+      es: Francia
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.79, 41.36], [9.56, 41.36],
+      [9.56, 51.09], [-4.79, 51.09], [-4.79, 41.36]]]}'
     value: http://publications.europa.eu/resource/authority/country/FRA
   - label:
-      es: Grecia
       en: Greece
+      es: Grecia
+    spatial: '{"type": "Polygon", "coordinates": [[[19.64, 34.93], [28.24, 34.93],
+      [28.24, 41.75], [19.64, 41.75], [19.64, 34.93]]]}'
     value: http://publications.europa.eu/resource/authority/country/GRC
   - label:
-      es: Hungría
       en: Hungary
+      es: Hungría
+    spatial: '{"type": "Polygon", "coordinates": [[[16.11, 45.75], [22.89, 45.75],
+      [22.89, 48.58], [16.11, 48.58], [16.11, 45.75]]]}'
     value: http://publications.europa.eu/resource/authority/country/HUN
   - label:
-      es: Irlanda
       en: Ireland
+      es: Irlanda
+    spatial: '{"type": "Polygon", "coordinates": [[[-10.47, 51.45], [-6.01, 51.45],
+      [-6.01, 55.38], [-10.47, 55.38], [-10.47, 51.45]]]}'
     value: http://publications.europa.eu/resource/authority/country/IRL
   - label:
-      es: Italia
       en: Italy
+      es: Italia
+    spatial: '{"type": "Polygon", "coordinates": [[[6.62, 36.65], [18.51, 36.65],
+      [18.51, 47.09], [6.62, 47.09], [6.62, 36.65]]]}'
     value: http://publications.europa.eu/resource/authority/country/ITA
   - label:
-      es: Letonia
       en: Latvia
+      es: Letonia
+    spatial: '{"type": "Polygon", "coordinates": [[[20.97, 55.67], [28.24, 55.67],
+      [28.24, 58.08], [20.97, 58.08], [20.97, 55.67]]]}'
     value: http://publications.europa.eu/resource/authority/country/LVA
   - label:
-      es: Lituania
       en: Lithuania
+      es: Lituania
+    spatial: '{"type": "Polygon", "coordinates": [[[20.94, 53.89], [26.81, 53.89],
+      [26.81, 56.45], [20.94, 56.45], [20.94, 53.89]]]}'
     value: http://publications.europa.eu/resource/authority/country/LTU
   - label:
-      es: Luxemburgo
       en: Luxembourg
+      es: Luxemburgo
+    spatial: '{"type": "Polygon", "coordinates": [[[5.73, 49.45], [6.52, 49.45], [6.52,
+      50.18], [5.73, 50.18], [5.73, 49.45]]]}'
     value: http://publications.europa.eu/resource/authority/country/LUX
   - label:
-      es: Malta
       en: Malta
+      es: Malta
+    spatial: '{"type": "Polygon", "coordinates": [[[14.33, 35.8], [14.57, 35.8], [14.57,
+      35.99], [14.33, 35.99], [14.33, 35.8]]]}'
     value: http://publications.europa.eu/resource/authority/country/MLT
   - label:
-      es: Nueva Zelanda
       en: New Zealand
+      es: Nueva Zelanda
+    spatial: '{"type": "Polygon", "coordinates": [[[-176.85, -52.58], [178.84, -52.58],
+      [178.84, -34.41], [-176.85, -34.41], [-176.85, -52.58]]]}'
     value: http://publications.europa.eu/resource/authority/country/NZL
   - label:
-      es: Países Bajos
       en: Netherlands
+      es: Países Bajos
+    spatial: '{"type": "Polygon", "coordinates": [[[3.37, 50.75], [7.21, 50.75], [7.21,
+      53.47], [3.37, 53.47], [3.37, 50.75]]]}'
     value: http://publications.europa.eu/resource/authority/country/NLD
   - label:
-      es: Polonia
       en: Poland
+      es: Polonia
+    spatial: '{"type": "Polygon", "coordinates": [[[14.15, 49.0], [24.14, 49.0], [24.14,
+      54.84], [14.15, 54.84], [14.15, 49.0]]]}'
     value: http://publications.europa.eu/resource/authority/country/POL
   - label:
-      es: Portugal
       en: Portugal
+      es: Portugal
+    spatial: '{"type": "Polygon", "coordinates": [[[-9.49, 37.01], [-6.19, 37.01],
+      [-6.19, 42.15], [-9.49, 42.15], [-9.49, 37.01]]]}'
     value: http://publications.europa.eu/resource/authority/country/PRT
   - label:
-      es: República Checa
       en: Czech Republic
+      es: República Checa
+    spatial: '{"type": "Polygon", "coordinates": [[[12.09, 48.58], [18.85, 48.58],
+      [18.85, 51.05], [12.09, 51.05], [12.09, 48.58]]]}'
     value: http://publications.europa.eu/resource/authority/country/CZE
   - label:
-      es: Rumania
       en: Romania
+      es: Rumania
+    spatial: '{"type": "Polygon", "coordinates": [[[20.26, 43.62], [29.67, 43.62],
+      [29.67, 48.26], [20.26, 48.26], [20.26, 43.62]]]}'
     value: http://publications.europa.eu/resource/authority/country/ROU
   - label:
-      es: Suecia
       en: Sweden
+      es: Suecia
+    spatial: '{"type": "Polygon", "coordinates": [[[11.11, 55.34], [24.17, 55.34],
+      [24.17, 69.06], [11.11, 69.06], [11.11, 55.34]]]}'
     value: http://publications.europa.eu/resource/authority/country/SWE
   - label:
-      es: Argentina
       en: Argentina
+      es: Argentina
+    spatial: '{"type": "Polygon", "coordinates": [[[-73.58, -55.05], [-53.65, -55.05],
+      [-53.65, -21.78], [-73.58, -21.78], [-73.58, -55.05]]]}'
     value: http://publications.europa.eu/resource/authority/country/ARG
   - label:
-      es: Australia
       en: Australia
+      es: Australia
+    spatial: '{"type": "Polygon", "coordinates": [[[112.91, -54.75], [158.96, -54.75],
+      [158.96, -10.14], [112.91, -10.14], [112.91, -54.75]]]}'
     value: http://publications.europa.eu/resource/authority/country/AUS
   - label:
-      es: Brasil
       en: Brazil
+      es: Brasil
+    spatial: '{"type": "Polygon", "coordinates": [[[-74.0, -33.74], [-34.79, -33.74],
+      [-34.79, 5.27], [-74.0, 5.27], [-74.0, -33.74]]]}'
     value: http://publications.europa.eu/resource/authority/country/BRA
   - label:
-      es: Canadá
       en: Canada
+      es: Canadá
+    spatial: '{"type": "Polygon", "coordinates": [[[-141.0, 41.68], [-52.62, 41.68],
+      [-52.62, 83.11], [-141.0, 83.11], [-141.0, 41.68]]]}'
     value: http://publications.europa.eu/resource/authority/country/CAN
   - label:
-      es: China
       en: China
+      es: China
+    spatial: '{"type": "Polygon", "coordinates": [[[73.62, 18.17], [134.77, 18.17],
+      [134.77, 53.55], [73.62, 53.55], [73.62, 18.17]]]}'
     value: http://publications.europa.eu/resource/authority/country/CHN
   - label:
-      es: Estados Unidos
       en: United States
+      es: Estados Unidos
+    spatial: '{"type": "Polygon", "coordinates": [-178.22, 18.93], [179.78, 18.93], [179.78, 71.35], [-178.22, 71.35], [-178.22, 18.93]}'
     value: http://publications.europa.eu/resource/authority/country/USA
   - label:
-      es: Japón
       en: Japan
+      es: Japón
+    spatial: '{"type": "Polygon", "coordinates": [[[123.68, 24.25], [145.81, 24.25],
+      [145.81, 45.49], [123.68, 45.49], [123.68, 24.25]]]}'
     value: http://publications.europa.eu/resource/authority/country/JPN
   - label:
-      es: Mexico
       en: Mexico
+      es: Mexico
+    spatial: '{"type": "Polygon", "coordinates": [[[-118.4, 14.55], [-86.74, 14.55],
+      [-86.74, 32.72], [-118.4, 32.72], [-118.4, 14.55]]]}'
     value: http://publications.europa.eu/resource/authority/country/MEX
   - label:
-      es: Nueva Zelanda
       en: New Zeland
+      es: Nueva Zelanda
+    spatial: '{"type": "Polygon", "coordinates": [[[-176.85, -52.58], [178.84, -52.58],
+      [178.84, -34.41], [-176.85, -34.41], [-176.85, -52.58]]]}'
     value: http://publications.europa.eu/resource/authority/country/NZL
   - label:
-      es: Reino Unido
       en: United Kingdom
+      es: Reino Unido
+    spatial: '{"type": "Polygon", "coordinates": [-8.17, 49.96], [1.75, 49.96], [1.75, 60.84], [-8.17, 60.84], [-8.17, 49.96]}'
     value: http://publications.europa.eu/resource/authority/country/GBR
   help_text:
     en: 'Geographic coverage of the dataset. More information in <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
