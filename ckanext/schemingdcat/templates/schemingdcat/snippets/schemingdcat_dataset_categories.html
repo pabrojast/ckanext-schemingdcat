@@ -32,15 +32,15 @@
 {% set theme_value = theme_list[0] if theme_list is sequence and theme_list|length > 0 else theme_list %}
 {% set theme_value = theme_value.split('/')[-1] if theme_value is string else theme_value %}
 {% set spatial_uri_value = theme_value.split('/')[-1] if theme_value is string else theme_value %}
-<div class="col-md-2 d-flex flex-row justify-content-center align-items-center">
+<div class="col-md-2 d-flex flex-row justify-content-end align-items-center dataset-categories">
   {% if theme_field %}
-    <div class="dataset-categories">
+    <div>
       <a href="{{ h.url_for('dataset.search', **{theme_field:theme_value}) }}" target="_blank" rel="noopener noreferrer" class="category-{{ theme_field }}" data-icon="{{ theme_value|lower }}"></a>
     </div>
   {% endif %}
   {% if package.spatial_uri %}
     {% set spatial_uri_value = package.spatial_uri.split('/')[-1] %}
-    <div class="dataset-categories">
+    <div>
       <a href="{{ h.url_for('dataset.search', **{'spatial_uri':package.spatial_uri}) }}" target="_blank" rel="noopener noreferrer" class="category-spatial_uri" data-icon="{{ spatial_uri_value|lower }}"></a>
     </div>
   {% endif %}

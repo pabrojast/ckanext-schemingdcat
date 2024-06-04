@@ -2003,3 +2003,17 @@ input#lang-r:checked ~ div .example-r {
 .dataset-featured-icon {
   color:#2f88a3;
 }
+
+/* package items */
+.col-md-10 {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dataset-content {
+  flex: 0 1 80%; /* Ajusta este valor según sea necesario */
+}
+
+.dataset-categories {
+  flex: 0 1 20%; /* Ajusta este valor según sea necesario */
+}

@@ -22,7 +22,7 @@
   {% block package_item %}
   <li class="{{ item_class or "dataset-item" }}">
     <div class="row">
-      <div class="col-md-10">
+      <div class="col-md-12 d-flex">
         {% block content %}
             <div class="dataset-content">
               {% block heading %}
@@ -79,11 +79,11 @@
                 {% endif %}
               {% endblock %}
             </div>
-          {% endblock %}
+            {% endblock %}
+            {% block dataset_categories %}
+              {% snippet 'schemingdcat/snippets/schemingdcat_dataset_categories.html', package=package %}
+            {% endblock %}
+          </div>
         </div>
-        {% block dataset_categories %}
-          {% snippet 'schemingdcat/snippets/schemingdcat_dataset_categories.html', package=package %}
-        {% endblock %}
-      </div>
-    </li>
-  {% endblock %}
+      </li>
+    {% endblock %}

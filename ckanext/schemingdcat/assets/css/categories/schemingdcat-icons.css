@@ -1,22 +1,22 @@
 .dataset-categories {
     display: flex;
-	margin-left: 5px;
-    margin-right: 5px;
+    justify-content: flex-end;
+    gap: 5px;
 }
 
 @media all and (min-width: 60em){
-	.dataset-categories a{display:block;overflow:hidden;text-indent:-9999px;height:40px;width:40px;background-repeat:no-repeat;background-position:center center;background-size:100% 100%;font-size:1em;}
-	.category-spatial_uri {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-	}
+    .dataset-categories a{display:block;overflow:hidden;text-indent:-9999px;height:40px;width:40px;background-repeat:no-repeat;background-position:center center;background-size:100% 100%;font-size:1em;}
+    .category-spatial_uri {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
 }
 
 @media all and (max-width: 770px){
-	.dataset-categories a, .category-spatial_uri {
-		display: none;
-	}
+    .dataset-categories a, .category-spatial_uri {
+        display: none;
+    }
 }
 
 /* theme_es: theme_es-last_part_of_uri */
