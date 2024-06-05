@@ -136,7 +136,9 @@ DATE_FIELDS = [
     {'field_name': 'created', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
     {'field_name': 'issued', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
     {'field_name': 'modified', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
-    {'field_name': 'valid', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str}
+    {'field_name': 'valid', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'temporal_start', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'temporal_end', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str}
 ]
 
 DATASET_DEFAULT_FIELDS = [
