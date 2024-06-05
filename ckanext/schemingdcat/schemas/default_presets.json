@@ -260,7 +260,7 @@
       "preset_name": "spatial",
       "values": {
         "form_snippet": "json.html",
-        "validators": "ignore_missing schemingdcat_spatial_uri_validator schemingdcat_valid_json_object"
+        "validators": "schemingdcat_spatial_uri_validator ignore_missing schemingdcat_valid_json_object"
       }
     },
     {

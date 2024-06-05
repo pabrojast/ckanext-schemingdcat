@@ -812,10 +812,10 @@ def schemingdcat_spatial_uri_validator(field, schema):
     choices = spatial_uri_field['choices'] if spatial_uri_field else []
 
     def validator(key, data, errors, context):
-        if (data[key] is missing or data[key] == ''):
+        if data[key] is missing or data[key] is None or data[key] == '':
             spatial_uri = data.get(('spatial_uri', ))
             choice = next((item for item in choices if item["value"] == spatial_uri), None)
-            data[key] = choice.get('spatial', '') if choice else ''
+            data[key] = choice.get('spatial', '') if choice else missing
 
     return validator
 
