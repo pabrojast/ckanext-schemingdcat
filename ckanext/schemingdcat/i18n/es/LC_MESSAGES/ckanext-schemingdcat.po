@@ -672,7 +672,7 @@ msgid "Title"
 msgstr "Título"
 
 #: ckanext/harvest/templates/source/new_source_form.html:14
-msgid "eg. A descriptive title"
+msgid "e.g. A descriptive title"
 msgstr "ej. Un título descriptivo"
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
@@ -680,7 +680,7 @@ msgid "Name"
 msgstr "Nombre"
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
-msgid "eg. my-dataset"
+msgid "e.g. my-dataset"
 msgstr "ej. mi-dataset"
 
 #: ckanext/harvest/templates/source/new_source_form.html:23

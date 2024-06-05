@@ -58,7 +58,7 @@ def schemingdcat_multiple_choice(field, schema):
     """
     Accept zero or more values from a list of choices and convert
     to a json list for storage. Also act like scheming_required to check for at least one non-empty string when required is true:
-    1. a list of strings, eg.:
+    1. a list of strings, e.g.
        ["choice-a", "choice-b"]
     2. a single string for single item selection in form submissions:
        "choice-a"
@@ -148,7 +148,7 @@ def schemingdcat_valid_json_object(value, context):
 def schemingdcat_multiple_text(field, schema):
     """
     Accept repeating text input in the following forms and convert to a json list for storage.
-    1. a list of strings, eg.
+    1. a list of strings, e.g.
        ["Person One", "Person Two"]
     2. a single string value to allow single text fields to be
        migrated to repeating text
@@ -357,12 +357,12 @@ def schemingdcat_fluent_text(field, schema):
     Accept multilingual text input in the following forms
     and convert to a json string for storage:
 
-    1. a multilingual dict, eg.
+    1. a multilingual dict, e.g.
 
        {"en": "Text", "fr": "texte"}
 
     2. a JSON encoded version of a multilingual dict, for
-       compatibility with old ways of loading data, eg.
+       compatibility with old ways of loading data, e.g.
 
        '{"en": "Text", "fr": "texte"}'
 
@@ -656,7 +656,7 @@ def schemingdcat_multiple_choice_custom_tag_string(field, schema):
     """
     Accept zero or more values from a list of choices and convert
     to a json list for storage. Also act like scheming_required to check for at least one non-empty string when required is true:
-    1. a list of strings, eg.:
+    1. a list of strings, e.g.
        ["choice-a", "choice-b"]
     2. a single string for single item selection in form submissions:
        "choice-a"

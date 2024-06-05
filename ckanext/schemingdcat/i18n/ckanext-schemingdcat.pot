@@ -660,7 +660,7 @@ msgid "Title"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:14
-msgid "eg. A descriptive title"
+msgid "e.g. A descriptive title"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
@@ -668,7 +668,7 @@ msgid "Name"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
-msgid "eg. my-dataset"
+msgid "e.g. my-dataset"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:23
