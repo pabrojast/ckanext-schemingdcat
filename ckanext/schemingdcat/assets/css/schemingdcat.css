@@ -812,6 +812,12 @@ img.spatial_uri-icon {
 	margin-left: 1em;
 }
 
+/* spatial_uri icons form_snippet*/
+.provincia {
+  margin-left: 10px;
+  filter: opacity(0.7);
+}
+
 /* Metadata profile list*/
 .metadata-profile-list { 
   list-style-type: "📃 ";

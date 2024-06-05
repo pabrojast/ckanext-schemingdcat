@@ -192,7 +192,7 @@
     {
       "preset_name": "select_spatial_icon",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/select_icon.html",
+        "form_snippet": "schemingdcat/form_snippets/select_spatial_uri.html",
         "display_snippet": "schemingdcat/display_snippets/select_spatial_icon.html",
         "validators": "ignore_missing"
       }
