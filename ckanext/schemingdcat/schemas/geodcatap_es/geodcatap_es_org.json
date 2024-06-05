@@ -64,7 +64,7 @@
           },
           "preset": "schemingdcat_fluent_notes_translated",
           "form_placeholder": {
-            "en": "eg. Some useful description about the organization.",
+            "en": "e.g. Some useful description about the organization.",
             "es": "ej. Una descripción útil sobre la organización."
           },
           "form_languages": ["es", "en"],
