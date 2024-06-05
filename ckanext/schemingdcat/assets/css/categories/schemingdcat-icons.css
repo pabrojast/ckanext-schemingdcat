@@ -281,65 +281,144 @@
 
 
 /* spain/autonomia */
-.category-spatial_uri[data-icon="andalucia"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/andalucia.jpg);
+/* Andalucía and provinces */
+.category-spatial_uri[data-icon="andalucia"],
+.category-spatial_uri[data-icon="almeria"],
+.category-spatial_uri[data-icon="cadiz"],
+.category-spatial_uri[data-icon="cordoba"],
+.category-spatial_uri[data-icon="granada"],
+.category-spatial_uri[data-icon="huelva"],
+.category-spatial_uri[data-icon="jaen"],
+.category-spatial_uri[data-icon="malaga"],
+.category-spatial_uri[data-icon="sevilla"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/andalucia.jpg);
 }
-.category-spatial_uri[data-icon="aragon"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/aragon.jpg);
+/* Aragón and provinces */
+.category-spatial_uri[data-icon="aragon"],
+.category-spatial_uri[data-icon="huesca"],
+.category-spatial_uri[data-icon="teruel"],
+.category-spatial_uri[data-icon="zaragoza"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/aragon.jpg);
 }
-.category-spatial_uri[data-icon="canarias"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/canarias.jpg);
+
+/* Canarias and provinces */
+.category-spatial_uri[data-icon="canarias"],
+.category-spatial_uri[data-icon="las-palmas"],
+.category-spatial_uri[data-icon="santa-cruz-tenerife"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/canarias.jpg);
 }
+
+/* Cantabria */
 .category-spatial_uri[data-icon="cantabria"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/cantabria.jpg);
+    background-image: url(../../images/icons/spatial_uri/autonomia/cantabria.jpg);
 }
-.category-spatial_uri[data-icon="castilla-la-mancha"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/castilla-la-mancha.jpg);
+
+/* Castilla-La Mancha and provinces */
+.category-spatial_uri[data-icon="castilla-la-mancha"],
+.category-spatial_uri[data-icon="albacete"],
+.category-spatial_uri[data-icon="ciudad-real"],
+.category-spatial_uri[data-icon="cuenca"],
+.category-spatial_uri[data-icon="guadalajara"],
+.category-spatial_uri[data-icon="toledo"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/castilla-la-mancha.jpg);
 }
-.category-spatial_uri[data-icon="castilla-leon"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/castilla-leon.jpg);
+
+/* Castilla y León and provinces */
+.category-spatial_uri[data-icon="castilla-leon"],
+.category-spatial_uri[data-icon="avila"],
+.category-spatial_uri[data-icon="burgos"],
+.category-spatial_uri[data-icon="leon"],
+.category-spatial_uri[data-icon="palencia"],
+.category-spatial_uri[data-icon="salamanca"],
+.category-spatial_uri[data-icon="segovia"],
+.category-spatial_uri[data-icon="soria"],
+.category-spatial_uri[data-icon="valladolid"],
+.category-spatial_uri[data-icon="zamora"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/castilla-leon.jpg);
 }
-.category-spatial_uri[data-icon="cataluna"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/cataluna.jpg);
+/* Cataluña and provinces */
+.category-spatial_uri[data-icon="cataluna"],
+.category-spatial_uri[data-icon="barcelona"],
+.category-spatial_uri[data-icon="girona"],
+.category-spatial_uri[data-icon="lleida"],
+.category-spatial_uri[data-icon="tarragona"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/cataluna.jpg);
 }
+
+/* Ceuta */
 .category-spatial_uri[data-icon="ceuta"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/ceuta.jpg);
+    background-image: url(../../images/icons/spatial_uri/autonomia/ceuta.jpg);
 }
-.category-spatial_uri[data-icon="comunidad-foral-navarra"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-foral-navarra.jpg);
+
+/* Comunidad Foral de Navarra */
+.category-spatial_uri[data-icon="comunidad-foral-navarra"],
+.category-spatial_uri[data-icon="navarra"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-foral-navarra.jpg);
 }
-.category-spatial_uri[data-icon="comunidad-madrid"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-madrid.jpg);
+
+/* Comunidad de Madrid */
+.category-spatial_uri[data-icon="comunidad-madrid"],
+.category-spatial_uri[data-icon="madrid"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/comunidad-madrid.jpg);
 }
-.category-spatial_uri[data-icon="comunitat-valenciana"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/comunitat-valenciana.jpg);
+
+/* Comunidad Valenciana and provinces */
+.category-spatial_uri[data-icon="comunitat-valenciana"],
+.category-spatial_uri[data-icon="alicante"],
+.category-spatial_uri[data-icon="castellon"],
+.category-spatial_uri[data-icon="valencia"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/comunitat-valenciana.jpg);
 }
-.category-spatial_uri[data-icon="españa"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/españa.jpg);
+
+/* Extremadura and provinces */
+.category-spatial_uri[data-icon="extremadura"],
+.category-spatial_uri[data-icon="badajoz"],
+.category-spatial_uri[data-icon="caceres"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/extremadura.jpg);
 }
-.category-spatial_uri[data-icon="extremadura"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/extremadura.jpg);
+
+/* Galicia and provinces */
+.category-spatial_uri[data-icon="galicia"],
+.category-spatial_uri[data-icon="a-coruna"],
+.category-spatial_uri[data-icon="lugo"],
+.category-spatial_uri[data-icon="ourense"],
+.category-spatial_uri[data-icon="pontevedra"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/galicia.jpg);
 }
-.category-spatial_uri[data-icon="galicia"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/galicia.jpg);
-}
+
+/* Illes Balears */
 .category-spatial_uri[data-icon="illes-balears"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/illes-balears.jpg);
+    background-image: url(../../images/icons/spatial_uri/autonomia/illes-balears.jpg);
 }
+
+/* La Rioja */
 .category-spatial_uri[data-icon="la-rioja"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/la-rioja.jpg);
+    background-image: url(../../images/icons/spatial_uri/autonomia/la-rioja.jpg);
 }
+
+/* Melilla */
 .category-spatial_uri[data-icon="melilla"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/melilla.jpg);
+    background-image: url(../../images/icons/spatial_uri/autonomia/melilla.jpg);
 }
-.category-spatial_uri[data-icon="pais-vasco"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/pais-vasco.jpg);
+
+/* País Vasco and provinces */
+.category-spatial_uri[data-icon="pais-vasco"],
+.category-spatial_uri[data-icon="alava"],
+.category-spatial_uri[data-icon="guipuzcoa"],
+.category-spatial_uri[data-icon="vizcaya"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/pais-vasco.jpg);
 }
-.category-spatial_uri[data-icon="principado-asturias"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/principado-asturias.jpg);
+
+/* Principado de Asturias */
+.category-spatial_uri[data-icon="principado-asturias"],
+.category-spatial_uri[data-icon="asturias"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/principado-asturias.jpg);
 }
-.category-spatial_uri[data-icon="region-murcia"] {
-	background-image: url(../../images/icons/spatial_uri/autonomia/region-murcia.jpg);
+
+/* Región de Murcia */
+.category-spatial_uri[data-icon="region-murcia"],
+.category-spatial_uri[data-icon="murcia"] {
+    background-image: url(../../images/icons/spatial_uri/autonomia/region-murcia.jpg);
 }
 
 /* spain/pais */
