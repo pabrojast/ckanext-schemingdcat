@@ -850,59 +850,57 @@ def schemingdcat_get_current_lang():
     except TypeError:
         return p.toolkit.config.get("ckan.locale_default", "en")
 
-
 @helper
 def schemingdcat_extract_lang_text(text, current_lang):
-    """Extracts the text content for a specified language from a string.
+    """
+    Extracts the text content for a specified language from a string.
 
     Args:
         text (str): The string to extract the language content from.
+            Example: "[#en#]Welcome to the CKAN Open Data Portal.[#es#]Bienvenido al portal de datos abiertos CKAN."
         current_lang (str): The language code to extract the content for.
+            Example: "es"
 
     Returns:
         str: The extracted language content, or the original string if no content is found.
+            Example: "Bienvenido al portal de datos abiertos CKAN."
 
     """
 
-    def process_language_content(language_label):
+    @lru_cache(maxsize=30)
+    def process_language_content(language_label, text):
         """Helper function to process the content for a specific language label.
 
         Args:
             language_label (str): The language label to process.
+            text (str): The text to process.
 
         Returns:
-            list: A list of lines containing the language content.
+            str: The text corresponding to the specified language label.
 
         """
-        lang_text = []
-        in_target_lang = False
-        for line in text.split("\n"):
-            if line.startswith(language_label):
-                in_target_lang = True
-            elif (
-                in_target_lang
-                and line.strip().startswith("[#")
-                and line.strip().endswith("#]")
-            ):
-                break
-            elif in_target_lang:
-                lang_text.append(line)
-        return lang_text
+        pattern = re.compile(r'\[#(.*?)#\](.*?)(?=\[#|$)', re.DOTALL)
+        matches = pattern.findall(text)
+
+        for lang, content in matches:
+            if lang == language_label.replace('[#', '').replace('#]', ''):
+                return content.strip()
+
+        return ''
 
     lang_label = f"[#{current_lang}#]"
     default_lang = schemingdcat_get_default_lang()
     default_lang_label = f"[#{default_lang}#]"
 
-    lang_text = process_language_content(lang_label)
+    lang_text = process_language_content(lang_label, text)
 
     if not lang_text and lang_label != default_lang_label:
-        lang_text = process_language_content(default_lang_label)
+        lang_text = process_language_content(default_lang_label, text)
 
     if not lang_text:
         return text
 
-    return "\n".join(lang_text)
-
+    return lang_text
 
 @helper
 def dataset_display_name(package_or_package_dict):
