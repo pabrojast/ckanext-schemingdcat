@@ -1810,7 +1810,7 @@ dataset_fields:
   preset: select_spatial_icon
   display_property: dcat:theme
   select_size: 10
-  sorted_choices: True
+  sorted_choices: False
   choices:
   - label:
       ca: España
