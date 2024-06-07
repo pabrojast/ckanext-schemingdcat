@@ -24,8 +24,8 @@
           "required": true,
           "preset": "schemingdcat_fluent_title_translated",
           "form_placeholder": {
-            "en": "My group",
-            "es": "Mi grupo"
+            "en": "My organization",
+            "es": "Mi organización"
           },
           "form_languages": ["es", "en"],
           "required_language": "es"
