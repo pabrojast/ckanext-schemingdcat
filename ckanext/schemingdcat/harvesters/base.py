@@ -11,7 +11,10 @@ import hashlib
 import pandas as pd
 
 import urllib.request
+from urllib.parse import urlparse
 from urllib.error import URLError, HTTPError
+import mimetypes
+import requests
 
 import ckan.logic as logic
 from ckan.model import Session
@@ -24,6 +27,7 @@ from ckantoolkit import config
 from ckanext.harvest.harvesters import HarvesterBase
 from ckanext.harvest.logic.schema import unicode_safe
 from ckanext.harvest.model import HarvestObject, HarvestObjectExtra
+from ckanext.schemingdcat.lib.field_mapping import FieldMappingValidator
 
 from ckanext.schemingdcat.config import (
     OGC2CKAN_HARVESTER_MD_CONFIG,
@@ -32,7 +36,10 @@ from ckanext.schemingdcat.config import (
     DATASET_DEFAULT_FIELDS,
     RESOURCE_DEFAULT_FIELDS,
     CUSTOM_FORMAT_RULES,
-    DATADICTIONARY_DEFAULT_SCHEMA
+    DATADICTIONARY_DEFAULT_SCHEMA,
+    URL_REGEX,
+    INVALID_CHARS,
+    ACCENT_MAP
 )
 
 log = logging.getLogger(__name__)
@@ -48,7 +55,6 @@ class SchemingDCATHarvester(HarvesterBase):
     _mapped_schema = {}
     _local_schema = None
     _local_required_lang = None
-    _field_mapping_schema_versions = [1,2]
     _remote_schema = None
     _local_schema_name = None
     _remote_schema_name = None
@@ -62,6 +68,8 @@ class SchemingDCATHarvester(HarvesterBase):
     _source_date_format = None
     _dataset_default_values = {}
     _distribution_default_values = {}
+    _field_mapping_validator = FieldMappingValidator()
+    _field_mapping_validator_versions = _field_mapping_validator.validators.keys()
 
     def get_harvester_basic_info(self, config):
         """
@@ -422,7 +430,7 @@ class SchemingDCATHarvester(HarvesterBase):
         """
         if field_mapping is not None:
             schema_version = self.config.get("field_mapping_schema_version", 2)
-            if schema_version not in self._field_mapping_schema_versions:
+            if schema_version not in self._field_mapping_validator_versions:
                 raise ValueError(f"Unsupported schema version: {schema_version}")
 
             if schema_version == 1:
@@ -469,8 +477,46 @@ class SchemingDCATHarvester(HarvesterBase):
         """
 
         def rename_and_update(df, old_name, new_name, value_dict):
-            df.rename(columns={old_name: new_name}, inplace=True)
+            if isinstance(old_name, list):
+                # If old_name is a list, iterate over its elements
+                for name in old_name:
+                    df.rename(columns={name: new_name}, inplace=True)
+            else:
+                df.rename(columns={old_name: new_name}, inplace=True)
             value_dict['field_name'] = new_name
+
+        def merge_values(row, fields):
+            """
+            Merges the values of specified fields in a row into a single string.
+
+            This function takes a dictionary (row) and a list of fields. It checks if each field is present in the row.
+            If the field value is a list, it joins the list into a string with comma separators.
+            If the field value is a string and contains a comma, it strips the string of leading and trailing whitespace.
+            If the field value is neither a list nor a string with a comma, it converts the value to a string and strips it of leading and trailing whitespace.
+            Finally, it joins all the field values into a single string with comma separators.
+
+            Args:
+                row (dict): The row of data as a dictionary.
+                fields (list): The list of fields to merge.
+
+            Returns:
+                str: The merged field values as a single string.
+
+            """
+            merged = []
+            for field in fields:
+                if field in row:  # Check if the field is in the row
+                    val = row[field]
+                    if isinstance(val, list):
+                        merged.append(','.join(str(v).strip() for v in val))
+                    elif isinstance(val, str) and ',' in val:
+                        merged.append(val.strip())
+                    else:
+                        merged.append(str(val).strip())
+            return ','.join(merged)
+
+        removed_columns = []
+        reserved_columns = ['dataset_id', 'identifier', 'resource_id', 'datadictionary_id']
 
         if field_mapping is not None:
             # Check if any field mapping contains 'field_position'
@@ -480,27 +526,49 @@ class SchemingDCATHarvester(HarvesterBase):
 
             for key, value in field_mapping.items():
                 if 'field_position' in value:
-                    rename_and_update(df, value['field_position'], key, value)
+                    if isinstance(value['field_position'], list):
+                        # Merge fields
+                        log.debug('standarize value: %s', value['field_position'])
+                        # Apply the function to each row in the dataframe
+                        df[key] = df.apply(lambda row: merge_values(row, value['field_position']), axis=1)
+                        # Drop the original value columns
+                        for field in value['field_position']:
+                            df.drop(field, axis=1, inplace=True)
+                    else:
+                        rename_and_update(df, value['field_position'], key, value)
                 elif 'field_name' in value:
-                    rename_and_update(df, value['field_name'], key, value)
-                elif isinstance(value, list):
-                    # Merge fields
-                    merged_field = df[value].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
-                    df[key] = merged_field
-                    df.drop(value, axis=1, inplace=True)
-                    value['field_name'] = key
+                    if isinstance(value['field_name'], list):
+                        # Merge fields
+                        log.debug('standarize value: %s', value['field_name'])
+                        # Apply the function to each row in the dataframe
+                        df[key] = df.apply(lambda row: merge_values(row, value['field_name']), axis=1)
+                        log.debug('df[key]: %s', df[key])
+                        # Drop the original value columns
+                        for field in value['field_name']:
+                            df.drop(field, axis=1, inplace=True)
+                    else:
+                        rename_and_update(df, value['field_name'], key, value)
                 elif isinstance(value, dict) and 'languages' in value:
                     for lang, lang_value in value['languages'].items():
                         if 'field_position' in lang_value:
                             rename_and_update(df, lang_value['field_position'], f"{key}-{lang}", lang_value)
                         elif 'field_name' in lang_value:
                             rename_and_update(df, lang_value['field_name'], f"{key}-{lang}", lang_value)
-                        elif isinstance(lang_value, list):
-                            # Merge fields
-                            merged_field = df[lang_value].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
-                            df[f"{key}-{lang}"] = merged_field
-                            df.drop(lang_value, axis=1, inplace=True)
-                            lang_value['field_name'] = f"{key}-{lang}"
+                        # translated_fields only str
+
+        # Calculate the difference between the DataFrame columns and the field_mapping keys
+        columns_to_remove = set(df.columns) - set(field_mapping.keys())
+
+        # Filter out columns that contain '-{lang}' or are in the columns_to_keep list
+        columns_to_remove = [col for col in columns_to_remove if not re.search(r'-[a-z]{2}$', col) and col not in reserved_columns]
+
+        # Convert the set to a list, sort it, and store it for logging
+        removed_columns = sorted(list(columns_to_remove))
+
+        # Remove the columns
+        df.drop(columns=columns_to_remove, inplace=True)
+
+        log.warning(f"Removed unused columns from remote sheet: {removed_columns}")
 
         return df, field_mapping
 
@@ -582,33 +650,32 @@ class SchemingDCATHarvester(HarvesterBase):
             )
 
             def get_mapped_fields(fields, field_mapping):
-                return [
-                    {
-                        "local_field_name": field["field_name"],
-                        "remote_field_name": (
-                            field_mapping.get(field["field_name"], field["field_name"])
-                            if field_mapping and isinstance(field_mapping.get(field["field_name"]), str)
-                            else field["field_name"]
-                        ),
-                        "modified": field["field_name"]
-                        != (
-                            field_mapping.get(field["field_name"], field["field_name"])
-                            if field_mapping and isinstance(field_mapping.get(field["field_name"]), str)
-                            else field["field_name"]
-                        ),
-                        **(
-                            {"form_languages": field["form_languages"]}
-                            if field.get("form_languages")
-                            else {}
-                        ),
-                        **(
-                            {"required_language": field["required_language"]}
-                            if field.get("required_language")
-                            else {}
-                        ),
-                    }
-                    for field in fields
-                ]
+                try:
+                    return [
+                        {
+                            "local_field_name": field["field_name"],
+                            "remote_field_name": (
+                                {lang: f"{field['field_name']}-{lang}" for lang in field_mapping[field['field_name']]['languages'].keys()}
+                                if 'languages' in field_mapping.get(field['field_name'], {})
+                                else field['field_name']
+                            ),
+                            "modified": 'languages' in field_mapping.get(field['field_name'], {}),
+                            **(
+                                {"form_languages": list(field_mapping[field['field_name']]['languages'].keys())}
+                                if 'languages' in field_mapping.get(field['field_name'], {})
+                                else {}
+                            ),
+                            **(
+                                {"required_language": field["required_language"]}
+                                if field.get("required_language")
+                                else {}
+                            ),
+                        }
+                        for field in fields
+                    ]
+                except Exception as e:
+                    logging.error("Error generating mapping schema: %s", e)
+                    raise
 
             self._mapped_schema = {
                 "dataset_fields": get_mapped_fields(
@@ -860,20 +927,26 @@ class SchemingDCATHarvester(HarvesterBase):
         ):
             return package_dict
         try:
-            #TODO: Apply the new versions schema self.config.get("field_mapping_schema_version")
             translated_fields = {"dataset_fields": [], "resource_fields": []}
             for field in self._mapped_schema["dataset_fields"]:
                 if field.get("modified", True):
                     local_field_name = field["local_field_name"]
                     remote_field_name = field["remote_field_name"]
 
-                    translated_fields["dataset_fields"].append(local_field_name)
+                    translated_fields["dataset_fields"].append(
+                        local_field_name
+                    )
 
-                    if isinstance(remote_field_name, dict) and 'languages' in remote_field_name:
+                    if isinstance(remote_field_name, dict):
                         package_dict[local_field_name] = {
-                            lang: package_dict.get(name['field_name'], None)
-                            for lang, name in remote_field_name['languages'].items()
+                            lang: package_dict.get(name, None)
+                            for lang, name in remote_field_name.items()
                         }
+                        if local_field_name.endswith('_translated'):
+                            if self._local_required_lang in remote_field_name:
+                                package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
+                            else:
+                                raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
                     else:
                         if remote_field_name not in package_dict:
                             raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
@@ -890,20 +963,21 @@ class SchemingDCATHarvester(HarvesterBase):
                                 local_field_name
                             )
 
-                            if isinstance(remote_field_name, dict) and 'languages' in remote_field_name:
-                                resource[local_field_name] = {
-                                    lang: resource.get(name['field_name'], None)
-                                    for lang, name in remote_field_name['languages'].items()
+                            if isinstance(remote_field_name, dict):
+                                package_dict[local_field_name] = {
+                                    lang: package_dict.get(name, None)
+                                    for lang, name in remote_field_name.items()
                                 }
-                            else:
-                                if remote_field_name not in resource:
-                                    raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
-                                resource[local_field_name] = resource.get(remote_field_name, None)
+                                if local_field_name.endswith('_translated'):
+                                    if self._local_required_lang in remote_field_name:
+                                        package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
+                                    else:
+                                        raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
 
                     # Update the resource in package_dict
                     package_dict["resources"][i] = resource
 
-            # log.debug('Translated fields: %s', translated_fields)
+            log.debug('Translated fields: %s', translated_fields)
 
         except Exception as e:
             raise ReadError(
@@ -949,7 +1023,7 @@ class SchemingDCATHarvester(HarvesterBase):
             None
         """
         issued_date = self._normalize_date(
-            package_dict["issued"], self._source_date_format
+            package_dict.get("issued"), self._source_date_format
         ) or datetime.now().strftime("%Y-%m-%d")
 
         for date_field in DATE_FIELDS:
@@ -977,6 +1051,42 @@ class SchemingDCATHarvester(HarvesterBase):
                     if resource.get(field_name) is not None:
                         self._normalize_date(resource.get(field_name), self._source_date_format) or fallback_date
 
+    @staticmethod
+    def _infer_format_from_url(url):
+        """
+        Infers the format and encoding of a file from its URL.
+
+        This function sends a HEAD request to the URL and checks the 'content-type'
+        header to determine the file's format and encoding. If the 'content-type'
+        header is not found or an exception occurs, it falls back to guessing the
+        format and encoding based on the URL's extension.
+
+        Args:
+            url (str): The URL of the file.
+
+        Returns:
+            tuple: A tuple containing the format, mimetype, and encoding of the file.
+
+        Raises:
+            Exception: If the 'content-type' header is not found in the response.
+        """
+        try:
+            response = requests.head(url, allow_redirects=True)
+            content_type = response.headers.get('content-type')
+            if content_type:
+                mimetype, *encoding = content_type.split(';')
+                format = mimetype.split('/')[-1]
+                encoding = encoding[0].split('charset=')[-1] if encoding and 'charset=' in encoding[0] else OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
+            else:
+                raise Exception("Content-Type header not found")
+        except Exception:
+            mimetype, encoding = mimetypes.guess_type(url)
+            format = mimetype.split('/')[-1] if mimetype else url.rsplit('.', 1)[-1]
+            encoding = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
+
+        mimetype = f"http://www.iana.org/assignments/media-types/{mimetype}" if mimetype else None
+
+        return format, mimetype, encoding
 
     @staticmethod
     def _normalize_date(date, source_date_format=None):
@@ -1011,6 +1121,28 @@ class SchemingDCATHarvester(HarvesterBase):
         
         return date
 
+    def _apply_package_defaults_from_config(self, package_dict, default_fields):
+        """
+        Applies default values from the configuration to the package dictionary.
+
+        This function iterates over the default fields. If 'override' is True, it sets the value of the field in the package dictionary to the 'default_value'. If 'override' is False and the field does not exist in the package dictionary or its value is None, it sets the value of the field in the package dictionary to the 'default_value'. If the value of the field in the package dictionary is None and 'fallback' is not None, it sets the value of the field in the package dictionary to the 'fallback'.
+
+        Args:
+            package_dict (dict): The package dictionary to which default values are applied.
+            default_fields (list): A list of dictionaries, each containing the field name, whether to override, the default value, and the fallback value.
+
+        Returns:
+            dict: The package dictionary with applied default values.
+        """
+        for field in default_fields:
+            if field['override']:
+                package_dict[field['field_name']] = field['default_value']
+            elif field['field_name'] not in package_dict or package_dict[field['field_name']] is None:
+                package_dict[field['field_name']] = field['default_value']
+            elif package_dict[field['field_name']] is None and field['fallback'] is not None:
+                package_dict[field['field_name']] = field['fallback']
+        return package_dict
+
     def _update_package_dict_with_config_mapping_default_values(self, package_dict):
         """
         Update the package dictionary with default values.
@@ -1020,6 +1152,8 @@ class SchemingDCATHarvester(HarvesterBase):
         If a key from the default values does not exist in the package dictionary,
         it is added with its corresponding default value. The same process is applied
         to each resource in `package_dict["resources"]` with `self._distribution_default_values`.
+        If the value in the package dictionary is a list and the default value is also a list,
+        the default values are appended to the list in the package dictionary.
 
         Args:
             package_dict (dict): The package dictionary to be updated.
@@ -1031,12 +1165,16 @@ class SchemingDCATHarvester(HarvesterBase):
             for key, value in self._dataset_default_values.items():
                 if key not in package_dict:
                     package_dict[key] = value
+                elif isinstance(package_dict[key], list) and isinstance(value, list):
+                    package_dict[key].extend(value)
 
         if self._distribution_default_values and isinstance(self._distribution_default_values, dict):
             for i in range(len(package_dict["resources"])):
                 for key, value in self._distribution_default_values.items():
                     if key not in package_dict["resources"][i]:
                         package_dict["resources"][i][key] = value
+                    elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
+                        package_dict["resources"][i][key].extend(value)
 
         return package_dict
 
@@ -1088,26 +1226,8 @@ class SchemingDCATHarvester(HarvesterBase):
         local_org = source_package_dict.get("owner_org")
         package_dict["owner_org"] = local_org
 
-        # TODO: Better using DATASET_DEFAULT_FIELDS
-        # Default license https://creativecommons.org/licenses/by/4.0/
-        package_dict["license_id"] = OGC2CKAN_HARVESTER_MD_CONFIG["license_id"]
-        package_dict["license"] = OGC2CKAN_HARVESTER_MD_CONFIG["license"]
-
-        # Rights and status
-        if "access_rights" not in package_dict or not package_dict["access_rights"]:
-            package_dict["access_rights"] = OGC2CKAN_HARVESTER_MD_CONFIG[
-                "access_rights"
-            ]
-        if "status" not in package_dict or not package_dict["status"]:
-            package_dict["status"] = OGC2CKAN_HARVESTER_MD_CONFIG["status"]
-
-        # Default topic and themes
-        if "topic" not in package_dict or not package_dict["topic"]:
-            package_dict["topic"] = OGC2CKAN_HARVESTER_MD_CONFIG["topic"]
-        if "theme" not in package_dict or not package_dict["theme"]:
-            package_dict["theme"] = OGC2CKAN_HARVESTER_MD_CONFIG["theme"]
-        if "theme_eu" not in package_dict or not package_dict["theme_eu"]:
-            package_dict["theme_eu"] = OGC2CKAN_HARVESTER_MD_CONFIG["theme_eu"]
+        # Using dataset config defaults
+        package_dict = self._apply_package_defaults_from_config(package_dict, DATASET_DEFAULT_FIELDS)
 
         # Prepare groups
         cleaned_groups = self._set_ckan_groups(package_dict.get("groups", []))
@@ -1329,14 +1449,20 @@ class SchemingDCATHarvester(HarvesterBase):
             ).lower()
             informat = next(
                 (key for key in OGC2CKAN_MD_FORMATS if key.lower() in informat),
-                resource.get("url", "").lower(),
+                None,  # Changed this line to return None instead of the URL
             )
 
         # Check if _update_custom_format
-        informat = self._update_custom_format(informat.lower(), resource.get("url", ""))
+        informat = self._update_custom_format(informat.lower() if informat else "", resource.get("url", ""))
 
         if informat is not None:
             resource["format"] = informat
+        else:
+            format, mimetype, encoding = self._infer_format_from_url(resource.get('url'))
+
+            resource['format'] = format if format else resource.get('format', '')
+            resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', '')
+            resource['encoding'] = encoding if encoding else resource.get('encoding', '')
 
         return resource
 
@@ -1346,7 +1472,8 @@ class SchemingDCATHarvester(HarvesterBase):
 
         Each keyword is cleaned by removing non-alphanumeric characters,
         allowing only: a-z, ñ, 0-9, _, -, ., and spaces, and truncating to a
-        maximum length of 100 characters.
+        maximum length of 100 characters. If the name of the keyword is a URL,
+        it is converted into a standard CKAN name using the _url_to_ckan_name function.
 
         Args:
             tags (list): The tags to be cleaned. Each keyword is a
@@ -1355,16 +1482,47 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             list: A list of dictionaries with cleaned keyword names.
         """
-        cleaned_tags = [
-            {"name": self._clean_name(k["name"]), "display_name": k["name"]}
-            for k in tags
-            if k and "name" in k
-        ]
-
+        cleaned_tags = []
+        for k in tags:
+            if k and "name" in k:
+                name = k["name"]
+                if self._is_url(name):
+                    name = self._url_to_ckan_name(name)
+                cleaned_tags.append({"name": self._clean_name(name), "display_name": k["name"]})
         return cleaned_tags
 
-    @staticmethod
-    def _clean_name(name):
+
+    def _is_url(self, name):
+        """
+        Checks if a string is a valid URL.
+
+        Args:
+            name (str): The string to check.
+
+        Returns:
+            bool: True if the string is a valid URL, False otherwise.
+        """
+        return bool(URL_REGEX.match(name))
+
+    def _url_to_ckan_name(self, url):
+        """
+        Converts a URL into a standard CKAN name.
+
+        This function extracts the path from the URL, removes leading and trailing slashes,
+        replaces other slashes with hyphens, and cleans the name using the _clean_name function.
+
+        Args:
+            url (str): The URL to convert.
+
+        Returns:
+            str: The standard CKAN name.
+        """
+        path = urlparse(url).path
+        name = path.strip('/')
+        name = name.replace('/', '-')
+        return self._clean_name(name)
+
+    def _clean_name(self, name):
         """
         Cleans a name by removing accents, special characters, and spaces.
 
@@ -1374,22 +1532,12 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             str: The cleaned name.
         """
-        # Define a dictionary to map accented characters to their unaccented equivalents except ñ
-        accent_map = {
-            "á": "a", "à": "a", "ä": "a", "â": "a", "ã": "a",
-            "é": "e", "è": "e", "ë": "e", "ê": "e",
-            "í": "i", "ì": "i", "ï": "i", "î": "i",
-            "ó": "o", "ò": "o", "ö": "o", "ô": "o", "õ": "o",
-            "ú": "u", "ù": "u", "ü": "u", "û": "u",
-            "ñ": "ñ",
-        }
-
         # Convert the name to lowercase
         name = name.lower()
 
         # Replace accented and special characters with their unaccented equivalents or -
-        name = "".join(accent_map.get(c, c) for c in name)
-        name = re.sub(r"[^a-zñ0-9_.-]", "-", name.strip())
+        name = name.translate(ACCENT_MAP)
+        name = INVALID_CHARS.sub("-", name.strip())
 
         # Truncate the name to 40 characters
         name = name[:40]
@@ -1435,11 +1583,6 @@ class SchemingDCATHarvester(HarvesterBase):
         :returns: The same as what import_stage should return. i.e. True if the
                   create or update occurred ok, 'unchanged' if it didn't need
                   updating or False if there were errors.
-
-
-        TODO: Not sure it is worth keeping this function. If useful it should
-        use the output of package_show logic function (maybe keeping support
-        for rest api based dicts
         """
         assert package_dict_form in ("rest", "package_show")
         try:
@@ -1661,7 +1804,6 @@ class SearchError(Exception):
 
 class ReadError(Exception):
     pass
-
 
 class RemoteSchemaError(Exception):
     pass

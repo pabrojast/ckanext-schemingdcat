@@ -403,6 +403,7 @@ Remote Google Sheet/Onedrive Excel metadata upload Harvester supports the follow
 
 * `storage_type` - **Mandatory**: The type of storage to use for the harvested datasets as `onedrive` or `gspread`. Default is `onedrive`.
 * `dataset_sheet` - **Mandatory**: The name of the sheet in the Excel file that contains the dataset records.
+* `field_mapping_schema_version`: Schema version of the field_mapping to ensure compatibility with older schemas. The default is `2`.
 * `dataset_field_mapping/distribution_field_mapping`:  Mapping field names from local to remote instance, all info at: [Field mapping structure](#field-mapping-structure)
 * `auth`: If the remote file is private and requires authentication, the `auth` parameter should be used to provide the authentication credentials. Default is `False`.
   * `credentials`: If `auth` is `True`, the `credentials` parameter should be used to provide the authentication credentials. The credentials depends on the `storage_type` used. 
@@ -435,12 +436,10 @@ The `dataset_field_mapping`/`distribution_field_mapping` is structured as follow
   ...
   "field_mapping_schema_version": 2,
   "<dataset_field_mapping>/<distribution_field_mapping>": {
-    "<field_name>": {
+    "<schema_field_name>": {
       "languages": {
-        "<language>": {
-          "field_value": "<fixed_value>/<fixed_value_list>",
-          "field_position": "<excel_column>/<excel_column_list>",
-          "field_name": "<excel_field_name>/<excel_field_name_list>"
+        "<language>":  {
+          <"field_value": "<fixed_value>/<fixed_value_list>">,/<"field_name": "<excel_field_name>/<excel_field_name_list>">/< "field_position": "<excel_column>/<excel_column_list>">
         },
         ...
       },
@@ -451,11 +450,12 @@ The `dataset_field_mapping`/`distribution_field_mapping` is structured as follow
 }
 ```
 
-* `<field_name>`: The name of the field in the CKAN dataset.
-  * `<language>`: (Optional) The language code for multilingual fields. This should be a valid ISO 639-1 language code. This is now nested under the `languages` key.
+* `<schema_field_name>`: The name of the field in the CKAN schema.
+  * `<language>`: (Optional) The language code for multilingual fields. This should be a valid [ISO 639-1 language code](https://localizely.com/iso-639-1-list/). This is now nested under the `languages` key.
 * `<fixed_value>/<fixed_value_list>`: (Optional) A fixed value or a list of fixed values that will be assigned to the field for all records.
-* `<field_position>/<field_position_list>`: (Optional) The position of the field in the Excel file, represented as a letter or a list of letters (e.g., "A", "B", "C").
-* `<field_name>/<field_name_list>`: (Optional) The name of the field in the Excel file or a list of field names.
+* **Field labels**: Field position or field name:
+  * `<field_position>/<field_position_list>`: (Optional) The position of the field in the remote file, represented as a letter or a list of letters (e.g., "A", "B", "C").
+  * `<field_name>/<field_name_list>`: (Optional) The name of the field in the remote file or a list of field names.
 
 For fields that are not multilingual, you can directly use `field_name` or `field_position` without the `languages` key. For example:
 
@@ -464,10 +464,8 @@ For fields that are not multilingual, you can directly use `field_name` or `fiel
   ...
   "field_mapping_schema_version": 2,
   "<dataset_field_mapping>/<distribution_field_mapping>": {
-    "<field_name>": {
-      "field_value": "<fixed_value>/<fixed_value_list>",
-      "field_position": "<excel_column>/<excel_column_list>",
-      "field_name": "<excel_field_name>/<excel_field_name_list>"
+    "<schema_field_name>": {
+      <"field_value": "<fixed_value>/<fixed_value_list>">,/<"field_name": "<excel_field_name>/<excel_field_name_list>">/< "field_position": "<excel_column>/<excel_column_list>">
     },
     ...
   }
@@ -478,61 +476,148 @@ For fields that are not multilingual, you can directly use `field_name` or `fiel
 >The field mapping can be done either at the dataset level using `dataset_field_mapping` or at the resource level using `distribution_field_mapping`. The structure and options are the same for both. The `field_mapping_schema_version` is `2` by default, but needs to be set to avoid errors.
 
 #### Field Types
-There are three types of fields that can be defined in the configuration:
+There are two types of fields that can be defined in the configuration:
 
-1. **Multilingual fields**: These fields have different values for different languages. Each language is represented as a separate object within the field object. The language object can have `field_value`, `field_position`, and `field_name` properties, just like a regular field.
-2. **Fixed value fields**: These fields have a fixed value that is assigned to all records. This is defined using the `field_value` property.
-3. **Position-based fields**: These fields are defined by their position in the Excel file. This is defined using the `field_position` property.
-4. **Name-based fields**: These fields are defined by their name in the Excel file. This is defined using the `field_name` property.
-5. **Schema version**: This property 
+1. **Regular fields**: These fields have a field label/position to define the mapping or a fixed value for all its records.
+    - **Properties**: A field can have one of these three properties:
+      - **Fixed value fields**: These fields have a fixed value that is assigned to all records. This is defined using the `field_value` property. If `field_value` is a list, `field_name` or `field_position` could be set at the same time, and the `field_value` extends the list obtained from the remote field.
+      - **Field labels**: Field position or field name:
+        - **Position based fields**: These fields are defined by their position in the Excel file. This is defined using the `field_position` property.
+        - **Name based fields**: These fields are defined by their name in the Excel file. This is defined using the `field_name` property.
+2. **Multilingual Fields**: These fields have different values for different languages. Each language is represented as a separate object within the field object (`es`, `en`, ...). The language object can have `field_value`, `field_position` and `field_name` properties, just like a normal field.
+
 
 **Example**
-Here is an example of a configuration file:
-```json
-{
-  "storage_type": "gspread",
-  "dataset_sheet": "Dataset",
-  "distribution_sheet": "Distribution",
-  "auth": true,
+Here are some examples of configuration files:
 
-  ...
-  # other properties
-  ...
+* *Field positions*: With `field_position` to define the mapping based on positions of attributes in the remote sheet (`A`, `B`, `AA`, etc.).
+  ```json
+  {
+    "storage_type": "gspread",
+    "dataset_sheet": "Dataset",
+    "distribution_sheet": "Distribution",
+    "auth": true,
 
-  "field_mapping_schema_version": 2,
-  "dataset_field_mapping": {
-    "title_translated": {
-        "languages": {
-            "en": {
-                "field_value": ""
-            },
-            "es": {
-                "field_position": "A"
-            }
-        }
-    },
-    "private": {
-        "field_name": "private"
-    },
-    "theme": {
-        "field_name": ["theme", "theme_eu"]
-    },
-    "tag_custom": {
-        "field_position": "B"
-    },
-    "tag_string": {
-        "field_position": ["A", "B", "AC"]
-    },
-    "theme_es": {
-        "field_value": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente"
-    },
-    "tag_uri": {
-        "field_value": ["https://www.example.org/codelist/a","https://www.example.org/codelist/b", "https://www.example.org/codelist/c"]
-    },
+    ...
+    # other properties
+    ...
+
+    "field_mapping_schema_version": 2,
+    "dataset_field_mapping": {
+      "title": {
+          "field_position": "A"
+        },
+      "title_translated": {
+          "languages": {
+              "en": {
+                  "field_position": "AC"
+              },
+              "de": {
+                  "field_value": ""
+              },
+              "es": {
+                  "field_position": "A"
+              }
+          }
+      },
+      "private": {
+          "field_position": "F"
+      },
+      "theme": {
+          "field_position": ["G", "AA"],
+      },
+      "tag_custom": {
+          "field_position": "B"
+      },
+      "tag_string": {
+          "field_position": ["A", "B", "AC"]
+      },
+      "theme_es": {
+          "field_value": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente"
+      },
+      "tag_uri": {
+          "field_position": "Z",
+          // "field_value" extends the original list of values retrieved from the remote file for all records.
+          "field_value": ["https://www.example.org/codelist/a","https://www.example.org/codelist/b", "https://www.example.org/codelist/c"] 
+      },
+    }
   }
-}
-```
+  ```
 
+  * *Field names*: With `field_name` to define the mapping based on names of attributes in the remote sheet (`my_title`, `org_identifier`, `keywords`).
+
+  ```json
+  {
+    "storage_type": "gspread",
+    "dataset_sheet": "Dataset",
+    "distribution_sheet": "Distribution",
+    "auth": true,
+
+    ...
+    # other properties
+    ...
+
+    "field_mapping_schema_version": 2,
+    "dataset_field_mapping": {
+      "title": {
+          "field_name": "my_title"
+        },
+      "title_translated": {
+          "languages": {
+              "en": {
+                  "field_name": "my_title-en"
+              },
+              "de": {
+                  "field_value": ""
+              },
+              "es": {
+                  "field_name": "my_title"
+              }
+          }
+      },
+      "private": {
+          "field_name": "private"
+      },
+      "theme": {
+          "field_name": ["theme", "theme_eu"]
+      },
+      "tag_custom": {
+          "field_name": "keywords"
+      },
+      "tag_string": {
+          "field_name": ["theme_a", "theme_b", "theme_c"]
+      },
+      "theme_es": {
+          "field_value": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente"
+      },
+      "tag_uri": {
+          "field_name": "keyword_uri",
+          // "field_value" extends the original list of values retrieved from the remote file for all records.
+          "field_value": ["https://www.example.org/codelist/a","https://www.example.org/codelist/b", "https://www.example.org/codelist/c"] 
+      },
+    }
+  }
+  ```
+
+>[!IMPORTANT]
+> All `*_translated` fields need their fallback `non-suffix` field as simple field, e.g: 
+> ```json
+> ...
+>    "title": {
+>         "field_position": "A"
+>      },
+>    "title_translated": {
+>        "languages": {
+>            "en": {
+>                "field_value": ""
+>            },
+>            "es": {
+>                "field_position": "A"
+>            }
+>       }
+>    },
+> ...
+>```
 
 ## Running the Tests
 To run the tests:
