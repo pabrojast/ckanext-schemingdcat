@@ -1,7 +1,7 @@
-{% macro contact_item(icon_class, url, truncate_length) %}
+{% macro contact_item(icon_class, url, truncate_length, url_text=None) %}
   {% if url %}
     <li class="nav-item">
-      <a href="{{ url }}" target="_blank"><i class="{{ icon_class }}"></i> {{ url | truncate(truncate_length) }}</a>
+      <a href="{{ url }}" target="_blank"><i class="{{ icon_class }}"></i> {{ url_text|default(url) | truncate(truncate_length) }}</a>
     </li>
   {% endif %}
 {% endmacro %}
@@ -39,9 +39,9 @@
         <a class="item_heading" href="{{ h.url_for('dataset.search', contact_name=pkg_dict.contact_name) }}" target="_blank"> {{ pkg_dict.contact_name }}</a>
 
         <ul class="nav nav-simple">
-          {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26) }}
-          {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26) }}
-          {{ contact_item('fa fa-user-circle-o', pkg_dict.contact_uri, 26) }}
+          {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26, pkg_dict.contact_email) }}
+          {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26, h.schemingdcat_prettify_url(pkg_dict.contact_url)) }}
+          {{ contact_item('fa fa-user-circle-o', pkg_dict.contact_uri, 26, h.schemingdcat_prettify_url(pkg_dict.contact_uri)) }}
         </ul>
       </section>
     </section>
