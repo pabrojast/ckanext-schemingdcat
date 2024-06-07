@@ -1,6 +1,7 @@
 import json
 import re
 import six
+import mimetypes
 
 import ckanext.scheming.helpers as sh
 import ckanext.schemingdcat.helpers as helpers
@@ -28,6 +29,10 @@ from ckanext.fluent.validators import (
     BCP_47_LANGUAGE, fluent_text_output, scheming_language_text, LANG_SUFFIX)
 
 from ckanext.schemingdcat.utils import parse_json
+from ckanext.schemingdcat.config import (
+    OGC2CKAN_HARVESTER_MD_CONFIG,
+    mimetype_base_uri
+)
 
 log = logging.getLogger(__name__)
 
@@ -819,3 +824,46 @@ def schemingdcat_spatial_uri_validator(field, schema):
 
     return validator
 
+@scheming_validator
+@validator
+def schemingdcat_if_empty_guess_format(field, schema):
+    """
+    Guess the format of a resource based on its URL.
+
+    This function attempts to guess the format of a resource based on its URL.
+    If the resource format is not provided or is missing, and the resource is not being updated,
+    it tries to guess the format from the URL. If the URL is a valid URL (i.e., it has a scheme and a path),
+    it uses the mimetypes module to guess the format and encoding. If a mimetype is found, it is stored in the data
+    dictionary and the format is set to the last part of the mimetype (after the '/'). If no mimetype is found,
+    the format is set to the file extension of the URL.
+
+    Args:
+        field (dict): The field dictionary.
+        schema (dict): The schema dictionary.
+
+    Returns:
+        function: A validator function which takes four arguments: key, data, errors, context.
+    """
+    def validator(key, data, errors, context):
+        value = data[key]
+        resource_id = data.get(key[:-1] + ('id',))
+        
+        # if resource_id then an update
+        if (not value or value is missing) and not resource_id:
+            url = data.get(key[:-1] + ('url',), '')
+            if not url:
+                return
+
+            # Uploaded files have only the filename as url, so check scheme to
+            # determine if it's an actual url
+            parsed = urlparse(url)
+            if parsed.scheme and not parsed.path:
+                return
+
+            mimetype, encoding = mimetypes.guess_type(url)
+            if mimetype:
+                data[key] = mimetype.split('/')[-1].upper()
+                data[key[:-1] + ('mimetype',)] = f"{mimetype_base_uri}/{mimetype}"
+                data[key[:-1] + ('encoding',)] = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
+                
+    return validator
