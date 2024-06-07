@@ -2033,3 +2033,110 @@ input#lang-r:checked ~ div .example-r {
   padding-left: 0;
   list-style: none;
 }
+
+/* distribution formats */
+.label[data-format=css],
+.label[data-format*=css] {
+  background-color: #0096e6;
+}
+
+.label[data-format=csv],
+.label[data-format*=csv],
+.label[data-format*=tsv],
+.label[data-format*=xls],
+.label[data-format*=xlsx],
+.label[data-format*=gspread],
+.label[data-format*=gsheet],
+.label[data-format*=sheet] {
+  background-color: #45b058;
+}
+
+.label[data-format=csw],
+.label[data-format*=csw],
+.label[data-format*=ows],
+.label[data-format*=ogc] {
+  background-color: #5e4f11;
+}
+
+.label[data-format=doc],
+.label[data-format*=docx],
+.label[data-format*=odt],
+.label[data-format*=md],
+.label[data-format*=tex],
+.label[data-format=txt],
+.label[data-format*=txt] {
+  background-color: #42a5f5;
+}
+
+.label[data-format=geojson],
+.label[data-format=json],
+.label[data-format*=json] {
+  background-color: #eeaf4b;
+}
+
+.label[data-format=jpeg],
+.label[data-format=jpg],
+.label[data-format*=jpg] {
+  background-color: #14a085;
+}
+
+.label[data-format=kml],
+.label[data-format=kmz],
+.label[data-format*=kmz] {
+  background-color: #8D6FA9;
+}
+
+.label[data-format=png],
+.label[data-format*=png] {
+  background-color: #659c35;
+}
+
+.label[data-format=mp3],
+.label[data-format*=mp3],
+.label[data-format*=mpeg3] {
+  background-color: #7d6599;
+}
+
+.label[data-format=mp4],
+.label[data-format*=mp4],
+.label[data-format*=mpeg4] {
+  background-color: #ff5364;
+}
+
+.label[data-format=shp],
+.label[data-format*=shp],
+.label[data-format*=shapefile],
+.label[data-format*=gdb],
+.label[data-format*=geodatabase] {
+  background-color: #daf7ff;
+}
+
+.label[data-format=wcs],
+.label[data-format*=wcs] {
+  background-color: #38586C;
+}
+
+.label[data-format=wfs],
+.label[data-format*=wfs] {
+  background-color: #5783A3;
+}
+
+.label[data-format=wms],
+.label[data-format*=wms] {
+  background-color: #ADAB46;
+}
+
+.label[data-format=wmts],
+.label[data-format*=wmts] {
+  background-color: #6E512F;
+}
+
+.label[data-format=xml],
+.label[data-format*=xml] {
+  background-color: #fc7b24;
+}
+
+.label[data-format=zip],
+.label[data-format*=zip] {
+  background-color: #afb42b;
+}
