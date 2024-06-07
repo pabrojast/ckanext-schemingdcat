@@ -1531,6 +1531,11 @@ dataset_fields:
       [4.32, 43.76], [-18.17, 43.76], [-18.17, 27.64]]]}'
     value: http://publications.europa.eu/resource/authority/country/ESP
   - label:
+      en: European Union
+      es: Unión Europea
+    spatial: '{"type": "Polygon", "coordinates": [[[-10.478556, 34.633284672291], [34.597916, 34.633284672291], [34.597916, 70.096054], [-10.478556, 70.096054], [-10.478556, 34.633284672291]]]}'
+    value: http://publications.europa.eu/resource/authority/country/EUR
+  - label:
       en: Germany
       es: Alemania
     spatial: '{"type": "Polygon", "coordinates": [[[5.87, 47.27], [15.03, 47.27],
