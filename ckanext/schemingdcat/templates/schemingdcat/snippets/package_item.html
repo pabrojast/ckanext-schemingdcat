@@ -14,17 +14,12 @@
   
   #}
 
-{# macro for displaying badges #}
-{% macro badge(class, text) %}
-  <span class="{{ class }}">{{ _(text) }}</span>
-{% endmacro %}
-
-{% set truncate = truncate or 180 %}
-{% set truncate_title = truncate_title or 80 %}
-{% set title = h.dataset_display_name(package) %}
-{% set notes = h.markdown_extract(h.dataset_display_field_value(package, 'notes'), extract_length=truncate) %}
+  {% set truncate = truncate or 180 %}
+  {% set truncate_title = truncate_title or 80 %}
+  {% set title = h.dataset_display_name(package) %}
+  {% set notes = h.markdown_extract(h.dataset_display_field_value(package, 'notes'), extract_length=truncate) %}
   
-{% block package_item %}
+  {% block package_item %}
   <li class="{{ item_class or 'dataset-item' }}">
     <div class="row">
       <div class="col-md-12 d-flex">
@@ -34,7 +29,10 @@
                 <h2 class="dataset-heading">
                   {% block heading_private %}
                     {% if package.private %}
-                      {{ badge('dataset-private badge bg-secondary', 'Private') }}
+                      <span class="dataset-private badge bg-secondary">
+                          <i class="fa fa-lock"></i>
+                          {{ _('Private') }}
+                      </span>
                     {% endif %}
                   {% endblock %}
                   {% block heading_title %}
