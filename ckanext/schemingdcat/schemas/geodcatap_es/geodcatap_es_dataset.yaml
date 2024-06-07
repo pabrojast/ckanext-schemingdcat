@@ -169,7 +169,7 @@ dataset_fields:
   required: True
   display_property: dct:title
   form_placeholder:
-    en: eg. A descriptive title.
+    en: e.g. A descriptive title.
     es: ej. Un título descriptivo.
   form_languages: ["es", "en"]
   required_language: "es"
@@ -228,7 +228,7 @@ dataset_fields:
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000
   help_text:
-    en: Eg. Unique resource identifier (UUID).
+    en: e.g. Unique resource identifier (UUID).
     es: Ej. Identificador único de recurso (UUID).
   help_allow_html: True
   form_group_id: identification
@@ -950,7 +950,7 @@ dataset_fields:
   required: True
   display_property: dct:description
   form_placeholder:
-    en: eg. Some useful description about the dataset.
+    en: e.g. Some useful description about the dataset.
     es: ej. Una descripción útil sobre el conjunto de datos.
   form_languages: ["es", "en"]
   required_language: "es"
@@ -1013,7 +1013,7 @@ dataset_fields:
     value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/utilitiesCommunication
 
   help_text:
-    en: 'eg.: Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
+    en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
     es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist/TopicCategory" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
   help_allow_html: True
   form_group_id: vocabs
@@ -1028,7 +1028,7 @@ dataset_fields:
   display_property: dct:subject
   form_placeholder: 'gsaa'
   help_text:
-    en: 'eg.: Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
+    en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
     es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
   help_allow_html: True
   form_group_id: vocabs
@@ -1045,7 +1045,7 @@ dataset_fields:
   display_snippet: schemingdcat/display_snippets/list_keywords.html
   form_placeholder: 'http://inspire.ec.europa.eu/metadata-codelist/IACSData/gsaa'
   help_text:
-    en: 'eg.: Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    en: 'e.g. Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
     es: 'ej: Registro de listas controladas de metadatos (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
   form_group_id: vocabs
 
@@ -1356,7 +1356,7 @@ dataset_fields:
   preset: multiple_text_links
   form_placeholder: 'http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
   help_text:
-    en: 'Implementing rule (eg. INSPIRE) or other specification.URLs eg.: http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
+    en: 'Implementing rule (e.g. INSPIRE) or other specification.URLs e.g. http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
     es: 'Conformidad con normativas (Reglamento INSPIRE) o especificaciones. URLs e.j:http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
   form_group_id: standards
 
@@ -1770,7 +1770,7 @@ dataset_fields:
   display_property: adms:identifier
   form_placeholder: ES.LU.IEPNB.IEPZ.2022
   help_text:
-    en: 'eg. inspireId = namespace (ES.LU.IEPNB) + localId (IEPZ) + versionId (2022) (INSPIRE) | <a href="http://eur-lex.europa.eu/eli-register/about.html" target="_blank" rel="noopener">ELI (UE)</a>'
+    en: 'e.g. inspireId = namespace (ES.LU.IEPNB) + localId (IEPZ) + versionId (2022) (INSPIRE) | <a href="http://eur-lex.europa.eu/eli-register/about.html" target="_blank" rel="noopener">ELI (UE)</a>'
     es: 'ej. inspireId = namespace (ES.LU.IEPNB) + localId (IEPZ) + versionId (2022) (INSPIRE) | <a href="http://eur-lex.europa.eu/eli-register/about.html" target="_blank" rel="noopener">ELI (UE)</a>'
   help_allow_html: True
   form_group_id: inspire
@@ -1797,8 +1797,8 @@ dataset_fields:
   preset: spatial
   form_placeholder: '{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}'
   help_text:
-    en: '<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value. eg. {"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</a> Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
-    es: '<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates". ej. {"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}. </a> Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    en: 'If a <strong>Geographic identifier</strong> is selected and this element is empty, it will be filled in automatically.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value..</a> e.g. <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    es: 'Sí se selecciona un <strong>Identificador geográfico</strong> y este elemento esta vacío, se rellena automáticamente.<br><br><a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates".</a> ej: <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
   help_allow_html: True
   form_group_id: spatial_info
 
@@ -1813,508 +1813,644 @@ dataset_fields:
   sorted_choices: True
   choices:
   - label:
-      es: España
-      en: Spain
       ca: España
-      gl: España
+      en: Spain
+      es: España
       eu: España
+      gl: España
+    spatial: '{"type": "Polygon", "coordinates": [[[-18.16, 27.64], [4.32, 27.64],
+      [4.32, 43.79], [-18.16, 43.79], [-18.16, 27.64]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Pais/España
   - label:
-      es: Andalucía
-      en: Andalucía
       ca: Andalucía
-      gl: Andalucía
+      en: Andalucía
+      es: Andalucía
       eu: Andalucía
+      gl: Andalucía
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.52, 35.94], [-1.63, 35.94],
+      [-1.63, 38.73], [-7.52, 38.73], [-7.52, 35.94]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Andalucia
   - label:
-      es: Almería
-      en: Almería
       ca: Almería
-      gl: Almería
+      en: Almería
+      es: Almería
       eu: Almería
+      gl: Almería
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.14, 35.94], [-1.63, 35.94],
+      [-1.63, 37.92], [-3.14, 37.92], [-3.14, 35.94]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Almeria
   - label:
-      es: Cádiz
-      en: Cádiz
       ca: Cádiz
-      gl: Cádiz
+      en: Cádiz
+      es: Cádiz
       eu: Cádiz
+      gl: Cádiz
+    spatial: '{"type": "Polygon", "coordinates": [[[-6.47, 36.0], [-5.09, 36.0], [-5.09,
+      37.05], [-6.47, 37.05], [-6.47, 36.0]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cadiz
   - label:
-      es: Córdoba
-      en: Córdoba
       ca: Córdoba
-      gl: Córdoba
+      en: Córdoba
+      es: Córdoba
       eu: Córdoba
+      gl: Córdoba
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.59, 37.18], [-4.0, 37.18],
+      [-4.0, 38.73], [-5.59, 38.73], [-5.59, 37.18]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cordoba
   - label:
-      es: Granada
-      en: Granada
       ca: Granada
-      gl: Granada
+      en: Granada
+      es: Granada
       eu: Granada
+      gl: Granada
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.33, 36.69], [-2.21, 36.69],
+      [-2.21, 38.08], [-4.33, 38.08], [-4.33, 36.69]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Granada
   - label:
-      es: Huelva
-      en: Huelva
       ca: Huelva
-      gl: Huelva
+      en: Huelva
+      es: Huelva
       eu: Huelva
+      gl: Huelva
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.52, 36.8], [-6.12, 36.8], [-6.12,
+      38.21], [-7.52, 38.21], [-7.52, 36.8]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Huelva
   - label:
-      es: Jaén
-      en: Jaén
       ca: Jaén
-      gl: Jaén
+      en: Jaén
+      es: Jaén
       eu: Jaén
+      gl: Jaén
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.29, 37.38], [-2.44, 37.38],
+      [-2.44, 38.53], [-4.29, 38.53], [-4.29, 37.38]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Jaen
   - label:
-      es: Málaga
-      en: Málaga
       ca: Málaga
-      gl: Málaga
+      en: Málaga
+      es: Málaga
       eu: Málaga
+      gl: Málaga
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.61, 36.31], [-3.77, 36.31],
+      [-3.77, 37.28], [-5.61, 37.28], [-5.61, 36.31]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Malaga
   - label:
-      es: Sevilla
-      en: Sevilla
       ca: Sevilla
-      gl: Sevilla
+      en: Sevilla
+      es: Sevilla
       eu: Sevilla
+      gl: Sevilla
+    spatial: '{"type": "Polygon", "coordinates": [[[-6.54, 36.84], [-4.65, 36.84],
+      [-4.65, 38.2], [-6.54, 38.2], [-6.54, 36.84]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Sevilla
   - label:
-      es: Aragón
-      en: Aragón
       ca: Aragón
-      gl: Aragón
+      en: Aragón
+      es: Aragón
       eu: Aragón
+      gl: Aragón
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.17, 39.85], [0.77, 39.85],
+      [0.77, 42.92], [-2.17, 42.92], [-2.17, 39.85]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Aragon
   - label:
-      es: Huesca
-      en: Huesca
       ca: Huesca
-      gl: Huesca
+      en: Huesca
+      es: Huesca
       eu: Huesca
+      gl: Huesca
+    spatial: '{"type": "Polygon", "coordinates": [[[-0.93, 41.35], [0.77, 41.35],
+      [0.77, 42.92], [-0.93, 42.92], [-0.93, 41.35]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Huesca
   - label:
-      es: Teruel
-      en: Teruel
       ca: Teruel
-      gl: Teruel
+      en: Teruel
+      es: Teruel
       eu: Teruel
+      gl: Teruel
+    spatial: '{"type": "Polygon", "coordinates": [[[-1.81, 39.85], [0.29, 39.85],
+      [0.29, 41.35], [-1.81, 41.35], [-1.81, 39.85]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Teruel
   - label:
-      es: Zaragoza
-      en: Zaragoza
       ca: Zaragoza
-      gl: Zaragoza
+      en: Zaragoza
+      es: Zaragoza
       eu: Zaragoza
+      gl: Zaragoza
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.17, 40.94], [0.39, 40.94],
+      [0.39, 42.74], [-2.17, 42.74], [-2.17, 40.94]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Zaragoza
   - label:
-      es: Principado de Asturias
-      en: Principado de Asturias
       ca: Principado de Asturias
-      gl: Principado de Asturias
+      en: Principado de Asturias
+      es: Principado de Asturias
       eu: Principado de Asturias
+      gl: Principado de Asturias
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.18, 42.88], [-4.51, 42.88],
+      [-4.51, 43.66], [-7.18, 43.66], [-7.18, 42.88]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Principado-Asturias
   - label:
-      es: Asturias
-      en: Asturias
       ca: Asturias
-      gl: Asturias
+      en: Asturias
+      es: Asturias
       eu: Asturias
+      gl: Asturias
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.18, 42.88], [-4.51, 42.88],
+      [-4.51, 43.66], [-7.18, 43.66], [-7.18, 42.88]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Asturias
   - label:
-      es: Illes Balears
-      en: Illes Balears
       ca: Illes Balears
-      gl: Illes Balears
+      en: Illes Balears
+      es: Illes Balears
       eu: Illes Balears
+      gl: Illes Balears
+    spatial: '{"type": "Polygon", "coordinates": [[[1.16, 38.64], [4.32, 38.64], [4.32,
+      40.1], [1.16, 40.1], [1.16, 38.64]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Illes-Balears
   - label:
-      es: Provincia de Illes Balears
-      en: Provincia de Illes Balears
       ca: Provincia de Illes Balears
-      gl: Provincia de Illes Balears
+      en: Provincia de Illes Balears
+      es: Provincia de Illes Balears
       eu: Provincia de Illes Balears
+      gl: Provincia de Illes Balears
+    spatial: '{"type": "Polygon", "coordinates": [[[1.16, 38.64], [4.32, 38.64], [4.32,
+      40.1], [1.16, 40.1], [1.16, 38.64]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Illes-Balears
   - label:
-      es: Canarias
-      en: Canarias
       ca: Canarias
-      gl: Canarias
+      en: Canarias
+      es: Canarias
       eu: Canarias
+      gl: Canarias
+    spatial: '{"type": "Polygon", "coordinates": [[[-18.16, 27.64], [-13.42, 27.64],
+      [-13.42, 29.42], [-18.16, 29.42], [-18.16, 27.64]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Canarias
   - label:
-      es: Las Palmas
-      en: Las Palmas
       ca: Las Palmas
-      gl: Las Palmas
+      en: Las Palmas
+      es: Las Palmas
       eu: Las Palmas
+      gl: Las Palmas
+    spatial: '{"type": "Polygon", "coordinates": [[[-15.83, 27.73], [-15.36, 27.73], [-15.36, 28.18], [-15.83, 28.18], [-15.83, 27.73]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Las-Palmas
   - label:
-      es: Santa Cruz de Tenerife
-      en: Santa Cruz de Tenerife
       ca: Santa Cruz de Tenerife
-      gl: Santa Cruz de Tenerife
+      en: Santa Cruz de Tenerife
+      es: Santa Cruz de Tenerife
       eu: Santa Cruz de Tenerife
+      gl: Santa Cruz de Tenerife
+    spatial: '{"type": "Polygon", "coordinates": [[[-16.92, 28.0], [-16.12, 28.0], [-16.12, 28.6], [-16.92, 28.6], [-16.92, 28.0]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Santa-Cruz-Tenerife
   - label:
-      es: Cantabria
-      en: Cantabria
       ca: Cantabria
-      gl: Cantabria
+      en: Cantabria
+      es: Cantabria
       eu: Cantabria
+      gl: Cantabria
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.85, 42.76], [-3.15, 42.76],
+      [-3.15, 43.51], [-4.85, 43.51], [-4.85, 42.76]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Cantabria
   - label:
-      es: Provincia de Cantabria
-      en: Provincia de Cantabria
       ca: Provincia de Cantabria
-      gl: Provincia de Cantabria
+      en: Provincia de Cantabria
+      es: Provincia de Cantabria
       eu: Provincia de Cantabria
+      gl: Provincia de Cantabria
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.85, 42.76], [-3.15, 42.76],
+      [-3.15, 43.51], [-4.85, 43.51], [-4.85, 42.76]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cantabria
   - label:
-      es: Castilla y León
-      en: Castilla y León
       ca: Castilla y León
-      gl: Castilla y León
+      en: Castilla y León
+      es: Castilla y León
       eu: Castilla y León
+      gl: Castilla y León
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.08, 40.08], [-1.78, 40.08],
+      [-1.78, 43.24], [-7.08, 43.24], [-7.08, 40.08]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Castilla-Leon
   - label:
-      es: Ávila
-      en: Ávila
       ca: Ávila
-      gl: Ávila
+      en: Ávila
+      es: Ávila
       eu: Ávila
+      gl: Ávila
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.74, 40.08], [-4.16, 40.08],
+      [-4.16, 41.16], [-5.74, 41.16], [-5.74, 40.08]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Avila
   - label:
-      es: Burgos
-      en: Burgos
       ca: Burgos
-      gl: Burgos
+      en: Burgos
+      es: Burgos
       eu: Burgos
+      gl: Burgos
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.33, 41.45], [-2.52, 41.45],
+      [-2.52, 43.2], [-4.33, 43.2], [-4.33, 41.45]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Burgos
   - label:
-      es: León
-      en: León
       ca: León
-      gl: León
+      en: León
+      es: León
       eu: León
+      gl: León
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.08, 42.03], [-4.74, 42.03],
+      [-4.74, 43.24], [-7.08, 43.24], [-7.08, 42.03]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Leon
   - label:
-      es: Palencia
-      en: Palencia
       ca: Palencia
-      gl: Palencia
+      en: Palencia
+      es: Palencia
       eu: Palencia
+      gl: Palencia
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.03, 41.76], [-3.89, 41.76],
+      [-3.89, 43.06], [-5.03, 43.06], [-5.03, 41.76]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Palencia
   - label:
-      es: Salamanca
-      en: Salamanca
       ca: Salamanca
-      gl: Salamanca
+      en: Salamanca
+      es: Salamanca
       eu: Salamanca
+      gl: Salamanca
+    spatial: '{"type": "Polygon", "coordinates": [[[-6.93, 40.24], [-5.09, 40.24],
+      [-5.09, 41.29], [-6.93, 41.29], [-6.93, 40.24]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Salamanca
   - label:
-      es: Segovia
-      en: Segovia
       ca: Segovia
-      gl: Segovia
+      en: Segovia
+      es: Segovia
       eu: Segovia
+      gl: Segovia
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.72, 40.63], [-3.21, 40.63],
+      [-3.21, 41.59], [-4.72, 41.59], [-4.72, 40.63]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Segovia
   - label:
-      es: Soria
-      en: Soria
       ca: Soria
-      gl: Soria
+      en: Soria
+      es: Soria
       eu: Soria
+      gl: Soria
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.55, 41.06], [-1.78, 41.06],
+      [-1.78, 42.15], [-3.55, 42.15], [-3.55, 41.06]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Soria
   - label:
-      es: Valladolid
-      en: Valladolid
       ca: Valladolid
-      gl: Valladolid
+      en: Valladolid
+      es: Valladolid
       eu: Valladolid
+      gl: Valladolid
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.52, 41.09], [-3.98, 41.09],
+      [-3.98, 42.31], [-5.52, 42.31], [-5.52, 41.09]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Valladolid
   - label:
-      es: Zamora
-      en: Zamora
       ca: Zamora
-      gl: Zamora
+      en: Zamora
+      es: Zamora
       eu: Zamora
+      gl: Zamora
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.03, 41.12], [-5.23, 41.12],
+      [-5.23, 42.25], [-7.03, 42.25], [-7.03, 41.12]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Zamora
   - label:
-      es: Castilla-La Mancha
-      en: Castilla-La Mancha
       ca: Castilla-La Mancha
-      gl: Castilla-La Mancha
+      en: Castilla-La Mancha
+      es: Castilla-La Mancha
       eu: Castilla-La Mancha
+      gl: Castilla-La Mancha
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.41, 38.02], [-0.92, 38.02],
+      [-0.92, 41.33], [-5.41, 41.33], [-5.41, 38.02]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Castilla-La-Mancha
   - label:
-      es: Albacete
-      en: Albacete
       ca: Albacete
-      gl: Albacete
+      en: Albacete
+      es: Albacete
       eu: Albacete
+      gl: Albacete
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.88, 38.02], [-0.92, 38.02],
+      [-0.92, 39.42], [-2.88, 39.42], [-2.88, 38.02]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Albacete
   - label:
-      es: Ciudad Real
-      en: Ciudad Real
       ca: Ciudad Real
-      gl: Ciudad Real
+      en: Ciudad Real
+      es: Ciudad Real
       eu: Ciudad Real
+      gl: Ciudad Real
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.05, 38.34], [-2.64, 38.34],
+      [-2.64, 39.58], [-5.05, 39.58], [-5.05, 38.34]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ciudad-Real
   - label:
-      es: Cuenca
-      en: Cuenca
       ca: Cuenca
-      gl: Cuenca
+      en: Cuenca
+      es: Cuenca
       eu: Cuenca
+      gl: Cuenca
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.17, 39.23], [-1.14, 39.23],
+      [-1.14, 40.66], [-3.17, 40.66], [-3.17, 39.23]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Cuenca
   - label:
-      es: Guadalajara
-      en: Guadalajara
       ca: Guadalajara
-      gl: Guadalajara
+      en: Guadalajara
+      es: Guadalajara
       eu: Guadalajara
+      gl: Guadalajara
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.54, 40.15], [-1.54, 40.15],
+      [-1.54, 41.33], [-3.54, 41.33], [-3.54, 40.15]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Guadalajara
   - label:
-      es: Toledo
-      en: Toledo
       ca: Toledo
-      gl: Toledo
+      en: Toledo
+      es: Toledo
       eu: Toledo
+      gl: Toledo
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.41, 39.26], [-2.91, 39.26],
+      [-2.91, 40.32], [-5.41, 40.32], [-5.41, 39.26]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Toledo
   - label:
-      es: Cataluña
-      en: Cataluña
       ca: Cataluña
-      gl: Cataluña
+      en: Cataluña
+      es: Cataluña
       eu: Cataluña
+      gl: Cataluña
+    spatial: '{"type": "Polygon", "coordinates": [[[0.17, 40.52], [3.32, 40.52], [3.32,
+      42.86], [0.17, 42.86], [0.17, 40.52]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Cataluna
   - label:
-      es: Barcelona
-      en: Barcelona
       ca: Barcelona
-      gl: Barcelona
+      en: Barcelona
+      es: Barcelona
       eu: Barcelona
+      gl: Barcelona
+    spatial: '{"type": "Polygon", "coordinates": [[[1.36, 41.2], [2.78, 41.2], [2.78,
+      42.32], [1.36, 42.32], [1.36, 41.2]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Barcelona
   - label:
-      es: Girona
-      en: Girona
       ca: Girona
-      gl: Girona
+      en: Girona
+      es: Girona
       eu: Girona
+      gl: Girona
+    spatial: '{"type": "Polygon", "coordinates": [[[1.72, 41.65], [3.32, 41.65], [3.32,
+      42.5], [1.72, 42.5], [1.72, 41.65]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Girona
   - label:
-      es: Lleida
-      en: Lleida
       ca: Lleida
-      gl: Lleida
+      en: Lleida
+      es: Lleida
       eu: Lleida
+      gl: Lleida
+    spatial: '{"type": "Polygon", "coordinates": [[[0.32, 41.27], [1.86, 41.27], [1.86,
+      42.86], [0.32, 42.86], [0.32, 41.27]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Lleida
   - label:
-      es: Tarragona
-      en: Tarragona
       ca: Tarragona
-      gl: Tarragona
+      en: Tarragona
+      es: Tarragona
       eu: Tarragona
+      gl: Tarragona
+    spatial: '{"type": "Polygon", "coordinates": [[[0.17, 40.52], [1.65, 40.52], [1.65,
+      41.58], [0.17, 41.58], [0.17, 40.52]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Tarragona
   - label:
-      es: Comunitat Valenciana
-      en: Comunitat Valenciana
       ca: Comunitat Valenciana
-      gl: Comunitat Valenciana
+      en: Comunitat Valenciana
+      es: Comunitat Valenciana
       eu: Comunitat Valenciana
+      gl: Comunitat Valenciana
+    spatial: '{"type": "Polygon", "coordinates": [[[-1.53, 37.84], [0.69, 37.84],
+      [0.69, 40.79], [-1.53, 40.79], [-1.53, 37.84]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunitat-Valenciana
   - label:
-      es: Alicante
-      en: Alicante
       ca: Alicante
-      gl: Alicante
+      en: Alicante
+      es: Alicante
       eu: Alicante
+      gl: Alicante
+    spatial: '{"type": "Polygon", "coordinates": [[[-1.09, 37.84], [0.23, 37.84], [0.23, 38.89], [-1.09, 38.89], [-1.09, 37.84]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Alicante
   - label:
-      es: Castellón
-      en: Castellón
       ca: Castellón
-      gl: Castellón
+      en: Castellón
+      es: Castellón
       eu: Castellón
+      gl: Castellón
+    spatial: '{"type": "Polygon", "coordinates": [[[-0.85, 39.72], [0.69, 39.72], [0.69, 40.79], [-0.85, 40.79], [-0.85, 39.72]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Castellon
   - label:
-      es: Valencia
-      en: Valencia
       ca: Valencia
-      gl: Valencia
+      en: Valencia
+      es: Valencia
       eu: Valencia
+      gl: Valencia
+    spatial: '{"type": "Polygon", "coordinates": [[[-1.53, 38.69], [-0.03, 38.69], [-0.03, 40.21], [-1.53, 40.21], [-1.53, 38.69]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Valencia
   - label:
-      es: Extremadura
-      en: Extremadura
       ca: Extremadura
-      gl: Extremadura
+      en: Extremadura
+      es: Extremadura
       eu: Extremadura
+      gl: Extremadura
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.55, 37.94], [-4.65, 37.94],
+      [-4.65, 40.49], [-7.55, 40.49], [-7.55, 37.94]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Extremadura
   - label:
-      es: Badajoz
-      en: Badajoz
       ca: Badajoz
-      gl: Badajoz
+      en: Badajoz
+      es: Badajoz
       eu: Badajoz
+      gl: Badajoz
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.34, 37.94], [-4.65, 37.94],
+      [-4.65, 39.45], [-7.34, 39.45], [-7.34, 37.94]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Badajoz
   - label:
-      es: Cáceres
-      en: Cáceres
       ca: Cáceres
-      gl: Cáceres
+      en: Cáceres
+      es: Cáceres
       eu: Cáceres
+      gl: Cáceres
+    spatial: '{"type": "Polygon", "coordinates": [[[-7.55, 39.03], [-4.95, 39.03],
+      [-4.95, 40.49], [-7.55, 40.49], [-7.55, 39.03]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Caceres
   - label:
-      es: Galicia
-      en: Galicia
       ca: Galicia
-      gl: Galicia
+      en: Galicia
+      es: Galicia
       eu: Galicia
+      gl: Galicia
+    spatial: '{"type": "Polygon", "coordinates": [[[-9.3, 41.81], [-6.73, 41.81],
+      [-6.73, 43.79], [-9.3, 43.79], [-9.3, 41.81]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Galicia
   - label:
-      es: A Coruña
-      en: A Coruña
       ca: A Coruña
-      gl: A Coruña
+      en: A Coruña
+      es: A Coruña
       eu: A Coruña
+      gl: A Coruña
+    spatial: '{"type": "Polygon", "coordinates": [[[-9.3, 42.46], [-7.66, 42.46],
+      [-7.66, 43.79], [-9.3, 43.79], [-9.3, 42.46]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/A-Coruna
   - label:
-      es: Lugo
-      en: Lugo
       ca: Lugo
-      gl: Lugo
+      en: Lugo
+      es: Lugo
       eu: Lugo
+      gl: Lugo
+    spatial: '{"type": "Polygon", "coordinates": [[[-8.0, 42.33], [-6.82, 42.33],
+      [-6.82, 43.76], [-8.0, 43.76], [-8.0, 42.33]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Lugo
   - label:
-      es: Ourense
-      en: Ourense
       ca: Ourense
-      gl: Ourense
+      en: Ourense
+      es: Ourense
       eu: Ourense
+      gl: Ourense
+    spatial: '{"type": "Polygon", "coordinates": [[[-8.37, 41.81], [-6.73, 41.81],
+      [-6.73, 42.58], [-8.37, 42.58], [-8.37, 41.81]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ourense
   - label:
-      es: Pontevedra
-      en: Pontevedra
       ca: Pontevedra
-      gl: Pontevedra
+      en: Pontevedra
+      es: Pontevedra
       eu: Pontevedra
+      gl: Pontevedra
+    spatial: '{"type": "Polygon", "coordinates": [[[-8.95, 41.87], [-7.86, 41.87],
+      [-7.86, 42.86], [-8.95, 42.86], [-8.95, 41.87]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Pontevedra
   - label:
-      es: Comunidad de Madrid
-      en: Comunidad de Madrid
       ca: Comunidad de Madrid
-      gl: Comunidad de Madrid
+      en: Comunidad de Madrid
+      es: Comunidad de Madrid
       eu: Comunidad de Madrid
+      gl: Comunidad de Madrid
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.58, 39.88], [-3.05, 39.88],
+      [-3.05, 41.17], [-4.58, 41.17], [-4.58, 39.88]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunidad-Madrid
   - label:
-      es: Madrid
-      en: Madrid
       ca: Madrid
-      gl: Madrid
+      en: Madrid
+      es: Madrid
       eu: Madrid
+      gl: Madrid
+    spatial: '{"type": "Polygon", "coordinates": [[[-4.58, 39.88], [-3.05, 39.88],
+      [-3.05, 41.17], [-4.58, 41.17], [-4.58, 39.88]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Madrid
   - label:
-      es: Región de Murcia
-      en: Región de Murcia
       ca: Región de Murcia
-      gl: Región de Murcia
+      en: Región de Murcia
+      es: Región de Murcia
       eu: Región de Murcia
+      gl: Región de Murcia
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.34, 37.38], [-0.69, 37.38],
+      [-0.69, 38.76], [-2.34, 38.76], [-2.34, 37.38]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Region-Murcia
   - label:
-      es: Murcia
-      en: Murcia
       ca: Murcia
-      gl: Murcia
+      en: Murcia
+      es: Murcia
       eu: Murcia
+      gl: Murcia
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.34, 37.38], [-0.69, 37.38],
+      [-0.69, 38.76], [-2.34, 38.76], [-2.34, 37.38]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Murcia
   - label:
-      es: C. Foral de Navarra
-      en: C. Foral de Navarra
       ca: C. Foral de Navarra
-      gl: C. Foral de Navarra
+      en: C. Foral de Navarra
+      es: C. Foral de Navarra
       eu: C. Foral de Navarra
+      gl: C. Foral de Navarra
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.5, 41.91], [-0.72, 41.91],
+      [-0.72, 43.31], [-2.5, 43.31], [-2.5, 41.91]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Comunidad-Foral-Navarra
   - label:
-      es: Navarra
-      en: Navarra
       ca: Navarra
-      gl: Navarra
+      en: Navarra
+      es: Navarra
       eu: Navarra
+      gl: Navarra
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.5, 41.91], [-0.72, 41.91],
+      [-0.72, 43.31], [-2.5, 43.31], [-2.5, 41.91]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Navarra
   - label:
-      es: País Vasco
-      en: País Vasco
       ca: País Vasco
-      gl: País Vasco
+      en: País Vasco
+      es: País Vasco
       eu: País Vasco
+      gl: País Vasco
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.45, 42.47], [-1.73, 42.47],
+      [-1.73, 43.46], [-3.45, 43.46], [-3.45, 42.47]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Pais-Vasco
   - label:
-      es: Álava
-      en: Álava
       ca: Álava
-      gl: Álava
+      en: Álava
+      es: Álava
       eu: Álava
+      gl: Álava
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.29, 42.47], [-2.23, 42.47], [-2.23, 43.22], [-3.29, 43.22], [-3.29, 42.47]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Alava
   - label:
-      es: Guipúzcoa
-      en: Guipúzcoa
       ca: Guipúzcoa
-      gl: Guipúzcoa
+      en: Guipúzcoa
+      es: Guipúzcoa
       eu: Guipúzcoa
+      gl: Guipúzcoa
+    spatial: '{"type": "Polygon", "coordinates": [[[-2.6, 42.9], [-1.73, 42.9], [-1.73, 43.39], [-2.6, 43.39], [-2.6, 42.9]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Guipuzcoa
   - label:
-      es: Vizcaya
-      en: Vizcaya
       ca: Vizcaya
-      gl: Vizcaya
+      en: Vizcaya
+      es: Vizcaya
       eu: Vizcaya
+      gl: Vizcaya
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.45, 42.98], [-2.41, 42.98], [-2.41, 43.46], [-3.45, 43.46], [-3.45, 42.98]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Vizcaya
   - label:
-      es: La Rioja
-      en: La Rioja
       ca: La Rioja
-      gl: La Rioja
+      en: La Rioja
+      es: La Rioja
       eu: La Rioja
+      gl: La Rioja
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.13, 41.92], [-1.68, 41.92],
+      [-1.68, 42.64], [-3.13, 42.64], [-3.13, 41.92]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/La-Rioja
   - label:
-      es: Provincia de La Rioja
-      en: Provincia de La Rioja
       ca: Provincia de La Rioja
-      gl: Provincia de La Rioja
+      en: Provincia de La Rioja
+      es: Provincia de La Rioja
       eu: Provincia de La Rioja
+      gl: Provincia de La Rioja
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.13, 41.92], [-1.68, 41.92],
+      [-1.68, 42.64], [-3.13, 42.64], [-3.13, 41.92]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/La-Rioja
   - label:
-      es: Ceuta
-      en: Ceuta
       ca: Ceuta
-      gl: Ceuta
+      en: Ceuta
+      es: Ceuta
       eu: Ceuta
+      gl: Ceuta
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.42, 35.87], [-5.28, 35.87],
+      [-5.28, 35.92], [-5.42, 35.92], [-5.42, 35.87]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Ceuta
   - label:
-      es: Provincia de Ceuta
-      en: Provincia de Ceuta
       ca: Provincia de Ceuta
-      gl: Provincia de Ceuta
+      en: Provincia de Ceuta
+      es: Provincia de Ceuta
       eu: Provincia de Ceuta
+      gl: Provincia de Ceuta
+    spatial: '{"type": "Polygon", "coordinates": [[[-5.42, 35.87], [-5.28, 35.87],
+      [-5.28, 35.92], [-5.42, 35.92], [-5.42, 35.87]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Ceuta
   - label:
-      es: Melilla
-      en: Melilla
       ca: Melilla
-      gl: Melilla
+      en: Melilla
+      es: Melilla
       eu: Melilla
+      gl: Melilla
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.89, 35.18], [-2.42, 35.18],
+      [-2.42, 35.32], [-3.89, 35.32], [-3.89, 35.18]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Autonomia/Melilla
   - label:
-      es: Provincia de Melilla
-      en: Provincia de Melilla
       ca: Provincia de Melilla
-      gl: Provincia de Melilla
+      en: Provincia de Melilla
+      es: Provincia de Melilla
       eu: Provincia de Melilla
+      gl: Provincia de Melilla
+    spatial: '{"type": "Polygon", "coordinates": [[[-3.89, 35.18], [-2.42, 35.18],
+      [-2.42, 35.32], [-3.89, 35.32], [-3.89, 35.18]]]}'
     value: http://datos.gob.es/recurso/sector-publico/territorio/Provincia/Melilla
   help_text:
     en: 'Geographic coverage of the dataset. More information in <a href="http://www.boe.es/diario_boe/txt.php?id=BOE-A-2013-2380" target="_blank" rel="noopener">NTI-RISP Annex V</a>.'
@@ -2472,7 +2608,7 @@ dataset_fields:
   preset: schemingdcat_fluent_markdown
   display_property: adms:versionNotes
   form_placeholder:
-    en: eg. Some useful version notes about the dataset.
+    en: e.g. Some useful version notes about the dataset.
     es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
   form_languages: ["es", "en"]
   form_group_id: version_notes
@@ -2505,7 +2641,7 @@ resource_fields:
     en: Distribution title
     es: Título de la distribución
   form_placeholder:
-    en: eg. Web Map Service
+    en: e.g. Web Map Service
     es: ej. Web Map Service
   display_property: dct:title
   form_group_id: resource_title
@@ -2820,7 +2956,7 @@ resource_fields:
     es: Licencia de la distribución
   display_property: dct:license
   form_placeholder:
-    en: eg. http://creativecommons.org/licenses/by/4.0/
+    en: e.g. http://creativecommons.org/licenses/by/4.0/
     es: ej. http://creativecommons.org/licenses/by/4.0/
   help_text:
     en: 'License definitions and additional information can be found at: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
@@ -2889,8 +3025,8 @@ resource_fields:
   display_property: dct:conformsTo
   form_placeholder: 'http://www.opengeospatial.org/standards/wms'
   help_text:
-    en: 'Specification (eg. OGC). URLs'
-    es: 'Especificaciones (eg. OGC). URLs'
+    en: 'Specification (e.g. OGC). URLs'
+    es: 'Especificaciones (e.g. OGC). URLs'
   form_group_id: resource_standards 
 
 # Coordinate Reference System (C)

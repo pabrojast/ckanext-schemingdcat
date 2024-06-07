@@ -20,6 +20,7 @@ import ckan.model as model
 from ckanext.harvest.model import HarvestObject, HarvestObjectExtra
 from ckanext.schemingdcat.harvesters.base import SchemingDCATHarvester, RemoteResourceError, ReadError, RemoteSchemaError
 from ckanext.schemingdcat.interfaces import ISchemingDCATHarvester
+from ckanext.schemingdcat.lib.field_mapping import FieldMappingValidator
 
 from ckanext.schemingdcat.config import (
     COMMON_DATE_FORMATS
@@ -35,35 +36,34 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     def info(self):
         return {
             'name': 'schemingdcat_xls',
-            'title': 'Remote XLS/XLSX Metadata Batch Harvester',
-            'description': 'A harvester for remote Excel files with Metadata records.',
-            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-xlsxlsx-metadata-batch-harvester'
+            'title': 'Remote Google Sheet/Onedrive Excel metadata upload Harvester',
+            'description': 'A harvester for remote sheets files with Metadata records. Google Sheets or Onedrive Excel files.',
+            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester'
         }
 
-    _storage_types_supported = [
-        {
+    _storage_types_supported = {
+        'gspread': {
             'name': 'gspread',
             'title': 'Google Sheets',
             'active': True
         },
-        {
+        'onedrive': {
             'name': 'onedrive',
             'title': 'OneDrive',
             'active': True
         },
-        {
+        'gdrive': {
             'name': 'gdrive',
             'title': 'Google Drive',
             'active': False
         }
-    ]
+    }
     
     _storage_type = None
     _auth = False
     _credentials = None
     _names_taken = []
 
-    #TODO: Implement the get_harvester_basic_info method
     def _set_config_credentials(self, storage_type, config_obj):
         """
         Set the credentials based on the storage type and configuration object.
@@ -97,7 +97,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 credentials = {'username': credentials['username'].strip(), 'password': credentials['password'].strip()}
 
             else:
-                raise ValueError('Credentials for Onedrive: eg. "credentials": {"username": "john", "password": "password"}')
+                raise ValueError('Credentials for Onedrive: e.g. "credentials": {"username": "john", "password": "password"}')
 
         elif storage_type == 'gspread' or storage_type == 'gdrive':
             if 'credentials' in config_obj:
@@ -164,7 +164,41 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         except Exception as e:
             raise ValueError('Invalid storage_type') from e
  
-    def _read_excel_sheet(self, url, sheet_name, storage_type, engine='openpyxl'):
+    @staticmethod
+    def _transform_column_names(content_dicts, field_mapping):
+        transformed_content_dict = content_dicts.copy()
+        for key, value in field_mapping.items():
+            if value['field_position'] in transformed_content_dict.columns:
+                transformed_content_dict.rename(columns={value['field_position']: key}, inplace=True)
+        return transformed_content_dict
+ 
+    @staticmethod
+    def _map_dataframe_columns_to_spreadsheet_format(df):
+        """
+        Maps the column positions of a DataFrame to spreadsheet column names.
+
+        This function assigns the column names from 'A' to 'Z' for the first 26 columns,
+        and then 'AA', 'AB', etc. for additional columns. It can handle an unlimited number
+        of columns.
+
+        Args:
+            df (pandas.DataFrame): The DataFrame whose columns to rename.
+
+        Returns:
+            pandas.DataFrame: The DataFrame with renamed columns.
+        """
+        col_names = []
+        for i in range(len(df.columns)):
+            col_name = ""
+            j = i
+            while j >= 0:
+                col_name = chr(j % 26 + 65) + col_name
+                j = j // 26 - 1
+            col_names.append(col_name)
+        df.columns = col_names
+        return df
+   
+    def _read_remote_sheet(self, url, sheet_name, storage_type, engine='openpyxl', harvest_job=None):
         """
         Reads an Excel sheet from a given URL and returns the data as a pandas DataFrame.
 
@@ -190,7 +224,9 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     try:
                         data = pd.read_excel(url, sheet_name=sheet_name, dtype=str, engine=engine)
                     except pd.errors.ParserError as e:
-                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+                        error_msg = f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}'
+                        self._save_gather_error(error_msg, harvest_job)
+                        raise ReadError(error_msg)
 
             elif storage_type in ['gspread', 'gdrive']:
                 if self._auth and self._credentials:
@@ -200,12 +236,18 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                         worksheet = sh.worksheet(sheet_name)
                         data = pd.DataFrame(worksheet.get_all_records(), dtype=str)
                     except gspread.exceptions.APIError as e:
-                        raise ReadError(f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}')
+                        msg_error = f'Error reading sheet {sheet_name} using URL {url}. Error: {str(e)}. If the file is an XLS file, it needs to be converted to a Google Sheet.'
+                        self._save_gather_error(msg_error, harvest_job)
+                        raise ReadError(msg_error)
                 else:
-                    raise ValueError('Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account')
+                    msg_error = 'Need credentials for Gspread/Gdrive. See: https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account'
+                    self._save_gather_error(msg_error, harvest_job)
+                    raise ValueError(msg_error)
 
             else:
-                raise ValueError(f'Unsupported storage type: {storage_type}')
+                msg_error = f'Unsupported storage type: {storage_type}'
+                self._save_gather_error(msg_error, harvest_job)
+                raise ValueError(msg_error)
 
             return data.fillna('')
 
@@ -245,14 +287,22 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             dict or None: A dictionary containing the cleaned distributions data grouped by dataset_id,
             or None if no distributions are loaded.
         """
+        if dataset_id_colname is None:
+            dataset_id_colname = 'dataset_id'
+
         # Select only the columns of type 'object' and apply the strip() method to them
         data.loc[:, data.dtypes == object] = data.select_dtypes(include=['object']).apply(lambda x: x.str.strip())
 
-        # Remove prefixes from column names in the distributions dataframe
-        data = data.rename(columns=lambda x: x.replace(prefix_colnames, ''))
+        # Remove prefixes from column names in the distributions dataframe if prefix_colnames is not None
+        if prefix_colnames is not None:
+            data = data.rename(columns=lambda x: x.replace(prefix_colnames, ''))
 
         # Remove rows where dataset_id_colname is None or an empty string
-        data = data[data[dataset_id_colname].notna() & (data[dataset_id_colname] != '')]
+        try:
+            data = data[data[dataset_id_colname].notna() & (data[dataset_id_colname] != '')]
+        except Exception as e:
+            log.error('Error removing rows: %s | Exception type: %s', str(e), type(e).__name__)
+            raise e
 
         if not data.empty:
             # Group distributions by dataset_id and convert to list of dicts
@@ -261,35 +311,41 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             log.debug('No distributions loaded. Check "distribution.%s" fields', dataset_id_colname)
             return None
 
-    def _clean_table_datadictionaries(self, data, resource_id_colname='resource_id'):
+    def _clean_table_datadictionaries(self, data, prefix_colnames='datadictionary_', distribution_id_colname='resource_id'):
         """
         Clean and process the table of data dictionaries.
 
         Args:
             data (pandas.DataFrame): The table of data dictionaries.
-            resource_id_colname (str, optional): The column name for the resource ID. Defaults to 'resource_id'.
+            prefix_colnames (str, optional): The prefix used in column names that need to be removed. Defaults to 'datadictionary_'.
+            distribution_id_colname (str, optional): The column name for the resource ID. Defaults to 'resource_id'.
 
         Returns:
             dict or None: A dictionary containing the cleaned and processed data dictionaries grouped by resource ID,
                           or None if no data dictionaries were loaded.
         """
+        if distribution_id_colname is None:
+            distribution_id_colname = 'resource_id'
+
         # Select only the columns of type 'object' and apply the strip() method to them
-        data.loc[:, data.dtypes == object] = data.select_dtypes(include=['object']).apply(lambda x: x.str.strip())
+        object_cols = data.select_dtypes(include=['object']).columns
+        data[object_cols] = data[object_cols].apply(lambda x: x.str.strip())
 
         # Remove prefixes from column names in the datadictionaries dataframe
-        data = data.rename(columns=lambda x: re.sub(re.compile(r'datadictionary(_info)?_'), '', x).replace('info.', ''))
+        new_column_names = {col: re.sub(re.compile(rf'{prefix_colnames}(_info)?_'), '', col).replace('info.', '') for col in data.columns}
+        data.rename(columns=new_column_names, inplace=True)
 
         # Filter datadictionaries where resource_id is not empty or None
-        if resource_id_colname in data.columns:
-            data = data[data[resource_id_colname].notna() & (data[resource_id_colname] != '')]
+        if distribution_id_colname in data.columns:
+            data = data[data[distribution_id_colname].notna() & (data[distribution_id_colname] != '')]
 
             # Group datadictionaries by resource_id and convert to list of dicts
-            return data.groupby(resource_id_colname).apply(lambda x: x.to_dict('records')).to_dict()
+            return data.groupby(distribution_id_colname).apply(lambda x: x.to_dict('records')).to_dict()
         else:
-            log.debug('No datadictionaries loaded. Check "datadictionary.%s" fields', resource_id_colname)
+            log.debug('No datadictionaries loaded. Check "datadictionary.%s" fields', distribution_id_colname)
             return None
 
-    def _add_distributions_and_datadictionaries_to_datasets(self, table_datasets, table_distributions_grouped, table_datadictionaries_grouped, identifier_field='identifier', alternate_identifier_field='alternate_identifier', inspire_id_field='inspire_id'):
+    def _add_distributions_and_datadictionaries_to_datasets(self, table_datasets, table_distributions_grouped, table_datadictionaries_grouped, identifier_field='identifier', alternate_identifier_field='alternate_identifier', inspire_id_field='inspire_id', datadictionary_id_field="id"):
         """
         Add distributions (CKAN resources) and datadictionaries to each dataset object.
 
@@ -300,45 +356,55 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             identifier_field (str, optional): Field name for the identifier. Defaults to 'identifier'.
             alternate_identifier_field (str, optional): Field name for the alternate identifier. Defaults to 'alternate_identifier'.
             inspire_id_field (str, optional): Field name for the inspire id. Defaults to 'inspire_id'.
+            datadictionary_id_field (str, optional): Field name for the datadictionary id. Defaults to 'id'.
 
         Returns:
             list: List of dataset objects with distributions (CKAN resources) and datadictionaries added.
         """
-        return [
-            {
-                **d,
-                'resources': [
-                    {**dr, 'datadictionaries': table_datadictionaries_grouped.get(dr['id'], []) if table_datadictionaries_grouped else []}
-                    for dr in table_distributions_grouped.get(
-                        d.get(identifier_field) or d.get(alternate_identifier_field) or d.get(inspire_id_field), []
-                    )
-                ]
-            }
-            for d in table_datasets
-        ]
+        try:
+            return [
+                {
+                    **d,
+                    'resources': [
+                        {**dr, 'datadictionaries': table_datadictionaries_grouped.get(dr[datadictionary_id_field], []) if table_datadictionaries_grouped else []}
+                        for dr in table_distributions_grouped.get(
+                            d.get(identifier_field) or d.get(alternate_identifier_field) or d.get(inspire_id_field), []
+                        )
+                    ]
+                }
+                for d in table_datasets
+            ]
+        except Exception as e:
+            log.error("Error while adding distributions and datadictionaries to datasets: %s", str(e))
+            raise
 
-    def _process_content(self, content_dict, source_url):
+    def _process_content(self, content_dicts, source_url, distribution_prefix_colnames, dataset_id_colname, datadictionary_prefix_colnames, distribution_id_colname):
         """
         Process the content of the harvested dataset.
 
         Args:
-            content_dict (dict): A dictionary containing the content of the harvested dataset.
+            content_dicts (dict): A dict of dataframes containing the content of the harvested dataset (datasets, distributions and datadictionaries).
             source_url (str): The URL of the harvested dataset.
+            distribution_prefix_colnames (str): The prefix used in column names that need to be removed in the distributions dataframe.
+            dataset_id_colname (str): The column name representing the dataset ID.
+            datadictionary_prefix_colnames (str): The prefix used in column names that need to be removed in the datadictionaries dataframe.
+            distribution_id_colname (str): The column name representing the resource ID.
 
         Returns:
             dict: A dictionary containing the processed content of the harvested dataset.
         """
         log.debug('In SchemingDCATXLSHarvester process_content: %s', source_url)
 
-        table_datasets = self._clean_table_datasets(content_dict['datasets'])
+        table_datasets = self._clean_table_datasets(content_dicts['datasets'])
 
-        if content_dict.get('distributions') is not None and not content_dict['distributions'].empty:
-            table_distributions_grouped = self._clean_table_distributions(content_dict['distributions'])
+        if content_dicts.get('distributions') is not None and not content_dicts['distributions'].empty:
+            table_distributions_grouped = self._clean_table_distributions(content_dicts['distributions'], distribution_prefix_colnames, dataset_id_colname)
         else:
+            log.debug('No distributions loaded. Check "distribution.%s" fields', dataset_id_colname)
             table_distributions_grouped = None
 
-        if content_dict.get('datadictionaries') is not None and not content_dict['datadictionaries'].empty:
-            table_datadictionaries_grouped = self._clean_table_datadictionaries(content_dict['datadictionaries'])
+        if content_dicts.get('datadictionaries') is not None and not content_dicts['datadictionaries'].empty:
+            table_datadictionaries_grouped = self._clean_table_datadictionaries(content_dicts['datadictionaries'], datadictionary_prefix_colnames, distribution_id_colname)
         else:
             table_datadictionaries_grouped = None
 
@@ -361,7 +427,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
         # Update unique ids
         for resource in package_dict['resources']:
-            resource['alternate_identifier'] = resource['id']
+            resource['alternate_identifier'] = resource.get('id', None)
             resource['id'] = str(uuid.uuid4())
             resource.pop('dataset_id', None)
 
@@ -449,10 +515,13 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         config_obj = self.get_harvester_basic_info(config)
         auth = False
 
-        supported_types = ', '.join([st['name'] for st in self._storage_types_supported if st['active']])
+        supported_types = {st['name'] for st in self._storage_types_supported.values() if st['active']}
 
         # Check basic validation config
         self._set_basic_validate_config(config)
+        
+        # Instance field_mapping validator
+        field_mapping_validator = FieldMappingValidator()
 
         # Check the storage type of the remote file
         if 'storage_type' in config:
@@ -461,14 +530,30 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 raise ValueError('storage_type must be a string')
 
             if storage_type not in supported_types:
-                raise ValueError(f'storage_type should be one of: {supported_types}')
+                raise ValueError(f'storage_type should be one of: {", ".join(supported_types)}')
 
             config = json.dumps({**config_obj, 'storage_type': storage_type})
 
         else:
-            raise ValueError(f'storage_type should be one of: {supported_types}')
+            raise ValueError(f'storage_type should be one of: {", ".join(supported_types)}')
 
-        # Check the name of the dataset sheet in the XLS/XLSX file
+        # Check the the cols info of the remote file
+        for mapping_name, default_value in [('distribution_prefix_colnames', 'resource_'), 
+                                            ('dataset_id_colname', 'dataset_id'),
+                                            ('datadictionary_prefix_colnames', 'datadictionary_'),
+                                            ('distribution_id_colname', 'resource_id')]:
+            if mapping_name in config:
+                mapping_value = config_obj[mapping_name]
+                if not isinstance(mapping_value, (basestring, type(None))):
+                    raise ValueError(f'{mapping_name} must be a string or None')
+            else:
+                if mapping_name == 'distribution_prefix_colnames':
+                    raise ValueError(f'{mapping_name} must be provided in the configuration, even if as None, e.g. ("distribution_prefix_colnames": null). If not provided, the default value "{default_value}" will be used.')
+                mapping_value = default_value
+
+            config = json.dumps({**config_obj, mapping_name: mapping_value})
+
+        # Check the name of the dataset sheet in the remote table
         if 'dataset_sheet' in config:
             dataset_sheet = config_obj['dataset_sheet']
             if not isinstance(dataset_sheet, basestring):
@@ -477,9 +562,9 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             config = json.dumps({**config_obj, 'dataset_sheet': dataset_sheet.strip()})
 
         else:
-            raise ValueError('The name of the datasets sheet is required. eg. "dataset_sheet": "Dataset"')
+            raise ValueError('The name of the datasets sheet is required. e.g. "dataset_sheet": "Dataset"')
 
-        # Check the name of the distribution and data dictionary (resourcedictionary) sheets in the XLS/XLSX file
+        # Check the name of the distribution and data dictionary (resourcedictionary) sheets in the remote table
         if 'distribution_sheet' in config:
             distribution_sheet = config_obj['distribution_sheet']
             if not isinstance(distribution_sheet, basestring):
@@ -498,7 +583,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if 'auth' in config:
             auth = config_obj['auth']
             if not isinstance(auth, bool):
-                raise ValueError('Authentication must be a boolean. eg. "auth": True or "auth": False')
+                raise ValueError('Authentication must be a boolean. e.g. "auth": True or "auth": False')
         else:
             config = json.dumps({**config_obj, 'auth': False})
     
@@ -561,25 +646,28 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         if source_date_format not in COMMON_DATE_FORMATS:
             raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {" | ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
 
+        # Check if 'field_mapping_schema_version' exists in the config
+        if 'field_mapping_schema_version' not in config_obj:
+            raise ValueError(f'Insert the schema version: "field_mapping_schema_version: <version>", one of {self._field_mapping_validator_versions} . More info: https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester')
+        else:
+            # If it exists, check if it's an integer and in the allowed versions
+            if not isinstance(config_obj['field_mapping_schema_version'], int) or config_obj['field_mapping_schema_version'] not in self._field_mapping_validator_versions:
+                raise ValueError(f'field_mapping_schema_version must be an integer and one of {self._field_mapping_validator_versions}. Check the extension README for more info.')
+
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
-        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping']:
+        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping', 'resourcedictionary_field_mapping']:
             if mapping_name in config:
                 field_mapping = config_obj[mapping_name]
                 if not isinstance(field_mapping, dict):
                     raise ValueError(f'{mapping_name} must be a dictionary')
 
-                # Check if the config is a valid mapping
-                for local_field, remote_field in field_mapping.items():
-                    if not isinstance(local_field, basestring):
-                        raise ValueError('"local_field_name" must be a string')
-                    if not isinstance(remote_field, (basestring, dict)):
-                        raise ValueError('"remote_field_name" must be a string or a dictionary')
-                    if isinstance(remote_field, dict):
-                        for lang, remote_field_name in remote_field.items():
-                            if not isinstance(lang, basestring) or not isinstance(remote_field_name, basestring):
-                                raise ValueError('In translated fields, both language and remote_field_name must be strings. eg. "notes_translated": {"es": "notes-es"}')
-                            if not re.match("^[a-z]{2}$", lang):
-                                raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                schema_version = config_obj['field_mapping_schema_version']
+
+                try:
+                    # Validate field_mappings acordin schema versions
+                    field_mapping_validator.validate(field_mapping, schema_version)
+                except ValueError as e:
+                    raise ValueError(f"The field mapping is invalid: {e}") from e
 
                 config = json.dumps({**config_obj, mapping_name: field_mapping})
 
@@ -594,7 +682,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
     def gather_stage(self, harvest_job):
         """
-        Performs the gather stage of the SchemingDCATXLSHarvester. This method is responsible for downloading the remote XLS/XLSX file and reading its contents. The contents are then processed, cleaned, and added to the database.
+        Performs the gather stage of the SchemingDCATXLSHarvester. This method is responsible for downloading the remote remote table and reading its contents. The contents are then processed, cleaned, and added to the database.
 
         Args:
             harvest_job (HarvestJob): The harvest job object.
@@ -607,7 +695,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         
         log.debug('In SchemingDCATXLSHarvester gather_stage with XLS remote file: %s', source_url)
         
-        content_dict = {}
+        content_dicts = {}
         self._names_taken = []
         
         # Get config options
@@ -627,11 +715,12 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
             # Get URLs for remote file
             remote_xls_base_url = self._get_storage_base_url(source_url, self._storage_type)
-            remote_xls_download_url = self._get_storage_url(source_url, self._storage_type)
+            remote_sheet_download_url = self._get_storage_url(source_url, self._storage_type)
         
         # Check if the remote file is valid
-        is_valid = self._check_url(remote_xls_download_url, harvest_job)
-        log.debug('URL is accessible: %s', remote_xls_download_url)
+        is_valid = self._check_url(remote_sheet_download_url, harvest_job, self._auth)
+        log.debug('URL is accessible: %s', remote_sheet_download_url)
+        log.debug('Storage type: %s', self._storage_type)
 
         # Get the previous guids for this source
         query = \
@@ -648,80 +737,117 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
         # before_download interface
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-            remote_xls_download_url, before_download_errors = harvester.before_download(remote_xls_download_url, harvest_job)
-        
-            for error_msg in before_download_errors:
-                self._save_gather_error(error_msg, harvest_job)
-            
-            if not source_url:
-                return []
+            if hasattr(harvester, 'before_download'):
+                remote_sheet_download_url, before_download_errors = harvester.before_download(remote_sheet_download_url, harvest_job)
+                
+                for error_msg in before_download_errors:
+                    self._save_gather_error(error_msg, harvest_job)
+                
+                if not source_url:
+                    return []
         
         # Read sheets
         if is_valid:
             try:
                 try:
-                    content_dict['datasets'] = self._read_excel_sheet(remote_xls_download_url, dataset_sheetname, self._storage_type )
+                    content_dicts['datasets'] = self._read_remote_sheet(remote_sheet_download_url, dataset_sheetname, self._storage_type )
                 except RemoteResourceError as e:
                     self._save_gather_error('Error reading the remote Excel datasets sheet: {0}'.format(e), harvest_job)
                     return False
                 
                 if distribution_sheetname:
-                    content_dict['distributions'] = self._read_excel_sheet(remote_xls_download_url, distribution_sheetname, self._storage_type )
+                    content_dicts['distributions'] = self._read_remote_sheet(remote_sheet_download_url, distribution_sheetname, self._storage_type, harvest_job)
                     
                 #TODO: Implement self._load_datadictionaries() method.
                 if datadictionary_sheetname:
-                    content_dict['datadictionaries'] = self._read_excel_sheet(remote_xls_download_url, datadictionary_sheetname, self._storage_type )
+                    content_dicts['datadictionaries'] = self._read_remote_sheet(remote_sheet_download_url, datadictionary_sheetname, self._storage_type, harvest_job)
 
                 # after_download interface
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-                    content_dict, after_download_errors = harvester.after_download(content_dict, harvest_job)
+                    if hasattr(harvester, 'after_download'):
+                        content_dicts, after_download_errors = harvester.after_download(content_dicts, harvest_job)
 
-                    for error_msg in after_download_errors:
-                        self._save_gather_error(error_msg, harvest_job)
+                        for error_msg in after_download_errors:
+                            self._save_gather_error(error_msg, harvest_job)
 
-                if not content_dict:
+                if not content_dicts:
                     return []
 
             except Exception as e:
-                self._save_gather_error('Could not read Excel file: %s' % str(e), harvest_job)
+                self._save_gather_error('Could not read remote sheet file: %s' % str(e), harvest_job)
                 return False
     
-        # Check if the content_dict colnames correspond to the local schema
+        # Create default values dict from config mappings.
         try:
-            remote_dataset_field_mapping = self.config.get("dataset_field_mapping")
-            remote_dataset_field_names = set(content_dict['datasets'].columns)
-            remote_resource_field_mapping = self.config.get("distribution_field_mapping")
-            remote_resource_field_names = set(content_dict['distributions'].columns)
+            self._dataset_default_values = {key: value['field_value'] for key, value in (self.config.get("dataset_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
+            self._distribution_default_values = {key: value['field_value'] for key, value in (self.config.get("distribution_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
+
+            if not self._dataset_default_values:
+                log.info('No default values for dataset.')
+            if not self._distribution_default_values:
+                log.info('No default values for distribution.')
+        except ReadError as e:
+            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
+    
+        # Check if the content_dicts colnames correspond to the local schema
+        try:
+            # Standardizes the field_mapping
+            remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
+            remote_resource_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
+
+            # Standardizes the field names
+            content_dicts['datasets'], remote_dataset_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['datasets'], remote_dataset_field_mapping)
+            content_dicts['distributions'], remote_resource_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['distributions'], remote_resource_field_mapping)
+            
+            # Validate field names
+            remote_dataset_field_names = set(content_dicts['datasets'].columns)
+            remote_resource_field_names = set(content_dicts['distributions'].columns)
+            
             self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_resource_field_mapping=remote_resource_field_mapping)
-                        
+
         except RemoteSchemaError as e:
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
             return []
 
+        # before_cleaning interface
+        for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+            if hasattr(harvester, 'before_cleaning'):
+                content_dicts, before_cleaning_errors = harvester.before_cleaning(content_dicts, harvest_job, self.config)
+
+                for error_msg in before_cleaning_errors:
+                    self._save_gather_error(error_msg, harvest_job)
+
         # Clean tables
         try:
-            clean_datasets = self._process_content(content_dict, remote_xls_base_url)
-            log.debug('XLS file cleaned successfully.')
+            clean_datasets = self._process_content(content_dicts, remote_xls_base_url, self.config.get("distribution_prefix_colnames"), self.config.get("dataset_id_colname"), self.config.get("datadictionary_prefix_colnames"), self.config.get("distribution_id_colname"))
+            log.debug('"%s" remote file cleaned successfully.', self._storage_types_supported[self._storage_type]['title'])
             clean_datasets = self._update_dict_lists(clean_datasets)
+            log.debug('clean_datasets: %s', clean_datasets)
             log.debug('Update dict string lists. Number of datasets imported: %s', len(clean_datasets))
             
         except Exception as e:
-            self._save_gather_error('Error cleaning the XLSX file: {0}'.format(e), harvest_job)
+            self._save_gather_error('Error cleaning the remote table: {0}'.format(e), harvest_job)
             return []
     
+        # after_cleaning interface
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-            clean_datasets, after_cleaning_errors = harvester.after_cleaning(clean_datasets, harvest_job)
+            if hasattr(harvester, 'after_cleaning'):
+                clean_datasets, after_cleaning_errors = harvester.after_cleaning(clean_datasets)
 
-            for error_msg in after_cleaning_errors:
-                self._save_gather_error(error_msg, harvest_job)
+                for error_msg in after_cleaning_errors:
+                    self._save_gather_error(error_msg, harvest_job)
     
         # Add datasets to the database
         try:
-            log.debug('Add datasets to DB')
+            log.debug('Adding datasets to DB')
             datasets_to_harvest = {}
             source_dataset = model.Package.get(harvest_job.source.id)
             for dataset in clean_datasets:
-                # Using name as identifier. XLS datasets doesnt have identifier
+
+                # Set and update translated fields
+                dataset = self._set_translated_fields(dataset)
+                
+                # Using name as identifier. Remote table datasets doesnt have identifier
                 try:
                     if not dataset.get('name'):
                         dataset['name'] = self._gen_new_name(dataset['title'])
@@ -736,9 +862,6 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 except Exception as e:
                     self._save_gather_error('Error for the dataset identifier %s [%r]' % (dataset['identifier'], e), harvest_job)
                     continue
-
-                # Set translated fields
-                dataset = self._set_translated_fields(dataset)
                 
                 # Check if a dataset with the same identifier exists can be overridden if necessary
                 #existing_dataset = self._check_existing_package_by_ids(dataset)
@@ -795,7 +918,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             obj.save()
             ids.append(obj.id)
 
-        log.debug('Number of elements in clean_datasets: %s and object_ids: %s', len(clean_datasets), len(ids))
+        #log.debug('Number of elements in clean_datasets: %s and object_ids: %s', len(clean_datasets), len(ids))
 
         return ids
     
@@ -819,6 +942,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         """
         log.debug('In SchemingDCATXLSHarvester import_stage')
 
+        harvester_tmp_dict = {}
         context = {
             'model': model,
             'session': model.Session,
@@ -885,25 +1009,25 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             previous_object.add()
 
         # Dataset dict::Update GUID with the identifier from the dataset
-        xls_guid = dataset['identifier']
-        if xls_guid and harvest_object.guid != xls_guid:
+        remote_guid = dataset['identifier']
+        if remote_guid and harvest_object.guid != remote_guid:
             # First make sure there already aren't current objects
             # with the same guid
             existing_object = model.Session.query(HarvestObject.id) \
-                            .filter(HarvestObject.guid==xls_guid) \
+                            .filter(HarvestObject.guid==remote_guid) \
                             .filter(HarvestObject.current==True) \
                             .first()
             if existing_object:
-                self._save_object_error('Object {0} already has this guid {1}'.format(existing_object.id, xls_guid),
+                self._save_object_error('Object {0} already has this guid {1}'.format(existing_object.id, remote_guid),
                         harvest_object, 'Import')
                 return False
 
-            harvest_object.guid = xls_guid
+            harvest_object.guid = remote_guid
             harvest_object.add()
 
         # Assign GUID if not present (i.e. it's a manual import)
         if not harvest_object.guid:
-            harvest_object.guid = xls_guid
+            harvest_object.guid = remote_guid
             harvest_object.add()
 
         # Update dates
@@ -937,18 +1061,28 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             # won't be be able to link the extent to the package.
             package_dict['id'] = package_dict['identifier']
 
-            harvester_tmp_dict = {}
-            
+            # before_create interface
             for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-                harvester.before_create(harvest_object, package_dict, harvester_tmp_dict)
+                if hasattr(harvester, 'before_create'):
+                    err = harvester.before_create(harvest_object, package_dict, self._local_schema, harvester_tmp_dict)
+                
+                    if err:
+                        self._save_object_error(f'before_create error: {err}', harvest_object, 'Import')
+                        return False
             
             try:
                 result = self._create_or_update_package(
                     package_dict, harvest_object, 
                     package_dict_form='package_show')
-
+                
+                # after_create interface
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-                    err = harvester.after_create(harvest_object, package_dict, harvester_tmp_dict)
+                    if hasattr(harvester, 'after_create'):
+                        err = harvester.after_create(harvest_object, package_dict, harvester_tmp_dict)
+
+                        if err:
+                            self._save_object_error(f'after_create error: {err}', harvest_object, 'Import')
+                            return False
 
             except p.toolkit.ValidationError as e:
                 error_message = ', '.join(f'{k}: {v}' for k, v in e.error_dict.items())
@@ -956,7 +1090,6 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 return False
 
         elif status == 'change':
-
             # Check if the modified date is more recent
             if not self.force_import and previous_object and dateutil.parser.parse(harvest_object.metadata_modified_date) <= previous_object.metadata_modified_date:
                 log.info('Package with GUID: %s unchanged, skipping...' % harvest_object.guid)
@@ -964,23 +1097,36 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             else:
                 log.info("Dataset dates - Harvest date: %s and Previous date: %s", harvest_object.metadata_modified_date, previous_object.metadata_modified_date)
 
+                # update_package_schema_for_update interface
                 package_schema = logic.schema.default_update_package_schema()
                 for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-                    package_schema = harvester.update_package_schema_for_update(package_schema)
+                    if hasattr(harvester, 'update_package_schema_for_update'):
+                        package_schema = harvester.update_package_schema_for_update(package_schema)
                 context['schema'] = package_schema
 
                 package_dict['id'] = harvest_object.package_id
                 try:
+                    # before_update interface
+                    for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+                        if hasattr(harvester, 'before_update'):
+                            err = harvester.before_update(harvest_object, package_dict, harvester_tmp_dict)
+
+                            if err:
+                                self._save_object_error(f'TableHarvester plugin error: {err}', harvest_object, 'Import')
+                                return False
+                    
                     result = self._create_or_update_package(
                         package_dict, harvest_object, 
                         package_dict_form='package_show')
-                    
-                    for harvester in p.PluginImplementations(ISchemingDCATHarvester):
-                        err = harvester.after_update(harvest_object, package_dict, harvester_tmp_dict)
 
-                        if err:
-                            self._save_object_error(f'XLSHarvester plugin error: {err}', harvest_object, 'Import')
-                            return False
+                    # after_update interface
+                    for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+                        if hasattr(harvester, 'after_update'):
+                            err = harvester.after_update(harvest_object, package_dict, harvester_tmp_dict)
+
+                            if err:
+                                self._save_object_error(f'TableHarvester plugin error: {err}', harvest_object, 'Import')
+                                return False
 
                     log.info('Updated package %s with GUID: %s' % (package_dict["id"], harvest_object.guid))
                     

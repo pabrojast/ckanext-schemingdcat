@@ -82,8 +82,8 @@
     {
       "preset_name": "resource_format_autocomplete",
       "values": {
-        "validators": "if_empty_guess_format ignore_missing clean_format unicode_safe",
-        "form_placeholder": "eg. CSV, XML or JSON",
+        "validators": "schemingdcat_if_empty_guess_format ignore_missing clean_format unicode_safe",
+        "form_placeholder": "e.g. CSV, XML or JSON",
         "form_attrs": {
           "data-module": "autocomplete",
           "data-module-source": "/api/2/util/resource/format_autocomplete?incomplete=?"
@@ -192,7 +192,7 @@
     {
       "preset_name": "select_spatial_icon",
       "values": {
-        "form_snippet": "schemingdcat/form_snippets/select_icon.html",
+        "form_snippet": "schemingdcat/form_snippets/select_spatial_uri.html",
         "display_snippet": "schemingdcat/display_snippets/select_spatial_icon.html",
         "validators": "ignore_missing"
       }
@@ -260,7 +260,7 @@
       "preset_name": "spatial",
       "values": {
         "form_snippet": "json.html",
-        "validators": "ignore_missing schemingdcat_valid_json_object"
+        "validators": "schemingdcat_spatial_uri_validator ignore_missing schemingdcat_valid_json_object"
       }
     },
     {

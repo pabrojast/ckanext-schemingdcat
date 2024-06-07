@@ -156,7 +156,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                                 remote_field_name, basestring
                             ):
                                 raise ValueError(
-                                    'In translated fields, both language and remote_field_name must be strings. eg. "notes_translated": {"es": "notes-es"}'
+                                    'In translated fields, both language and remote_field_name must be strings. e.g. "notes_translated": {"es": "notes-es"}'
                                 )
                             if not re.match("^[a-z]{2}$", lang):
                                 raise ValueError(

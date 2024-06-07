@@ -2,7 +2,7 @@
 
 <div class="box">
     <div class="inner">
-        <h3>{{ _('Catalog endpoints') }}</h3>   
+        <h3><a href="{{ h.url_for('schemingdcat.endpoint_index') }}" title="{{ _('Catalog endpoints') }}">{{ _('Catalog endpoints') }}</a></h3>    
         <div class="addons">
             {% for endpoint in endpoints %}
                 {% if endpoint.type == 'ogc' %}

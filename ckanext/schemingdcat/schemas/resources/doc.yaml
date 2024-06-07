@@ -33,7 +33,7 @@ dataset_fields:
   required: True
   display_property: dct:title
   form_placeholder:
-    en: eg. A descriptive title.
+    en: e.g. A descriptive title.
     es: ej. Un título descriptivo.
   form_languages: ["es", "en"]
   required_language: "es"
@@ -81,7 +81,7 @@ dataset_fields:
   required: True
   display_property: dct:description
   form_placeholder:
-    en: eg. Some useful description about the dataset.
+    en: e.g. Some useful description about the dataset.
     es: ej. Una descripción útil sobre el conjunto de datos.
   form_languages: ["es", "en"]
   required_language: "es"
@@ -503,7 +503,7 @@ dataset_fields:
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000
   help_text:
-    en: Eg. Unique resource identifier (UUID).
+    en: e.g. Unique resource identifier (UUID).
     es: Ej. Identificador único de recurso (UUID).
   help_allow_html: True
 
@@ -604,7 +604,7 @@ dataset_fields:
     value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/utilitiesCommunication
 
   help_text:
-    en: 'eg.: Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
+    en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
     es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist/TopicCategory" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
   help_allow_html: True
 
@@ -618,7 +618,7 @@ dataset_fields:
   display_property: dct:subject
   form_placeholder: 'gsaa'
   help_text:
-    en: 'eg.: Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
+    en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
     es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
   help_allow_html: True
 
@@ -634,7 +634,7 @@ dataset_fields:
   display_snippet: schemingdcat/display_snippets/list_keywords.html
   form_placeholder: 'http://inspire.ec.europa.eu/metadata-codelist/IACSData/gsaa'
   help_text:
-    en: 'eg.: Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    en: 'e.g. Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
     es: 'ej: Registro de listas controladas de metadatos (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
 
 # TODO: Probably better include contact_role and contact_organization (boolean) to distinguish between vcard:Individual and vcard:Organizationto use in ckanext-dcat/profiles.py
@@ -924,7 +924,7 @@ dataset_fields:
   preset: multiple_text_links
   form_placeholder: 'http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
   help_text:
-    en: 'Implementing rule (eg. INSPIRE) or other specification.URLs eg.: http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
+    en: 'Implementing rule (e.g. INSPIRE) or other specification.URLs e.g. http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
     es: 'Conformidad con normativas (Reglamento INSPIRE) o especificaciones. URLs e.j:http://inspire.ec.europa.eu/documents/commission-regulation-eu-no-13122014-10-december-2014-amending-regulation-eu-no-10892010-0'
 
 # Metadata standard (M)
@@ -1252,7 +1252,7 @@ dataset_fields:
   display_property: adms:versionNotes
   form_snippet: markdown.html
   form_placeholder:
-    en: eg. Some useful version notes about the dataset.
+    en: e.g. Some useful version notes about the dataset.
     es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
 
 # Dataset validity (O)
@@ -1283,7 +1283,7 @@ resource_fields:
     en: Distribution title
     es: Título de la distribución
   form_placeholder:
-    en: eg. Web Map Service
+    en: e.g. Web Map Service
     es: ej. Web Map Service
   display_property: dct:title
 
@@ -1463,7 +1463,7 @@ resource_fields:
     es: Licencia de la distribución
   display_property: dct:license
   form_placeholder:
-    en: eg. http://creativecommons.org/licenses/by/4.0/
+    en: e.g. http://creativecommons.org/licenses/by/4.0/
     es: ej. http://creativecommons.org/licenses/by/4.0/
   help_text:
     en: 'License definitions and additional information can be found at: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
@@ -1530,8 +1530,8 @@ resource_fields:
   display_property: dct:conformsTo
   form_placeholder: 'http://www.opengeospatial.org/standards/wms'
   help_text:
-    en: 'Specification (eg. OGC). URLs'
-    es: 'Especificaciones (eg. OGC). URLs'
+    en: 'Specification (e.g. OGC). URLs'
+    es: 'Especificaciones (e.g. OGC). URLs'
 
 # Coordinate Reference System (C)
 - field_name: reference_system

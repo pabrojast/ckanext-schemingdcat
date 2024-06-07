@@ -1,4 +1,5 @@
 import typing
+import re
 
 # Default values
 default_facet_operator = 'OR'
@@ -13,6 +14,7 @@ endpoints = None
 facet_list_limit = 6
 default_package_item_icon = 'theme'
 default_package_item_show_spatial = True
+mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
 
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {
@@ -78,6 +80,13 @@ OGC2CKAN_HARVESTER_MD_CONFIG = {
         'stereoModel': 'http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/stereoModel',
         'video': 'http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/video',
     },
+    'resources': {
+        'availability': 'http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE',
+        'name': {
+            'es': 'Distribución {format}',
+            'en': 'Distribution {format}'
+        },
+    },
     'rights': 'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations',
     'spatial': None,
     'spatial_uri': 'http://datos.gob.es/recurso/sector-publico/territorio/Pais/España',
@@ -136,7 +145,9 @@ DATE_FIELDS = [
     {'field_name': 'created', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
     {'field_name': 'issued', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
     {'field_name': 'modified', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},
-    {'field_name': 'valid', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str}
+    {'field_name': 'valid', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'temporal_start', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str},
+    {'field_name': 'temporal_end', 'fallback': None, 'default_value': None, 'override': True, 'dtype': str}
 ]
 
 DATASET_DEFAULT_FIELDS = [
@@ -208,3 +219,22 @@ SCHEMINGDCAT_DEFAULT_DATASET_SCHEMA_NAME: typing.Final[str] = "dataset"
 SCHEMINGDCAT_INSPIRE_THEMES_VOCAB: typing.Final[str] = "theme"
 SCHEMINGDCAT_DCAT_THEMES_VOCAB: typing.Final[list] = ["theme_es", "theme_eu"]
 SCHEMINGDCAT_ISO19115_TOPICS_VOCAB: typing.Final[list] = "topic"
+
+
+# Clean ckan names
+URL_REGEX = re.compile(
+    r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+)
+
+# Compile the regular expression
+INVALID_CHARS = re.compile(r"[^a-zñ0-9_.-]")
+
+# Define a dictionary to map accented characters to their unaccented equivalents except ñ
+ACCENT_MAP = str.maketrans({
+    "á": "a", "à": "a", "ä": "a", "â": "a", "ã": "a",
+    "é": "e", "è": "e", "ë": "e", "ê": "e",
+    "í": "i", "ì": "i", "ï": "i", "î": "i",
+    "ó": "o", "ò": "o", "ö": "o", "ô": "o", "õ": "o",
+    "ú": "u", "ù": "u", "ü": "u", "û": "u",
+    "ñ": "ñ",
+})

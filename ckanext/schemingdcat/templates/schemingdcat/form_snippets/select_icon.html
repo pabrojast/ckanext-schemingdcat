@@ -35,8 +35,9 @@
         {% set img_url= h.url_for_static(icon) %}
       {%  endif %}
     {%  endif %} 
+    {% set val_id = val.split('/')[-1]|lower if '/' in val else val[-4:]|lower %}
       <option 
-        id="field-{{ field.field_name }}-{{ val }}" 
+        id="field-{{ field.field_name }}-{{ val_id }}" 
         value="{{ val }}"
         {% if img_url %}
         style="background-image:url({{img_url}});"

@@ -35,7 +35,7 @@
         "form_snippet": "markdown.html",
         "display_snippet": "markdown.html",
         "form_placeholder": {
-          "en": "eg. Some useful description about the group.",
+          "en": "e.g. Some useful description about the group.",
           "es": "ej. Una descripción útil sobre el grupo."
         }
       },

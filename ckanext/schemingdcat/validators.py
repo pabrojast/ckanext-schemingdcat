@@ -1,6 +1,7 @@
 import json
 import re
 import six
+import mimetypes
 
 import ckanext.scheming.helpers as sh
 import ckanext.schemingdcat.helpers as helpers
@@ -28,6 +29,10 @@ from ckanext.fluent.validators import (
     BCP_47_LANGUAGE, fluent_text_output, scheming_language_text, LANG_SUFFIX)
 
 from ckanext.schemingdcat.utils import parse_json
+from ckanext.schemingdcat.config import (
+    OGC2CKAN_HARVESTER_MD_CONFIG,
+    mimetype_base_uri
+)
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +63,7 @@ def schemingdcat_multiple_choice(field, schema):
     """
     Accept zero or more values from a list of choices and convert
     to a json list for storage. Also act like scheming_required to check for at least one non-empty string when required is true:
-    1. a list of strings, eg.:
+    1. a list of strings, e.g.
        ["choice-a", "choice-b"]
     2. a single string for single item selection in form submissions:
        "choice-a"
@@ -148,7 +153,7 @@ def schemingdcat_valid_json_object(value, context):
 def schemingdcat_multiple_text(field, schema):
     """
     Accept repeating text input in the following forms and convert to a json list for storage.
-    1. a list of strings, eg.
+    1. a list of strings, e.g.
        ["Person One", "Person Two"]
     2. a single string value to allow single text fields to be
        migrated to repeating text
@@ -357,12 +362,12 @@ def schemingdcat_fluent_text(field, schema):
     Accept multilingual text input in the following forms
     and convert to a json string for storage:
 
-    1. a multilingual dict, eg.
+    1. a multilingual dict, e.g.
 
        {"en": "Text", "fr": "texte"}
 
     2. a JSON encoded version of a multilingual dict, for
-       compatibility with old ways of loading data, eg.
+       compatibility with old ways of loading data, e.g.
 
        '{"en": "Text", "fr": "texte"}'
 
@@ -656,7 +661,7 @@ def schemingdcat_multiple_choice_custom_tag_string(field, schema):
     """
     Accept zero or more values from a list of choices and convert
     to a json list for storage. Also act like scheming_required to check for at least one non-empty string when required is true:
-    1. a list of strings, eg.:
+    1. a list of strings, e.g.
        ["choice-a", "choice-b"]
     2. a single string for single item selection in form submissions:
        "choice-a"
@@ -792,4 +797,73 @@ def schemingdcat_dataset_scope(field, schema):
         dcat_type = data.get(('dcat_type', ))
         data[key] = choices_dict.get(dcat_type, 'non_spatial_dataset')
 
+    return validator
+
+@scheming_validator
+@validator
+def schemingdcat_spatial_uri_validator(field, schema):
+    """
+    Returns a validator function that checks if the 'spatial_uri' value exists in the choices. If it exists, it sets the value of the field to the value of 'spatial' in the choice. Otherwise, it sets the value to ''.
+
+    Args:
+        field (dict): Information about the field to be updated.
+        schema (dict): The schema for the field to be updated.
+
+    Returns:
+        function: A validation function that can be used to update the field based on the presence of 'spatial' in the choice corresponding to 'spatial_uri'.
+    """
+    schema_data = helpers.schemingdcat_get_dataset_schema()
+    spatial_uri_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'spatial_uri'), None)
+    choices = spatial_uri_field['choices'] if spatial_uri_field else []
+
+    def validator(key, data, errors, context):
+        if data[key] is missing or data[key] is None or data[key] == '':
+            spatial_uri = data.get(('spatial_uri', ))
+            choice = next((item for item in choices if item["value"] == spatial_uri), None)
+            data[key] = choice.get('spatial', '') if choice else missing
+
+    return validator
+
+@scheming_validator
+@validator
+def schemingdcat_if_empty_guess_format(field, schema):
+    """
+    Guess the format of a resource based on its URL.
+
+    This function attempts to guess the format of a resource based on its URL.
+    If the resource format is not provided or is missing, and the resource is not being updated,
+    it tries to guess the format from the URL. If the URL is a valid URL (i.e., it has a scheme and a path),
+    it uses the mimetypes module to guess the format and encoding. If a mimetype is found, it is stored in the data
+    dictionary and the format is set to the last part of the mimetype (after the '/'). If no mimetype is found,
+    the format is set to the file extension of the URL.
+
+    Args:
+        field (dict): The field dictionary.
+        schema (dict): The schema dictionary.
+
+    Returns:
+        function: A validator function which takes four arguments: key, data, errors, context.
+    """
+    def validator(key, data, errors, context):
+        value = data[key]
+        resource_id = data.get(key[:-1] + ('id',))
+        
+        # if resource_id then an update
+        if (not value or value is missing) and not resource_id:
+            url = data.get(key[:-1] + ('url',), '')
+            if not url:
+                return
+
+            # Uploaded files have only the filename as url, so check scheme to
+            # determine if it's an actual url
+            parsed = urlparse(url)
+            if parsed.scheme and not parsed.path:
+                return
+
+            mimetype, encoding = mimetypes.guess_type(url)
+            if mimetype:
+                data[key] = mimetype.split('/')[-1].upper()
+                data[key[:-1] + ('mimetype',)] = f"{mimetype_base_uri}/{mimetype}"
+                data[key[:-1] + ('encoding',)] = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
+                
     return validator

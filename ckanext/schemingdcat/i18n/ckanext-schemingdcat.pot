@@ -660,7 +660,7 @@ msgid "Title"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:14
-msgid "eg. A descriptive title"
+msgid "e.g. A descriptive title"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
@@ -668,7 +668,7 @@ msgid "Name"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:21
-msgid "eg. my-dataset"
+msgid "e.g. my-dataset"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:23
@@ -921,6 +921,21 @@ msgstr ""
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Geographic Metadata (CSW INSPIRE)"
 msgstr ""
+
+msgid "Featured organization"
+msgid_plural "Featured organizations"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Featured group"
+msgid_plural "Featured groups"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Featured dataset"
+msgid_plural "Featured datasets"
+msgstr[0] ""
+msgstr[1] ""
 
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
