@@ -17,4 +17,10 @@ class SchemingDCATOWSHarvester(SchemingDCATHarvester):
     '''
     An expanded Harvester for OWS servers like Geoserver
     '''
-    pass
+    
+    _field_mapping_required = {
+        "dataset_field_mapping": False,
+        "distribution_field_mapping": False,
+        "datadictionary_field_mapping": False,
+    }
+    pass 

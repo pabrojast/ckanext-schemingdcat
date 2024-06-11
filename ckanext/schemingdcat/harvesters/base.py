@@ -464,7 +464,6 @@ class SchemingDCATHarvester(HarvesterBase):
             else:
                 # If the value is not a dictionary, it is a single-language field
                 standardized_mapping[key] = {'field_name': value}
-                log.debug('standardized_mapping: %s', standardized_mapping)
         return standardized_mapping
 
     def _standardize_df_fields_from_field_mapping(self, df, field_mapping):
@@ -528,7 +527,6 @@ class SchemingDCATHarvester(HarvesterBase):
                 if 'field_position' in value:
                     if isinstance(value['field_position'], list):
                         # Merge fields
-                        log.debug('standarize value: %s', value['field_position'])
                         # Apply the function to each row in the dataframe
                         df[key] = df.apply(lambda row: merge_values(row, value['field_position']), axis=1)
                         # Drop the original value columns
@@ -539,10 +537,8 @@ class SchemingDCATHarvester(HarvesterBase):
                 elif 'field_name' in value:
                     if isinstance(value['field_name'], list):
                         # Merge fields
-                        log.debug('standarize value: %s', value['field_name'])
                         # Apply the function to each row in the dataframe
                         df[key] = df.apply(lambda row: merge_values(row, value['field_name']), axis=1)
-                        log.debug('df[key]: %s', df[key])
                         # Drop the original value columns
                         for field in value['field_name']:
                             df.drop(field, axis=1, inplace=True)
@@ -551,12 +547,13 @@ class SchemingDCATHarvester(HarvesterBase):
                 elif isinstance(value, dict) and 'languages' in value:
                     for lang, lang_value in value['languages'].items():
                         if 'field_position' in lang_value:
-                            rename_and_update(df, lang_value['field_position'], f"{key}-{lang}", lang_value)
+                            rename_and_update(df, lang_value['field_position'].upper(), f"{key}-{lang}", lang_value)
                         elif 'field_name' in lang_value:
                             rename_and_update(df, lang_value['field_name'], f"{key}-{lang}", lang_value)
                         # translated_fields only str
 
         # Calculate the difference between the DataFrame columns and the field_mapping keys
+        log.debug('field_mapping: %s', field_mapping)
         columns_to_remove = set(df.columns) - set(field_mapping.keys())
 
         # Filter out columns that contain '-{lang}' or are in the columns_to_keep list
@@ -578,7 +575,7 @@ class SchemingDCATHarvester(HarvesterBase):
         remote_dataset_field_names=None,
         remote_resource_field_names=None,
         remote_dataset_field_mapping=None,
-        remote_resource_field_mapping=None,
+        remote_distribution_field_mapping=None,
     ):
         """
         Validates the remote schema by comparing it with the local schema.
@@ -588,7 +585,7 @@ class SchemingDCATHarvester(HarvesterBase):
             remote_dataset_field_names (set, optional): The field names of the remote dataset schema. If provided, the remote schema will be validated using these field names.
             remote_resource_field_names (set, optional): The field names of the remote resource schema. If provided, the remote schema will be validated using these field names.
             remote_dataset_field_mapping (dict, optional): A mapping of local dataset field names to remote dataset field names. If provided, the local dataset fields will be mapped to the corresponding remote dataset fields.
-            remote_resource_field_mapping (dict, optional): A mapping of local resource field names to remote resource field names. If provided, the local resource fields will be mapped to the corresponding remote resource fields.
+            remote_distribution_field_mapping (dict, optional): A mapping of local resource field names to remote resource field names. If provided, the local resource fields will be mapped to the corresponding remote resource fields.
 
         Returns:
             bool: True if the remote schema is valid, False otherwise.
@@ -608,7 +605,73 @@ class SchemingDCATHarvester(HarvesterBase):
                 set: A set of simplified column names.
             """
             return set(name.split('-')[0] for name in colnames)
-        
+
+        def check_field_mapping(mapping_name, mapping_value):
+            """
+            Checks if a field mapping is required and if it is provided.
+
+            Args:
+                mapping_name (str): The name of the field mapping.
+                mapping_value (str): The value of the field mapping.
+
+            Returns:
+                The value of the field mapping if it exists, otherwise None.
+
+            Raises:
+                ValueError: If the field mapping is required but not provided.
+            """
+            if self._field_mapping_required.get(mapping_name, False) and not mapping_value:
+                raise ValueError(f"Field mapping is required for {mapping_name}, but it is not provided.")
+            elif mapping_value is None:
+                mapping_value = None
+            return mapping_value
+
+        def get_mapped_fields(fields, field_mapping):
+            """
+            Generates a list of mapped fields based on the provided fields and field mapping.
+
+            Args:
+                fields (list): A list of fields to be mapped.
+                field_mapping (dict): A dictionary containing the field mapping.
+
+            Returns:
+                A list of dictionaries, each containing the local field name, the remote field name, 
+                a flag indicating if the field was modified, and optionally the form languages and 
+                the required language.
+
+            Raises:
+                Exception: If there is an error generating the mapping schema.
+            """
+            if field_mapping is None:
+                return []
+
+            try:
+                return [
+                    {
+                        "local_field_name": field["field_name"],
+                        "remote_field_name": (
+                            {lang: f"{field['field_name']}-{lang}" for lang in field_mapping[field['field_name']]['languages'].keys()}
+                            if 'languages' in field_mapping.get(field['field_name'], {})
+                            else field['field_name']
+                        ),
+                        "modified": 'languages' in field_mapping.get(field['field_name'], {}),
+                        **(
+                            {"form_languages": list(field_mapping[field['field_name']]['languages'].keys())}
+                            if 'languages' in field_mapping.get(field['field_name'], {})
+                            else {}
+                        ),
+                        **(
+                            {"required_language": field["required_language"]}
+                            if field.get("required_language")
+                            else {}
+                        ),
+                    }
+                    for field in fields
+                ]
+            except Exception as e:
+                logging.error("Error generating mapping schema: %s", e)
+                raise
+
         try:
             if self._local_schema is None:
                 self._local_schema = self._get_local_schema()
@@ -649,44 +712,23 @@ class SchemingDCATHarvester(HarvesterBase):
                 local_distributions_colnames - simplify_colnames(remote_distributions_colnames)
             )
 
-            def get_mapped_fields(fields, field_mapping):
-                try:
-                    return [
-                        {
-                            "local_field_name": field["field_name"],
-                            "remote_field_name": (
-                                {lang: f"{field['field_name']}-{lang}" for lang in field_mapping[field['field_name']]['languages'].keys()}
-                                if 'languages' in field_mapping.get(field['field_name'], {})
-                                else field['field_name']
-                            ),
-                            "modified": 'languages' in field_mapping.get(field['field_name'], {}),
-                            **(
-                                {"form_languages": list(field_mapping[field['field_name']]['languages'].keys())}
-                                if 'languages' in field_mapping.get(field['field_name'], {})
-                                else {}
-                            ),
-                            **(
-                                {"required_language": field["required_language"]}
-                                if field.get("required_language")
-                                else {}
-                            ),
-                        }
-                        for field in fields
-                    ]
-                except Exception as e:
-                    logging.error("Error generating mapping schema: %s", e)
-                    raise
+            # Check if field mapping is required for dataset and distribution
+            remote_dataset_field_mapping = check_field_mapping("dataset_field_mapping", remote_dataset_field_mapping)
+            remote_distribution_field_mapping = check_field_mapping("distribution_field_mapping", remote_distribution_field_mapping)
 
-            self._mapped_schema = {
-                "dataset_fields": get_mapped_fields(
-                    self._local_schema.get("dataset_fields", []),
-                    remote_dataset_field_mapping,
-                ),
-                "resource_fields": get_mapped_fields(
-                    self._local_schema.get("resource_fields", []),
-                    remote_resource_field_mapping,
-                ),
-            }
+            if remote_dataset_field_mapping is None and remote_distribution_field_mapping is None:
+                self._mapped_schema = None
+            else:
+                self._mapped_schema = {
+                    "dataset_fields": get_mapped_fields(
+                        self._local_schema.get("dataset_fields", []),
+                        remote_dataset_field_mapping,
+                    ) if remote_dataset_field_mapping is not None else None,
+                    "resource_fields": get_mapped_fields(
+                        self._local_schema.get("resource_fields", []),
+                        remote_distribution_field_mapping,
+                    ) if remote_distribution_field_mapping is not None else None,
+                }
 
             log.info("Local required language: %s", self._local_required_lang)
             log.info(
@@ -720,7 +762,7 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return dataset_dict
 
-    def _check_url(self, url, harvest_job, auth=False):
+    def _check_accesible_url(self, url, harvest_job, auth=False):
         """
         Check if the given URL is valid and accessible.
 
@@ -954,30 +996,34 @@ class SchemingDCATHarvester(HarvesterBase):
 
             if package_dict["resources"]:
                 for i, resource in enumerate(package_dict["resources"]):
-                    for field in self._mapped_schema["resource_fields"]:
-                        if field.get("modified", True):
-                            local_field_name = field["local_field_name"]
-                            remote_field_name = field["remote_field_name"]
+                    if self._mapped_schema and "resource_fields" in self._mapped_schema and self._mapped_schema["resource_fields"] is not None:
+                        for field in self._mapped_schema["resource_fields"]:
+                            if field.get("modified", True):
+                                local_field_name = field["local_field_name"]
+                                remote_field_name = field["remote_field_name"]
 
-                            translated_fields["resource_fields"].append(
-                                local_field_name
-                            )
+                                translated_fields["resource_fields"].append(
+                                    local_field_name
+                                )
 
-                            if isinstance(remote_field_name, dict):
-                                package_dict[local_field_name] = {
-                                    lang: package_dict.get(name, None)
-                                    for lang, name in remote_field_name.items()
-                                }
-                                if local_field_name.endswith('_translated'):
-                                    if self._local_required_lang in remote_field_name:
-                                        package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
-                                    else:
-                                        raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
+                                if isinstance(remote_field_name, dict):
+                                    package_dict[local_field_name] = {
+                                        lang: package_dict.get(name, None)
+                                        for lang, name in remote_field_name.items()
+                                    }
+                                    if local_field_name.endswith('_translated'):
+                                        if self._local_required_lang in remote_field_name:
+                                            package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
+                                        else:
+                                            raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
+
+                    else:
+                        log.warning("self._mapped_schema['resource_fields'] is None, skipping resource fields translation.")
 
                     # Update the resource in package_dict
                     package_dict["resources"][i] = resource
 
-            log.debug('Translated fields: %s', translated_fields)
+            #log.debug('Translated fields: %s', translated_fields)
 
         except Exception as e:
             raise ReadError(
@@ -1114,7 +1160,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 else:
                     date = parse(date).strftime("%Y-%m-%d")
             except ValueError:
-                log.error('normalize_date failed')
+                log.error('normalize_date failed for: %s', date)
                 return None
         elif isinstance(date, datetime):
             date = date.strftime("%Y-%m-%d")

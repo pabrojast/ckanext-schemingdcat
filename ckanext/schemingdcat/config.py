@@ -162,6 +162,7 @@ DATASET_DEFAULT_FIELDS = [
     {'field_name': 'theme', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme'], 'override': True, 'dtype': str},
     {'field_name': 'theme_eu', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme_eu'], 'override': True, 'dtype': str},
     {'field_name': 'status', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['status'], 'override': True, 'dtype': str},
+    {'field_name': 'hvd_category', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
 ]
 
 RESOURCE_DEFAULT_FIELDS = [
@@ -238,3 +239,11 @@ ACCENT_MAP = str.maketrans({
     "ú": "u", "ù": "u", "ü": "u", "û": "u",
     "ñ": "ñ",
 })
+
+URL_FIELD_NAMES = {
+        'dataset': 
+            ['dcat_type', 'theme_es', 'language', 'topic', 'maintainer_url', 'tag_uri', 'contact_uri', 'contact_url', 'publisher_identifier', 'publisher_uri', 'publisher_url', 'publisher_type', 'maintainer_uri', 'maintainer_url', 'author_uri', 'author_url', 'conforms_to', 'theme', 'reference_system', 'spatial_uri', 'representation_type', 'license_id', 'access_rights', 'graphic_overview', 'frequency', 'hvd_category'],
+        'resource':
+            ['url', 'availability', 'mimetype', 'status', 'resource_relation', 'license', 'rights', 'conforms_to', 'reference_system']
+    }
+EMAIL_FIELD_NAMES = ['publisher_email', 'maintainer_email', 'author_email', ]

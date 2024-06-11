@@ -29,6 +29,11 @@ class SchemingDCATCSWHarvester(CSWHarvester, SchemingDCATHarvester):
         }
         
     csw = None
+    _field_mapping_required = {
+        "dataset_field_mapping": False,
+        "distribution_field_mapping": False,
+        "datadictionary_field_mapping": False,
+    }
         
     def _set_constraints_keywords(self, constraints):
         self.contraints['keywords'] = [PropertyIsLike("csw:anyText", keyword) for keyword in constraints["keywords"]]

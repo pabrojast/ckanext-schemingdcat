@@ -12,6 +12,7 @@ from pathlib import Path
 from functools import lru_cache
 import datetime
 import typing
+from urllib.parse import urlparse
 
 from six.moves.urllib.parse import urlencode
 
@@ -511,14 +512,21 @@ def schemingdcat_prettify_url(url):
 
 @helper
 def schemingdcat_prettify_url_name(url):
-    """Extracts the name of the last segment of a URL.
+    """
+    Extracts the name of the last segment of a URL.
 
     Args:
         url (str): The URL to extract the name from.
 
     Returns:
         str: The name of the last segment of the URL.
+
+    Raises:
+        ValueError: If url is None.
     """
+    if url is None:
+        raise ValueError("URL cannot be None")
+
     url_name = url.split("/")[-1] if "/" in url else url
 
     if url_name is not None:
@@ -1252,3 +1260,20 @@ def get_header_endpoint_url(endpoint, site_protocol_and_host):
         return url_for(endpoint_value, **endpoint['endpoint_data'])
     elif endpoint_type == 'sparql':
         return url_for('/sparql')
+    
+@helper
+def schemingdcat_check_valid_url(url):
+    """
+    Check if a string is a valid URL.
+
+    Args:
+        url (str): The string to check.
+
+    Returns:
+        bool: True if the string is a valid URL, False otherwise.
+    """
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

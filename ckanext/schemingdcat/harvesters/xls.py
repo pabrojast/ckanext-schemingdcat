@@ -63,6 +63,11 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     _auth = False
     _credentials = None
     _names_taken = []
+    _field_mapping_required = {
+        "dataset_field_mapping": True,
+        "distribution_field_mapping": False,
+        "datadictionary_field_mapping": False,
+    }
 
     def _set_config_credentials(self, storage_type, config_obj):
         """
@@ -169,7 +174,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         transformed_content_dict = content_dicts.copy()
         for key, value in field_mapping.items():
             if value['field_position'] in transformed_content_dict.columns:
-                transformed_content_dict.rename(columns={value['field_position']: key}, inplace=True)
+                transformed_content_dict.rename(columns={value['field_position'].upper(): key}, inplace=True)
         return transformed_content_dict
  
     @staticmethod
@@ -194,7 +199,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             while j >= 0:
                 col_name = chr(j % 26 + 65) + col_name
                 j = j // 26 - 1
-            col_names.append(col_name)
+            col_names.append(col_name.upper())
         df.columns = col_names
         return df
    
@@ -579,18 +584,14 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
             config = json.dumps({**config_obj, 'datadictionary_sheet': datadictionary_sheet.strip()})
 
-        # Check auth and retrieve credentials for the storage type
-        if 'auth' in config:
-            auth = config_obj['auth']
-            if not isinstance(auth, bool):
-                raise ValueError('Authentication must be a boolean. e.g. "auth": True or "auth": False')
+        # Check and retrieve credentials for the storage type
+        if 'credentials' not in config:
+            raise ValueError(f'Credentials must exist to access spreadsheets via: {config_obj["storage_type"]}.')
         else:
-            config = json.dumps({**config_obj, 'auth': False})
-    
-        if auth is True:
             credentials = self._set_config_credentials(storage_type, config_obj)
-            config = json.dumps({**config_obj, 'credentials': credentials})
-
+            config_obj.update({'auth': True, 'credentials': credentials})
+            config = json.dumps(config_obj)
+    
         if 'default_tags' in config_obj:
             if not isinstance(config_obj['default_tags'], list):
                 raise ValueError('default_tags must be a list')
@@ -665,7 +666,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
                 try:
                     # Validate field_mappings acordin schema versions
-                    field_mapping_validator.validate(field_mapping, schema_version)
+                    field_mapping = field_mapping_validator.validate(field_mapping, schema_version)
                 except ValueError as e:
                     raise ValueError(f"The field mapping is invalid: {e}") from e
 
@@ -718,7 +719,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             remote_sheet_download_url = self._get_storage_url(source_url, self._storage_type)
         
         # Check if the remote file is valid
-        is_valid = self._check_url(remote_sheet_download_url, harvest_job, self._auth)
+        is_valid = self._check_accesible_url(remote_sheet_download_url, harvest_job, self._auth)
         log.debug('URL is accessible: %s', remote_sheet_download_url)
         log.debug('Storage type: %s', self._storage_type)
 
@@ -793,17 +794,17 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         try:
             # Standardizes the field_mapping
             remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
-            remote_resource_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
+            remote_distribution_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
 
             # Standardizes the field names
             content_dicts['datasets'], remote_dataset_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['datasets'], remote_dataset_field_mapping)
-            content_dicts['distributions'], remote_resource_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['distributions'], remote_resource_field_mapping)
+            content_dicts['distributions'], remote_distribution_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['distributions'], remote_distribution_field_mapping)
             
             # Validate field names
             remote_dataset_field_names = set(content_dicts['datasets'].columns)
             remote_resource_field_names = set(content_dicts['distributions'].columns)
-            
-            self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_resource_field_mapping=remote_resource_field_mapping)
+
+            self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_distribution_field_mapping=remote_distribution_field_mapping)
 
         except RemoteSchemaError as e:
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
@@ -822,7 +823,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             clean_datasets = self._process_content(content_dicts, remote_xls_base_url, self.config.get("distribution_prefix_colnames"), self.config.get("dataset_id_colname"), self.config.get("datadictionary_prefix_colnames"), self.config.get("distribution_id_colname"))
             log.debug('"%s" remote file cleaned successfully.', self._storage_types_supported[self._storage_type]['title'])
             clean_datasets = self._update_dict_lists(clean_datasets)
-            log.debug('clean_datasets: %s', clean_datasets)
+            #log.debug('clean_datasets: %s', clean_datasets)
             log.debug('Update dict string lists. Number of datasets imported: %s', len(clean_datasets))
             
         except Exception as e:
