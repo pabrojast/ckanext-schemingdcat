@@ -324,34 +324,20 @@ button.active {
 }
 
 .stages li .highlight {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    padding: 11px 43px;
-    border: none;
-    text-align: left;
-    text-decoration: none;
-    line-height: 12px;
-    z-index: -1;
-
-}.stages li .highlight {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    padding: 11px 44px;
-    border: none;
-    text-align: left;
-    text-decoration: none;
-    line-height: 12px;
-    z-index: -1;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  padding: 11px 43px;
+  border: none;
+  text-align: left;
+  text-decoration: none;
+  line-height: 23px;
+  z-index: -1;
+  font-size: 1em;
 }
 
 .stages li.active .highlight {
