@@ -1797,11 +1797,23 @@ a.endpoints_index:hover {
   justify-content: flex-start; /* Align to the left */
 }
 
+/* Code CSS */
 code {
   padding: 2px 4px;
   font-size: 11px;
   color: #c7254e;
   background-color: #f9f2f4;
+  border-radius: 4px;
+}
+
+.block-code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.875em;
+  color: #c7254e;
+  word-wrap: break-word;
+  background-color: #f9f2f4;
+  border: 1px solid #ccc;
+  padding: 5px;
   border-radius: 4px;
 }
 
