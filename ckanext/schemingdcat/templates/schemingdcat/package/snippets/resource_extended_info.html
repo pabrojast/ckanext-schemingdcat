@@ -18,9 +18,12 @@
             <td>
                 {% if type == 'text' %}
                     {{ res[field_name] }}
+                {% elif type == 'mimetype' %}
+                    {% set mimetype_label = res[field_name].split('/')[-2:] | join('/') %}
+                    {{ h.link_to(mimetype_label, res[field_name], target='_blank') }}
                 {% elif type == 'url' %}
                     {% if h.is_url(res[field_name]) %}
-                        {{ h.link_to(res[field_name], res[field_name], target='_blank') }}
+                        {{ h.link_to(h.schemingdcat_prettify_url_name(res[field_name]), res[field_name], target='_blank') }}
                     {% else %}
                         {{ res[field_name] }}
                     {% endif %}
@@ -46,7 +49,7 @@
 {% block mimetype %}
     {% set field_name = _('Media type') %}
     {% set field = h.scheming_field_by_name(schema.resource_fields, 'mimetype') %}
-    {{ render_basic_field_block(field_name, field, res, schema, 'url') }}
+    {{ render_basic_field_block(field_name, field, res, schema, 'mimetype') }}
 {% endblock %}
 
 {%  block conforms_to %}
