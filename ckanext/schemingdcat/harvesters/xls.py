@@ -720,6 +720,11 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         
         # Check if the remote file is valid
         is_valid = self._check_accesible_url(remote_sheet_download_url, harvest_job, self._auth)
+        
+        if not is_valid:
+            log.error(f'The URL is not accessible. The harvest source: "{harvest_job.source.title}" has finished.')
+            return []
+        
         log.debug('URL is accessible: %s', remote_sheet_download_url)
         log.debug('Storage type: %s', self._storage_type)
 

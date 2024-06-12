@@ -30,6 +30,7 @@ from ckanext.harvest.model import HarvestObject, HarvestObjectExtra
 from ckanext.schemingdcat.lib.field_mapping import FieldMappingValidator
 
 from ckanext.schemingdcat.config import (
+    mimetype_base_uri,
     OGC2CKAN_HARVESTER_MD_CONFIG,
     OGC2CKAN_MD_FORMATS,
     DATE_FIELDS,
@@ -1114,8 +1115,12 @@ class SchemingDCATHarvester(HarvesterBase):
             tuple: A tuple containing the format, mimetype, and encoding of the file.
 
         Raises:
-            Exception: If the 'content-type' header is not found in the response.
+            Exception: If the 'content-type' header is not found in the response or if url is None.
         """
+        if url is None:
+            log.warning("URL cannot be None")
+            return None, None, None
+
         try:
             response = requests.head(url, allow_redirects=True)
             content_type = response.headers.get('content-type')
@@ -1127,10 +1132,10 @@ class SchemingDCATHarvester(HarvesterBase):
                 raise Exception("Content-Type header not found")
         except Exception:
             mimetype, encoding = mimetypes.guess_type(url)
-            format = mimetype.split('/')[-1] if mimetype else url.rsplit('.', 1)[-1]
+            format = mimetype.split('/')[-1].upper() if mimetype else url.rsplit('.', 1)[-1]
             encoding = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
 
-        mimetype = f"http://www.iana.org/assignments/media-types/{mimetype}" if mimetype else None
+        mimetype = f"{mimetype_base_uri}/{mimetype}" if mimetype else None
 
         return format, mimetype, encoding
 
@@ -1206,7 +1211,7 @@ class SchemingDCATHarvester(HarvesterBase):
 
         Returns:
             dict: The updated package dictionary.
-        """
+        """        
         if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
             for key, value in self._dataset_default_values.items():
                 if key not in package_dict:
@@ -1216,11 +1221,12 @@ class SchemingDCATHarvester(HarvesterBase):
 
         if self._distribution_default_values and isinstance(self._distribution_default_values, dict):
             for i in range(len(package_dict["resources"])):
-                for key, value in self._distribution_default_values.items():
-                    if key not in package_dict["resources"][i]:
-                        package_dict["resources"][i][key] = value
-                    elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
-                        package_dict["resources"][i][key].extend(value)
+                if isinstance(package_dict["resources"][i], dict):  # Add this line
+                    for key, value in self._distribution_default_values.items():
+                        if key not in package_dict["resources"][i]:
+                            package_dict["resources"][i][key] = value
+                        elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
+                            package_dict["resources"][i][key].extend(value)
 
         return package_dict
 
@@ -1449,7 +1455,7 @@ class SchemingDCATHarvester(HarvesterBase):
         for rule in CUSTOM_FORMAT_RULES:
             if (
                 any(string in res_format for string in rule["format_strings"])
-                or rule["url_string"] in url
+                or (rule["url_string"] is not None and rule["url_string"] in url)
             ):
                 res_format = rule["new_format"]
                 break
@@ -1485,9 +1491,11 @@ class SchemingDCATHarvester(HarvesterBase):
             dict: The updated distribution information.
         """
 
-        if isinstance(resource["format"], str):
-            informat = resource["format"].lower()
-        else:
+        encoding = "UTF-8"
+
+        informat = resource.get("format", "").lower() if isinstance(resource.get("format"), str) else None
+
+        if informat is None:
             informat = "".join(
                 str(value)
                 for key, value in resource.items()
@@ -1495,20 +1503,19 @@ class SchemingDCATHarvester(HarvesterBase):
             ).lower()
             informat = next(
                 (key for key in OGC2CKAN_MD_FORMATS if key.lower() in informat),
-                None,  # Changed this line to return None instead of the URL
+                None,
             )
 
-        # Check if _update_custom_format
-        informat = self._update_custom_format(informat.lower() if informat else "", resource.get("url", ""))
+        format, mimetype = (informat, OGC2CKAN_MD_FORMATS[informat][1]) if informat in OGC2CKAN_MD_FORMATS else (informat, None)
 
-        if informat is not None:
-            resource["format"] = informat
-        else:
+        if format is None:
             format, mimetype, encoding = self._infer_format_from_url(resource.get('url'))
 
-            resource['format'] = format if format else resource.get('format', '')
-            resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', '')
-            resource['encoding'] = encoding if encoding else resource.get('encoding', '')
+        format = self._update_custom_format(format, resource.get("url", "")) if format else None
+
+        resource['format'] = format if format else resource.get('format', '')
+        resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', '')
+        resource['encoding'] = encoding if encoding else resource.get('encoding', '')
 
         return resource
 
