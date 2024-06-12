@@ -793,6 +793,22 @@ dataset_fields:
       es: Español
     value: http://publications.europa.eu/resource/authority/language/SPA
   - label:
+      en: Catalan
+      es: Catalán
+    value: http://publications.europa.eu/resource/authority/language/CAT
+  - label:
+      en: Basque
+      es: Vasco
+    value: http://publications.europa.eu/resource/authority/language/EUS
+  - label:
+      en: Galician
+      es: Gallego
+    value: http://publications.europa.eu/resource/authority/language/GLG
+  - label:
+      en: Valencian
+      es: Valenciano
+    value: http://publications.europa.eu/resource/authority/language/CAT
+  - label:
       en: English
       es: Inglés
     value: http://publications.europa.eu/resource/authority/language/ENG
