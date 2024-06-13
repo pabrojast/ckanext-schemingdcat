@@ -432,6 +432,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
         # Update unique ids
         for resource in package_dict['resources']:
+            resource['url'] = resource.get('url', "")
             resource['alternate_identifier'] = resource.get('id', None)
             resource['id'] = str(uuid.uuid4())
             resource.pop('dataset_id', None)

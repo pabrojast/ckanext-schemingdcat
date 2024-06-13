@@ -1117,8 +1117,7 @@ class SchemingDCATHarvester(HarvesterBase):
         Raises:
             Exception: If the 'content-type' header is not found in the response or if url is None.
         """
-        if url is None:
-            log.warning("URL cannot be None")
+        if url is None or url == "":
             return None, None, None
 
         try:
@@ -1192,6 +1191,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 package_dict[field['field_name']] = field['default_value']
             elif package_dict[field['field_name']] is None and field['fallback'] is not None:
                 package_dict[field['field_name']] = field['fallback']
+
         return package_dict
 
     def _update_package_dict_with_config_mapping_default_values(self, package_dict):
@@ -1211,7 +1211,8 @@ class SchemingDCATHarvester(HarvesterBase):
 
         Returns:
             dict: The updated package dictionary.
-        """        
+        """
+        log.debug('package_dict BEFORE DEFAULT DEFAULT FROM MAPPING: %s', package_dict)
         if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
             for key, value in self._dataset_default_values.items():
                 if key not in package_dict:
@@ -1228,6 +1229,7 @@ class SchemingDCATHarvester(HarvesterBase):
                         elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
                             package_dict["resources"][i][key].extend(value)
 
+        log.debug('package_dict AFTER DEFAULT DEFAULT FROM MAPPING: %s', package_dict)
         return package_dict
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
@@ -1508,14 +1510,14 @@ class SchemingDCATHarvester(HarvesterBase):
 
         format, mimetype = (informat, OGC2CKAN_MD_FORMATS[informat][1]) if informat in OGC2CKAN_MD_FORMATS else (informat, None)
 
-        if format is None:
+        if format is None or format == "":
             format, mimetype, encoding = self._infer_format_from_url(resource.get('url'))
 
         format = self._update_custom_format(format, resource.get("url", "")) if format else None
 
-        resource['format'] = format if format else resource.get('format', '')
-        resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', '')
-        resource['encoding'] = encoding if encoding else resource.get('encoding', '')
+        resource['format'] = format if format else resource.get('format', None)
+        resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', None)
+        resource['encoding'] = encoding if encoding else resource.get('encoding', None)
 
         return resource
 
@@ -1727,6 +1729,13 @@ class SchemingDCATHarvester(HarvesterBase):
                         # If the resource URL is not in existing_resources, add the resource to new_resources
                         elif "url" in resource and resource["url"] not in existing_resources:
                             new_resources.append(resource)
+                            
+                        if resource["url"] is None or resource["url"] == "" or "url" not in resource:
+                            self._save_object_error(
+                                "Warning: Resource URL is None. Add it!",
+                                harvest_object,
+                                "Import",
+                            )
 
                     package_dict["resources"] = new_resources
 
@@ -1781,13 +1790,21 @@ class SchemingDCATHarvester(HarvesterBase):
                 else:
                     package_dict["name"] = self._gen_new_name(package_dict["title"])
 
+                for resource in package_dict.get("resources", []):
+                    if resource["url"] is None or resource["url"] == "" or "url" not in resource:
+                        self._save_object_error(
+                            "Warning: Resource URL is None. Add it!",
+                            harvest_object,
+                            "Import",
+                        )
+
                 log.info(
                     "Created new package ID: %s with GUID: %s",
                     package_dict["id"],
                     harvest_object.guid,
                 )
 
-                # log.debug('Package: %s', package_dict)
+                #log.debug('Package: %s', package_dict)
                 harvest_object.package_id = package_dict["id"]
                 # Defer constraints and flush so the dataset can be indexed with
                 # the harvest object id (on the after_show hook from the harvester
@@ -1834,10 +1851,6 @@ class SchemingDCATHarvester(HarvesterBase):
             self._save_object_error("%r" % e, harvest_object, "Import")
 
         return None
-
-    def _create_or_update_pkg(self, package_dict, harvest_object):
-        print(True)
-
 
 class ContentFetchError(Exception):
     pass
