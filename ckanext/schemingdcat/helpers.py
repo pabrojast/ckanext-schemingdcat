@@ -12,6 +12,8 @@ from pathlib import Path
 from functools import lru_cache
 import datetime
 import typing
+from urllib.parse import urlparse
+from urllib.error import URLError
 
 from six.moves.urllib.parse import urlencode
 
@@ -42,7 +44,8 @@ import logging
 log = logging.getLogger(__name__)
 
 all_helpers = {}
-
+prettify_cache = {}
+DEFAULT_LANG = None
 
 @lru_cache(maxsize=None)
 def get_scheming_dataset_schemas():
@@ -393,6 +396,50 @@ def schemingdcat_get_default_package_item_show_spatial():
     """
     return sdct_config.default_package_item_show_spatial
 
+@helper
+def schemingdcat_get_show_metadata_templates_toolbar():
+    """
+    Returns the default icon defined for a given scheming field definition.
+
+    This function is used to retrieve the default value to show metadata templates toolbar. If no default icon is defined, 
+    the function will return None.
+
+    Args:
+        field (dict): A dictionary representing the scheming field definition. 
+                      This should include all the properties of the field, 
+                      including the default icon if one is defined.
+
+    Returns:
+        str: A string representing the default icon for the field. This could 
+             be a URL, a data URI, or any other string format used to represent 
+             images. If no default icon is defined for the field, the function 
+             will return None.
+    """
+    return sdct_config.show_metadata_templates_toolbar
+
+@helper
+def schemingdcat_get_harvest_templates(search_identifier=sdct_config.metadata_templates_search_identifier, count=10):
+    """
+    This helper function retrieves the schemingdcat_xls templates from the CKAN instance. 
+    It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
+    
+    Parameters:
+    search_identifier (str): The text to search in the identifier. Default is sdct_config.metadata_templates_search_identifier.
+    count (int): The number of featured datasets to retrieve. Default is 10.
+
+    Returns:
+    list: A list of dictionaries, each representing a featured dataset. If no results are found, returns None.
+    """
+    fq = f'+identifier:{search_identifier}'
+    search_dict = {
+        'fq': fq, 
+        'fl': 'name,title,notes,metadata_modified,extras_title_translated,extras_notes_translated',
+        'rows': count
+    }
+    context = {'model': model, 'session': model.Session}
+    result = logic.get_action('package_search')(context, search_dict)
+    
+    return result['results'] if result['results'] else None
 
 @helper
 def schemingdcat_get_icon(
@@ -434,7 +481,6 @@ def schemingdcat_get_icon(
 
     return default
 
-
 @helper
 def schemingdcat_get_choice_item(field, value):
     """Return the whole choice item for the given value in the scheming field.
@@ -454,7 +500,6 @@ def schemingdcat_get_choice_item(field, value):
 
     return None
 
-
 @helper
 def scheming_display_json_list(value):
     """Return the object passed serialized as a JSON list.
@@ -471,7 +516,6 @@ def scheming_display_json_list(value):
         return json.loads(value)
     except (TypeError, ValueError):
         return value
-
 
 @helper
 def scheming_clean_json_value(value):
@@ -491,43 +535,73 @@ def scheming_clean_json_value(value):
     except (TypeError, ValueError):
         return value
 
+def format_eli_label(parsed_url):
+    """
+    Formats the label for a parsed URL with 'eli' segment.
+
+    Args:
+        parsed_url (ParseResult): The parsed URL.
+
+    Returns:
+        str: The formatted label.
+    """
+    segments = parsed_url.path.split('/')
+    eli_index = next(i for i, segment in enumerate(segments) if segment == 'eli')
+    return '/'.join(segments[eli_index + 1:]).upper()
 
 @helper
 def schemingdcat_prettify_url(url):
-    """Clean a URL to remove 'http://', 'https://', and 'www.'.
+    """
+    Prettifies a URL by removing the protocol and trailing slash.
 
     Args:
-        url (str): The URL to clean.
+        url (str): The URL to prettify.
 
     Returns:
-        str: The cleaned URL.
+        str: The prettified URL, or the original URL if an error occurred.
     """
-    try:
-        cleaned_url = re.sub(r"^https?://(?:www\.)?", "", url).rstrip("/")
-        return cleaned_url
-    except AttributeError:
-        return url
+    if url in prettify_cache:
+        return prettify_cache[url]
 
+    try:
+        prettified_url = re.sub(r"^https?://(?:www\.)?", "", url).rstrip("/")
+        prettify_cache[url] = prettified_url
+        return prettified_url
+    except (TypeError, AttributeError):
+        return url
 
 @helper
 def schemingdcat_prettify_url_name(url):
-    """Extracts the name of the last segment of a URL.
+    """
+    Prettifies a URL name by extracting the last segment and cleaning it.
 
     Args:
         url (str): The URL to extract the name from.
 
     Returns:
-        str: The name of the last segment of the URL.
+        str: The prettified URL name, or the original URL if an error occurred.
     """
-    url_name = url.split("/")[-1] if "/" in url else url
+    if url is None:
+        return url
 
-    if url_name is not None:
-        url_name = re.sub(r"^https?://", "", url_name)
-    else:
-        url_name = re.sub(r"^https?://", "", url)
+    if url in prettify_cache:
+        return prettify_cache[url]
 
-    return url_name
+    try:
+        parsed_url = urlparse(url)
+        
+        if '/eli/' in url:
+            prettified_url_name = format_eli_label(parsed_url)
+        else:
+            url_name = parsed_url.path.split("/")[-1].split('.')[0].replace('_', '-')
+            prettified_url_name = ' '.join(url_name.split(' ')[:4])
 
+        prettify_cache[url] = prettified_url_name
+        return prettified_url_name
+
+    except (URLError, ValueError) as e:
+        print(f"Error while prettifying URL: {e}")
+        return url
 
 @helper
 def schemingdcat_listify_str(values):
@@ -552,7 +626,6 @@ def schemingdcat_listify_str(values):
 
     return values
 
-
 @helper
 def schemingdcat_load_yaml(file, folder="codelists"):
     """Load a YAML file from the folder, by default 'codelists' directory.
@@ -575,7 +648,6 @@ def schemingdcat_load_yaml(file, folder="codelists"):
         log.error("Could not read configuration from {0}: {1}".format(file, e))
 
     return yaml_data
-
 
 @helper
 def schemingdcat_get_linked_data(id):
@@ -618,7 +690,6 @@ def schemingdcat_get_linked_data(id):
         for name, content_type in CONTENT_TYPES.items()
     ]
 
-
 @helper
 def schemingdcat_get_catalog_endpoints():
     """Get the catalog endpoints.
@@ -660,7 +731,6 @@ def schemingdcat_get_catalog_endpoints():
         for item in endpoints["catalog_endpoints"]
     ]
 
-
 @helper
 def schemingdcat_get_geospatial_endpoint(type="dataset"):
     """Get geospatial base URI for CSW Endpoint.
@@ -694,7 +764,6 @@ def schemingdcat_get_geospatial_endpoint(type="dataset"):
             csw_uri
             + "?service=CSW&version={version}&request=GetRecordById&id={id}&elementSetName={element_set_name}&outputSchema={output_schema}&OutputFormat={output_format}"
         )
-
 
 @helper
 def schemingdcat_get_geospatial_metadata():
@@ -731,7 +800,6 @@ def schemingdcat_get_geospatial_metadata():
         for item in geometadata_links["csw_formats"]
     ]
 
-
 @helper
 def schemingdcat_get_all_metadata(id):
     """Get linked data and geospatial metadata for a given identifier.
@@ -752,12 +820,6 @@ def schemingdcat_get_all_metadata(id):
         data["endpoint_type"] = "dcat"
 
     return geospatial_metadata + linked_data
-
-
-@helper
-def schemingdcat_get_default_lang():
-    return p.toolkit.config.get("ckan.locale_default", "en")
-
 
 @helper
 def fluent_form_languages(field=None, entity_type=None, object_type=None, schema=None):
@@ -788,7 +850,6 @@ def fluent_form_languages(field=None, entity_type=None, object_type=None, schema
             langs.append(l.language)
     return langs
 
-
 @helper
 def schemingdcat_fluent_form_label(field, lang):
     """Returns a label for the input field in the specified language.
@@ -808,7 +869,6 @@ def schemingdcat_fluent_form_label(field, lang):
     label = scheming_language_text(form_label.get(lang, field["label"]))
     return f"{label} ({lang.upper()})"
 
-
 @helper
 def schemingdcat_multiple_field_required(field, lang):
     """
@@ -827,7 +887,6 @@ def schemingdcat_multiple_field_required(field, lang):
         return True
     return "not_empty" in field.get("validators", "").split()
 
-
 def parse_json(value, default_value=None):
     try:
         return json.loads(value)
@@ -836,6 +895,12 @@ def parse_json(value, default_value=None):
             return default_value
         return value
 
+@helper
+def schemingdcat_get_default_lang():
+    global DEFAULT_LANG
+    if DEFAULT_LANG is None:
+        DEFAULT_LANG = p.toolkit.config.get("ckan.locale_default", "en")
+    return DEFAULT_LANG
 
 @helper
 def schemingdcat_get_current_lang():
@@ -936,21 +1001,26 @@ def dataset_display_field_value(package_or_package_dict, field_name):
         package_or_package_dict, field_name
     )
 
-
 @helper
 def schemingdcat_get_localized_value_from_dict(
     package_or_package_dict, field_name, default=""
 ):
     """
-    Returns the localized value for a given field name from the provided package or package dictionary.
+    Get the localized value from a dictionary.
+
+    This function tries to get the value of a field in a specific language.
+    If the value is not available in the specific language, it tries to get it in the default language.
+    If the value is not available in the default language, it tries to get the untranslated value.
+    If the untranslated value is not available, it returns a default value.
 
     Args:
-        package_or_package_dict (str or dict): The package or package dictionary to extract the value from.
-        field_name (str): The name of the field to extract the value for.
-        default (str, optional): The default value to return if the field is not found. Defaults to ''.
+        package_or_package_dict (dict or str): The package or dictionary to get the value from.
+            If it's a string, it tries to convert it to a dictionary using json.loads.
+        field_name (str): The name of the field to get the value from.
+        default (str, optional): The default value to return if the value is not available. Defaults to "".
 
     Returns:
-        str: The localized value for the given field name, or the default value if the field is not found.
+        str: The localized value, or the default value if the localized value is not available.
     """
     if isinstance(package_or_package_dict, str):
         try:
@@ -959,21 +1029,17 @@ def schemingdcat_get_localized_value_from_dict(
             return default
 
     lang_code = schemingdcat_get_current_lang().split("_")[0]
-    default_lang_code = schemingdcat_get_default_lang()
+    schemingdcat_get_default_lang()
 
-    translated_package_or_package_dict = package_or_package_dict.get(
-        field_name + "_translated", {}
-    )
+    translated_field = package_or_package_dict.get(field_name + "_translated", {})
+    if isinstance(translated_field, str):
+        try:
+            translated_field = json.loads(translated_field)
+        except ValueError:
+            translated_field = {}
 
     # Check the lang_code, if not check the default_lang, if not check the field without translation
-    value = (
-        translated_package_or_package_dict.get(lang_code, None)
-        or translated_package_or_package_dict.get(default_lang_code, None)
-        or package_or_package_dict.get(field_name, None)
-    )
-
-    return value if value is not None else default
-
+    return translated_field.get(lang_code) or translated_field.get(DEFAULT_LANG) or package_or_package_dict.get(field_name, default)
 
 @helper
 def schemingdcat_get_readable_file_size(num, suffix="B"):
@@ -1252,3 +1318,20 @@ def get_header_endpoint_url(endpoint, site_protocol_and_host):
         return url_for(endpoint_value, **endpoint['endpoint_data'])
     elif endpoint_type == 'sparql':
         return url_for('/sparql')
+    
+@helper
+def schemingdcat_check_valid_url(url):
+    """
+    Check if a string is a valid URL.
+
+    Args:
+        url (str): The string to check.
+
+    Returns:
+        bool: True if the string is a valid URL, False otherwise.
+    """
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

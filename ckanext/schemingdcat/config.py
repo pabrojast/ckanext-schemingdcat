@@ -14,6 +14,8 @@ endpoints = None
 facet_list_limit = 6
 default_package_item_icon = 'theme'
 default_package_item_show_spatial = True
+show_metadata_templates_toolbar = True
+metadata_templates_search_identifier = '*schemingdcat_xls-template*'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
 
 # Default DCAT metadata configuration
@@ -122,6 +124,7 @@ OGC2CKAN_MD_FORMATS = {
     'shapefile': ('SHP', 'http://www.iana.org/assignments/media-types/application/vnd.shp', 'http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf', 'ESRI Shapefile'),
     'esri': ('SHP', 'http://www.iana.org/assignments/media-types/application/vnd.shp', 'http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf', 'ESRI Shapefile'),
     'html': ('HTML', 'http://www.iana.org/assignments/media-types/text/html', 'http://www.w3.org/TR/2011/WD-html5-20110405/', 'HyperText Markup Language'),
+    'html5': ('HTML', 'http://www.iana.org/assignments/media-types/text/html', 'http://www.w3.org/TR/2011/WD-html5-20110405/', 'HyperText Markup Language'),
     'visor': ('HTML', 'http://www.iana.org/assignments/media-types/text/html', 'http://www.w3.org/TR/2011/WD-html5-20110405/', 'Map Viewer'),
     'enlace': ('HTML', 'http://www.iana.org/assignments/media-types/text/html', 'http://www.w3.org/TR/2011/WD-html5-20110405/', 'Map Viewer'),
     'pdf': ('PDF', 'http://www.iana.org/assignments/media-types/application/pdf', 'http://www.iso.org/standard/75839.html', 'Portable Document Format'),
@@ -154,6 +157,7 @@ DATASET_DEFAULT_FIELDS = [
     {'field_name': 'id', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'title', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'notes', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'description', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'access_rights', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['access_rights'], 'override': True, 'dtype': str},
     {'field_name': 'license', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license'], 'override': True, 'dtype': str},
@@ -162,10 +166,11 @@ DATASET_DEFAULT_FIELDS = [
     {'field_name': 'theme', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme'], 'override': True, 'dtype': str},
     {'field_name': 'theme_eu', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['theme_eu'], 'override': True, 'dtype': str},
     {'field_name': 'status', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['status'], 'override': True, 'dtype': str},
+    {'field_name': 'hvd_category', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
 ]
 
 RESOURCE_DEFAULT_FIELDS = [
-    {'field_name': 'url', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'url', 'fallback': None, 'default_value': "", 'override': False, 'dtype': str},
     {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'format', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'protocol', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
@@ -184,6 +189,11 @@ CUSTOM_FORMAT_RULES = [
     {
         'format_strings': ['esri', 'arcgis'],
         'url_string': 'viewer.html?url=',
+        'new_format': 'HTML'
+    },
+    {
+        'format_strings': ['html', 'html5'],
+        'url_string': None,
         'new_format': 'HTML'
     },
     # Add more rules here as needed
@@ -238,3 +248,11 @@ ACCENT_MAP = str.maketrans({
     "ú": "u", "ù": "u", "ü": "u", "û": "u",
     "ñ": "ñ",
 })
+
+URL_FIELD_NAMES = {
+        'dataset': 
+            ['dcat_type', 'theme_es', 'language', 'topic', 'maintainer_url', 'tag_uri', 'contact_uri', 'contact_url', 'publisher_identifier', 'publisher_uri', 'publisher_url', 'publisher_type', 'maintainer_uri', 'maintainer_url', 'author_uri', 'author_url', 'conforms_to', 'theme', 'reference_system', 'spatial_uri', 'representation_type', 'license_id', 'access_rights', 'graphic_overview', 'frequency', 'hvd_category'],
+        'resource':
+            ['url', 'availability', 'mimetype', 'status', 'resource_relation', 'license', 'rights', 'conforms_to', 'reference_system']
+    }
+EMAIL_FIELD_NAMES = ['publisher_email', 'maintainer_email', 'author_email', ]

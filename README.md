@@ -346,16 +346,12 @@ To use it, you need to add the `schemingdcat_ckan_harvester` plugin to your opti
 
 The Scheming DCAT CKAN Harvester supports the same configuration options as the [CKAN Harvester](https://github.com/ckan/ckanext-harvest#the-ckan-harvester), plus the following additional options:
 
-* `dataset_field_mapping`:  Mapping field names from local to remote instance. This is a dictionary with the following keys: 
-  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
-  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
-* `resource_field_mapping`: Mapping field names from local to remote instance. This is a dictionary with the following keys: 
-  - `local_field_name`: The `field_name` in the local instance, check the schema: http://ckan-instance/catalog/api/3/action/scheming_dataset_schema_show?type=dataset.
-  - `remote_field_name`: The `field_name` in the remote instance. If the remote schema does not contain translations in the fields `'title_translated':{'en': 'example_record', 'en': 'example_record'}`, but you want the values to be updated on load, you can define it as a dictionary where the keys refer to the names of the fields in the remote record, e.g. `{'en': 'title', 'en': 'title-en'}`.
-* `schema`: The name of the schema to use for the harvested datasets. This is the `schema_name` as defined in the scheming file. The remote and local instances must have the same dataset schema. If not provided, the local instance schema will be used.
-* `allow_harvest_datasets`: If `true`, the harvester will create new records even if the package type is from the harvest source. If `false`, the harvester will only create records that originate from the instance. Default is `false`.
-* `remote_orgs`: [WIP]. Only `only_local`.
-* `remote_groups`: [WIP]. Only `only_local`.
+* `dataset_field_mapping/distribution_field_mapping` (Optional):  Mapping field names from local to remote instance, all info at: [Field mapping structure](#field-mapping-structure)
+* `field_mapping_schema_version` (**Mandatory if exists** `dataset_field_mapping/distribution_field_mapping`): Schema version of the field_mapping to ensure compatibility with older schemas. The default is `2`.
+* `schema` (Optional): The name of the schema to use for the harvested datasets. This is the `schema_name` as defined in the scheming file. The remote and local instances must have the same dataset schema. If not provided, the local instance schema will be used.
+* `allow_harvest_datasets` (Optional): If `true`, the harvester will create new records even if the package type is from the harvest source. If `false`, the harvester will only create records that originate from the instance. Default is `false`.
+* `remote_orgs` (Optional): [WIP]. Only `only_local`.
+* `remote_groups` (Optional): [WIP]. Only `only_local`.
 
 And example configuration might look like this:
 
@@ -376,12 +372,40 @@ And example configuration might look like this:
       "schema": "geodcatap",
       "allow_harvest_datasets":false,
       "field_mapping_schema_version":2,
-      "dataset_field_mapping":{"title_translated":{"languages":{"en":{"field_value":""},"es":{"field_position":"A"}}},"private":{"field_name":"private"},"tags":{"field_position":"B"},"theme_es":{"field_value":"http://datos.gob.es/kos/sector-publico/sector/medio-ambiente"}},
+      "dataset_field_mapping": {
+        "title": {
+            "field_name": "my_title"
+          },
+        "title_translated": {
+            "languages": {
+                "en": {
+                    "field_name": "my_title-en"
+                },
+                "es": {
+                    "field_name": "my_title"
+                }
+            }
+        },
+        "private": {
+            "field_name": "private"
+        },
+        "tag_string": {
+            "field_name": ["theme_a", "theme_b", "theme_c"]
+        },
+        "theme_es": {
+            "field_value": "http://datos.gob.es/kos/sector-publico/sector/medio-ambiente"
+        },
+        "tag_uri": {
+            "field_name": "keyword_uri",
+            // "field_value" extends the original list of values retrieved from the remote file for all records.
+            "field_value": ["https://www.example.org/codelist/a","https://www.example.org/codelist/b", "https://www.example.org/codelist/c"] 
+        },
+      },
       }
   ```
 
 
-### Scheming DCAT CSW INSPIRE Harvester
+###TODO: Scheming DCAT CSW INSPIRE Harvester
 A harvester for remote CSW catalogues using the INSPIRE ISO 19139 metadata profile. This harvester is a subclass of the CSW Harvester provided by `ckanext-spatial` and is designed to work with the `schemingdcat` plugin to provide a more versatile and customizable harvester for CSW endpoints and GeoDCAT-AP CKAN instances.
 
 To use it, you need to add the `schemingdcat_csw_harvester` plugin to your options file:
@@ -389,9 +413,10 @@ To use it, you need to add the `schemingdcat_csw_harvester` plugin to your optio
   ```ini
 	ckan.plugins = harvest schemingdcat schemingdcat_datasets ... schemingdcat_csw_harvester
   ```
-  ==#TODO:==
+
+
 ### Remote Google Sheet/Onedrive Excel metadata upload Harvester
-A harvester for remote Excel files with Metadata records. This harvester is a subclass of the Scheming DCAT Base Harvester provided by `ckanext-schemingdcat` to provide a more versatile and customizable harvester for Excel files that have metadata records in them.
+A harvester for remote [Google spreadsheets](https://docs.gspread.org/en/v6.0.0/oauth2.html) and Onedrive Excel files with Metadata records. This harvester is a subclass of the Scheming DCAT Base Harvester provided by `ckanext-schemingdcat` to provide a more versatile and customizable harvester for Excel files that have metadata records in them.
 
 To use it, you need to add the `schemingdcat_xls_harvester` plugin to your options file:
 
@@ -405,10 +430,9 @@ Remote Google Sheet/Onedrive Excel metadata upload Harvester supports the follow
 * `dataset_sheet` - **Mandatory**: The name of the sheet in the Excel file that contains the dataset records.
 * `field_mapping_schema_version`: Schema version of the field_mapping to ensure compatibility with older schemas. The default is `2`.
 * `dataset_field_mapping/distribution_field_mapping`:  Mapping field names from local to remote instance, all info at: [Field mapping structure](#field-mapping-structure)
-* `auth`: If the remote file is private and requires authentication, the `auth` parameter should be used to provide the authentication credentials. Default is `False`.
-  * `credentials`: If `auth` is `True`, the `credentials` parameter should be used to provide the authentication credentials. The credentials depends on the `storage_type` used. 
-    * For `onedrive`: The credentials parameter should be a dictionary with the following keys: `username`: A string representing the username. `password`: A string representing the password.
-    * For `gspread` or `gdrive`: The credentials parameter should be a string containing the credentials in `JSON` format. You can obtain the credentials by following the instructions provided in the [Google Workspace documentation.](https://developers.google.com/workspace/guides/create-credentials?hl=es-419)
+* `credentials`: The `credentials` parameter should be used to provide the authentication credentials. The credentials depends on the `storage_type` used. 
+  * For `onedrive`: The credentials parameter should be a dictionary with the following keys: `username`: A string representing the username. `password`: A string representing the password.
+  * For `gspread` or `gdrive`: The credentials parameter should be a string containing the credentials in `JSON` format. You can obtain the credentials by following the instructions provided in the [Google Workspace documentation.](https://developers.google.com/workspace/guides/create-credentials?hl=es-419)
 * `distribution_sheet`: The name of the sheet in the Excel file that contains the distribution records. If not provided, the harvester will only create records for the dataset sheet.
 * `datadictionary_sheet`: The name of the sheet in the Excel file that contains the data dictionary records. If not provided, the harvester will only create records for the dataset sheet.
 * `api_version`: You can force the harvester to use either version 1 or 2 of the CKAN API. Default is `2`.
@@ -496,7 +520,6 @@ Here are some examples of configuration files:
     "storage_type": "gspread",
     "dataset_sheet": "Dataset",
     "distribution_sheet": "Distribution",
-    "auth": true,
 
     ...
     # other properties
@@ -551,7 +574,6 @@ Here are some examples of configuration files:
     "storage_type": "gspread",
     "dataset_sheet": "Dataset",
     "distribution_sheet": "Distribution",
-    "auth": true,
 
     ...
     # other properties

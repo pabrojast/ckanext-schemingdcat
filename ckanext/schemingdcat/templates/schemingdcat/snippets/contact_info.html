@@ -40,8 +40,13 @@
 
         <ul class="nav nav-simple">
           {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26, pkg_dict.contact_email) }}
-          {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26, h.schemingdcat_prettify_url(pkg_dict.contact_url)) }}
-          {{ contact_item('fa fa-user-circle-o', pkg_dict.contact_uri, 26, h.schemingdcat_prettify_url_name(pkg_dict.contact_uri)) }}
+
+          {% if pkg_dict.contact_url %}
+            {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26, h.schemingdcat_prettify_url(pkg_dict.contact_url)) }}
+          {% endif %}
+          {% if pkg_dict.contact_uri %}
+            {{ contact_item('fa fa-user-circle-o', pkg_dict.contact_uri, 26, h.schemingdcat_prettify_url_name(pkg_dict.contact_uri)) }}
+          {% endif %}
         </ul>
       </section>
     </section>

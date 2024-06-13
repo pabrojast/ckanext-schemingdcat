@@ -42,14 +42,20 @@
       <ul class="nav nav-simple">
         <ul class="nav nav-simple">
           {{ publisher_item('fa fa-envelope', 'mailto:' + pkg_dict.publisher_email, 26, pkg_dict.publisher_email) }}
-          {{ publisher_item('fa fa-external-link',pkg_dict.publisher_url, 26,  h.schemingdcat_prettify_url(pkg_dict.publisher_url)) }}
-          {{ publisher_item('fa fa-user-circle-o', pkg_dict.publisher_identifier, 26, h.schemingdcat_prettify_url_name(pkg_dict.publisher_identifier)) }}
+
+          {% if pkg_dict.publisher_url %}
+            {{ publisher_item('fa fa-external-link',pkg_dict.publisher_url, 26,  h.schemingdcat_prettify_url(pkg_dict.publisher_url)) }}
+          {% endif %}
+
+          {% if pkg_dict.publisher_identifier %}
+            {{ publisher_item('fa fa-user-circle-o', pkg_dict.publisher_identifier, 26, h.schemingdcat_prettify_url_name(pkg_dict.publisher_identifier)) }}
+          {% endif %}
 
           {% if pkg_dict.publisher_type %}
             {% set choices = h.scheming_field_choices(field_publisher_type) %}
             {% set publisher_type_label = h.scheming_choices_label(choices, pkg_dict.publisher_type) %}
 
-            {{ publisher_item('fa fa university', pkg_dict.publisher_type, 26, publisher_type_label) }}
+            {{ publisher_item('fa fa-university', pkg_dict.publisher_type, 26, publisher_type_label) }}
           {% endif %}
       </ul>
     </section>

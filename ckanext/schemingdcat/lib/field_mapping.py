@@ -1,4 +1,8 @@
 import re
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class FieldMappingValidator:
     """
@@ -32,9 +36,28 @@ class FieldMappingValidator:
             if not all(isinstance(item, str) for item in value):
                 raise ValueError(f'"{local_field}" (property: "{prop}") must be a list of strings: "["value_1", "value_2"]')
         elif isinstance(value, str):
-                if ',' in value and prop != 'field_value':
-                    raise ValueError(f'"{local_field}" (property: "{prop}") must not contain commas. Use a list ["value_1", "value_2"] instead of a comma-separated string: "value_1,value_2"')
+            if ',' in value and prop != 'field_value':
+                raise ValueError(f'"{local_field}" (property: "{prop}") must not contain commas. Use a list ["value_1", "value_2"] instead of a comma-separated string: "value_1,value_2"')
+    
+    def _update_field_position_to_upper(self, prop, value):
+        """
+        Convert to upper all field_position values.
 
+        Args:
+            prop (str): The property name.
+            value (str or list): The value to check.
+
+        Raises:
+            ValueError: If the value is not valid.
+        """
+        if prop == 'field_position':
+            if isinstance(value, str):
+                value = value.upper()  # Convert 'value' to uppercase
+            elif isinstance(value, list):
+                value = [v.upper() for v in value]  # Convert each 'value' in the list to uppercase
+                
+        return value
+    
     def _check_non_translated_fields(self, field_mapping):
         """
         Check for corresponding non-translated fields.
@@ -68,7 +91,9 @@ class FieldMappingValidator:
         if validator is None:
             raise ValueError(f'Unsupported schema version: {schema_version}. Supported versions are: {list(self.validators.keys())}')
 
-        validator(field_mapping)
+        field_mapping = validator(field_mapping)
+        
+        return field_mapping
 
     def validate_v1(self, field_mapping):
         """
@@ -105,13 +130,14 @@ class FieldMappingValidator:
         Raises:
             ValueError: If the field mapping is not valid.
         """
-        field_position_defined = False
-        field_name_defined = False
-        field_value_defined = False
-
         self._check_non_translated_fields(field_mapping)
 
         for local_field, field_config in field_mapping.items():
+            # Initialize the flags for each local_field
+            field_position_defined = False
+            field_name_defined = False
+            field_value_defined = False
+
             if not isinstance(local_field, str):
                 raise ValueError('"local_field_name" must be a string')
             if not isinstance(field_config, dict):
@@ -123,6 +149,7 @@ class FieldMappingValidator:
                 if prop == 'field_position':
                     field_position_defined = True
                     self._check_value(local_field, prop, value)
+                    field_mapping[local_field][prop] = self._update_field_position_to_upper(prop, value)
                 if prop == 'field_name':
                     field_name_defined = True
                     self._check_value(local_field, prop, value)
@@ -139,14 +166,25 @@ class FieldMappingValidator:
                             raise ValueError('Language config must be a dictionary')
                         for lang_prop, lang_value in lang_config.items():
                             if lang_prop not in self.valid_props:
-                                raise ValueError(f'Invalid property "{lang_prop}" in language config')
-                            if not isinstance(lang_value, (str)):
-                                raise ValueError(f'"{lang_prop}" must be a string')
+                                raise ValueError(f'Invalid property "{lang_prop}" in *_field_mapping. Check: https://github.com/mjanez/ckanext-schemingdcat?tab=field-mapping-structure')
+                            if lang_prop == 'field_position':
+                                field_position_defined = True
+                                self._check_value(local_field, lang_prop, lang_value)
+                                field_mapping[local_field]['languages'][lang][lang_prop] = self._update_field_position_to_upper(lang_prop, lang_value)
+                            if lang_prop == 'field_name':
+                                field_name_defined = True
+                                self._check_value(local_field, lang_prop, lang_value)
+                            if lang_prop == 'field_value':
+                                field_value_defined = True
+                                self._check_value(local_field, lang_prop, lang_value)
 
-        if field_position_defined and field_name_defined:
-            raise ValueError(f'Both "field_position" and "field_name" cannot be defined in the field mapping. Define either all as "field_position" or all as "field_name". "local_field_name" with errors: "{local_field}"')
+            # Check the flags after processing each local_field
+            if field_position_defined and field_name_defined:
+                raise ValueError(f'Both "field_position" and "field_name" cannot be defined in the field mapping. Define either all as "field_position" or all as "field_name". "local_field_name" with errors: "{local_field}"')
 
-        if (field_position_defined or field_name_defined) and field_value_defined:
-            if field_config.get('field_position') is not None or field_config.get('field_name') is not None:
-                if not isinstance(field_config.get('field_value'), list):
-                    raise ValueError(f'"field_value" for "{local_field}" can only be used if it is a list. First, check that the local_field_name accepts lists, otherwise the harvester validator may have problems.')
+            if (field_position_defined or field_name_defined) and field_value_defined:
+                if field_config.get('field_position') is not None or field_config.get('field_name') is not None:
+                    if not isinstance(field_config.get('field_value'), list):
+                        raise ValueError(f'"field_value" for "{local_field}" can only be used if it is a list. First, check that the local_field_name accepts lists, otherwise the harvester validator may have problems.')
+
+        return field_mapping

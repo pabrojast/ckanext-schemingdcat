@@ -45,6 +45,11 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         }
 
     _names_taken = []
+    _field_mapping_required = {
+        "dataset_field_mapping": False,
+        "distribution_field_mapping": False,
+        "datadictionary_field_mapping": False,
+    }
 
     def _get_action_api_offset(self):
         return "/api/%d/action" % self.action_api_version
@@ -270,17 +275,22 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
             # Check if the content_dict colnames correspond to the local schema
             try:
-                remote_dataset_field_mapping = self.config.get("dataset_field_mapping")
-                remote_resource_field_mapping = self.config.get(
-                    "distribution_field_mapping"
-                )
-                self._validate_remote_schema(
-                    remote_dataset_field_names=None,
-                    remote_ckan_base_url=remote_ckan_base_url,
-                    remote_resource_field_names=None,
-                    remote_dataset_field_mapping=remote_dataset_field_mapping,
-                    remote_resource_field_mapping=remote_resource_field_mapping,
-                )
+                if self.config.get("dataset_field_mapping") is None and self.config.get("distribution_field_mapping") is None:
+                    log.warning('If no *_field_mapping is provided in the configuration for validation, fields are automatically mapped to the local schema.')
+                else:
+                    # Standardizes the field_mapping
+                    remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
+                    remote_distribution_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
+                    
+                    log.debug('remote_dataset_field_mapping: %s', remote_dataset_field_mapping)
+                    log.debug('remote_distribution_field_mapping: %s', remote_distribution_field_mapping)
+                    self._validate_remote_schema(
+                        remote_dataset_field_names=None,
+                        remote_ckan_base_url=remote_ckan_base_url,
+                        remote_resource_field_names=None,
+                        remote_dataset_field_mapping=remote_dataset_field_mapping,
+                        remote_distribution_field_mapping=remote_distribution_field_mapping,
+                    )
             except RemoteSchemaError as e:
                 self._save_gather_error(
                     "Error validating remote schema: {0}".format(e), harvest_job
@@ -311,7 +321,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
             return object_ids
         except Exception as e:
-            self._save_gather_error("%r" % e.message, harvest_job)
+            self._save_gather_error("%r" % e, harvest_job)
 
     def _search_for_datasets(self, remote_ckan_base_url, fq_terms=None):
         """Does a dataset search on a remote CKAN and returns the results.

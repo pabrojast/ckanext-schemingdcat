@@ -929,6 +929,26 @@ msgid_plural "Featured datasets"
 msgstr[0] "Featured dataset"
 msgstr[1] "Featured datasets"
 
+# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+msgid "Metadata templates"
+msgstr "Metadata templates"
+
+#: ckanext/harvest/templates/source/new.html:26
+msgid "The metadata templates allow large numbers of datasets to be created in CKAN in a simple and standardised way. They are all compatible with the metadata schema of the catalogue:"
+msgstr "The metadata templates allow large numbers of datasets to be created in CKAN in a simple and standardised way. They are all compatible with the metadata schema of the catalogue:"
+
+#: ckanext/harvest/templates/source/new.html:26
+msgid "Specifically, the extension that adds the metadata harvester using tabular files is:"
+msgstr "Specifically, the extension that adds the metadata harvester using tabular files is:"
+
+# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+msgid "About the templates"
+msgstr "About the templates"
+
+# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+msgid "CKAN schema"
+msgstr "CKAN schema"
+
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
 msgstr "Science and technology"
