@@ -14,6 +14,8 @@ endpoints = None
 facet_list_limit = 6
 default_package_item_icon = 'theme'
 default_package_item_show_spatial = True
+show_metadata_templates_toolbar = True
+metadata_templates_search_identifier = '*schemingdcat_xls-template*'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
 
 # Default DCAT metadata configuration
@@ -155,6 +157,7 @@ DATASET_DEFAULT_FIELDS = [
     {'field_name': 'id', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'title', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'notes', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'description', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'access_rights', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['access_rights'], 'override': True, 'dtype': str},
     {'field_name': 'license', 'fallback': None, 'default_value': OGC2CKAN_HARVESTER_MD_CONFIG['license'], 'override': True, 'dtype': str},
@@ -167,7 +170,7 @@ DATASET_DEFAULT_FIELDS = [
 ]
 
 RESOURCE_DEFAULT_FIELDS = [
-    {'field_name': 'url', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
+    {'field_name': 'url', 'fallback': None, 'default_value': "", 'override': False, 'dtype': str},
     {'field_name': 'name', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'format', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
     {'field_name': 'protocol', 'fallback': None, 'default_value': None, 'override': False, 'dtype': str},
