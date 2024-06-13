@@ -21,20 +21,24 @@
       {% if field %}
         {% set field_choices = h.scheming_field_choices(field) %}
         {% set list_values = h.schemingdcat_listify_str(pkg_dict[theme_field]) %}
-        {% set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
-        <ul class="nav nav-simple scrollable-list">
-          {% for item in list_values %}
-            {% set label = h.scheming_choices_label(field_choices, item) %}
-            {% set choice_item = h.schemingdcat_get_choice_item(field, item) %}
-            {% set icon = choice_item and h.schemingdcat_get_icon(choice_item, icons_dir) %}
-            {% set img_url = h.url_for_static(icon) if icon %}
-            {% set url = h.url_for('dataset.search', **{theme_field: item}) %}
-            <li class="nav-item info_item" title="{{ h.scheming_language_text(field.label) }}">
-              <img class="module-image info_image" src="{{ img_url }}" alt="{{ organization.title }}" />
-              <a href="{{ url }}" class="info_text">{{ label }}</a>
-            </li>
-          {% endfor %}
-        </ul>
+        {% if list_values %}
+          {% set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
+          <ul class="nav nav-simple scrollable-list">
+            {% for item in list_values %}
+              {% if item %}
+                {% set label = h.scheming_choices_label(field_choices, item) %}
+                {% set choice_item = h.schemingdcat_get_choice_item(field, item) %}
+                {% set icon = choice_item and h.schemingdcat_get_icon(choice_item, icons_dir) %}
+                {% set img_url = h.url_for_static(icon) if icon %}
+                {% set url = h.url_for('dataset.search', **{theme_field: item}) %}
+                <li class="nav-item info_item" title="{{ h.scheming_language_text(field.label) }}">
+                  <img class="module-image info_image" src="{{ img_url }}" alt="{{ organization.title }}" />
+                  <a href="{{ url }}" class="info_text">{{ label }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
       {% endif %}
     </div>
   </section>
