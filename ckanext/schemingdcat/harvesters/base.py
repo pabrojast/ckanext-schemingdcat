@@ -1212,7 +1212,6 @@ class SchemingDCATHarvester(HarvesterBase):
         Returns:
             dict: The updated package dictionary.
         """
-        log.debug('package_dict BEFORE DEFAULT DEFAULT FROM MAPPING: %s', package_dict)
         if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
             for key, value in self._dataset_default_values.items():
                 if key not in package_dict:
@@ -1229,7 +1228,6 @@ class SchemingDCATHarvester(HarvesterBase):
                         elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
                             package_dict["resources"][i][key].extend(value)
 
-        log.debug('package_dict AFTER DEFAULT DEFAULT FROM MAPPING: %s', package_dict)
         return package_dict
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
