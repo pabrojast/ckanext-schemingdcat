@@ -1,5 +1,12 @@
 {% ckan_extends %}
 {% block secondary_content %}
+
+{% block toolbar_templates %}
+  {% if h.schemingdcat_get_show_metadata_templates_toolbar() %}
+    {% snippet 'schemingdcat/metadata_templates/header_metadata_templates.html' %}               
+  {% endif %}
+{% endblock %}
+
   {% snippet "schemingdcat/snippets/schemingdcat_spatial_query.html", default_extent="[[26.78,-19.21], [44.08, 5.66]]" %}
   <div class="filters">
     <div>

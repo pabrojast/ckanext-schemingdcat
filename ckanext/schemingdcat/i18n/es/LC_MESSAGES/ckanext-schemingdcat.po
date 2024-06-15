@@ -923,22 +923,29 @@ msgstr "Punto final SPARQL"
 msgid "Geographic Metadata (CSW INSPIRE)"
 msgstr "Metadatos Geográficos (CSW INSPIRE)"
 
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Featured organization"
 msgid_plural "Featured organizations"
 msgstr[0] "Organización destacada"
 msgstr[1] "Organizaciones destacadas"
 
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Featured group"
 msgid_plural "Featured groups"
 msgstr[0] "Grupo destacado"
 msgstr[1] "Grupos destacados"
 
+#: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html
 msgid "Featured dataset"
 msgid_plural "Featured datasets"
 msgstr[0] "Conjunto de datos destacado"
 msgstr[1] "Conjuntos de datos destacados"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "Metadata template"
+msgstr "Plantilla de metadatos"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "Metadata templates"
 msgstr "Plantillas de metadatos"
 
@@ -950,13 +957,25 @@ msgstr "Las plantillas de metadatos permiten crear grandes cantidades de conjunt
 msgid "Specifically, the extension that adds the metadata harvester using tabular files is:"
 msgstr "Concretamente la extensión que añade el cosechador de metadatos mediante ficheros tabulares es:"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "About the templates"
 msgstr "Acerca de las plantillas"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "CKAN schema"
 msgstr "esquema CKAN"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "No metadata templates available"
+msgstr "No hay plantillas de metadatos disponibles"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "To retrieve them, use an identifier that includes the following"
+msgstr "Para recuperarlas, utilice un identificador que incluya lo siguiente"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "\"*\" means any character"
+msgstr "\"*\" se refiere a cualquier carácter"
 
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"

@@ -80,7 +80,7 @@ class SchemingDCATPlugin(
                 "schemingdcat.show_metadata_templates_toolbar", sdct_config.show_metadata_templates_toolbar
             )
         
-        sdct_config.show_metadata_templates_toolbar = config_.get(
+        sdct_config.metadata_templates_search_identifier = config_.get(
                 "schemingdcat.metadata_templates_search_identifier", sdct_config.metadata_templates_search_identifier
             )
 

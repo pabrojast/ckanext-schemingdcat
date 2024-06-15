@@ -31,15 +31,17 @@
         }
         },
 
-        _onDocumentClick: function() {
+      _onDocumentClick: function(event) {
         var sidebar = document.getElementById('metadata-sidebar');
         var button = document.getElementById('sidebarButton');
-        if (sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            button.style.opacity = '1'; // Show the button
-            button.style.visibility = 'visible';
+        var isClickInside = sidebar.contains(event.target);
+
+        if (!isClickInside && sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+          button.style.opacity = '1'; // Show the button
+          button.style.visibility = 'visible';
         }
-        }
+      }
     };
   });
 }).apply(this);

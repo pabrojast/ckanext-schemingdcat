@@ -24,6 +24,13 @@
         {{ _('Deleted') }}
       </span>
       {% endif %}
+      {% if pkg.schemingdcat_xls_metadata_template %}
+      <span class="dataset-draft badge pull-left">
+        <a href="{{ h.url_for('schemingdcat.metadata_templates') }}" title="{{ _('Metadata templates') }}">  
+          <i class="fa fa-table"></i> {{ _('Metadata template') }}
+        </a>
+      </span>
+      {% endif %}
     </div>
     <h1>
       {% block page_heading %}
