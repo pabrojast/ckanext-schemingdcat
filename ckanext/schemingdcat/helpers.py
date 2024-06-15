@@ -377,31 +377,41 @@ def schemingdcat_get_default_package_item_icon():
 @helper
 def schemingdcat_get_default_package_item_show_spatial():
     """
-    Returns the default icon defined for a given scheming field definition.
+    Returns the configuration value for showing spatial information in the default package item.
 
-    This function is used to retrieve the default icon associated with a 
-    specific field in a scheming dataset. If no default icon is defined, 
-    the function will return None.
-
-    Args:
-        field (dict): A dictionary representing the scheming field definition. 
-                      This should include all the properties of the field, 
-                      including the default icon if one is defined.
+    This function is used to retrieve the configuration value that determines 
+    whether the spatial information should be shown in the default package item. 
+    If no value is defined in the configuration, the function will return None.
 
     Returns:
-        str: A string representing the default icon for the field. This could 
-             be a URL, a data URI, or any other string format used to represent 
-             images. If no default icon is defined for the field, the function 
-             will return None.
+        bool: A boolean value representing whether the spatial information should 
+              be shown in the default package item. If no value is defined in the 
+              configuration, the function will return None.
     """
     return sdct_config.default_package_item_show_spatial
 
 @helper
 def schemingdcat_get_show_metadata_templates_toolbar():
     """
+    Returns the configuration value for showing the metadata templates toolbar.
+
+    This function is used to retrieve the configuration value that determines 
+    whether the metadata templates toolbar should be shown or not. If the configuration 
+    value is not set, the function will return False.
+
+    Returns:
+        bool: A boolean value representing whether the metadata templates toolbar 
+              should be shown. If the configuration value is not set, the function 
+              will return False.
+    """
+    return sdct_config.show_metadata_templates_toolbar
+
+@helper
+def schemingdcat_get_metadata_templates_search_identifier():
+    """
     Returns the default icon defined for a given scheming field definition.
 
-    This function is used to retrieve the default value to show metadata templates toolbar. If no default icon is defined, 
+    This function is used to retrieve the default value to retrieve metadata templates. If no default value is defined, 
     the function will return None.
 
     Args:
@@ -415,10 +425,10 @@ def schemingdcat_get_show_metadata_templates_toolbar():
              images. If no default icon is defined for the field, the function 
              will return None.
     """
-    return sdct_config.show_metadata_templates_toolbar
+    return sdct_config.metadata_templates_search_identifier
 
 @helper
-def schemingdcat_get_harvest_templates(search_identifier=sdct_config.metadata_templates_search_identifier, count=10):
+def schemingdcat_get_schemingdcat_xls_harvest_templates(search_identifier=sdct_config.metadata_templates_search_identifier, count=10):
     """
     This helper function retrieves the schemingdcat_xls templates from the CKAN instance. 
     It uses the 'package_search' action of the CKAN logic layer to perform a search with specific parameters.
@@ -430,15 +440,20 @@ def schemingdcat_get_harvest_templates(search_identifier=sdct_config.metadata_te
     Returns:
     list: A list of dictionaries, each representing a featured dataset. If no results are found, returns None.
     """
-    fq = f'+identifier:{search_identifier}'
+    fq = f'+extras_schemingdcat_xls_metadata_template:{True}'
     search_dict = {
         'fq': fq, 
-        'fl': 'name,title,notes,metadata_modified,extras_title_translated,extras_notes_translated',
+        'fl': 'name,extras_identifier,title,notes,metadata_modified,extras_title_translated,extras_notes_translated',
         'rows': count
     }
     context = {'model': model, 'session': model.Session}
     result = logic.get_action('package_search')(context, search_dict)
     
+    if not result['results']:
+        fq = f'+extras_schemingdcat_xls_metadata_template:*{search_identifier}*'
+        search_dict['fq'] = fq
+        result = logic.get_action('package_search')(context, search_dict)
+
     return result['results'] if result['results'] else None
 
 @helper

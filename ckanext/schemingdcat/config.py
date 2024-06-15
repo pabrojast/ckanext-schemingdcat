@@ -15,7 +15,7 @@ facet_list_limit = 6
 default_package_item_icon = 'theme'
 default_package_item_show_spatial = True
 show_metadata_templates_toolbar = True
-metadata_templates_search_identifier = '*schemingdcat_xls-template*'
+metadata_templates_search_identifier = 'schemingdcat_xls-template'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
 
 # Default DCAT metadata configuration

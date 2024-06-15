@@ -175,6 +175,27 @@ dataset_fields:
   required_language: "en"
   form_group_id: title
 
+# Metadata template for schemingdcat_xls harvester
+- field_name: schemingdcat_xls_metadata_template
+  label:
+    en: Metadata template for schemingdcat_xls harvester
+    es: Plantilla de metadatos para el cosechador schemingdcat_xls
+  preset: schemingdcat_xls_metadata_template
+  required: False
+  choices:
+    - label:
+        en: "No"
+        es: "No"
+      value: False
+    - label:
+        en: "Yes"
+        es: "Si"
+      value: True
+  help_text:
+    en: 'ckanext-schemingdcat <a href="https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester" target="_blank" rel="noopener noreferrer">remote Google Sheet/Onedrive Excel metadata harvester</a>'
+    es: 'ckanext-schemingdcat <a href="https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester" target="_blank" rel="noopener noreferrer">cosechador de ficheros remotos Google Sheet/Onedrive Excel/a>'
+  form_group_id: general_info
+
 # Non-spatial Dataset (Hidden field, based on dcat_type)
 - field_name: dataset_scope
   label:

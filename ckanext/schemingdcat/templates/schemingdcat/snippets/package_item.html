@@ -14,6 +14,16 @@
   
   #}
 
+  {% macro render_badge(package) %}
+    {% if package.get('state', '').startswith('draft') %}
+      <span class="badge badge-info">{{ _('Draft') }}</span>
+    {% elif package.schemingdcat_xls_metadata_template %}
+      <span class="badge badge-info"><i class="fa fa-table"></i> {{ _('Metadata template') }}</span>
+    {% elif package.get('state', '').startswith('deleted') %}
+      <span class="badge badge-danger">{{ _('Deleted') }}</span>
+    {% endif %}
+  {% endmacro %}
+
   {% set truncate = truncate or 180 %}
   {% set truncate_title = truncate_title or 80 %}
   {% set title = h.dataset_display_name(package) %}
@@ -42,11 +52,7 @@
                     {% endif %}
                   {% endblock %}
                   {% block heading_meta %}
-                    {% if package.get('state', '').startswith('draft') %}
-                      <span class="badge badge-info">{{ _('Draft') }}</span>
-                    {% elif package.get('state', '').startswith('deleted') %}
-                      <span class="badge badge-danger">{{ _('Deleted') }}</span>
-                    {% endif %}
+                    {{ render_badge(package) }}
                     {{ h.popular('recent views', package.tracking_summary.recent, min=10) if package.tracking_summary }}
                   {% endblock %}
                 </h2>

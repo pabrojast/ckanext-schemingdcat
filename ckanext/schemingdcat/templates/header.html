@@ -1,8 +1,16 @@
 {% ckan_extends %}
 
 {% block header_account_logged %}
+    {% block header_metadata_templates %}
+    <li>
+      <a href="{{ h.url_for('schemingdcat.metadata_templates') }}" title="{{ _('Metadata templates') }}">  
+          <i class="fa fa-table"></i>
+        </a>
+      </li>
+    {% endblock %}
+
   <li>
-    <a href="{{ h.url_for('/harvest') }}" title="{{ _('Harvest metadata') }}">
+    <a href="{{ h.url_for('/harvest/') }}" title="{{ _('Harvest metadata') }}">
       <i class="fa fa-cloud-download"></i>
     </a>
   </li>

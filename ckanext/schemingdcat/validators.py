@@ -801,6 +801,29 @@ def schemingdcat_dataset_scope(field, schema):
 
 @scheming_validator
 @validator
+def schemingdcat_xls_metadata_template(field, schema):
+    """
+    Returns a validator function that checks if the 'metadata_template_id' value exists in the 'identifier'. If it exists, it sets the value of the field to True. Otherwise, it leaves the value unchanged.
+
+    Args:
+        field (dict): Information about the field to be updated.
+        schema (dict): The schema for the field to be updated.
+
+    Returns:
+        function: A validation function that can be used to update the field based on the presence of 'metadata_template_id' in the 'identifier'.
+    """
+    metadata_template_id = helpers.schemingdcat_get_metadata_templates_search_identifier()
+    
+    def validator(key, data, errors, context):
+        identifier = data.get(('identifier', ))
+        log.debug('identifier: %s', identifier)
+        if metadata_template_id in identifier:
+            data[key] = True
+
+    return validator
+
+@scheming_validator
+@validator
 def schemingdcat_spatial_uri_validator(field, schema):
     """
     Returns a validator function that checks if the 'spatial_uri' value exists in the choices. If it exists, it sets the value of the field to the value of 'spatial' in the choice. Otherwise, it sets the value to ''.

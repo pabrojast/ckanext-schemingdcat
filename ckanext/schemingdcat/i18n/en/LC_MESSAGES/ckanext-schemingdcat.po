@@ -929,7 +929,11 @@ msgid_plural "Featured datasets"
 msgstr[0] "Featured dataset"
 msgstr[1] "Featured datasets"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "Metadata template"
+msgstr "Metadata template"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "Metadata templates"
 msgstr "Metadata templates"
 
@@ -941,13 +945,25 @@ msgstr "The metadata templates allow large numbers of datasets to be created in 
 msgid "Specifically, the extension that adds the metadata harvester using tabular files is:"
 msgstr "Specifically, the extension that adds the metadata harvester using tabular files is:"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "About the templates"
 msgstr "About the templates"
 
-# ckanext/schemingdcat/templates/schemingdcat/snippets/header_metadata_templates.html
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 msgid "CKAN schema"
 msgstr "CKAN schema"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "No metadata templates available"
+msgstr "No metadata templates available"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "To retrieve them, use an identifier that includes the following"
+msgstr "To retrieve them, use an identifier that includes the following"
+
+# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
+msgid "\"*\" means any character"
+msgstr "\"*\" means any character"
 
 # Themes (NTI-RISP) - Schema field_name: theme_es
 msgid "ciencia-tecnologia"
