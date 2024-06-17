@@ -24,15 +24,14 @@
         </ul>
     {% else %}
         <div class="metadata-sidebar-no-templates">
-            <p><i class="fa fa-exclamation-triangle"></i>{{ _('No metadata templates available') }}. {{ _('To retrieve them, use an identifier that includes the following') }}:</p>
+            <p><i class="fa fa-exclamation-triangle"></i> {{ _('No metadata templates available') }}. {{ _('To retrieve them, use an identifier that includes the following') }}:</p>
 
             <div class="block-code">
                 *{{h.schemingdcat_get_metadata_templates_search_identifier()}}*
             </div>
 
             <div class="metadata-sidebar-info-block">
-                <i class="fa fa-info-circle"></i>
-                {{ _('"*" means any character') }}.
+                <i class="fa fa-info-circle"></i> {{ _('"*" means any character') }}.
             </div>
 
         </div>
