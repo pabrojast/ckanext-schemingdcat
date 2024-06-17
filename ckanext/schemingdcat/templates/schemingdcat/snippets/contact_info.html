@@ -39,8 +39,9 @@
         <a class="item_heading" href="{{ h.url_for('dataset.search', contact_name=pkg_dict.contact_name) }}" target="_blank"> {{ pkg_dict.contact_name }}</a>
 
         <ul class="nav nav-simple">
-          {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26, pkg_dict.contact_email) }}
-
+          {% if pkg_dict.contact_email %}
+            {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26, pkg_dict.contact_email) }}
+          {% endif %}
           {% if pkg_dict.contact_url %}
             {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26, h.schemingdcat_prettify_url(pkg_dict.contact_url)) }}
           {% endif %}
