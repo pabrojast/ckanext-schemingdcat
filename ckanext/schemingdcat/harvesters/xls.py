@@ -955,7 +955,10 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             'session': model.Session,
             'user': self._get_user_name(),
         }
-        
+
+        if self._local_schema is None:
+            self._local_schema = self._get_local_schema()
+
         if not harvest_object:
             log.error('No harvest object received')
             return False   
