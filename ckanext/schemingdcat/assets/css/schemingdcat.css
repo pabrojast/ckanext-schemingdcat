@@ -2142,7 +2142,7 @@ input#lang-r:checked ~ div .example-r {
 
 .label[data-format=zip],
 .label[data-format*=zip] {
-  background-color: #afb42b;
+  background-color: #fcba2f;
 }
 
 /* Metadata templates toolbar */
