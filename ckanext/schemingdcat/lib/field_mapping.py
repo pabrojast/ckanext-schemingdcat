@@ -25,13 +25,13 @@ class FieldMappingValidator:
         Args:
             local_field (str): The local field name.
             prop (str): The property name.
-            value (str or list): The value to check.
+            value (str or list or None): The value to check.
 
         Raises:
             ValueError: If the value is not valid.
         """
-        if not isinstance(value, (list, str)):
-            raise ValueError(f'"{local_field}" (property: "{prop}") must be a string or a list: "value_1" or ["value_1", "value_2"]')
+        if not isinstance(value, (list, str, type(None))):
+            raise ValueError(f'"{local_field}" (property: "{prop}") must be a string, a list, or None: "value_1" or ["value_1", "value_2"] or None')
         if isinstance(value, list):
             if not all(isinstance(item, str) for item in value):
                 raise ValueError(f'"{local_field}" (property: "{prop}") must be a list of strings: "["value_1", "value_2"]')
