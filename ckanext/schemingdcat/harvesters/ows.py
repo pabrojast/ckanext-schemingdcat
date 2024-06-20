@@ -18,6 +18,15 @@ class SchemingDCATOWSHarvester(SchemingDCATHarvester):
     An expanded Harvester for OWS servers like Geoserver
     '''
     
+    def info(self):
+        return {
+            'name': 'schemingdcat_ows',
+            'title': 'Scheming DCAT OWS Server endpoint',
+            'description': 'Harvester for OWS Servers like Geoserver to generate INSPIRE-GeoDCAT-AP dataset descriptions ' +
+                           'serialized as XML metadata according to the INSPIRE ISO 19139 standard.',
+            'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#schemingdcat-ows-harvester'
+        }
+    
     _field_mapping_required = {
         "dataset_field_mapping": False,
         "distribution_field_mapping": False,
