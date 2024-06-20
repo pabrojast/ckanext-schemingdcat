@@ -655,8 +655,36 @@ msgid "URL"
 msgstr "URL"
 
 #: ckanext/harvest/templates/source/new_source_form.html:10
-msgid "This should include the http:// part of the URL"
-msgstr "This should include the http:// part of the URL"
+msgid "This should include the <code>http://</code> or <code>https://</code> part of the URL."
+msgstr "This should include the <code>http://</code> or <code>https://</code> part of the URL."
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_xls"
+msgstr "Scheming DCAT: Remote Google Sheet/Onedrive Excel Harvester"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_ckan"
+msgstr "Scheming DCAT: CKAN endpoints"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_csw"
+msgstr "Scheming DCAT: INSPIRE CSW endpoints"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_ows"
+msgstr "Scheming DCAT: OWS servers"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_xml"
+msgstr "Scheming DCAT: XML Metadata Harvester"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "dcat_rdf"
+msgstr "DCAT: RDF Harvester"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "dcat_json"
+msgstr "DCAT: JSON Harvester"
 
 #: ckanext/harvest/templates/source/new_source_form.html:14
 msgid "Title"

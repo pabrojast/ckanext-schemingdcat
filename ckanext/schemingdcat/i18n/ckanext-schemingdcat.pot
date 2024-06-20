@@ -652,7 +652,35 @@ msgid "URL"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:10
-msgid "This should include the http:// part of the URL"
+msgid "This should include the <code>http://</code> or <code>https://</code> part of the URL."
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_xls"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_ckan"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_csw"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_ows"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "schemingdcat_xml"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "dcat_rdf"
+msgstr ""
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "dcat_json"
 msgstr ""
 
 #: ckanext/harvest/templates/source/new_source_form.html:14
