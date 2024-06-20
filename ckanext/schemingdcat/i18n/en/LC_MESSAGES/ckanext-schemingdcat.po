@@ -686,6 +686,14 @@ msgstr "DCAT: RDF Harvester"
 msgid "dcat_json"
 msgstr "DCAT: JSON Harvester"
 
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "Type"
+msgstr "Type"
+
+#: ckanext/harvest/templates/source/new_source_form.html
+msgid "Frequency"
+msgstr "Frequency"
+
 #: ckanext/harvest/templates/source/new_source_form.html:14
 msgid "Title"
 msgstr "Title"
