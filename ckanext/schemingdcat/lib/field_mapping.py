@@ -12,7 +12,8 @@ class FieldMappingValidator:
         """
         Initialize FieldMappingValidator with a set of valid properties.
         """
-        self.valid_props = {'field_value', 'field_position', 'field_name', 'languages'}
+        self.language_field = 'languages'
+        self.valid_props = {'field_value', 'field_position', 'field_name', self.language_field}
         self.validators = {
             1: self.validate_v1,
             2: self.validate_v2
@@ -156,9 +157,9 @@ class FieldMappingValidator:
                 if prop == 'field_value':
                     field_value_defined = True
                     self._check_value(local_field, prop, value)
-                if prop == 'languages':
+                if prop == self.language_field:
                     if not isinstance(value, dict):
-                        raise ValueError('"languages" must be a dictionary')
+                        raise ValueError('%s must be a dictionary', self.language_field)
                     for lang, lang_config in value.items():
                         if not isinstance(lang, str) or not re.match("^[a-z]{2}$", lang):
                             raise ValueError('Language code must be a 2-letter ISO 639-1 code')
@@ -170,7 +171,7 @@ class FieldMappingValidator:
                             if lang_prop == 'field_position':
                                 field_position_defined = True
                                 self._check_value(local_field, lang_prop, lang_value)
-                                field_mapping[local_field]['languages'][lang][lang_prop] = self._update_field_position_to_upper(lang_prop, lang_value)
+                                field_mapping[local_field][self.language_field][lang][lang_prop] = self._update_field_position_to_upper(lang_prop, lang_value)
                             if lang_prop == 'field_name':
                                 field_name_defined = True
                                 self._check_value(local_field, lang_prop, lang_value)

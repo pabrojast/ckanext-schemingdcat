@@ -504,11 +504,11 @@ There are two types of fields that can be defined in the configuration:
 
 1. **Regular fields**: These fields have a field label/position to define the mapping or a fixed value for all its records.
     - **Properties**: A field can have one of these three properties:
-      - **Fixed value fields**: These fields have a fixed value that is assigned to all records. This is defined using the `field_value` property. If `field_value` is a list, `field_name` or `field_position` could be set at the same time, and the `field_value` extends the list obtained from the remote field.
+      - **Fixed value fields (`field_value`)**: These fields have a fixed value that is assigned to all records. This is defined using the `field_value` property. If `field_value` is a list, `field_name` or `field_position` could be set at the same time, and the `field_value` extends the list obtained from the remote field.
       - **Field labels**: Field position or field name:
-        - **Position based fields**: These fields are defined by their position in the Excel file. This is defined using the `field_position` property.
-        - **Name based fields**: These fields are defined by their name in the Excel file. This is defined using the `field_name` property.
-2. **Multilingual Fields**: These fields have different values for different languages. Each language is represented as a separate object within the field object (`es`, `en`, ...). The language object can have `field_value`, `field_position` and `field_name` properties, just like a normal field.
+        - **Position based fields (`field_position`)**: These fields are defined by their position in the Excel file. This is defined using the `field_position` property.
+        - **Name based fields (`field_name`)**: These fields are defined by their name in the Excel file. This is defined using the `field_name` property.
+2. **Multilingual Fields (`languages`)**: These fields have different values for different languages. Each language is represented as a separate object within the field object (`es`, `en`, ...). The language object can have `field_value`, `field_position` and `field_name` properties, just like a normal field.
 
 
 **Example**
