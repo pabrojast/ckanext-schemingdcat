@@ -71,6 +71,20 @@ class SchemingDCATHarvester(HarvesterBase):
     _distribution_default_values = {}
     _field_mapping_validator = FieldMappingValidator()
     _field_mapping_validator_versions = _field_mapping_validator.validators.keys()
+    _field_mapping_info = {
+        "dataset_field_mapping": {
+            "required": True,
+            "content_dicts": "datasets"
+        },
+        "distribution_field_mapping": {
+            "required": False,
+            "content_dicts": "distributions"
+        },
+        "datadictionary_field_mapping": {
+            "required": False,
+            "content_dicts": "datadictionaries"
+        }
+    }
 
     def get_harvester_basic_info(self, config):
         """
@@ -621,10 +635,17 @@ class SchemingDCATHarvester(HarvesterBase):
             Raises:
                 ValueError: If the field mapping is required but not provided.
             """
-            if self._field_mapping_required.get(mapping_name, False) and not mapping_value:
-                raise ValueError(f"Field mapping is required for {mapping_name}, but it is not provided.")
-            elif mapping_value is None:
-                mapping_value = None
+            
+            mapping_info = self._field_mapping_info.get(mapping_name)
+
+            # If mapping_info is None, it means that mapping_name is invalid.
+            if mapping_info is None:
+                raise ValueError(f"{mapping_name} is not a valid field mapping.")
+
+            # Checks if the mapping is required and if a value has not been provided
+            if mapping_info["required"] and not mapping_value:
+                raise ValueError(f"Field mapping '{mapping_name}' is required, but it is not provided.")
+
             return mapping_value
 
         def get_mapped_fields(fields, field_mapping):

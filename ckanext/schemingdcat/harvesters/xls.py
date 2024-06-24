@@ -63,11 +63,6 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
     _auth = False
     _credentials = None
     _names_taken = []
-    _field_mapping_required = {
-        "dataset_field_mapping": True,
-        "distribution_field_mapping": False,
-        "datadictionary_field_mapping": False,
-    }
 
     def _set_config_credentials(self, storage_type, config_obj):
         """
@@ -657,7 +652,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 raise ValueError(f'field_mapping_schema_version must be an integer and one of {self._field_mapping_validator_versions}. Check the extension README for more info.')
 
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
-        for mapping_name in ['dataset_field_mapping', 'distribution_field_mapping', 'resourcedictionary_field_mapping']:
+        for mapping_name in self._field_mapping_info.keys():
             if mapping_name in config:
                 field_mapping = config_obj[mapping_name]
                 if not isinstance(field_mapping, dict):
@@ -750,7 +745,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                 for error_msg in before_download_errors:
                     self._save_gather_error(error_msg, harvest_job)
                 
-                if not source_url:
+                if not remote_sheet_download_url:
                     return []
         
         # Read sheets

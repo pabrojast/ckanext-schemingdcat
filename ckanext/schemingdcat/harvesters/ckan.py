@@ -45,11 +45,6 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         }
 
     _names_taken = []
-    _field_mapping_required = {
-        "dataset_field_mapping": False,
-        "distribution_field_mapping": False,
-        "datadictionary_field_mapping": False,
-    }
 
     def _get_action_api_offset(self):
         return "/api/%d/action" % self.action_api_version

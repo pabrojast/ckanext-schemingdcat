@@ -27,9 +27,4 @@ class SchemingDCATOWSHarvester(SchemingDCATHarvester):
             'about_url': 'https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#schemingdcat-ows-harvester'
         }
     
-    _field_mapping_required = {
-        "dataset_field_mapping": False,
-        "distribution_field_mapping": False,
-        "datadictionary_field_mapping": False,
-    }
     pass 
