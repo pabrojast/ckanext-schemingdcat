@@ -897,32 +897,35 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         change = guids_in_db & guids_in_harvest
 
         log.debug('new: %s, delete: %s and change: %s', new, delete, change)
-        
+            
         ids = []
         for guid in new:
             obj = HarvestObject(guid=guid, job=harvest_job, content=json.dumps(datasets_to_harvest.get(guid)),
                                 extras=[HarvestObjectExtra(key='status', value='new')])
             obj.save()
-            ids.append(obj.id)
+            ids.append({'id': obj.id, 'name': datasets_to_harvest.get(guid)['name'], 'identifier': datasets_to_harvest.get(guid)['identifier']})
         for guid in change:
             obj = HarvestObject(guid=guid, job=harvest_job, content=json.dumps(datasets_to_harvest.get(guid)),
                                 package_id=guid_to_package_id[guid],
                                 extras=[HarvestObjectExtra(key='status', value='change')])
             obj.save()
-            ids.append(obj.id)
+            ids.append({'id': obj.id, 'name': datasets_to_harvest.get(guid)['name'], 'identifier': datasets_to_harvest.get(guid)['identifier']})
         for guid in delete:
             obj = HarvestObject(guid=guid, job=harvest_job, content=json.dumps(datasets_to_harvest.get(guid)),
                                 package_id=guid_to_package_id[guid],
                                 extras=[HarvestObjectExtra(key='status', value='delete')])
             model.Session.query(HarvestObject).\
-                  filter_by(guid=guid).\
-                  update({'current': False}, False)
+                filter_by(guid=guid).\
+                update({'current': False}, False)
             obj.save()
-            ids.append(obj.id)
+            ids.append({'id': obj.id, 'name': datasets_to_harvest.get(guid)['name'], 'identifier': datasets_to_harvest.get(guid)['identifier']})
 
-        #log.debug('Number of elements in clean_datasets: %s and object_ids: %s', len(clean_datasets), len(ids))
+        log.debug('Number of elements in clean_datasets: %s and object_ids: %s', len(clean_datasets), len(ids))
 
-        return ids
+        # Log clean_datasets/ ids
+        #self._log_export_clean_datasets_and_ids(harvest_source_title, clean_datasets, ids)
+
+        return [id_dict['id'] for id_dict in ids]
     
     def fetch_stage(self, harvest_object):
         # Nothing to do here - we got the package dict in the search in the gather stage

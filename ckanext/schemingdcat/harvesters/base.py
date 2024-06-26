@@ -8,7 +8,7 @@ from datetime import datetime
 from dateutil.parser import parse
 import six
 import hashlib
-import pandas as pd
+import csv
 
 import urllib.request
 from urllib.parse import urlparse
@@ -59,7 +59,7 @@ class SchemingDCATHarvester(HarvesterBase):
     _remote_schema = None
     _local_schema_name = None
     _remote_schema_name = None
-    _supported_schemas = []
+    _supported_schemas = set()
     _readme = "https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file"
     config = None
     api_version = 2
@@ -307,7 +307,7 @@ class SchemingDCATHarvester(HarvesterBase):
 
         # Get the set of available schemas
         # self._supported_schemas = set(schemingdcat_get_schema_names())
-        self._supported_schemas.append(self._local_schema_name)
+        self._supported_schemas.add(self._local_schema_name)
 
     def _get_object_extra(self, harvest_object, key):
         """
@@ -1185,7 +1185,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 else:
                     date = parse(date).strftime("%Y-%m-%d")
             except ValueError:
-                log.error('normalize_date failed for: %s', date)
+                log.error('normalize_date failed for: "%s" Check config source_date_format: "%s"', date, source_date_format)
                 return None
         elif isinstance(date, datetime):
             date = date.strftime("%Y-%m-%d")
@@ -1215,41 +1215,81 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return package_dict
 
+    def create_default_values(self, field_mappings):
+      """
+      Creates default values for datasets and distributions based on the provided field mappings.
+
+      This function processes the 'field_mappings' dictionary to extract default values for both
+      dataset fields and distribution fields. It handles multilingual fields by extracting 'field_value'
+      for each language specified under 'languages'. For non-multilingual fields, it directly extracts
+      'field_value'. The extracted default values are stored in '_dataset_default_values' and
+      '_distribution_default_values' attributes of the class.
+
+      Parameters:
+      - field_mappings (dict): A dictionary containing mappings for dataset and distribution fields.
+        The expected keys are "dataset_field_mapping" and "distribution_field_mapping", each with
+        a dictionary value that maps field names to their configurations, which may include 'languages'
+        for multilingual fields and 'field_value' for default values.
+      """
+      def extract_default_values(field_mapping):
+        default_values = {}
+        for key, value in (field_mapping or {}).items():
+          if isinstance(value, dict):
+            if 'languages' in value:  # Handling multilingual fields
+              default_values[key] = {lang: lang_details['field_value'] for lang, lang_details in value['languages'].items() if 'field_value' in lang_details}
+            elif 'field_value' in value:  # Handling non-multilingual fields
+              default_values[key] = value['field_value']
+        return default_values
+
+      # Create default values for dataset and distribution
+      self._dataset_default_values = extract_default_values(field_mappings.get("dataset_field_mapping"))
+      self._distribution_default_values = extract_default_values(field_mappings.get("distribution_field_mapping"))
+
+      # Log if there are no default values
+      if not self._dataset_default_values:
+        log.info('No default values for dataset.')
+      if not self._distribution_default_values:
+        log.info('No default values for distribution.')
+
     def _update_package_dict_with_config_mapping_default_values(self, package_dict):
-        """
-        Update the package dictionary with default values.
+      """
+      Updates the package dictionary with default values for dataset and distribution.
 
-        This method updates the package dictionary with default values from
-        `self._dataset_default_values` and `self._distribution_default_values` (config property: *_field_mapping).
-        If a key from the default values does not exist in the package dictionary,
-        it is added with its corresponding default value. The same process is applied
-        to each resource in `package_dict["resources"]` with `self._distribution_default_values`.
-        If the value in the package dictionary is a list and the default value is also a list,
-        the default values are appended to the list in the package dictionary.
+      This method iterates through the package dictionary, updating it with default values
+      specified in `_dataset_default_values` and `_distribution_default_values`. For each
+      key in the default values, if the key is not present in the target dictionary or its
+      value is None, it updates the target dictionary with the default value. If the default
+      value is a list, it extends the corresponding list in the target dictionary. If the
+      default value is a dictionary, it recursively updates the target dictionary with the
+      default dictionary values.
 
-        Args:
-            package_dict (dict): The package dictionary to be updated.
+      Args:
+        package_dict (dict): The package dictionary to update with default values.
 
-        Returns:
-            dict: The updated package dictionary.
-        """
-        if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
-            for key, value in self._dataset_default_values.items():
-                if key not in package_dict:
-                    package_dict[key] = value
-                elif isinstance(package_dict[key], list) and isinstance(value, list):
-                    package_dict[key].extend(value)
+      Returns:
+        dict: The updated package dictionary.
+      """
+      def update_dict_with_defaults(target_dict, default_values):
+        for key, default_value in default_values.items():
+          if key not in target_dict or target_dict[key] is None:
+            target_dict[key] = default_value
+          elif isinstance(target_dict[key], list) and isinstance(default_value, list):
+            target_dict[key].extend(default_value)
+          elif isinstance(default_value, dict):
+            target_dict[key] = target_dict.get(key, {})
+            for subkey, subvalue in default_value.items():
+              if subkey not in target_dict[key] or target_dict[key][subkey] is None:
+                target_dict[key][subkey] = subvalue
 
-        if self._distribution_default_values and isinstance(self._distribution_default_values, dict):
-            for i in range(len(package_dict["resources"])):
-                if isinstance(package_dict["resources"][i], dict):  # Add this line
-                    for key, value in self._distribution_default_values.items():
-                        if key not in package_dict["resources"][i]:
-                            package_dict["resources"][i][key] = value
-                        elif isinstance(package_dict["resources"][i][key], list) and isinstance(value, list):
-                            package_dict["resources"][i][key].extend(value)
+      if self._dataset_default_values and isinstance(self._dataset_default_values, dict):
+        update_dict_with_defaults(package_dict, self._dataset_default_values)
 
-        return package_dict
+      if self._distribution_default_values and isinstance(self._distribution_default_values, dict):
+        for resource in package_dict.get("resources", []):
+          if isinstance(resource, dict):
+            update_dict_with_defaults(resource, self._distribution_default_values)
+
+      return package_dict
 
     def _set_package_dict_default_values(self, package_dict, harvest_object, context):
         """
@@ -1264,8 +1304,6 @@ class SchemingDCATHarvester(HarvesterBase):
             dict: The package_dict with default values set.
         """
         # Add default values: tags, groups, etc.
-        package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
-
         harvester_info = self.info()
         extras = {
             'harvester_name': harvester_info['name'],
@@ -1281,17 +1319,6 @@ class SchemingDCATHarvester(HarvesterBase):
             )
             return True
 
-        #TODO: Fix existing_tags_ids
-        log.debug('TODO:existing_tags_ids: %s', existing_tags_ids)
-        
-        # Set default tags if needed
-        default_tags = self.config.get("default_tags", [])
-        if default_tags:
-            for tag in default_tags:
-                if tag["name"] not in existing_tags_ids:
-                    package_dict["tags"].append(tag)
-                    existing_tags_ids.add(tag["name"])
-
         # Local harvest source organization
         source_package_dict = p.toolkit.get_action("package_show")(
             context.copy(), {"id": harvest_object.source.id}
@@ -1301,19 +1328,6 @@ class SchemingDCATHarvester(HarvesterBase):
 
         # Using dataset config defaults
         package_dict = self._apply_package_defaults_from_config(package_dict, DATASET_DEFAULT_FIELDS)
-
-        # Prepare groups
-        cleaned_groups = self._set_ckan_groups(package_dict.get("groups", []))
-        default_groups = self.config.get("default_groups", [])
-        if default_groups:
-            cleaned_default_groups = self._set_ckan_groups(default_groups)
-            #log.debug("cleaned_default_groups: %s", cleaned_default_groups)
-            existing_group_ids = set(g["name"] for g in cleaned_groups)
-            for group in cleaned_default_groups:
-                if group["name"] not in existing_group_ids:
-                    cleaned_groups.append(group)
-
-        package_dict["groups"] = cleaned_groups
 
         # Add default_extras from config
         default_extras = self.config.get('default_extras',{})
@@ -1351,6 +1365,33 @@ class SchemingDCATHarvester(HarvesterBase):
 
         # Using self._dataset_default_values and self._distribution_default_values based on config mappings
         package_dict = self._update_package_dict_with_config_mapping_default_values(package_dict)
+
+        # Prepare tags
+        package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
+
+        #TODO: Fix existing_tags_ids
+        log.debug('TODO:existing_tags_ids: %s', existing_tags_ids)
+        
+        # Set default tags if needed
+        default_tags = self.config.get("default_tags", [])
+        if default_tags:
+            for tag in default_tags:
+                if tag["name"] not in existing_tags_ids:
+                    package_dict["tags"].append(tag)
+                    existing_tags_ids.add(tag["name"])
+
+        # Prepare groups
+        cleaned_groups = self._set_ckan_groups(package_dict.get("groups", []))
+        default_groups = self.config.get("default_groups", [])
+        if default_groups:
+            cleaned_default_groups = self._set_ckan_groups(default_groups)
+            #log.debug("cleaned_default_groups: %s", cleaned_default_groups)
+            existing_group_ids = set(g["name"] for g in cleaned_groups)
+            for group in cleaned_default_groups:
+                if group["name"] not in existing_group_ids:
+                    cleaned_groups.append(group)
+
+        package_dict["groups"] = cleaned_groups
 
         # log.debug('package_dict default values: %s', package_dict)
         return package_dict
@@ -1459,29 +1500,43 @@ class SchemingDCATHarvester(HarvesterBase):
 
     @staticmethod
     def _update_custom_format(res_format, url=None, **args):
-        """Update the custom format based on custom rules.
+      """Update of the custom format based on custom rules.
 
-        The function checks the format and URL against a set of custom rules (CUSTOM_FORMAT_RULES). If a rule matches,
-        the format is updated according to that rule. This function is designed to be easily
-        extendable with new rules.
+      This optimized version pre-processes the rules to lower case outside the main loop to enhance efficiency.
+      It checks the format and URL against a set of custom rules (CUSTOM_FORMAT_RULES). If a rule matches,
+      the format is updated accordingly. This function is designed for easy extension with new rules.
 
-        Args:
-            res_format (str): The custom format to update.
-            url (str, optional): The URL to check. Defaults to None.
-            **args: Additional arguments that are ignored.
+      Args:
+        res_format (str): The custom format to update.
+        url (str, optional): The URL to check. Defaults to None.
+        **args: Additional arguments that are ignored.
 
-        Returns:
-            str: The updated custom format.
-        """
-        for rule in CUSTOM_FORMAT_RULES:
-            if (
-                any(string in res_format for string in rule["format_strings"])
-                or (rule["url_string"] is not None and rule["url_string"] in url)
-            ):
-                res_format = rule["new_format"]
-                break
+      Returns:
+        tuple: A tuple containing the updated custom format as a string and the MIME type as a string or None.
+      """
+      if not res_format:
+          return ("", None)  # Return a default tuple if format is None or empty
 
-        return res_format.upper()
+      res_format_lower = res_format.lower()
+      url_lower = url.lower() if url is not None else ""
+
+      preprocessed_rules = [
+          {
+              "format_strings_lower": [s.lower() for s in rule["format_strings"]] if rule["format_strings"] is not None else None,
+              "url_string_lower": rule["url_string"].lower() if rule["url_string"] is not None else None,
+              "format": rule["format"].upper(),
+              "mimetype": rule['mimetype'].strip()
+          }
+          for rule in CUSTOM_FORMAT_RULES
+      ]
+
+      for rule in preprocessed_rules:
+          if rule["format_strings_lower"] and any(s in res_format_lower for s in rule["format_strings_lower"]):
+              return rule["format"], rule['mimetype']
+          elif rule["url_string_lower"] and rule["url_string_lower"] in url_lower:
+              return rule["format"], rule['mimetype']
+
+      return res_format, None  # Ensure a tuple is returned
 
     @staticmethod
     def _secret_properties(input_dict, secrets=None):
@@ -1532,7 +1587,7 @@ class SchemingDCATHarvester(HarvesterBase):
         if format is None or format == "":
             format, mimetype, encoding = self._infer_format_from_url(resource.get('url'))
 
-        format = self._update_custom_format(format, resource.get("url", "")) if format else None
+        format, mimetype = self._update_custom_format(format, resource.get("url", "")) if format else ("", None)
 
         resource['format'] = format if format else resource.get('format', None)
         resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', None)
@@ -1870,6 +1925,81 @@ class SchemingDCATHarvester(HarvesterBase):
             self._save_object_error("%r" % e, harvest_object, "Import")
 
         return None
+
+    @staticmethod
+    def log_export_to_csv(data, harvest_source_title, filename_suf, log_dir='harvester-log', fieldnames=None):
+        """
+        Export data to a CSV file for logging, with filenames based on the harvest source title and current timestamp.
+        The files are saved in a 'log' directory.
+
+        Args:
+            data (list): A list of dictionaries (for clean_datasets) or a list of values (for object_ids).
+            harvest_source_title (str): The title of the harvest source to be included in the filename.
+            filename_suf (str): Suffix for the filename indicating the type of data (e.g., 'clean_datasets', 'ids').
+            log_dir (str, optional): Dir to ouput files.
+            fieldnames (list, optional): List of keys to write as the first row if data is a list of dictionaries. If None, it will use the keys of the first dictionary in data.
+        """
+        # Normalize the harvest source title: replace spaces with _, and convert to lowercase
+        normalized_title = harvest_source_title.replace(" ", "_").lower()
+
+        # Get the current date and time in string format
+        now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+        # Format the filename with the normalized title and the current date/time
+        filename = f"{normalized_title}_{now}_{filename_suf}.csv"
+
+        # Ensure the log_dir exists
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Combine the directory with the filename
+        filepath = os.path.join(log_dir, filename)
+
+        # Export logic remains the same
+        try:
+            with open(filepath, mode='w', newline='', encoding='utf-8') as csvfile:
+                if all(isinstance(item, dict) for item in data):
+                    # Data is a list of dictionaries
+                    if fieldnames is None:
+                        fieldnames = data[0].keys()
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    for item in data:
+                        # Filter each item to include only the keys in fieldnames
+                        filtered_item = {key: item[key] for key in fieldnames if key in item}
+                        writer.writerow(filtered_item)
+                else:
+                    # Data is a simple list
+                    writer = csv.writer(csvfile)
+                    for item in data:
+                        writer.writerow([item])
+        except Exception as e:
+            raise RuntimeError(f"Failed to export data to CSV: {e}")
+
+    def _log_export_clean_datasets_and_ids(self, harvest_source_title, clean_datasets, ids):
+        """
+        Logs and exports clean datasets and object IDs to CSV files.
+
+        This method exports two sets of data: 'clean_datasets' and 'ids'. Each set is exported to a separate CSV file
+        named with the harvest source title and the type of data. The 'clean_datasets' export includes all fields from
+        the dataset, while the 'ids' export is limited to 'id', 'name', and 'identifier'.
+
+        Args:
+            harvest_source_title (str): The title of the harvest source, used in naming the export files.
+            clean_datasets (list of dict): A list of dictionaries, each representing a clean dataset to be logged.
+            ids (list of dict): A list of dictionaries, each representing an object ID to be logged.
+
+        """
+        # Log clean_datasets/ ids
+        log_dir = 'harvester-log'
+        # Export clean_datasets
+        fieldnames = clean_datasets[0].keys() if clean_datasets else []
+        self.log_export_to_csv(clean_datasets, harvest_source_title, 'clean_datasets', log_dir, fieldnames=fieldnames)
+
+        # Export object_ids
+        fieldnames_ids = ['name', 'identifier']
+        self.log_export_to_csv(ids, harvest_source_title, 'ids', log_dir, fieldnames=fieldnames_ids)
+        
+        log.debug('"clean_datasets" and "ids" files logging in %s', log_dir)
 
 class ContentFetchError(Exception):
     pass
