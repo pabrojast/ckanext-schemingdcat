@@ -644,12 +644,13 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             raise ValueError(f'source_date_format: {str(source_date_format)} is not a valid date format. Accepted formats are: {" | ".join(COMMON_DATE_FORMATS)}. More info: https://docs.python.org/es/3/library/datetime.html#strftime-and-strptime-format-codes')
 
         # Check if 'field_mapping_schema_version' exists in the config
+        field_mapping_schema_version_error_message = f'Insert the schema version: "field_mapping_schema_version: <version>", one of: {", ".join(map(str, self._field_mapping_validator_versions))} . More info: https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester'
         if 'field_mapping_schema_version' not in config_obj:
-            raise ValueError(f'Insert the schema version: "field_mapping_schema_version: <version>", one of {self._field_mapping_validator_versions} . More info: https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester')
+            raise ValueError(field_mapping_schema_version_error_message)
         else:
-            # If it exists, check if it's an integer and in the allowed versions
+            # Check if is an integer and if it is in the versions
             if not isinstance(config_obj['field_mapping_schema_version'], int) or config_obj['field_mapping_schema_version'] not in self._field_mapping_validator_versions:
-                raise ValueError(f'field_mapping_schema_version must be an integer and one of {self._field_mapping_validator_versions}. Check the extension README for more info.')
+                raise ValueError(field_mapping_schema_version_error_message)
 
         # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
         for mapping_name in self._field_mapping_info.keys():
@@ -688,9 +689,10 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             list: A list of object IDs for the harvested datasets.
         """
         # Get file contents of source url
+        harvest_source_title = harvest_job.source.title
         source_url = harvest_job.source.url
         
-        log.debug('In SchemingDCATXLSHarvester gather_stage with XLS remote file: %s', source_url)
+        log.debug('In SchemingDCATXLSHarvester gather_stage with harvest source: %s and remote sheet: %s', harvest_source_title, source_url)
         
         content_dicts = {}
         self._names_taken = []
@@ -718,7 +720,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
         is_valid = self._check_accesible_url(remote_sheet_download_url, harvest_job, self._auth)
         
         if not is_valid:
-            log.error(f'The URL is not accessible. The harvest source: "{harvest_job.source.title}" has finished.')
+            log.error(f'The URL is not accessible. The harvest source: "{harvest_source_title}" has finished.')
             return []
         
         log.debug('URL is accessible: %s', remote_sheet_download_url)
@@ -778,38 +780,36 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             except Exception as e:
                 self._save_gather_error('Could not read remote sheet file: %s' % str(e), harvest_job)
                 return False
-    
-        # Create default values dict from config mappings.
-        try:
-            self._dataset_default_values = {key: value['field_value'] for key, value in (self.config.get("dataset_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
-            self._distribution_default_values = {key: value['field_value'] for key, value in (self.config.get("distribution_field_mapping") or {}).items() if isinstance(value, dict) and 'field_value' in value}
-
-            if not self._dataset_default_values:
-                log.info('No default values for dataset.')
-            if not self._distribution_default_values:
-                log.info('No default values for distribution.')
-        except ReadError as e:
-            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
-    
+        
         # Check if the content_dicts colnames correspond to the local schema
         try:
-            # Standardizes the field_mapping
-            remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
-            remote_distribution_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
+            # Standardizes the field_mapping           
+            field_mappings = {
+              'dataset_field_mapping': self._standardize_field_mapping(self.config.get("dataset_field_mapping")),
+              'distribution_field_mapping': self._standardize_field_mapping(self.config.get("distribution_field_mapping")),
+              'datadictionary_field_mapping': None
+            }
 
             # Standardizes the field names
-            content_dicts['datasets'], remote_dataset_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['datasets'], remote_dataset_field_mapping)
-            content_dicts['distributions'], remote_distribution_field_mapping = self._standardize_df_fields_from_field_mapping(content_dicts['distributions'], remote_distribution_field_mapping)
+            content_dicts['datasets'], field_mappings['dataset_field_mapping'] = self._standardize_df_fields_from_field_mapping(content_dicts['datasets'], field_mappings['dataset_field_mapping'])
+            content_dicts['distributions'], field_mappings['distribution_field_mapping'] = self._standardize_df_fields_from_field_mapping(content_dicts['distributions'], field_mappings['distribution_field_mapping'])
             
             # Validate field names
             remote_dataset_field_names = set(content_dicts['datasets'].columns)
             remote_resource_field_names = set(content_dicts['distributions'].columns)
 
-            self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=remote_dataset_field_mapping, remote_distribution_field_mapping=remote_distribution_field_mapping)
+            self._validate_remote_schema(remote_dataset_field_names=remote_dataset_field_names, remote_ckan_base_url=None, remote_resource_field_names=remote_resource_field_names, remote_dataset_field_mapping=field_mappings['dataset_field_mapping'], remote_distribution_field_mapping=field_mappings['distribution_field_mapping'])
 
         except RemoteSchemaError as e:
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
             return []
+
+        # Create default values dict from config mappings.
+        try:
+            self.create_default_values(field_mappings)
+    
+        except ReadError as e:
+            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
 
         # before_cleaning interface
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
