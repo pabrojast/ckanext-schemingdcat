@@ -168,14 +168,25 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         return config
 
     def gather_stage(self, harvest_job):
-        log.debug("In CKANHarvester gather_stage (%s)", harvest_job.source.url)
+        """
+        Performs the gather stage of the SchemingDCATCKANHarvester. This method is responsible for accesing the CKAN API and reading its contents. The contents are then processed, cleaned, and added to the database.
+
+        Args:
+            harvest_job (HarvestJob): The harvest job object.
+
+        Returns:
+            list: A list of object IDs for the harvested datasets.
+        """
+        # Get file contents of source url
+        harvest_source_title = harvest_job.source.title
+        remote_ckan_base_url = harvest_job.source.url.rstrip("/")
+
+        log.debug('In SchemingDCATCKANHarvester gather_stage with harvest source: %s and database URL: %s', harvest_source_title, remote_ckan_base_url)
+
+        # Get config options
         toolkit.requires_ckan_version(min_version="2.0")
         get_all_packages = True
-
         self._set_config(harvest_job.source.config)
-
-        # Get source URL
-        remote_ckan_base_url = harvest_job.source.url.rstrip("/")
 
         # Filter in/out datasets from particular organizations
         fq_terms = []
