@@ -330,6 +330,30 @@ msgstr "ISO 639-1 codes"
 msgid "Standard CKAN settings"
 msgstr "Standard CKAN settings"
 
+#: ckanext/schemingdcat/templates/admin/config.html:32
+msgid "This is the title of this CKAN instance. It appears in various places throughout CKAN."
+msgstr "This is the title of this CKAN instance. It appears in various places throughout CKAN."
+
+#: ckanext/schemingdcat/templates/admin/config.html:35
+msgid "Choose from a list of simple variations of the main colour scheme to get a very quick custom theme working."
+msgstr "Choose from a list of simple variations of the main colour scheme to get a very quick custom theme working."
+
+#: ckanext/schemingdcat/templates/admin/config.html:38
+msgid "This is the logo that appears in the header of all the CKAN instance templates."
+msgstr "This is the logo that appears in the header of all the CKAN instance templates."
+
+#: ckanext/schemingdcat/templates/admin/config.html:40
+msgid "This text will appear on this CKAN instances, see "
+msgstr "This text will appear on this CKAN instances, see "
+
+#: ckanext/schemingdcat/templates/admin/config.html:43
+msgid "This can be used for custom CSS on a CKAN site"
+msgstr "This can be used for custom CSS on a CKAN site"
+
+#: ckanext/schemingdcat/templates/admin/config.html:46
+msgid "This is for choosing a predefined layout for the modules that appear on your homepage."
+msgstr "This is for choosing a predefined layout for the modules that appear on your homepage."
+
 #: ckanext/schemingdcat/templates/header.html:5
 msgid "Harvest metadata"
 msgstr "Harvest metadata"

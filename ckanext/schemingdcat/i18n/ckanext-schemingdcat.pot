@@ -327,6 +327,30 @@ msgstr ""
 msgid "Standard CKAN settings"
 msgstr ""
 
+#: ckanext/schemingdcat/templates/admin/config.html:32
+msgid "This is the title of this CKAN instance. It appears in various places throughout CKAN."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/admin/config.html:35
+msgid "Choose from a list of simple variations of the main colour scheme to get a very quick custom theme working."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/admin/config.html:38
+msgid "This is the logo that appears in the header of all the CKAN instance templates."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/admin/config.html:40
+msgid "This text will appear on this CKAN instances, see "
+msgstr ""
+
+#: ckanext/schemingdcat/templates/admin/config.html:43
+msgid "This can be used for custom CSS on a CKAN site"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/admin/config.html:46
+msgid "This is for choosing a predefined layout for the modules that appear on your homepage."
+msgstr ""
+
 # ckanext-harvest
 #: ckanext/harvest/helpers.py:70
 msgid "title"
