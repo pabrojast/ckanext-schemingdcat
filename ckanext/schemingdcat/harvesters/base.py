@@ -1499,7 +1499,7 @@ class SchemingDCATHarvester(HarvesterBase):
         return ckan_groups
 
     @staticmethod
-    def _update_custom_format(res_format, url=None, **args):
+    def _update_custom_format(res_format, mimetype=None, url=None, **args):
       """Update of the custom format based on custom rules.
 
       This optimized version pre-processes the rules to lower case outside the main loop to enhance efficiency.
@@ -1508,6 +1508,7 @@ class SchemingDCATHarvester(HarvesterBase):
 
       Args:
         res_format (str): The custom format to update.
+        mimetype (str, optional): The source mimetype.
         url (str, optional): The URL to check. Defaults to None.
         **args: Additional arguments that are ignored.
 
@@ -1536,7 +1537,7 @@ class SchemingDCATHarvester(HarvesterBase):
           elif rule["url_string_lower"] and rule["url_string_lower"] in url_lower:
               return rule["format"], rule['mimetype']
 
-      return res_format, None  # Ensure a tuple is returned
+      return res_format, mimetype  # Ensure a tuple is returned
 
     @staticmethod
     def _secret_properties(input_dict, secrets=None):
@@ -1587,12 +1588,16 @@ class SchemingDCATHarvester(HarvesterBase):
         if format is None or format == "":
             format, mimetype, encoding = self._infer_format_from_url(resource.get('url'))
 
-        format, mimetype = self._update_custom_format(format, resource.get("url", "")) if format else ("", None)
+        format, mimetype = self._update_custom_format(format, mimetype, resource.get("url", "")) if format else ("", None)
+
+
+        log.debug('format: %s, mimetype: %s', format, mimetype)
 
         resource['format'] = format if format else resource.get('format', None)
         resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', None)
         resource['encoding'] = encoding if encoding else resource.get('encoding', None)
 
+        log.debug('resource: %s', resource)
         return resource
 
     def _clean_tags(self, tags):
