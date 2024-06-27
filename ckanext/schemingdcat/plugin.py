@@ -72,13 +72,17 @@ class SchemingDCATPlugin(
                 "schemingdcat.default_package_item_icon", sdct_config.default_package_item_icon
             )
 
-        sdct_config.default_package_item_show_spatial = config_.get(
+        sdct_config.default_package_item_show_spatial = toolkit.asbool(
+            config_.get(
                 "schemingdcat.default_package_item_show_spatial", sdct_config.default_package_item_show_spatial
             )
+        )
 
-        sdct_config.show_metadata_templates_toolbar = config_.get(
+        sdct_config.show_metadata_templates_toolbar = toolkit.asbool(
+            config_.get(
                 "schemingdcat.show_metadata_templates_toolbar", sdct_config.show_metadata_templates_toolbar
             )
+        )
         
         sdct_config.metadata_templates_search_identifier = config_.get(
                 "schemingdcat.metadata_templates_search_identifier", sdct_config.metadata_templates_search_identifier

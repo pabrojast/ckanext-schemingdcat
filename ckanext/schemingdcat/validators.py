@@ -816,7 +816,6 @@ def schemingdcat_xls_metadata_template(field, schema):
     
     def validator(key, data, errors, context):
         identifier = data.get(('identifier', ))
-        log.debug('identifier: %s', identifier)
         if metadata_template_id in identifier:
             data[key] = True
 

@@ -189,13 +189,21 @@ CUSTOM_FORMAT_RULES = [
     {
         'format_strings': ['esri', 'arcgis'],
         'url_string': 'viewer.html?url=',
-        'new_format': 'HTML'
+        'format': 'HTML',
+        'mimetype': 'https://www.iana.org/assignments/media-types/text/html'
     },
     {
         'format_strings': ['html', 'html5'],
         'url_string': None,
-        'new_format': 'HTML'
+        'format': 'HTML',
+        'mimetype': 'https://www.iana.org/assignments/media-types/text/html'
     },
+    {
+        'format_strings': None,
+        'url_string': 'getrecordbyid',
+        'format': 'XML',
+        'mimetype': 'https://www.iana.org/assignments/media-types/application/xml'
+    }
     # Add more rules here as needed
 ]
 
