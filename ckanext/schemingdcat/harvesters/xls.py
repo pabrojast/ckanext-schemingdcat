@@ -804,13 +804,6 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
             self._save_gather_error('Error validating remote schema: {0}'.format(e), harvest_job)
             return []
 
-        # Create default values dict from config mappings.
-        try:
-            self.create_default_values(field_mappings)
-    
-        except ReadError as e:
-            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
-
         # before_cleaning interface
         for harvester in p.PluginImplementations(ISchemingDCATHarvester):
             if hasattr(harvester, 'before_cleaning'):
