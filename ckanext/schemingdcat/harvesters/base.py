@@ -1268,7 +1268,20 @@ class SchemingDCATHarvester(HarvesterBase):
 
       Returns:
         dict: The updated package dictionary.
-      """
+      """         
+      field_mappings = {
+            'dataset_field_mapping': self._standardize_field_mapping(self.config.get("dataset_field_mapping")),
+            'distribution_field_mapping': self._standardize_field_mapping(self.config.get("distribution_field_mapping")),
+            'datadictionary_field_mapping': None
+        }
+
+      # Create default values dict from config mappings.
+      try:
+        self.create_default_values(field_mappings)
+
+      except ReadError as e:
+        self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
+
       def update_dict_with_defaults(target_dict, default_values):
         for key, default_value in default_values.items():
           if key not in target_dict or target_dict[key] is None:
@@ -1590,14 +1603,11 @@ class SchemingDCATHarvester(HarvesterBase):
 
         format, mimetype = self._update_custom_format(format, mimetype, resource.get("url", "")) if format else ("", None)
 
-
-        log.debug('format: %s, mimetype: %s', format, mimetype)
-
         resource['format'] = format if format else resource.get('format', None)
         resource['mimetype'] = mimetype if mimetype else resource.get('mimetype', None)
         resource['encoding'] = encoding if encoding else resource.get('encoding', None)
 
-        log.debug('resource: %s', resource)
+        #log.debug('resource: %s', resource)
         return resource
 
     def _clean_tags(self, tags):
