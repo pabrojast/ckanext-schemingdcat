@@ -387,6 +387,13 @@
         "display_snippet": "schemingdcat/display_snippets/file_size.html",
         "form_snippet": "schemingdcat/form_snippets/file_size.html"
       }
+    },
+    {
+      "preset_name": "schemingdcat_valid_email",
+      "values": {
+        "validators": "ignore_missing schemingdcat_valid_email",
+        "display_snippet": "email.html"
+      }
     }
   ]
 }

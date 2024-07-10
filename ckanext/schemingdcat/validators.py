@@ -816,7 +816,7 @@ def schemingdcat_xls_metadata_template(field, schema):
     
     def validator(key, data, errors, context):
         identifier = data.get(('identifier', ))
-        if metadata_template_id in identifier:
+        if identifier and metadata_template_id in identifier:
             data[key] = True
 
     return validator
@@ -888,4 +888,31 @@ def schemingdcat_if_empty_guess_format(field, schema):
                 data[key[:-1] + ('mimetype',)] = f"{mimetype_base_uri}/{mimetype}"
                 data[key[:-1] + ('encoding',)] = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]
                 
+    return validator
+
+@scheming_validator
+@validator
+def schemingdcat_valid_email(field, schema):
+    """
+    Validates if the provided string is a basically valid email address.
+
+    Args:
+        field (dict): Information about the field to be validated.
+        schema (dict): The schema for the field to be validated.
+
+    Returns:
+        function: A validation function that checks if the email is valid.
+    """
+    
+    def validator(key, data, errors, context):
+        value = data[key].strip()
+        
+        if value is missing or value is None or value == '':
+            data[key] = value
+            return validator
+        elif "@" not in value or "." not in value.split("@")[-1]:
+            errors[key].append(_('Expecting valid email: "user@example.org"'))
+            
+        data[key] = value
+
     return validator
