@@ -704,7 +704,7 @@ dataset_fields:
   label:
     en: Metadata contact point email
     es: Email del punto de contacto de los Metadatos
-  validators: not_empty scheming_required
+  validators: not_empty scheming_required schemingdcat_valid_email
   required: True
   display_property: vcard:hasEmail
   display_snippet: email.html
@@ -773,8 +773,8 @@ dataset_fields:
   label:
     en: Email of the publisher
     es: Email del publicador
+  preset: schemingdcat_valid_email
   display_property: foaf:mbox
-  display_snippet: email.html
   form_placeholder: joseblanco@example.com
   form_group_id: publisher
 
@@ -876,8 +876,8 @@ dataset_fields:
   label:
     en: Email of the dataset maintainer
     es: Email del mantenedor
+  preset: schemingdcat_valid_email
   display_property: vcard:hasEmail
-  display_snippet: email.html
   form_placeholder: joseblanco@example.com
   form_group_id: maintainer
 
@@ -924,8 +924,8 @@ dataset_fields:
   label:
     en: Email of the dataset creator
     es: Email del autor
+  preset: schemingdcat_valid_email
   display_property: vcard:hasEmail
-  display_snippet: email.html
   form_placeholder: joseblanco@example.com
   form_group_id: author
 
