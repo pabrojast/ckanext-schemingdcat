@@ -516,6 +516,25 @@ def schemingdcat_get_choice_item(field, value):
     return None
 
 @helper
+def schemingdcat_get_choice_property(choices, value, property):
+    """
+    Retrieve a specific property from a choice dictionary based on the given value.
+
+    Args:
+        choices (list): List of dictionaries containing "label" and "value" keys.
+        value (str): The value to match against the choices.
+        property (str): The property to retrieve from the matching choice dictionary.
+
+    Returns:
+        str or None: The property value from the matching choice dictionary, or None if not found.
+    """
+    for c in choices:
+        if c['value'] == value:
+            return c.get(property, None)
+    return None
+
+
+@helper
 def scheming_display_json_list(value):
     """Return the object passed serialized as a JSON list.
 
