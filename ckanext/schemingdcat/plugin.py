@@ -87,6 +87,10 @@ class SchemingDCATPlugin(
         sdct_config.metadata_templates_search_identifier = config_.get(
                 "schemingdcat.metadata_templates_search_identifier", sdct_config.metadata_templates_search_identifier
             )
+        
+        sdct_config.endpoints_yaml = config_.get(
+                "schemingdcat.endpoints_yaml", sdct_config.endpoints_yaml
+            )
 
         sdct_config.debug = toolkit.asbool(config_.get("debug", sdct_config.debug))
 
@@ -95,9 +99,8 @@ class SchemingDCATPlugin(
             "schemingdcat.geometadata_base_uri", "/csw"
         )
 
-        # Load yamls config files, if not in debug mode
-        if not sdct_config.debug:
-            init_config()
+        # Load yamls config files
+        init_config()
 
         # configure Faceted class (parent of this)
         self.facet_load_config(config_.get("schemingdcat.facet_list", "").split())

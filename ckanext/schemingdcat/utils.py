@@ -3,6 +3,7 @@ import ckan.logic as logic
 from ckanext.schemingdcat import config as sdct_config
 import logging
 import os
+import inspect
 import json
 import hashlib
 from threading import Lock
@@ -10,6 +11,11 @@ from ckanext.dcat.utils import CONTENT_TYPES
 import yaml
 from yaml.loader import SafeLoader
 from pathlib import Path
+
+try:
+    from paste.reloader import watch_file
+except ImportError:
+    watch_file = None
 
 log = logging.getLogger(__name__)
 
@@ -112,28 +118,97 @@ def public_dir_exists(path):
 def init_config():
     sdct_config.linkeddata_links = _load_yaml('linkeddata_links.yaml')
     sdct_config.geometadata_links = _load_yaml('geometadata_links.yaml')
-    sdct_config.endpoints = _load_yaml('endpoints.yaml')
+    sdct_config.endpoints = _load_yaml(sdct_config.endpoints_yaml)
+
+def is_yaml(file):
+    """Check if a file has a YAML extension.
+
+    Args:
+        file (str): The file name or path.
+
+    Returns:
+        bool: True if the file has a .yaml or .yml extension, False otherwise.
+    """
+    return file.lower().endswith(('.yaml', '.yml'))
 
 def _load_yaml(file):
-    """Load a YAML file from the 'codelists' directory.
+    """Load a YAML file, either from a module path or a default directory.
+
+    Args:
+        file (str): The name of the YAML file to load. Can be a module path like "module:file.yaml".
+
+    Returns:
+        dict: A dictionary containing the data from the YAML file, or an empty dictionary if the file is invalid or cannot be loaded.
+    """
+    if not is_yaml(file):
+        log.error("The file {0} is not a valid YAML file".format(file))
+        return {}
+
+    yaml_data = _load_yaml_module_path(file)
+    if not yaml_data:
+        yaml_data = _load_default_yaml(file)
+    return yaml_data
+
+def _load_yaml_module_path(file):
+    """Load a YAML file from a module path.
+
+    Given a path like "module:file.yaml", find the file relative to the import path of the module.
+
+    Args:
+        file (str): The module path of the YAML file.
+
+    Returns:
+        dict or None: A dictionary containing the data from the YAML file, or None if the module cannot be imported or the file cannot be loaded.
+    """
+    log.debug('file: %s', file)
+    
+    if ':' not in file:
+        return None
+
+    module, file_name = file.split(':', 1)
+    try:
+        m = __import__(module, fromlist=[''])
+        log.debug('m: %s', m)
+        log.debug('file_name: %s', os.path.join(os.path.dirname(inspect.getfile(m)), file_name))
+    except ImportError:
+        log.error("Module {0} could not be imported".format(module))
+        return None
+
+    return _load_yaml_file(os.path.join(os.path.dirname(inspect.getfile(m)), file_name))
+
+def _load_default_yaml(file):
+    """Load a YAML file from the 'codelists' directory of the schemingdcat extension.
 
     Args:
         file (str): The name of the YAML file to load.
 
     Returns:
-        dict: A dictionary containing the data from the YAML file.
+        dict: A dictionary containing the data from the YAML file, or an empty dictionary if the file cannot be loaded.
     """
     source_path = Path(__file__).resolve(True)
+    log.debug('source_path: %s', source_path)
+    return _load_yaml_file(source_path.parent.joinpath('codelists', file))
+
+def _load_yaml_file(path):
+    """Load a YAML file from a given path.
+
+    Args:
+        path (str): The file path of the YAML file.
+
+    Returns:
+        dict: A dictionary containing the data from the YAML file, or an empty dictionary if the file cannot be loaded.
+    """
     yaml_data = {}
     try:
-        p = source_path.parent.joinpath('codelists',file)
-        with open(p,'r') as f:
-            yaml_data=yaml.load(f, Loader=SafeLoader )
-    except FileNotFoundError:
-        log.error("The file {0} does not exist".format(file))
+        if os.path.exists(path):
+            if watch_file:
+                watch_file(path)
+            with open(path, 'r') as f:
+                yaml_data = yaml.load(f, Loader=SafeLoader)
+        else:
+            log.error("The file {0} does not exist".format(path))
     except Exception as e:
-        log.error("Could not read configuration from {0}: {1}".format(file, e))
-
+        log.error("Could not read configuration from {0}: {1}".format(path, e))
     return yaml_data
 
 def get_linked_data(id):
