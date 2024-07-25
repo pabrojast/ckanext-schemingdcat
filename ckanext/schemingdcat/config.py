@@ -18,6 +18,7 @@ default_package_item_show_spatial = True
 show_metadata_templates_toolbar = True
 metadata_templates_search_identifier = 'schemingdcat_xls-template'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
+form_tabs_allowed = True
 
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {

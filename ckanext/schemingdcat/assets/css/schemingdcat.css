@@ -2339,3 +2339,9 @@ input#lang-r:checked ~ div .example-r {
   font-size: 12px;
   padding: 10px 0 10px 10px;
 }
+
+/* Tabs package_form */
+.tab-content {
+  display: none;
+  padding-bottom: 10px;
+}

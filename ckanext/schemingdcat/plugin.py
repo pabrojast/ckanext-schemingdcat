@@ -94,6 +94,14 @@ class SchemingDCATPlugin(
 
         sdct_config.debug = toolkit.asbool(config_.get("debug", sdct_config.debug))
 
+
+        # New form tabs
+        sdct_config.form_tabs_allowed = toolkit.asbool(
+            config_.get(
+                "schemingdcat.form_tabs_allowed", sdct_config.form_tabs_allowed
+            )
+        )
+
         # Default value use local ckan instance with /csw
         sdct_config.geometadata_base_uri = config_.get(
             "schemingdcat.geometadata_base_uri", "/csw"

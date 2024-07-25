@@ -46,6 +46,7 @@ log = logging.getLogger(__name__)
 all_helpers = {}
 prettify_cache = {}
 DEFAULT_LANG = None
+slugify_pat = re.compile('[^a-zA-Z0-9]')
 
 @lru_cache(maxsize=None)
 def get_scheming_dataset_schemas():
@@ -139,6 +140,25 @@ def schemingdcat_organization_name(org_id):
         )
     return org_name
 
+@helper
+def schemingdcat_default_organization_name():
+    """Return the name of the first available organization as a default.
+
+    Returns:
+        str: The name of the first available organization, or None if no organizations are available.
+    """
+    default_org_name = None
+    try:
+        organizations = ckan_helpers.organizations_available()
+        if organizations:
+            default_org_name = organizations[0]["name"]
+        else:
+            log.warning("No organizations available to set as default.")
+    except Exception as e:
+        log.error(
+            "Exception while trying to find the default organization name: {0}".format(e)
+        )
+    return default_org_name
 
 @helper
 def schemingdcat_get_facet_label(facet):
@@ -1351,3 +1371,44 @@ def schemingdcat_check_valid_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
+
+# schemingdcat form tabs
+@helper
+def schemingdcat_form_tabs_allowed():
+    """
+    Returns a boolean value indicating whether form tabs are allowed in the current configuration.
+
+    Returns:
+        bool: True if form tabs are allowed, False otherwise.
+    """
+    return sdct_config.form_tabs_allowed
+
+@helper
+def schemingdcat_form_tabs_grouping(schema):
+    """
+    Generates a dictionary containing information about form tabs, including their labels and fields.
+    Ensures that form_tab names are unique and that each tab has at least one label.
+
+    Args:
+        schema (list): A list of dictionaries where each dictionary represents a tab with its fields and labels.
+
+    Returns:
+        dict: A dictionary with tab information, including labels and fields.
+    """
+    if 'schema_form_tabs' in schema:
+        #log.debug("schema order: %s" % schema['schema_form_tabs'])
+        return schema['schema_form_tabs']
+
+@helper
+def schemingdcat_slugify(s):
+    """
+    Removes all non-alphanumeric characters from the input string.
+
+    Args:
+        s (str): The input string to be slugified.
+
+    Returns:
+        str: The slugified string with only alphanumeric characters.
+    """
+    return slugify_pat.sub('', s)
