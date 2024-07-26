@@ -15,18 +15,16 @@ import ckan.model as model
 import ckan.logic as logic
 import uuid
 
-from ckanext.harvest.harvesters.ckanharvester import (
-    CKANHarvester,
-    ContentFetchError,
-    ContentNotFoundError,
-    RemoteResourceError,
-    SearchError,
-)
 
 from ckanext.schemingdcat.harvesters.base import (
     SchemingDCATHarvester,
     RemoteSchemaError,
+    ReadError,
+    ContentFetchError,
+    SearchError,
+    RemoteResourceError
 )
+from ckanext.schemingdcat.lib.field_mapping import FieldMappingValidator
 
 log = logging.getLogger(__name__)
 
@@ -92,6 +90,9 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         # Check basic validation config
         self._set_basic_validate_config(config)
 
+        # Instance field_mapping validator
+        field_mapping_validator = FieldMappingValidator()
+
         # Check if the schema is specified
         if "schema" in config_obj:
             schema = config_obj["schema"]
@@ -135,37 +136,33 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         ):
             config = json.dumps({**config_obj, "remote_orgs": "only_local"})
 
-        # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema
-        for mapping_name in ["dataset_field_mapping", "distribution_field_mapping"]:
+        # Check if 'field_mapping_schema_version' exists in the config
+        field_mapping_schema_version_error_message = f'Insert the schema version: "field_mapping_schema_version: <version>", one of: {", ".join(map(str, self._field_mapping_validator_versions))} . More info: https://github.com/mjanez/ckanext-schemingdcat?tab=readme-ov-file#remote-google-sheetonedrive-excel-metadata-upload-harvester'
+        if 'field_mapping_schema_version' not in config_obj and 'dataset_field_mapping' in config_obj:
+            raise ValueError(field_mapping_schema_version_error_message)
+        else:
+            # Check if is an integer and if it is in the versions
+            if not isinstance(config_obj['field_mapping_schema_version'], int) or config_obj['field_mapping_schema_version'] not in self._field_mapping_validator_versions:
+                raise ValueError(field_mapping_schema_version_error_message)
+
+        # Validate if exists a JSON contained the mapping field_names between the remote schema and the local schema        
+        for mapping_name in self._field_mapping_info.keys():
             if mapping_name in config:
                 field_mapping = config_obj[mapping_name]
                 if not isinstance(field_mapping, dict):
-                    raise ValueError(f"{mapping_name} must be a dictionary")
+                    raise ValueError(f'{mapping_name} must be a dictionary')
 
-                # Check if the config is a valid mapping
-                for local_field, remote_field in field_mapping.items():
-                    if not isinstance(local_field, basestring):
-                        raise ValueError('"local_field_name" must be a string')
-                    if not isinstance(remote_field, (basestring, dict)):
-                        raise ValueError(
-                            '"remote_field_name" must be a string or a dictionary'
-                        )
-                    if isinstance(remote_field, dict):
-                        for lang, remote_field_name in remote_field.items():
-                            if not isinstance(lang, basestring) or not isinstance(
-                                remote_field_name, basestring
-                            ):
-                                raise ValueError(
-                                    'In translated fields, both language and remote_field_name must be strings. e.g. "notes_translated": {"es": "notes-es"}'
-                                )
-                            if not re.match("^[a-z]{2}$", lang):
-                                raise ValueError(
-                                    "Language code must be a 2-letter ISO 639-1 code"
-                                )
+                schema_version = config_obj['field_mapping_schema_version']
+
+                try:
+                    # Validate field_mappings acordin schema versions
+                    field_mapping = field_mapping_validator.validate(field_mapping, schema_version)
+                except ValueError as e:
+                    raise ValueError(f"The field mapping is invalid: {e}") from e
 
                 config = json.dumps({**config_obj, mapping_name: field_mapping})
 
-        return config
+        return config     
 
     def gather_stage(self, harvest_job):
         """
@@ -181,7 +178,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         harvest_source_title = harvest_job.source.title
         remote_ckan_base_url = harvest_job.source.url.rstrip("/")
 
-        log.debug('In SchemingDCATCKANHarvester gather_stage with harvest source: %s and database URL: %s', harvest_source_title, remote_ckan_base_url)
+        log.debug('In SchemingDCATCKANHarvester gather_stage with harvest source: %s and URL: %s', harvest_source_title, remote_ckan_base_url)
 
         # Get config options
         toolkit.requires_ckan_version(min_version="2.0")
@@ -274,6 +271,23 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
             )
             return []
 
+
+        # Check if the content_dicts colnames correspond to the local schema
+        try:
+            # Standardizes the field_mapping           
+            field_mappings = {
+            'dataset_field_mapping': self._standardize_field_mapping(self.config.get("dataset_field_mapping")),
+            'distribution_field_mapping': self._standardize_field_mapping(self.config.get("distribution_field_mapping")),
+            'datadictionary_field_mapping': None
+        }
+
+        except RemoteSchemaError as e:
+            self._save_gather_error('Error standardize field mapping: {0}'.format(e), harvest_job)
+            return []
+    
+        except ReadError as e:
+            self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
+
         # Create harvest objects for each dataset
         try:
             package_ids = set()
@@ -284,18 +298,15 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 if self.config.get("dataset_field_mapping") is None and self.config.get("distribution_field_mapping") is None:
                     log.warning('If no *_field_mapping is provided in the configuration for validation, fields are automatically mapped to the local schema.')
                 else:
-                    # Standardizes the field_mapping
-                    remote_dataset_field_mapping = self._standardize_field_mapping(self.config.get("dataset_field_mapping"))
-                    remote_distribution_field_mapping = self._standardize_field_mapping(self.config.get("distribution_field_mapping"))
-                    
-                    log.debug('remote_dataset_field_mapping: %s', remote_dataset_field_mapping)
-                    log.debug('remote_distribution_field_mapping: %s', remote_distribution_field_mapping)
+                    # Standardizes the field_mapping                    
+                    log.debug('remote_dataset_field_mapping: %s', field_mappings.get('dataset_field_mapping'))
+                    log.debug('remote_distribution_field_mapping: %s', field_mappings.get('distribution_field_mapping'))
                     self._validate_remote_schema(
                         remote_dataset_field_names=None,
                         remote_ckan_base_url=remote_ckan_base_url,
                         remote_resource_field_names=None,
-                        remote_dataset_field_mapping=remote_dataset_field_mapping,
-                        remote_distribution_field_mapping=remote_distribution_field_mapping,
+                        remote_dataset_field_mapping=field_mappings.get('dataset_field_mapping'),
+                        remote_distribution_field_mapping=field_mappings.get('distribution_field_mapping'),
                     )
             except RemoteSchemaError as e:
                 self._save_gather_error(
@@ -312,6 +323,17 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                         pkg_dict["id"],
                     )
                     continue
+                
+                # Check if the content_dicts colnames correspond to the local schema
+                try:
+                    #log.debug('content_dicts: %s', content_dicts)
+                    # Standardizes the field names
+                    pkg_dict = self._standardize_ckan_dict_from_field_mapping(pkg_dict, field_mappings)
+                    log.debug('Standardized package dict: %s', pkg_dict)
+                except RemoteSchemaError as e:
+                    self._save_gather_error('Error standarize remote dataset: {0}'.format(e), harvest_job)
+                    return []
+                                        
                 package_ids.add(pkg_dict["id"])
 
                 # Set translated fields
@@ -319,6 +341,8 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 log.debug(
                     "Creating HarvestObject for %s %s", pkg_dict["name"], pkg_dict["id"]
                 )
+                log.debug('Translated package dict: %s', pkg_dict)
+                
                 obj = HarvestObject(
                     guid=pkg_dict["id"], job=harvest_job, content=json.dumps(pkg_dict)
                 )
@@ -427,6 +451,9 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         """
         # Clean up any existing extras already in package_dict
         package_dict = self._remove_duplicate_keys_in_extras(package_dict)
+        
+        # Check basic fields without translations
+        package_dict = self._fill_translated_properties(package_dict)
 
         return package_dict
 
@@ -548,11 +575,13 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 # key.
                 resource.pop("revision_id", None)
 
+            log.debug('package_dict BEFORE MODIFY: %s', package_dict)
             package_dict = self.modify_package_dict(package_dict, harvest_object)
-
             result = self._create_or_update_package(
                 package_dict, harvest_object, package_dict_form="package_show"
             )
+            log.debug('package_dict AFTER MODIFY: %s', package_dict)
+
 
             # Log package_dict, package dict is a dict
             log.debug("Package create or update: %s", result)
@@ -591,3 +620,4 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
             resource.pop('dataset_id', None)
 
         return package_dict
+    

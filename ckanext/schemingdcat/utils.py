@@ -160,7 +160,6 @@ def _load_yaml_module_path(file):
     Returns:
         dict or None: A dictionary containing the data from the YAML file, or None if the module cannot be imported or the file cannot be loaded.
     """
-    log.debug('file: %s', file)
     
     if ':' not in file:
         return None
@@ -168,8 +167,6 @@ def _load_yaml_module_path(file):
     module, file_name = file.split(':', 1)
     try:
         m = __import__(module, fromlist=[''])
-        log.debug('m: %s', m)
-        log.debug('file_name: %s', os.path.join(os.path.dirname(inspect.getfile(m)), file_name))
     except ImportError:
         log.error("Module {0} could not be imported".format(module))
         return None
