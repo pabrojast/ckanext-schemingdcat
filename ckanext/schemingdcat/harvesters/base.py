@@ -43,7 +43,10 @@ from ckanext.schemingdcat.config import (
     URL_REGEX,
     INVALID_CHARS,
     ACCENT_MAP,
-    slugify_pat
+    slugify_pat,
+    field_mapping_extras_prefix,
+    field_mapping_extras_prefix_symbol,
+    field_mapping_extras_prefix_list
 )
 
 log = logging.getLogger(__name__)
@@ -496,18 +499,39 @@ class SchemingDCATHarvester(HarvesterBase):
         """
         def normalize_key(key):
             """
-            Helper function to normalize the key by converting to lowercase and replacing non-alphanumeric characters with underscores.
+            Helper function to normalize the key by removing accents, converting to lowercase, replacing non-alphanumeric characters with '-', and trimming spaces.
             """
-            return slugify_pat.sub('_', key.lower())
+            try:
+                key = key.strip()
+                
+                # Remove accents
+                norm_key = key.translate(ACCENT_MAP)
+                
+                # Replace non-alphanumeric characters with underscores
+                normalized_key = slugify_pat.sub('-', norm_key.lower())
+                                
+                #log.debug('key: %s normalize key: %s', key, normalized_key)
+                
+                return normalized_key
+        
+            except AttributeError:
+                # Manejar el caso donde 'key' no es una cadena
+                raise ValueError("The provided key must be a string")
+            
+            except Exception as e:
+                # Manejar cualquier otra excepción
+                raise RuntimeError(f"An unexpected error occurred: {e}")
     
         def get_extra_value(extras, key):
             """
             Helper function to get the value from the extras list where the key matches (case insensitive and normalized).
-            """
+            """            
             normalized_key = normalize_key(key)
             for item in extras:
                 if normalize_key(item['key']) == normalized_key:
+                    #log.debug('"extras" dict key: %s - normalized: %s', key, normalized_key)
                     return item['value']
+            
             return None
     
         def apply_field_mapping(d, mapping):
@@ -515,9 +539,9 @@ class SchemingDCATHarvester(HarvesterBase):
             for local_field, remote_info in mapping.items():
                 if 'field_name' in remote_info:
                     remote_field = remote_info['field_name']
-                    if remote_field and remote_field.startswith('extras.'):
-                        extra_key = remote_field.split('.', 1)[1]
-                        extra_value = get_extra_value(d.get('extras', []), extra_key)
+                    if remote_field and remote_field.startswith(field_mapping_extras_prefix):
+                        extra_key = remote_field.split(field_mapping_extras_prefix_symbol, 1)[1]
+                        extra_value = get_extra_value(d.get(field_mapping_extras_prefix_list, []), extra_key)
                         if extra_value is not None:
                             new_dict[local_field] = extra_value
                     elif remote_field in d:
@@ -528,9 +552,9 @@ class SchemingDCATHarvester(HarvesterBase):
                     for lang, lang_info in remote_info['languages'].items():
                         if 'field_name' in lang_info:
                             remote_field = lang_info['field_name']
-                            if remote_field and remote_field.startswith('extras.'):
-                                extra_key = remote_field.split('.', 1)[1]
-                                extra_value = get_extra_value(d.get('extras', []), extra_key)
+                            if remote_field and remote_field.startswith(field_mapping_extras_prefix):
+                                extra_key = remote_field.split(field_mapping_extras_prefix_symbol, 1)[1]
+                                extra_value = get_extra_value(d.get(field_mapping_extras_prefix_list, []), extra_key)
                                 if extra_value is not None:
                                     if local_field not in new_dict:
                                         new_dict[local_field] = {}
@@ -544,7 +568,7 @@ class SchemingDCATHarvester(HarvesterBase):
                                 new_dict[local_field] = {}
                             new_dict[local_field][lang] = lang_info['field_value']
             return new_dict
-    
+
         # Apply dataset field mapping
         dataset_field_mapping = field_mapping.get('dataset_field_mapping', {})
         standardized_dataset = apply_field_mapping(dataset, dataset_field_mapping)
@@ -816,9 +840,9 @@ class SchemingDCATHarvester(HarvesterBase):
                         for field in self._remote_schema["resource_fields"]
                     )
                 else:
-                    log.warning("Failed to retrieve remote schema from: %s. Using local schema by default.", remote_ckan_base_url)
-                    remote_datasets_colnames = set()
-                    remote_distributions_colnames = set()
+                    log.warning("Failed to retrieve remote schema from: %s. Using local schema and config field_mapping by default.", remote_ckan_base_url)
+                    remote_datasets_colnames = set(remote_dataset_field_mapping.keys())
+                    remote_distributions_colnames = set(remote_distribution_field_mapping.keys())
             
             elif remote_dataset_field_names is not None:
                 log.debug(
@@ -1056,16 +1080,16 @@ class SchemingDCATHarvester(HarvesterBase):
     def _set_translated_fields(self, package_dict):
         """
         Sets translated fields in the package dictionary based on the mapped schema.
-
+    
         Args:
             package_dict (dict): The package dictionary to update with translated fields.
-
+    
         Returns:
             dict: The updated package dictionary.
-
+    
         Raises:
             ReadError: If there is an error translating the dataset.
-
+    
         """
         if (
             not hasattr(self, "_mapped_schema")
@@ -1079,26 +1103,24 @@ class SchemingDCATHarvester(HarvesterBase):
                 if field.get("modified", True):
                     local_field_name = field["local_field_name"]
                     remote_field_name = field["remote_field_name"]
-
-                    translated_fields["dataset_fields"].append(
-                        local_field_name
-                    )
-
+    
+                    translated_fields["dataset_fields"].append(local_field_name)
+    
                     if isinstance(remote_field_name, dict):
                         package_dict[local_field_name] = {
-                            lang: package_dict.get(name, None)
+                            lang: package_dict.get(name, package_dict.get(local_field_name, {}).get(lang))
                             for lang, name in remote_field_name.items()
                         }
                         if local_field_name.endswith('_translated'):
                             if self._local_required_lang in remote_field_name:
-                                package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
+                                package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], package_dict.get(local_field_name.replace('_translated', '')))
                             else:
                                 raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
                     else:
                         if remote_field_name not in package_dict:
                             raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
-                        package_dict[local_field_name] = package_dict.get(remote_field_name, None)
-
+                        package_dict[local_field_name] = package_dict.get(remote_field_name, package_dict.get(local_field_name))
+    
             if package_dict["resources"]:
                 for i, resource in enumerate(package_dict["resources"]):
                     if self._mapped_schema and "resource_fields" in self._mapped_schema and self._mapped_schema["resource_fields"] is not None:
@@ -1106,36 +1128,38 @@ class SchemingDCATHarvester(HarvesterBase):
                             if field.get("modified", True):
                                 local_field_name = field["local_field_name"]
                                 remote_field_name = field["remote_field_name"]
-
-                                translated_fields["resource_fields"].append(
-                                    local_field_name
-                                )
-
+    
+                                translated_fields["resource_fields"].append(local_field_name)
+    
                                 if isinstance(remote_field_name, dict):
-                                    package_dict[local_field_name] = {
-                                        lang: package_dict.get(name, None)
+                                    resource[local_field_name] = {
+                                        lang: resource.get(name, resource.get(local_field_name, {}).get(lang))
                                         for lang, name in remote_field_name.items()
                                     }
                                     if local_field_name.endswith('_translated'):
                                         if self._local_required_lang in remote_field_name:
-                                            package_dict[local_field_name.replace('_translated', '')] = package_dict.get(remote_field_name[self._local_required_lang], None)
+                                            resource[local_field_name.replace('_translated', '')] = resource.get(remote_field_name[self._local_required_lang], resource.get(local_field_name.replace('_translated', '')))
                                         else:
                                             raise ValueError("Missing translated field: %s for required language: %s" % (remote_field_name, self._local_required_lang))
-
+                                else:
+                                    if remote_field_name not in resource:
+                                        raise KeyError(f"Field {remote_field_name} does not exist in the local schema")
+                                    resource[local_field_name] = resource.get(remote_field_name, resource.get(local_field_name))
+    
                     else:
                         log.warning("self._mapped_schema['resource_fields'] is None, skipping resource fields translation.")
-
+    
                     # Update the resource in package_dict
                     package_dict["resources"][i] = resource
-
+    
             #log.debug('Translated fields: %s', translated_fields)
-
+    
         except Exception as e:
             raise ReadError(
                 "Error translating dataset: %s. Error: %s"
                 % (package_dict["title"], str(e))
             )
-
+    
         return package_dict
 
     # TODO: Fix this method
@@ -1361,9 +1385,12 @@ class SchemingDCATHarvester(HarvesterBase):
       # Create default values dict from config mappings.
       try:
         self.create_default_values(field_mappings)
-
-      except ReadError as e:
-        self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
+        
+      except Exception as e:
+        raise ReadError(
+            "Error generating default values from config field mappings. Error: %s"
+            % (str(e))
+        )
 
       def update_dict_with_defaults(target_dict, default_values):
         for key, default_value in default_values.items():
@@ -1430,7 +1457,7 @@ class SchemingDCATHarvester(HarvesterBase):
         if default_extras:
            override_extras = self.config.get('override_extras',False)
            for key,value in default_extras.items():
-              log.debug('Processing extra %s', key)
+              #log.debug('Processing extra %s', key)
               if not key in extras or override_extras:
                  # Look for replacement strings
                  if isinstance(value,six.string_types):

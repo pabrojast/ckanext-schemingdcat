@@ -7,14 +7,13 @@ import re
 from urllib.parse import urlencode
 from ckanext.harvest.model import HarvestObject
 import datetime
-from ckan.plugins import toolkit
+import ckan.plugins as p
 import requests
 from requests.exceptions import HTTPError, RequestException
 
 import ckan.model as model
 import ckan.logic as logic
 import uuid
-
 
 from ckanext.schemingdcat.harvesters.base import (
     SchemingDCATHarvester,
@@ -25,6 +24,7 @@ from ckanext.schemingdcat.harvesters.base import (
     RemoteResourceError
 )
 from ckanext.schemingdcat.lib.field_mapping import FieldMappingValidator
+from ckanext.schemingdcat.interfaces import ISchemingDCATHarvester
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +107,9 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                     )
                 else:
                     raise ValueError(
-                        f"schema should match the local schema: {self._local_schema_name}"
+                        f"Config schema should match the local schema: '{self._local_schema_name}'. "
+                        f"Check the remote schema with CKAN API: {{ckan_site_url}}/api/3/action/scheming_dataset_schema_show?type=dataset, "
+                        f"or specify the local schema, and the harvester will try to map the fields."
                     )
 
             config = json.dumps({**config_obj, "schema": schema.lower().strip()})
@@ -181,7 +183,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         log.debug('In SchemingDCATCKANHarvester gather_stage with harvest source: %s and URL: %s', harvest_source_title, remote_ckan_base_url)
 
         # Get config options
-        toolkit.requires_ckan_version(min_version="2.0")
+        p.toolkit.requires_ckan_version(min_version="2.0")
         get_all_packages = True
         self._set_config(harvest_job.source.config)
 
@@ -326,23 +328,20 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 
                 # Check if the content_dicts colnames correspond to the local schema
                 try:
+                    
+                    #log.debug('RAW package_dict: %s', pkg_dict)
+                    
                     #log.debug('content_dicts: %s', content_dicts)
                     # Standardizes the field names
                     pkg_dict = self._standardize_ckan_dict_from_field_mapping(pkg_dict, field_mappings)
-                    log.debug('Standardized package dict: %s', pkg_dict)
+                    
+                    #log.debug('Standardized package dict: %s', pkg_dict)
                 except RemoteSchemaError as e:
                     self._save_gather_error('Error standarize remote dataset: {0}'.format(e), harvest_job)
                     return []
                                         
                 package_ids.add(pkg_dict["id"])
 
-                # Set translated fields
-                pkg_dict = self._set_translated_fields(pkg_dict)
-                log.debug(
-                    "Creating HarvestObject for %s %s", pkg_dict["name"], pkg_dict["id"]
-                )
-                log.debug('Translated package dict: %s', pkg_dict)
-                
                 obj = HarvestObject(
                     guid=pkg_dict["id"], job=harvest_job, content=json.dumps(pkg_dict)
                 )
@@ -451,9 +450,15 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         """
         # Clean up any existing extras already in package_dict
         package_dict = self._remove_duplicate_keys_in_extras(package_dict)
-        
+
+        # Set translated fields
+        package_dict = self._set_translated_fields(package_dict)
+
         # Check basic fields without translations
         package_dict = self._fill_translated_properties(package_dict)
+
+        # Using self._dataset_default_values and self._distribution_default_values based on config mappings
+        package_dict = self._update_package_dict_with_config_mapping_default_values(package_dict)
 
         return package_dict
 
@@ -490,7 +495,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
         try:
             package_dict = json.loads(harvest_object.content)
-
+            
             # Add default values: tags, groups, etc.
             package_dict = self._set_package_dict_default_values(
                 package_dict, harvest_object, base_context
@@ -575,13 +580,28 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 # key.
                 resource.pop("revision_id", None)
 
-            log.debug('package_dict BEFORE MODIFY: %s', package_dict)
+            # before_cleaning interface
+            for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+                if hasattr(harvester, 'before_modify_package_dict'):
+                    package_dict, before_modify_package_dict_errors = harvester.before_modify_package_dict(package_dict)
+
+                    for err in before_modify_package_dict_errors:
+                        self._save_object_error(f'before_modify_package_dict error: {err}', harvest_object, 'Import')
+                        return False
+
             package_dict = self.modify_package_dict(package_dict, harvest_object)
             result = self._create_or_update_package(
                 package_dict, harvest_object, package_dict_form="package_show"
             )
-            log.debug('package_dict AFTER MODIFY: %s', package_dict)
 
+            # after_modify_package_dict interface
+            for harvester in p.PluginImplementations(ISchemingDCATHarvester):
+                if hasattr(harvester, 'after_modify_package_dict'):
+                    package_dict, after_modify_package_dict_errors = harvester.after_modify_package_dict(package_dict)
+
+                    for err in after_modify_package_dict_errors:
+                        self._save_object_error(f'after_modify_package_dict error: {err}', harvest_object, 'Import')
+                        return False
 
             # Log package_dict, package dict is a dict
             log.debug("Package create or update: %s", result)

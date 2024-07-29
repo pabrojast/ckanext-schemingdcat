@@ -20,6 +20,12 @@ metadata_templates_search_identifier = 'schemingdcat_xls-template'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
 slugify_pat = re.compile('[^a-zA-Z0-9]')
 
+# schemingdcat field_mapping extras field_names
+field_mapping_extras_prefix_symbol = '_'
+field_mapping_extras_prefix_list = 'extras'
+field_mapping_extras_prefix = field_mapping_extras_prefix_list + field_mapping_extras_prefix_symbol
+
+
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {
     'access_rights': 'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations',
