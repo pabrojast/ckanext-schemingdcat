@@ -18,6 +18,10 @@ default_package_item_show_spatial = True
 show_metadata_templates_toolbar = True
 metadata_templates_search_identifier = 'schemingdcat_xls-template'
 mimetype_base_uri = 'http://www.iana.org/assignments/media-types'
+slugify_pat = re.compile('[^a-zA-Z0-9]')
+# schemingdcat field_mapping extras prefix, e.g. custom_field = extras_custom_field
+field_mapping_extras_prefix = 'extras'
+field_mapping_extras_prefix_symbol = '_'
 
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {
@@ -144,6 +148,18 @@ OGC2CKAN_ISO_MD_ELEMENTS = {
 
 # loose definition of BCP47-like strings
 BCP_47_LANGUAGE = u'^[a-z]{2,8}(-[0-9a-zA-Z]{1,8})*$'
+
+DATASET_DEFAULT_SCHEMA = [
+    'id',
+    'type',
+    'isopen',
+    ]
+
+RESOURCE_DEFAULT_SCHEMA = [
+    'url',
+    'name',
+    ]
+
 
 DATE_FIELDS = [
     {'field_name': 'created', 'fallback': 'issued', 'default_value': None, 'override': True, 'dtype': str},

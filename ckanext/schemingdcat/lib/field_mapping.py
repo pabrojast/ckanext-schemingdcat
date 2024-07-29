@@ -119,7 +119,7 @@ class FieldMappingValidator:
                     if not isinstance(lang, str) or not isinstance(remote_field_name, str):
                         raise ValueError('In translated fields, both language and remote_field_name must be strings. e.g. "notes_translated": {"es": "notes-es"}')
                     if not re.match("^[a-z]{2}$", lang):
-                        raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                        raise ValueError(f'Invalid field "{lang}". Language code must be a 2-letter ISO 639-1 code')
                     
     def validate_v2(self, field_mapping):
         """
@@ -162,7 +162,7 @@ class FieldMappingValidator:
                         raise ValueError('%s must be a dictionary', self.language_field)
                     for lang, lang_config in value.items():
                         if not isinstance(lang, str) or not re.match("^[a-z]{2}$", lang):
-                            raise ValueError('Language code must be a 2-letter ISO 639-1 code')
+                            raise ValueError(f'Invalid field "{lang}". Language code must be a 2-letter ISO 639-1 code')
                         if not isinstance(lang_config, dict):
                             raise ValueError('Language config must be a dictionary')
                         for lang_prop, lang_value in lang_config.items():
