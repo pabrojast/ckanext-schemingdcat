@@ -630,9 +630,6 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         Returns:
             dict: The package dictionary with translated fields and default values set.
         """
-        # Add default values: tags, groups, etc.
-        package_dict = self._set_package_dict_default_values(package_dict, harvest_object, context)
-
         # Update unique ids
         for resource in package_dict['resources']:
             resource['alternate_identifier'] = resource['id']

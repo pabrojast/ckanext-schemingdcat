@@ -46,7 +46,6 @@ from ckanext.schemingdcat.config import (
     slugify_pat,
     field_mapping_extras_prefix,
     field_mapping_extras_prefix_symbol,
-    field_mapping_extras_prefix_list
 )
 
 log = logging.getLogger(__name__)
@@ -540,8 +539,8 @@ class SchemingDCATHarvester(HarvesterBase):
                 if 'field_name' in remote_info:
                     remote_field = remote_info['field_name']
                     if remote_field and remote_field.startswith(field_mapping_extras_prefix):
-                        extra_key = remote_field.split(field_mapping_extras_prefix_symbol, 1)[1]
-                        extra_value = get_extra_value(d.get(field_mapping_extras_prefix_list, []), extra_key)
+                        extra_key = remote_field.split(field_mapping_extras_prefix + field_mapping_extras_prefix_symbol, 1)[1]
+                        extra_value = get_extra_value(d.get(field_mapping_extras_prefix, []), extra_key)
                         if extra_value is not None:
                             new_dict[local_field] = extra_value
                     elif remote_field in d:
@@ -553,8 +552,8 @@ class SchemingDCATHarvester(HarvesterBase):
                         if 'field_name' in lang_info:
                             remote_field = lang_info['field_name']
                             if remote_field and remote_field.startswith(field_mapping_extras_prefix):
-                                extra_key = remote_field.split(field_mapping_extras_prefix_symbol, 1)[1]
-                                extra_value = get_extra_value(d.get(field_mapping_extras_prefix_list, []), extra_key)
+                                extra_key = remote_field.split(field_mapping_extras_prefix + field_mapping_extras_prefix_symbol, 1)[1]
+                                extra_value = get_extra_value(d.get(field_mapping_extras_prefix, []), extra_key)
                                 if extra_value is not None:
                                     if local_field not in new_dict:
                                         new_dict[local_field] = {}
@@ -1398,6 +1397,7 @@ class SchemingDCATHarvester(HarvesterBase):
             target_dict[key] = default_value
           elif isinstance(target_dict[key], list) and isinstance(default_value, list):
             target_dict[key].extend(default_value)
+            target_dict[key] = list(set(target_dict[key]))
           elif isinstance(default_value, dict):
             target_dict[key] = target_dict.get(key, {})
             for subkey, subvalue in default_value.items():
@@ -1492,8 +1492,8 @@ class SchemingDCATHarvester(HarvesterBase):
         # Prepare tags
         package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
 
-        #TODO: Fix existing_tags_ids
-        log.debug('TODO:existing_tags_ids: %s', existing_tags_ids)
+        # Existing_tags_ids
+        log.debug('existing_tags_ids: %s', existing_tags_ids)
         
         # Set default tags if needed
         default_tags = self.config.get("default_tags", [])
@@ -1515,6 +1515,14 @@ class SchemingDCATHarvester(HarvesterBase):
                     cleaned_groups.append(group)
 
         package_dict["groups"] = cleaned_groups
+
+        # Remove duplicates in list or dictionary fields
+        for key, value in package_dict.items():
+            if key not in ['groups', 'resources', 'tags']:
+                if isinstance(value, list):
+                    package_dict[key] = list({json.dumps(item): item for item in value}.values())
+                elif isinstance(value, dict):
+                    package_dict[key] = {k: v for k, v in value.items()}
 
         # log.debug('package_dict default values: %s', package_dict)
         return package_dict
