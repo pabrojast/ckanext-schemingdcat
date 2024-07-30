@@ -102,7 +102,7 @@
     <tr>
         <th scope="row">{{ h.scheming_language_text(field.label) }}</th>
         <td>
-        {{ res[field_name] }}
+            {{ h.localised_filesize(res[field_name]) }}
         </td>
     </tr>
 {% endblock %}
