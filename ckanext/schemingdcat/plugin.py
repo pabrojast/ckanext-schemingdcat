@@ -70,7 +70,7 @@ class SchemingDCATPlugin(
         
         sdct_config.default_package_item_icon = config_.get(
                 "schemingdcat.default_package_item_icon", sdct_config.default_package_item_icon
-            )
+            ) or sdct_config.default_package_item_icon
 
         sdct_config.default_package_item_show_spatial = toolkit.asbool(
             config_.get(
@@ -86,11 +86,11 @@ class SchemingDCATPlugin(
         
         sdct_config.metadata_templates_search_identifier = config_.get(
                 "schemingdcat.metadata_templates_search_identifier", sdct_config.metadata_templates_search_identifier
-            )
+            ) or sdct_config.metadata_templates_search_identifier
         
         sdct_config.endpoints_yaml = config_.get(
-                "schemingdcat.endpoints_yaml", sdct_config.endpoints_yaml
-            )
+            "schemingdcat.endpoints_yaml", sdct_config.endpoints_yaml
+            ) or sdct_config.endpoints_yaml
 
         sdct_config.debug = toolkit.asbool(config_.get("debug", sdct_config.debug))
 
