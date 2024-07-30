@@ -516,6 +516,25 @@ def schemingdcat_get_choice_item(field, value):
     return None
 
 @helper
+def schemingdcat_get_choice_property(choices, value, property):
+    """
+    Retrieve a specific property from a choice dictionary based on the given value.
+
+    Args:
+        choices (list): List of dictionaries containing "label" and "value" keys.
+        value (str): The value to match against the choices.
+        property (str): The property to retrieve from the matching choice dictionary.
+
+    Returns:
+        str or None: The property value from the matching choice dictionary, or None if not found.
+    """
+    for c in choices:
+        if c['value'] == value:
+            return c.get(property, None)
+    return None
+
+
+@helper
 def scheming_display_json_list(value):
     """Return the object passed serialized as a JSON list.
 
@@ -674,28 +693,22 @@ def schemingdcat_get_linked_data(id):
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
     """
-    linkeddata_links = (
-        schemingdcat_load_yaml("linkeddata_links.yaml")
-        if sdct_config.debug
-        else sdct_config.linkeddata_links
-    )
-
     return [
         {
             "name": name,
-            "display_name": linkeddata_links.get(name, {"display_name": content_type})[
+            "display_name": sdct_config.linkeddata_links.get(name, {"display_name": content_type})[
                 "display_name"
             ],
-            "format": linkeddata_links.get(name, {}).get("format"),
-            "image_display_url": linkeddata_links.get(name, {}).get(
+            "format": sdct_config.linkeddata_links.get(name, {}).get("format"),
+            "image_display_url": sdct_config.linkeddata_links.get(name, {}).get(
                 "image_display_url"
             ),
-            "endpoint_icon": linkeddata_links.get(name, {}).get(
+            "endpoint_icon": sdct_config.linkeddata_links.get(name, {}).get(
                 "endpoint_icon"
             ),
-            "description": linkeddata_links.get(name, {}).get("description")
+            "description": sdct_config.linkeddata_links.get(name, {}).get("description")
             or f"Formats {content_type}",
-            "description_url": linkeddata_links.get(name, {}).get("description_url"),
+            "description_url": sdct_config.linkeddata_links.get(name, {}).get("description_url"),
             "endpoint": "dcat.read_dataset",
             "endpoint_data": {
                 "_id": id,
@@ -711,13 +724,7 @@ def schemingdcat_get_catalog_endpoints():
 
     Returns:
         list: A list of dictionaries containing linked data for the identifier.
-    """
-    endpoints = (
-        schemingdcat_load_yaml("endpoints.yaml")
-        if sdct_config.debug
-        else sdct_config.endpoints
-    )
-
+    """    
     csw_uri = schemingdcat_get_geospatial_endpoint("catalog")
 
     return [
@@ -743,7 +750,7 @@ def schemingdcat_get_catalog_endpoints():
                 "profiles": item["profile"],
             },
         }
-        for item in endpoints["catalog_endpoints"]
+        for item in sdct_config.endpoints["catalog_endpoints"]
     ]
 
 @helper
@@ -787,12 +794,6 @@ def schemingdcat_get_geospatial_metadata():
     Returns:
         list: A list of dictionaries containing geospatial metadata for CSW formats.
     """
-    geometadata_links = (
-        schemingdcat_load_yaml("geometadata_links.yaml")
-        if sdct_config.debug
-        else sdct_config.geometadata_links
-    )
-
     csw_uri = schemingdcat_get_geospatial_endpoint("dataset")
 
     return [
@@ -812,7 +813,7 @@ def schemingdcat_get_geospatial_metadata():
                 id="{id}",
             ),
         }
-        for item in geometadata_links["csw_formats"]
+        for item in sdct_config.geometadata_links["csw_formats"]
     ]
 
 @helper

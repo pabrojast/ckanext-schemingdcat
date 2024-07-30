@@ -237,3 +237,33 @@ class ISchemingDCATHarvester(Interface):
             object: The updated package_schema object
         """
         return package_schema
+    
+    def before_modify_package_dict(self, package_dict):
+        """
+        Interface called just before modifying the package_dict in the CKAN harvester.
+    
+        Args:
+            package_dict (dict): The package dictionary that is about to be updated.
+    
+        Returns:
+            tuple: A tuple with two items:
+                    * The updated package dictionary.
+                    * A list of error messages. These will get stored as import
+                      errors by the harvester
+        """
+        return package_dict, []
+    
+    def after_modify_package_dict(self, package_dict):
+        """
+        Interface called just after modifying the package_dict in the CKAN harvester.
+    
+        Args:
+            package_dict (dict): The package dictionary that has been updated.
+    
+        Returns:
+            tuple: A tuple with two items:
+                    * The updated package dictionary.
+                    * A list of error messages. These will get stored as import
+                      errors by the harvester
+        """
+        return package_dict, []

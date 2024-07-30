@@ -17,7 +17,7 @@
   {% endblock %}
 
   {% block package_data_access %}
-    {% if pkg.license_id %}
+    {% if pkg.license_id and pkg.access_rights %}
       {% snippet "schemingdcat/snippets/data_access_license.html", pkg_dict=pkg, dataset_type=dataset_type %}
     {% endif %}
   {% endblock %}

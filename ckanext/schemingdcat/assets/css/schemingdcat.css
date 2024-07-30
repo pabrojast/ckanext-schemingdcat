@@ -290,7 +290,7 @@ img {
   position: absolute;
   top: 50%;
   margin-top: -10px;
-  right: 30px;
+  right: 20px;
   height: 20px;
   padding: 0;
   border: none;
@@ -634,6 +634,7 @@ button.active {
   height: 52px;
   position: relative;
   z-index: 10;
+  width: 102.5%;
 }
 
 .box {
