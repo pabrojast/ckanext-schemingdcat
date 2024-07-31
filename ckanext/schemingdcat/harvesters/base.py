@@ -43,6 +43,7 @@ from ckanext.schemingdcat.config import (
     URL_REGEX,
     INVALID_CHARS,
     ACCENT_MAP,
+    AUX_TAG_FIELDS,
     slugify_pat,
     field_mapping_extras_prefix,
     field_mapping_extras_prefix_symbol,
@@ -1489,11 +1490,11 @@ class SchemingDCATHarvester(HarvesterBase):
         # Using self._dataset_default_values and self._distribution_default_values based on config mappings
         package_dict = self._update_package_dict_with_config_mapping_default_values(package_dict)
 
-        # Prepare tags
-        package_dict, existing_tags_ids = self._set_ckan_tags(package_dict)
+        # Prepare tags        
+        package_dict, existing_tags_ids = self._set_ckan_tags(package_dict, clean_tags=self.config.get("clean_tags", True))
 
         # Existing_tags_ids
-        log.debug('existing_tags_ids: %s', existing_tags_ids)
+        #log.debug('existing_tags_ids: %s', existing_tags_ids)
         
         # Set default tags if needed
         default_tags = self.config.get("default_tags", [])
@@ -1559,13 +1560,14 @@ class SchemingDCATHarvester(HarvesterBase):
 
         return self._get_ckan_format(resource)
 
-    def _set_ckan_tags(self, package_dict, tag_fields=["tag_string", "keywords"]):
+    def _set_ckan_tags(self, package_dict, tag_fields=AUX_TAG_FIELDS, clean_tags=True):
         """
         Process the tags from the provided sources.
 
         Args:
             package_dict (dict): The package dictionary containing the information.
             tag_fields (list): The list of sources to check for tags. Default: ['tag_string', 'keywords']
+            clean_tags (bool): By default, tags are stripped of accent characters, spaces and capital letters for display. Setting this option to `False` will keep the original tag names. Default is `True`.
 
         Returns:
             list: A list of processed tags.
@@ -1586,7 +1588,9 @@ class SchemingDCATHarvester(HarvesterBase):
                     tags = [{"name": tags}]
                 else:
                     raise ValueError("Unsupported type for tags")
-                cleaned_tags = self._clean_tags(tags)
+                
+                # Clean tags
+                cleaned_tags = self._clean_tags(tags=tags, clean_tag_names=clean_tags, existing_dataset=True)
 
                 for tag in cleaned_tags:
                     if tag["name"] not in existing_tags_ids:
@@ -1728,31 +1732,53 @@ class SchemingDCATHarvester(HarvesterBase):
         #log.debug('resource: %s', resource)
         return resource
 
-    def _clean_tags(self, tags):
+    def _clean_tags(self, tags, clean_tag_names=True, existing_dataset=False):
         """
         Cleans the names of tags.
-
+    
         Each keyword is cleaned by removing non-alphanumeric characters,
         allowing only: a-z, ñ, 0-9, _, -, ., and spaces, and truncating to a
         maximum length of 100 characters. If the name of the keyword is a URL,
         it is converted into a standard CKAN name using the _url_to_ckan_name function.
-
+    
         Args:
-            tags (list): The tags to be cleaned. Each keyword is a
-            dictionary with a 'name' key.
-
+            tags (list): The tags to be cleaned. Each keyword is a dictionary with a `name` key.
+    
+            clean_tag_names (bool): By default, tags are stripped of accent characters, spaces and capital letters for display. Setting this harvester config option `clean_tags` to `False` will keep the original tag names. Default is `True`.
+    
+            existing_dataset (bool): If the tags are from a dataset from the local CKAN instance.
+    
         Returns:
             list: A list of dictionaries with cleaned keyword names.
         """
         cleaned_tags = []
+        seen_names = set()
+    
         for k in tags:
             if k and "name" in k:
                 name = k["name"]
+                vocabulary_id = k.get("vocabulary_id") or None
                 if self._is_url(name):
                     name = self._url_to_ckan_name(name)
-                cleaned_tags.append({"name": self._clean_name(name), "display_name": k["name"]})
-        return cleaned_tags
+    
+                normalized_name = self._clean_name(name)
+    
+                if normalized_name in seen_names:
+                    continue
+    
+                seen_names.add(normalized_name)
+    
+                tag = {
+                    "name": normalized_name if clean_tag_names else name,
+                    "display_name": k["name"]
+                }
+    
+                if vocabulary_id and existing_dataset:
+                    tag["vocabulary_id"] = vocabulary_id
+    
+                cleaned_tags.append(tag)
 
+        return cleaned_tags
 
     def _is_url(self, name):
         """
@@ -1976,6 +2002,18 @@ class SchemingDCATHarvester(HarvesterBase):
 
                     package_dict["resources"] = new_resources
 
+                    # Clean tags before update existing dataset
+                    tags = package_dict.get("tags", [])
+
+                    if hasattr(self, 'config') and self.config:
+                        package_dict["tags"] = self._clean_tags(tags=tags, clean_tag_names=self.config.get("clean_tags", True), existing_dataset=False)
+                    else:
+                        package_dict["tags"] = self._clean_tags(tags=tags, clean_tag_names=True, existing_dataset=True)
+
+                    # Remove tag_fields from package_dict
+                    for field in AUX_TAG_FIELDS:
+                        package_dict.pop(field, None)
+
                     for field in p.toolkit.aslist(
                         config.get("ckan.harvest.not_overwrite_fields")
                     ):
@@ -2035,11 +2073,17 @@ class SchemingDCATHarvester(HarvesterBase):
                             "Import",
                         )
 
-                log.info(
-                    "Created new package ID: %s with GUID: %s",
-                    package_dict["id"],
-                    harvest_object.guid,
-                )
+                # Clean tags before create. Not existing_dataset 
+                tags = package_dict.get("tags", [])
+
+                if hasattr(self, 'config') and self.config:
+                    package_dict["tags"] = self._clean_tags(tags=tags, clean_tag_names=self.config.get("clean_tags", True), existing_dataset=False)
+                else:
+                    package_dict["tags"] = self._clean_tags(tags=tags, clean_tag_names=True, existing_dataset=False)
+
+                # Remove tag_fields from package_dict
+                for field in AUX_TAG_FIELDS:
+                    package_dict.pop(field, None)
 
                 #log.debug('Package: %s', package_dict)
                 harvest_object.package_id = package_dict["id"]
