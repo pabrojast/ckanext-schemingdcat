@@ -274,6 +274,12 @@ ACCENT_MAP = str.maketrans({
     "ñ": "ñ",
 })
 
+# CKAN tags fields to be searched in the harvester
+AUX_TAG_FIELDS = [
+    'tag_string',
+    'keywords'
+]
+
 URL_FIELD_NAMES = {
         'dataset': 
             ['dcat_type', 'theme_es', 'language', 'topic', 'maintainer_url', 'tag_uri', 'contact_uri', 'contact_url', 'publisher_identifier', 'publisher_uri', 'publisher_url', 'publisher_type', 'maintainer_uri', 'maintainer_url', 'author_uri', 'author_url', 'conforms_to', 'theme', 'reference_system', 'spatial_uri', 'representation_type', 'license_id', 'access_rights', 'graphic_overview', 'frequency', 'hvd_category'],

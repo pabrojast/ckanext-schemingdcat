@@ -352,12 +352,14 @@ The Scheming DCAT CKAN Harvester supports the same configuration options as the 
 * `allow_harvest_datasets` (Optional): If `true`, the harvester will create new records even if the package type is from the harvest source. If `false`, the harvester will only create records that originate from the instance. Default is `false`.
 * `remote_orgs` (Optional): [WIP]. Only `only_local`.
 * `remote_groups` (Optional): [WIP]. Only `only_local`.
+* `clean_tags`: By default, tags are stripped of accent characters, spaces and capital letters for display. Setting this option to `False` will keep the original tag names. Default is `True`.
 
 And example configuration might look like this:
 
   ```json
       {
       "api_version": 2,
+      "clean_tags": false,
       "default_tags": [{"name": "inspire"}, {"name": "geodcatap"}],
       "default_groups": ["transportation", "hb"],
       "default_extras": {"encoding":"utf8", "harvest_description":"Harvesting from Sample Catalog", "harvest_url": "{harvest_source_url}/dataset/{dataset_id}"},
@@ -471,9 +473,8 @@ Here are some examples of configuration files:
 
   ```json
   {
-    "storage_type": "gspread",
-    "dataset_sheet": "Dataset",
-    "distribution_sheet": "Distribution",
+    "api_version": 2,
+    "clean_tags": false,
 
     ...
     # other properties
