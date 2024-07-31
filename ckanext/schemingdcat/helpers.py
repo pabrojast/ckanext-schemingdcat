@@ -1071,7 +1071,6 @@ def schemingdcat_get_readable_file_size(num, suffix="B"):
     except ValueError:
         return False
 
-
 @helper
 def schemingdcat_get_group_or_org(id, type="group"):
     """
