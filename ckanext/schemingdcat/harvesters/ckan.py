@@ -383,10 +383,11 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
         pkg_dicts = []
         pkg_ids = set()
         previous_content = None
-        url = base_search_url + "?" + urlencode(params)
-        log.debug("Searching for CKAN datasets: %s", url)
 
         while True:
+            url = base_search_url + "?" + urlencode(params)
+            log.debug("Searching for CKAN datasets: %s", url)
+
             try:
                 content = self._get_content(url)
             except ContentFetchError as e:
@@ -428,6 +429,8 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
                 break
 
             params["start"] = str(int(params["start"]) + int(params["rows"]))
+
+        log.debug('Number of elements in remote CKAN: %s', len(pkg_dicts))
 
         return pkg_dicts
 
