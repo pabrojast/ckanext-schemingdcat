@@ -141,6 +141,68 @@ schema_form_groups:
       en: Standards compliance
       es: Adecuación a estándares
     fa_icon: fa-check-square-o
+schema_form_tabs:
+  - form_tab: basic_tab
+    label:
+      en: Identification
+      es: Identificación
+    form_group_id:
+      - general_info
+      - identification
+      - notes
+  - form_tab: vocabs_tab
+    label:
+      en: Vocabs
+      es: Vocabularios
+    form_group_id:
+      - vocabs
+  - form_tab: contact_tab
+    label:
+      en: Contact point
+      es: Punto de Contacto
+    form_group_id:
+      - contact
+  - form_tab: publisher_tab
+    label:
+      en: Publisher
+      es: Publicador
+    form_group_id:
+      - publisher
+  - form_tab: responsible_parties_tab
+    label:
+      en: Responsible parties
+      es: Responsables
+    form_group_id:
+      - maintainer
+      - author
+  - form_tab: quality_tab
+    label:
+      en: Quality
+      es: Calidad
+    form_group_id:
+      - standards
+      - temporal_info
+  - form_tab: lineage_tab
+    label:
+      en: Lineage
+      es: Linaje
+    form_group_id:
+      - lineage
+      - purpose
+  - form_tab: spatial_tab
+    label:
+      en: Spatial
+      es: Espacial
+    form_group_id:
+      - spatial_info
+      - inspire
+  - form_tab: license_tab
+    label:
+      en: License
+      es: Licencia
+    form_group_id:
+      - license_info
+      - version_notes
 
 ### Codes in Schema
 # (M): Mandatory

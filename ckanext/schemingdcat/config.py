@@ -286,4 +286,5 @@ URL_FIELD_NAMES = {
         'resource':
             ['url', 'availability', 'mimetype', 'status', 'resource_relation', 'license', 'rights', 'conforms_to', 'reference_system']
     }
+
 EMAIL_FIELD_NAMES = ['publisher_email', 'maintainer_email', 'author_email', ]
