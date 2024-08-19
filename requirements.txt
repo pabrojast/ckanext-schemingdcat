@@ -2,4 +2,4 @@ gspread==6.1.2
 msal==1.29.0
 Office365-REST-Python-Client==2.5.5
 openpyxl==3.1.2
-pandas==2.2.2
+pandas
