@@ -23,7 +23,7 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
 <section class="additional-info">
   {% with md = dataset_type %} {% if md %}
   <header>
-    <h2 class="inline">
+    <h2 class="inline" style="background-color: #fff;">
       {{ _('Metadata') }} {% block package_download_metadata %} {% snippet
       "schemingdcat/package/snippets/download_metadata.html", pkg=pkg %} {%
       endblock %}

@@ -71,11 +71,11 @@
       {# Check if any field in this form group is in the current page #}
       {%- set group_fields = fields | selectattr("form_group_id", "equalto", element.form_group_id) | list -%}
       {%- if group_fields | length > 0 -%}
-        <div class="{{ element.form_group_id }}-group card mb-3">
-          <div class="card-header">
+        <div class="{{ element.form_group_id }}-group card2 mb-3">
+          <div class="card2-header">
             <h3 class="mb-0"><i class="fa {{ element.fa_icon }}" style="padding-right:5px;"></i>{{ h.scheming_language_text(element.label) }}</h3>
           </div>
-          <div class="card-body">
+          <div class="card2-body">
             {# Render each field in the form group #}
             {%- for field in group_fields -%}
               {%- if field.form_snippet is not none -%}
