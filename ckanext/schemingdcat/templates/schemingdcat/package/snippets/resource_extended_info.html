@@ -99,10 +99,19 @@
 {% block byte_size %}
     {% set field_name = _('Size') %}
     {% set field = h.scheming_field_by_name(schema.resource_fields, 'size') %}
+    {% if res[field_name] is not none %}
     <tr>
         <th scope="row">{{ h.scheming_language_text(field.label) }}</th>
         <td>
             {{ h.localised_filesize(res[field_name]) }}
         </td>
     </tr>
+    {% else %}
+    <tr>
+        <th scope="row">{{ h.scheming_language_text(field.label) }}</th>
+        <td>
+            {{ _("Size not available") }}
+        </td>
+    </tr>
+    {% endif %}
 {% endblock %}
