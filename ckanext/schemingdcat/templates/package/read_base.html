@@ -6,6 +6,7 @@
   {% block package_info %}
     {% if pkg.organization %}
       {% set org = h.get_organization(pkg.organization.id) %}
+	  {% snippet "snippets/organization.html", organization=org, has_context_title=true %}
       {% snippet 'schemingdcat/snippets/schemingdcat_info.html', pkg_dict=pkg, dataset_type=dataset_type, organization=org %}
     {% endif %}
   {% endblock %}

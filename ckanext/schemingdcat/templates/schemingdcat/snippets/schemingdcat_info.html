@@ -6,10 +6,6 @@
       {% set org_img = 'placeholder' in organization.image_display_url %}
       {% set org_img = h.url_for_static('/images/default/organization.png') if org_img else organization.image_display_url or h.url_for_static('/images/default/organization.png') %}
       {% set url = h.url_for(organization.type + '.read', id=organization.name) %}
-      <h2 class="info_heading">
-        <img class="module-image info_heading_image" src="{{ org_img }}" alt="{{ organization.title }}" />
-        <a href="{{ url }}" class="info_text_bold" title="{{ _('Organization') }}">{{ organization.title }}</a>
-      </h2>
       {% if pkg_dict.theme_es %}
         {% set theme_field = 'theme_es' %}
       {% elif pkg_dict.theme_eu %}
