@@ -264,6 +264,15 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
+- field_name: groups__0__id
+  label:
+    en: Group
+    es: Grupo
+    fr: Grappe
+  required: False
+  preset: dataset_group
+  form_group_id: general_info
+
 # Graphic overview (O)
 - field_name: graphic_overview
   label:

@@ -60,6 +60,13 @@
         "form_snippet": "organization.html"
       }
     },
+	{
+      "preset_name": "dataset_group",
+      "values": {
+        "validators": "unicode_safe ignore_missing",
+        "form_snippet": "schemingdcat/form_snippets/group_select.html"
+      }
+    },
     {
       "preset_name": "resource_url_upload",
       "values": {

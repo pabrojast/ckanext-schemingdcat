@@ -1,0 +1,14 @@
+				{% set grupos = h.get_memberstates() %}
+				{% set existing_groups = data.groups %}
+
+				<label class="checkbox" for="field-group-0">Member State:</label>
+				<select id="field-group-0" name="groups__0__id" class="form-control form-select">
+				<option value="" ></option>
+				{% for group in grupos %}
+						{% set selected_org =  existing_groups[0].id == group.id %}
+						<option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
+                {% endfor %}
+				</select>
+
+
+           

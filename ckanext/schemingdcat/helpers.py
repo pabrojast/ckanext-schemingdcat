@@ -1350,3 +1350,10 @@ def schemingdcat_check_valid_url(url):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
+@helper
+def get_memberstates():
+    memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'member-states', 'include_groups': True })
+    #memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'grupo-papa', 'include_groups': True })
+    
+    return memberstates
