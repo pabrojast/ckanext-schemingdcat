@@ -126,7 +126,7 @@ def schemingdcat_organization_name(org_id):
     try:
         org_dic = ckan_helpers.get_organization(org_id["display_name"])
         if org_dic is not None:
-            org_name = org_dic["name"]
+            org_name = org_dic["display_name"]
         else:
             log.warning(
                 "Could not find the name of the organization with ID {0}".format(
