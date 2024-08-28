@@ -1355,5 +1355,5 @@ def schemingdcat_check_valid_url(url):
 def get_memberstates():
     memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'member-states', 'include_groups': True, 'all_fields': True })
     #memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'grupo-papa', 'include_groups': True })
-    
-    return memberstates
+    nombres_grupos_s = [item['name'] for item in memberstates["groups"]]
+    return nombres_grupos_s
