@@ -7,7 +7,7 @@
     <option value=""></option>
     {% for group in disponibles %}
         {% set selected_org = False %}
-            {% if group['name'] == existing_group.name %}
+            {% if group.name in grupos.groups %}
                 {% set selected_org = existing_groups[0].id == group.id %}
                 <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
             {% endif %}
