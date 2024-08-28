@@ -9,7 +9,9 @@
     {% for group in disponibles %}
         {% set selected_org = False %}
             {% if group.name in grupos %}
-                {% set selected_org = existing_groups[0].id == group.id %}
+			      {% if existing_groups|length > 0 %}
+						{% set selected_org = existing_groups[0].id == group.id %}
+				  {% endif %}
                 <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
             {% endif %}
     {% endfor %}
