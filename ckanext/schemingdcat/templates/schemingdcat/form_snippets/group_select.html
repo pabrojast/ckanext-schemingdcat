@@ -1,17 +1,17 @@
-				{% set grupos = h.get_memberstates() %}
-				{% set existing_groups = data.groups if data.groups else [] %}
-				{% set disponibles = h.groups_available() %}
-				
-				<label class="checkbox" for="field-group-0">Member State:</label>
-				<select id="field-group-0" name="groups__0__id" class="form-control form-select">
-				<option value="" ></option>
-				{% for group in disponibles %}
-				{% if any(group['name'] == groupe.name for groupe in existing_groups['groups']) %}
-						{% set selected_org =  existing_groups and existing_groups[0].id == group.id %}
-						<option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
-			    {% endif %}
-                {% endfor %}
-				</select>
+{% set grupos = h.get_memberstates() %}
+{% set existing_groups = data.groups if data.groups else [] %}
+{% set disponibles = h.groups_available() %}
 
-
-           
+<label class="checkbox" for="field-group-0">Member State:</label>
+<select id="field-group-0" name="groups__0__id" class="form-control form-select">
+    <option value=""></option>
+    {% for group in disponibles %}
+        {% set selected_org = False %}
+        {% for existing_group in existing_groups %}
+            {% if group['name'] == existing_group.name %}
+                {% set selected_org = existing_groups[0].id == group.id %}
+                <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</select>
