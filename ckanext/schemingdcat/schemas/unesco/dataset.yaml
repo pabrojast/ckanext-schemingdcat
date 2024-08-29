@@ -91,6 +91,13 @@ schema_form_groups:
       es: Propósito del conjunto de datos
       fr: Objectif du jeu de données
     fa_icon: fa-question-circle
+    
+  - form_group_id: unesdoc
+    label:
+      en: Featured Dataset for UNESDOC
+      es: Conjunto de datos destacado para UNESDOC
+      fr: Ensemble de données en vedette pour UNESDOC
+    fa_icon: fa-question-circle
   # Spatial form_page (#4)
   - form_group_id: spatial_info
     label:
@@ -1557,6 +1564,37 @@ dataset_fields:
     form_languages: ["en", "es", "fr"]
   form_group_id: purpose
 
+
+
+# Related resources (O)
+- field_name: unesdocurl
+  label: 
+    en: URL
+    es: URL
+    fr: URL
+  display_property: dct:source
+  display_snippet: schemingdcat/display_snippets/link_name.html
+  form_placeholder: https://unesdoc.unesco.org/ark:/48223/pf0000373781
+  help_text:
+    en: The UNESCO URL that leads to the document.
+    es: La URL de unesco que lleva al documento.
+    fr: L'URL de l'UNESCO qui mène au document.
+  form_group_id: unesdoc
+  
+- field_name: unesdocimage
+  label: 
+    en: Image URL
+    es: URL de Imagen 
+    fr: URL de l'image
+  display_property: dct:source
+  display_snippet: schemingdcat/display_snippets/link_name.html
+  form_placeholder:  https://unesdoc.unesco.org/in/rest/Thumb/image?id=p%3A%3Ausmarcdef_0000373781&isbn=9789231003851&author=Verbist%2C+Koen&title=A+stress+test+for+climate+change+impacts+on+water+security%3A+case+study+from+the+Limar%C3%AD+watershed+in+Chile&year=2020&publisher=UNESCO&TypeOfDocument=UnescoPhysicalDocument&mat=BKS&ct=true&size=256&isPhysical=1&siteId=mainSite
+  help_text:
+    en: The UNESCO URL that leads to the document.
+    es: La URL de unesco que lleva al documento.
+    fr: L'URL de l'UNESCO qui mène au document.
+  form_group_id: unesdoc  
+  
 # Character encoding (C)
 - field_name: encoding
   label:
