@@ -2102,6 +2102,12 @@ dataset_fields:
       fr: Royaume-Uni
     spatial: '{"type": "Polygon", "coordinates": [-8.17, 49.96], [1.75, 49.96], [1.75, 60.84], [-8.17, 60.84], [-8.17, 49.96]}'
     value: http://publications.europa.eu/resource/authority/country/GBR
+  - label:
+        en: Chile
+        es: Chile
+        fr: Chili
+    spatial: '{"type": "Polygon", "coordinates": [[-75.64, -55.92], [-66.42, -55.92], [-66.42, -17.50], [-75.64, -17.50], [-75.64, -55.92]]}'
+    value: http://publications.europa.eu/resource/authority/country/CHL
   help_text:
     en: 'Geographic coverage of the dataset. More information in <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
     es: 'Ámbito geográfico cubierto por el conjunto de datos. Más información en <a href="http://publications.europa.eu/resource/authority/country" target="_blank" rel="noopener">EU Vocab Countries</a>.'
