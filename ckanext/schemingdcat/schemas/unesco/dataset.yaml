@@ -1844,21 +1844,6 @@ dataset_fields:
   help_allow_html: True
   form_group_id: inspire
 
-# Geographic bounding box (M)
-- field_name: spatial
-  label: 
-    en: Bounding Box
-    es: Extensión espacial
-    fr: Boîte englobante
-  preset: spatial
-  form_placeholder: '{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}'
-  help_text:
-    en: 'If a <strong>Geographic identifier</strong> is selected and this element is empty, it will be filled in automatically.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value..</a> e.g. <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
-    es: 'Sí se selecciona un <strong>Identificador geográfico</strong> y este elemento esta vacío, se rellena automáticamente.<br><br><a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates".</a> ej: <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
-    fr: 'Si un <strong>identifiant géographique</strong> est sélectionné et que cet élément est vide, il sera automatiquement rempli.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dessinez la boîte englobante et copiez le GEOJSON avec la valeur "coordinates".</a> ex : <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Seul le dictionnaire "geometry" avec les éléments "type" et "coordinates" est nécessaire. Plus d informations sur <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">les boîtes englobantes GeoJSON</a>.'
-  help_allow_html: True
-  form_group_id: spatial_info
-
 # Geographic identifier (O)
 - field_name: spatial_uri
   label: 
@@ -2153,6 +2138,21 @@ dataset_fields:
   help_allow_html: True
   form_group_id: spatial_info
 
+# Geographic bounding box (M)
+- field_name: spatial
+  label: 
+    en: Bounding Box
+    es: Extensión espacial
+    fr: Boîte englobante
+  preset: spatial
+  form_placeholder: '{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}'
+  help_text:
+    en: 'If a <strong>Geographic identifier</strong> is selected and this element is empty, it will be filled in automatically.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Draw BBox and copy GEOJSON with "coordinates" value..</a> e.g. <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Only "geometry" dict with "type" and "coordinates" elements. More information at <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    es: 'Sí se selecciona un <strong>Identificador geográfico</strong> y este elemento esta vacío, se rellena automáticamente.<br><br><a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dibuja el BBox y copia el GEOJSON con el valor de "coordinates".</a> ej: <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Solo es necesario el diccionario "geometry" con los elementos "type" y "coordinates". Más información en <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">GeoJSON bounding boxes</a>.'
+    fr: 'Si un <strong>identifiant géographique</strong> est sélectionné et que cet élément est vide, il sera automatiquement rempli.<a href="https://boundingbox.klokantech.com" target="_blank" rel="noopener">Dessinez la boîte englobante et copiez le GEOJSON avec la valeur "coordinates".</a> ex : <code>{"type": "Polygon", "coordinates": [[[-18.27, 27.54], [4.44, 27.54], [4.44, 43.85], [-18.27, 43.85], [-18.27, 27.54]]]}</code><br>Seul le dictionnaire "geometry" avec les éléments "type" et "coordinates" est nécessaire. Plus d informations sur <a href="http://geojson.org/geojson-spec.html#bounding-boxes" target="_blank" rel="noopener">les boîtes englobantes GeoJSON</a>.'
+  help_allow_html: True
+  form_group_id: spatial_info
+  
 # Spatial representation type (O)
 - field_name: representation_type
   label: 
