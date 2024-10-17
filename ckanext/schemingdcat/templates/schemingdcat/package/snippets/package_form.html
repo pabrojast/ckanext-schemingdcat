@@ -23,6 +23,7 @@
     <ol class="stages stage-1">
       {% asset 'ckanext-schemingdcat/schemingdcat-copy-from-title' %}
       {% asset 'ckanext-schemingdcat/schemingdcat-autofill-today' %}
+      {% asset 'ckanext-schemingdcat/schemingdcat-autofill-responsible-party' %}
 
       {%- for p in pages -%}
         <li class="{{
@@ -174,6 +175,7 @@
   {# Render hidden input based on whether pages are defined #}
   {%- if pages -%}
     <input type="hidden" name="_ckan_phase" value="{{ active_page }}" />
+    <input type="hidden" id="form_data" value="{{ h.dump_json(data) }}" />
   {%- elif 'resource_fields' not in schema -%}
     <!-- force controller to skip resource-editing step for this type -->
     <input type="hidden" name="_ckan_phase" value="" />
