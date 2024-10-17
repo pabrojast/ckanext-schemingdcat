@@ -1007,6 +1007,9 @@ dataset_fields:
     es: "Persona u organización que pone a disposición de otros el conjunto de datos."
     fr: "Partie qui rend un jeu de données disponible pour d'autres."
   form_group_id: publisher
+  form_attrs:
+    data-module: "autofill-responsible-party"
+
 
 # Publisher identifier (M)
 - field_name: publisher_identifier
@@ -1048,6 +1051,8 @@ dataset_fields:
   display_property: foaf:mbox
   form_placeholder: joseblanco@example.com
   form_group_id: publisher
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Publisher URL (O)
 - field_name: publisher_url
@@ -1063,6 +1068,8 @@ dataset_fields:
     es: Esta propiedad se refiere a una página web que actúa como página principal del publicador. URL
     fr: Cette propriété fait référence à une page web qui agit comme la page d'accueil de l'éditeur. URL
   form_group_id: publisher
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Publisher type (M)
 - field_name: publisher_type
@@ -1144,6 +1151,8 @@ dataset_fields:
     es: "Persona u organización responsable de mantener o actualizar un conjunto de datos."
     fr: "Personne ou organisation responsable de la maintenance ou de la mise à jour d'un jeu de données."
   form_group_id: maintainer
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Maintainer Identifier (O)
 - field_name: maintainer_uri
@@ -1170,6 +1179,8 @@ dataset_fields:
   display_property: vcard:hasEmail
   form_placeholder: joseblanco@example.com
   form_group_id: maintainer
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Maintainer web (O)
 - field_name: maintainer_url
@@ -1185,6 +1196,8 @@ dataset_fields:
     es: Esta propiedad se refiere a una página web que actúa como página principal del mantenedor. URL
     fr: Cette propriété fait référence à une page web qui sert de page d'accueil au responsable de la maintenance. URL
   form_group_id: maintainer
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Author name (O)
 - field_name: author
@@ -1199,6 +1212,8 @@ dataset_fields:
     es: "Persona u organización creadora o productora de un conjunto de datos."
     fr: "Partie qui crée ou produit un ensemble de données particulier."
   form_group_id: author
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Author Identifier (O)
 - field_name: author_uri
@@ -1225,6 +1240,8 @@ dataset_fields:
   display_property: vcard:hasEmail
   form_placeholder: joseblanco@example.com
   form_group_id: author
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 # Author web (O)
 - field_name: author_url
@@ -1240,6 +1257,8 @@ dataset_fields:
     es: Esta propiedad se refiere a una página web que actúa como página principal del publicador. URL
     fr: Cette propriété fait référence à une page web qui sert de page d'accueil de l'auteur. URL
   form_group_id: author
+  form_attrs:
+    data-module: "autofill-responsible-party"
 
 #--Quality--#
 - start_form_page:
@@ -4922,7 +4941,7 @@ dataset_fields:
     fr: "Couverture géographique de l'ensemble de données. Plus d'informations sur <a href='http://publications.europa.eu/resource/authority/country' target='_blank' rel='noopener'>EU Vocab Countries</a>."
   help_allow_html: True
   form_group_id: spatial_info
-
+  
 # Geographic bounding box (M)
 - field_name: spatial
   label: 
