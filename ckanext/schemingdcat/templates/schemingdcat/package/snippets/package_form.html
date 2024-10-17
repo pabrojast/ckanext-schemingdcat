@@ -21,6 +21,9 @@
   {%- if pages -%}
     {%- set active_page = data.get('_form_page', 1) | int -%}
     <ol class="stages stage-1">
+      {% asset 'ckanext-schemingdcat/schemingdcat-copy-from-title' %}
+      {% asset 'ckanext-schemingdcat/schemingdcat-autofill-today' %}
+
       {%- for p in pages -%}
         <li class="{{
           'first ' if loop.first else ''}}{{
@@ -179,6 +182,7 @@
 {% endblock %}
 
 {% block metadata_fields %}
+
 {% endblock %}
 
 {% block save_button_text %}

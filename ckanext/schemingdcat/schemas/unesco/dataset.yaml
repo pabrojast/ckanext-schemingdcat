@@ -271,14 +271,14 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
-- field_name: groups__0__id
-  label:
-    en: Group
-    es: Grupo
-    fr: Grappe
-  required: False
-  preset: dataset_group
-  form_group_id: general_info
+# - field_name: groups__0__id
+#   label:
+#     en: Group
+#     es: Grupo
+#     fr: Grappe
+#   required: FalseW
+#   preset: dataset_group
+#   form_group_id: general_info
 
 # Graphic overview (O)
 - field_name: graphic_overview
@@ -301,7 +301,6 @@ dataset_fields:
     en: Metadata identifier
     es: Identificador de los metadatos
     fr: Identifiant des métadonnées
-  preset: schemingdcat_identifier
   required: True
   display_property: dct:identifier
   form_placeholder: 123e4567-e89b-12d3-a456-426614174000
@@ -310,8 +309,10 @@ dataset_fields:
     es: Ej. Identificador único de recurso (UUID).
     fr: p. ex. Identifiant unique de ressource (UUID).
   help_allow_html: True
+  validators: "not_empty scheming_required schemingdcat_clean_identifier"
   form_group_id: identification
-
+  form_attrs:
+    data-module: "copy-from-title slug-preview-target"
 # Dataset locator (O)
 ## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset).
 - field_name: name
@@ -566,6 +567,7 @@ dataset_fields:
         es: Ciencia y tecnología
         fr: Science et technologie
   form_group_id: identification
+  default: "http://publications.europa.eu/resource/authority/data-theme/ENVI"
 
 # High-value dataset category (R)
 - field_name: hvd_category
@@ -795,7 +797,8 @@ dataset_fields:
       fr: Irlandais
     value: http://publications.europa.eu/resource/authority/language/GLE
   form_group_id: identification
-
+  default: "http://publications.europa.eu/resource/authority/language/ENG"
+    
 # Date of creation (O)
 - field_name: created
   label: 
@@ -891,7 +894,8 @@ dataset_fields:
     value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/transportation
   - label: utilitiesCommunication
     value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/utilitiesCommunication
-
+  default: "http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment"
+  
   help_text:
     en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
     es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist/TopicCategory" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
@@ -1812,6 +1816,7 @@ dataset_fields:
       fr: Zones de gestion, de restriction, de réglementation et unités de déclaration (AM)
     value: http://inspire.ec.europa.eu/theme/am
   form_group_id: inspire  
+  default: "http://inspire.ec.europa.eu/theme/hy"
 
 # INSPIRE identifier (M)
 - field_name: inspire_id
@@ -1850,7 +1855,7 @@ dataset_fields:
     en: Geographic identifier
     es: Identificador geográfico
     fr: Identifiant géographique
-  preset: select_spatial_icon
+  preset: multiple_choice_icon
   display_property: dcat:theme
   select_size: 10
   sorted_choices: True

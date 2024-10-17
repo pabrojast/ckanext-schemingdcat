@@ -161,7 +161,10 @@
       "values": {
         "form_snippet": "date.html",
         "display_snippet": "schemingdcat/display_snippets/date_localised.html",
-        "validators": "schemingdcat_if_empty_datenow scheming_required isodate convert_to_json_if_date"
+        "validators": "schemingdcat_if_empty_datenow scheming_required isodate convert_to_json_if_date",
+        "form_attrs": {
+          "data-module": "schemingdcat-autofill-today"
+        }
       }
     },
     {

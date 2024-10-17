@@ -25,6 +25,24 @@ schemingdcat-permanent-url:
   contents:
     - js/modules/schemingdcat-permanent-url.js
 
+schemingdcat-copy-from-title:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_copy_from_title.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-copy-from-title.js
+
+schemingdcat-autofill-today:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_autofill_today.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-autofill-today.js
+
 schemingdcat-metadata-sidebar:
   filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_metadata_sidebar.js
