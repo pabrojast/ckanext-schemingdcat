@@ -1138,12 +1138,7 @@ dataset_fields:
     value: http://purl.org/adms/publishertype/StandardisationBody
   form_group_id: publisher
 
-#Aproval Work Flow
-- field_name: publishing_status 
-  label: Publishing Status 
-  form_snippet: null 
-  display_snippet: null 
-  validators: ignore_missing publishing_status_validator
+
 
 # Maintainer name (O)
 - field_name: maintainer
