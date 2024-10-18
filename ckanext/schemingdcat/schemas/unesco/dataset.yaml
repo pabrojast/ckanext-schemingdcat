@@ -1138,6 +1138,13 @@ dataset_fields:
     value: http://purl.org/adms/publishertype/StandardisationBody
   form_group_id: publisher
 
+#Aproval Work Flow
+- field_name: publishing_status 
+  label: Publishing Status 
+  form_snippet: null 
+  display_snippet: null 
+  validators: ignore_missing publishing_status_validator
+
 # Maintainer name (O)
 - field_name: maintainer
   label:
@@ -4941,7 +4948,7 @@ dataset_fields:
     fr: "Couverture géographique de l'ensemble de données. Plus d'informations sur <a href='http://publications.europa.eu/resource/authority/country' target='_blank' rel='noopener'>EU Vocab Countries</a>."
   help_allow_html: True
   form_group_id: spatial_info
-  
+
 # Geographic bounding box (M)
 - field_name: spatial
   label: 
