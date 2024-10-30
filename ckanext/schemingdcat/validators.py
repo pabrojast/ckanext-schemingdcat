@@ -825,14 +825,8 @@ def schemingdcat_xls_metadata_template(field, schema):
 @validator
 def schemingdcat_spatial_uri_validator(field, schema):
     """
-    Returns a validator function that checks if the 'spatial_uri' value exists in the choices. If it exists, it sets the value of the field to the value of 'spatial' in the choice. Otherwise, it sets the value to ''.
-
-    Args:
-        field (dict): Information about the field to be updated.
-        schema (dict): The schema for the field to be updated.
-
-    Returns:
-        function: A validation function that can be used to update the field based on the presence of 'spatial' in the choice corresponding to 'spatial_uri'.
+    Validates and combines spatial geometries when multiple spatial_uri values are selected.
+    Handles both Polygon and MultiPolygon geometries.
     """
     schema_data = helpers.schemingdcat_get_dataset_schema()
     spatial_uri_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'spatial_uri'), None)
@@ -840,9 +834,42 @@ def schemingdcat_spatial_uri_validator(field, schema):
 
     def validator(key, data, errors, context):
         if data[key] is missing or data[key] is None or data[key] == '':
-            spatial_uri = data.get(('spatial_uri', ))
-            choice = next((item for item in choices if item["value"] == spatial_uri), None)
-            data[key] = choice.get('spatial', '') if choice else missing
+            spatial_uris = data.get(('spatial_uri',), [])
+            print(spatial_uris)
+            if not isinstance(spatial_uris, list):
+                spatial_uris = [spatial_uris]
+            
+            # Collect all polygon coordinates from selected spatial_uris
+            all_coordinates = []
+            for uri in spatial_uris:
+                choice = next((item for item in choices if item["value"] == uri), None)
+                if choice and 'spatial' in choice:
+                    try:
+                        geometry = json.loads(choice['spatial'])
+                        if geometry.get('type') == 'Polygon':
+                            all_coordinates.append(geometry['coordinates'])
+                        elif geometry.get('type') == 'MultiPolygon':
+                                all_coordinates.extend(geometry['coordinates'])
+                    except (json.JSONDecodeError, AttributeError):
+                        continue
+            
+            if all_coordinates:
+                if len(all_coordinates) == 1:
+                    # Si solo hay un conjunto de coordenadas, usar Polygon
+                    polygon = {
+                        "type": "Polygon",
+                        "coordinates": all_coordinates[0]
+                    }
+                    data[key] = json.dumps(polygon)
+                else:
+                    # Si hay múltiples conjuntos de coordenadas, usar MultiPolygon
+                    multi_polygon = {
+                        "type": "MultiPolygon",
+                        "coordinates": all_coordinates
+                    }
+                    data[key] = json.dumps(multi_polygon)
+            else:
+                data[key] = missing
 
     return validator
 
