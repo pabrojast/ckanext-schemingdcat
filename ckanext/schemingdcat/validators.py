@@ -835,9 +835,8 @@ def schemingdcat_spatial_uri_validator(field, schema):
     def validator(key, data, errors, context):
         if data[key] is missing or data[key] is None or data[key] == '':
             spatial_uris = data.get(('spatial_uri',), [])
-            print(spatial_uris)
             if not isinstance(spatial_uris, list):
-                spatial_uris = [spatial_uris]
+                spatial_uris = [spatial_uris] if spatial_uris else []
             
             # Collect all polygon coordinates from selected spatial_uris
             all_coordinates = []
@@ -849,7 +848,7 @@ def schemingdcat_spatial_uri_validator(field, schema):
                         if geometry.get('type') == 'Polygon':
                             all_coordinates.append(geometry['coordinates'])
                         elif geometry.get('type') == 'MultiPolygon':
-                                all_coordinates.extend(geometry['coordinates'])
+                            all_coordinates.extend(geometry['coordinates'])
                     except (json.JSONDecodeError, AttributeError):
                         continue
             
@@ -869,7 +868,10 @@ def schemingdcat_spatial_uri_validator(field, schema):
                     }
                     data[key] = json.dumps(multi_polygon)
             else:
-                data[key] = missing
+                data[key] = ''  # Establecer como cadena vacía en lugar de 'missing'
+        else:
+            # Si data[key] ya tiene un valor, no hacemos nada
+            pass
 
     return validator
 
