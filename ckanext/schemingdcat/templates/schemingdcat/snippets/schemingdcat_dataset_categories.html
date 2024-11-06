@@ -38,9 +38,4 @@
     <a href="{{ h.url_for('dataset.search', **{theme_field: theme_value}) }}" target="_blank" rel="noopener noreferrer" class="category-{{ theme_field }}" data-icon="{{ category_icon|lower }}"></a>
   </div>
 {% endif %}
-{% if package.spatial_uri %}
-  <div>
-    <a href="{{ h.url_for('dataset.search', **{'spatial_uri': package.spatial_uri}) }}" target="_blank" rel="noopener noreferrer" class="category-spatial_uri" data-icon="{{ category_icon|lower }}"></a>
-  </div>
-{% endif %}
 </div>
