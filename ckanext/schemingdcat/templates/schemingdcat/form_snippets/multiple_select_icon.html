@@ -21,6 +21,11 @@
     {%  set choices = choices|sort(case_sensitive=false, attribute=1) %}
   {%  endif %}
   {% set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
+  <button type="button" 
+          class="btn btn-default" 
+          onclick="selectAll('field-{{ field.field_name }}')">
+          Select All
+  </button>
   <select multiple
       size="{{ field.get('select_size', field.choices|length) }}"
       style="display: block"
@@ -47,4 +52,13 @@
     {%  endfor %}
   </select>
 {%  endcall %}
+
+<script>
+function selectAll(selectId) {
+  var select = document.getElementById(selectId);
+  for (var i = 0; i < select.options.length; i++) {
+    select.options[i].selected = true;
+  }
+}
+</script>
 

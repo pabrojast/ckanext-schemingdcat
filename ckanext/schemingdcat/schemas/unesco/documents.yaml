@@ -1,0 +1,680 @@
+scheming_version: 2
+dataset_type: documents
+about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. European context (EU27)"
+about_url: https://github.com/mjanez/ckanext-schemingdcat
+form_languages: ["en", "es", "fr"]
+required_language: "en"
+schema_version: 2.1
+schema_date: 2024-05-01
+schema_name: geodcatap
+schema_title: GeoDCAT-AP
+schema_description: Geospatial extension for the DCAT application profile for data portals in Europe (GeoDCAT-AP)
+schema_form_groups:
+  # Basic Info parties form_page (#1)
+  - form_group_id: title
+    label:
+      en: Title
+      es: Título
+      fr: Titre
+    fa_icon: fa-sticky-note
+  - form_group_id: general_info
+    label:
+      en: General information
+      es: Información general
+      fr: Informations générales
+    fa_icon: fa-info-circle 
+  - form_group_id: identification
+    label:
+      en: Document identification
+      es: Identificación del documento
+      fr: Identification du document
+    fa_icon: fa-id-card
+  - form_group_id: notes
+    label:
+      en: Abstract
+      es: Resumen
+      fr: Résumé
+    fa_icon: fa-file-text
+  - form_group_id: vocabs
+    label:
+      en: Vocabs information
+      es: Información de vocabularios
+      fr: Informations sur les vocabulaires
+    fa_icon: fa-database
+  - form_group_id: contact
+    label:
+      en: Contact information
+      es: Información de contacto
+      fr: Informations de contact
+    fa_icon: fa-address-book
+
+  # Resources form_page
+  - form_group_id: resource_title
+    label:
+      en: Title
+      es: Título
+      fr: Titre
+    fa_icon: fa-sticky-note
+  - form_group_id: resource_notes
+    label:
+      en: Abstract
+      es: Resumen
+      fr: Résumé
+    fa_icon: fa-file-text
+  - form_group_id: resource_identification
+    label:
+      en: Resource identification
+      es: Identificación del recurso
+      fr: Identification de la ressource
+    fa_icon: fa-id-card
+  - form_group_id: resource_url
+    label:
+      en: Resource locator
+      es: Localizador del recurso
+      fr: Localisateur de ressource
+    fa_icon: fa-link
+  - form_group_id: resource_type
+    label:
+      en: Resource type information 
+      es: Información del tipo de recurso
+      fr: Informations sur le type de ressource
+    fa_icon: fa-file-code-o 
+  - form_group_id: resource_license_info
+    label:
+      en: License and restrictions
+      es: Licencia y restricciones
+      fr: Licence et restrictions
+    fa_icon: fa-lock
+  - form_group_id: resource_lineage
+    label:
+      en: Provenance information
+      es: Información de procedencia
+      fr: Informations de provenance
+    fa_icon: fa-history
+  - form_group_id: resource_standards
+    label:
+      en: Standards compliance
+      es: Adecuación a estándares
+      fr: Conformité aux normes
+    fa_icon: fa-check-square-o
+
+### Codes in Schema
+# (M): Mandatory
+# (R): Recommended
+# (C): Conditional
+# (O): Optional
+
+#--Dataset (dcat:Dataset) fields--#
+dataset_fields:
+
+# Dataset title translated (M)
+- field_name: title_translated
+  label: 
+    en: Document title
+    es: Título del documento
+    fr: Titre du document
+  preset: schemingdcat_fluent_title_translated
+  required: True
+  display_property: dct:title
+  form_placeholder:
+    en: e.g. A descriptive title.
+    es: ej. Un título descriptivo.
+    fr: p. ex. Un titre descriptif.
+  form_languages: ["en", "es", "fr"]
+  required_language: "en"
+  form_group_id: title
+
+# # Dataset abstract translated (M)
+- field_name: notes_translated
+  label: 
+    en: Document abstract 
+    es: Resumen del documento
+    fr: Résumé du document
+  preset: schemingdcat_fluent_notes_translated
+  required: True
+  display_property: dct:description
+  form_placeholder:
+    en: e.g. Some useful description about the document.
+    es: ej. Una descripción útil sobre el documento.
+    fr: p. ex. Une description utile du document.
+  form_languages: ["en", "es", "fr"]
+  required_language: "en"
+  default_values: 
+    en: Default abstract of the {document}.
+    es: Resumen por defecto del documento {document}.
+    fr: Résumé par défaut du document {document}.
+  form_group_id: notes
+
+
+
+
+# Non-spatial Dataset (Hidden field, based on dcat_type)
+- field_name: dataset_scope
+  label:
+    en: Scope of the data
+    es: Alcance de los datos
+    fr: Portée des données
+  preset: dataset_scope
+  required: False
+  choices:
+    - label:
+        en: "Non-spatial dataset"
+        es: "Conjunto de datos no espaciales"
+        fr: "Jeu de données non spatial"
+      value: non_spatial_dataset
+    - label:
+        en: "Spatial dataset"
+        es: "Conjunto de datos espaciales"
+        fr: "Jeu de données spatiales"
+      value: spatial_dataset
+  form_group_id: general_info
+
+# CKAN Organization (M) // Dataset privacy (M)
+- field_name: owner_org
+  label:
+    en: Organization
+    es: Organización
+    fr: Organisation
+  required: True
+  help_text:
+    en: Entity (organisation) responsible for making the Dataset available.
+    es: Entidad (organización) responsable de publicar el conjunto de datos.
+    fr: Entité (organisation) responsable de la mise à disposition du jeu de données.
+  preset: dataset_organization
+  form_group_id: general_info
+
+# - field_name: groups__0__id
+#   label:
+#     en: Group
+#     es: Grupo
+#     fr: Grappe
+#   required: FalseW
+#   preset: dataset_group
+#   form_group_id: general_info
+
+# Graphic overview (O)
+- field_name: graphic_overview
+  label:
+    en: Graphic overview of the document
+    es: Descripción gráfica del documento
+    fr: Aperçu graphique du document
+  display_snippet: schemingdcat/display_snippets/graphic_overview.html
+  form_placeholder: http://example.com/dataset.jpg
+  help_text:
+    en: "Graphic that provides an illustration of the document."
+    es: "Gráfico que ilustra el documento."
+    fr: "Graphique illustrant le document."
+  form_group_id: general_info
+
+# Metadata file language (M)
+- field_name: language
+  label:
+    en: Metadata language
+    es: Idioma de los metadatos
+    fr: Langue des métadonnées
+  preset: select
+  display_property: dct:language
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  form_include_blank_choice: False
+  validators: not_empty scheming_required
+  required: True
+  sorted_choices: True
+  choices:
+  - label:
+      en: Spanish
+      es: Español
+      fr: Espagnol
+    value: http://publications.europa.eu/resource/authority/language/SPA
+  - label:
+      en: English
+      es: Inglés
+      fr: Anglais
+    value: http://publications.europa.eu/resource/authority/language/ENG
+  - label:
+      en: German
+      es: Alemán
+      fr: Allemand
+    value: http://publications.europa.eu/resource/authority/language/DEU
+  - label:
+      en: French
+      es: Francés
+      fr: Français
+    value: http://publications.europa.eu/resource/authority/language/FRA
+  - label:
+      en: Italian
+      es: Italiano
+      fr: Italien
+    value: http://publications.europa.eu/resource/authority/language/ITA
+  - label:
+      en: Dutch
+      es: Neerlandés
+      fr: Néerlandais
+    value: http://publications.europa.eu/resource/authority/language/NLD
+  - label:
+      en: Danish
+      es: Danés
+      fr: Danois
+    value: http://publications.europa.eu/resource/authority/language/DAN
+  - label:
+      en: Greek
+      es: Griego
+      fr: Grec
+    value: http://publications.europa.eu/resource/authority/language/ELL
+  - label:
+      en: Portuguese
+      es: Portugués
+      fr: Portugais
+    value: http://publications.europa.eu/resource/authority/language/POR
+  - label:
+      en: Finnish
+      es: Finés
+      fr: Finlandais
+    value: http://publications.europa.eu/resource/authority/language/FIN
+  - label:
+      en: Swedish
+      es: Sueco
+      fr: Suédois
+    value: http://publications.europa.eu/resource/authority/language/SWE
+  - label:
+      en: Czech
+      es: Checo
+      fr: Tchèque
+    value: http://publications.europa.eu/resource/authority/language/CES
+  - label:
+      en: Estonian
+      es: Estonio
+      fr: Estonien
+    value: http://publications.europa.eu/resource/authority/language/EST
+  - label:
+      en: Croatian
+      es: Croata
+      fr: Croate
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Hungarian
+      es: Húngaro
+      fr: Hongrois
+    value: http://publications.europa.eu/resource/authority/language/HUN
+  - label:
+      en: Latvian
+      es: Letón
+      fr: Letton
+    value: http://publications.europa.eu/resource/authority/language/LAV
+  - label:
+      en: Lithuanian
+      es: Lituano
+      fr: Lituanien
+    value: http://publications.europa.eu/resource/authority/language/LIT
+  - label:
+      en: Maltese
+      es: Maltés
+      fr: Maltais
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+      fr: Polonais
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Slovak
+      es: Eslovaco
+      fr: Slovaque
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+      fr: Slovène
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Romanian
+      es: Rumano
+      fr: Roumain
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+      fr: Bulgare
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+      fr: Irlandais
+    value: http://publications.europa.eu/resource/authority/language/GLE
+  - label:
+      en: Croatian
+      es: Croata
+      fr: Croate
+    value: http://publications.europa.eu/resource/authority/language/HRV
+  - label:
+      en: Luxembourgish
+      es: Luxemburgués
+      fr: Luxembourgeois
+    value: http://publications.europa.eu/resource/authority/language/LTZ
+  - label:
+      en: Slovak
+      es: Eslovaco
+      fr: Slovaque
+    value: http://publications.europa.eu/resource/authority/language/SLK
+  - label:
+      en: Slovene
+      es: Esloveno
+      fr: Slovène
+    value: http://publications.europa.eu/resource/authority/language/SLV
+  - label:
+      en: Maltese
+      es: Maltés
+      fr: Maltais
+    value: http://publications.europa.eu/resource/authority/language/MLT
+  - label:
+      en: Polish
+      es: Polaco
+      fr: Polonais
+    value: http://publications.europa.eu/resource/authority/language/POL
+  - label:
+      en: Romanian
+      es: Rumano
+      fr: Roumain
+    value: http://publications.europa.eu/resource/authority/language/ROM
+  - label:
+      en: Bulgarian
+      es: Búlgaro
+      fr: Bulgare
+    value: http://publications.europa.eu/resource/authority/language/BUL
+  - label:
+      en: Irish
+      es: Irlandés
+      fr: Irlandais
+    value: http://publications.europa.eu/resource/authority/language/GLE
+  form_group_id: general_info
+  default: "http://publications.europa.eu/resource/authority/language/ENG"
+
+# Metadata file identifier (M)
+## Unique resource identifier (UUID)  (Mandatory). If it does not exist, CKAN creates a UUID (Metadata file identifier 'package_id')
+- field_name: identifier
+  label: 
+    en: Metadata identifier
+    es: Identificador de los metadatos
+    fr: Identifiant des métadonnées
+  required: True
+  display_property: dct:identifier
+  form_placeholder: 123e4567-e89b-12d3-a456-426614174000
+  help_text:
+    en: e.g. Unique resource identifier (UUID).
+    es: Ej. Identificador único de recurso (UUID).
+    fr: p. ex. Identifiant unique de ressource (UUID).
+  help_allow_html: True
+  validators: "not_empty scheming_required schemingdcat_clean_identifier"
+  form_group_id: identification
+  form_attrs:
+    data-module: "copy-from-title slug-preview-target"
+# Dataset locator (O)
+## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset).
+- field_name: name
+  label: 
+    en: URL
+    es: URL
+    fr: URL
+  preset: schemingdcat_dataset_slug
+  display_property: dcat:landingPage
+  form_placeholder:
+    en: URL title Dataset
+    es: Título de la URL del Dataset
+    fr: Titre de l'URL du jeu de données
+  form_slug_related: identifier
+  form_group_id: identification
+
+# Keyword URI (M)
+## TODO: Improve form_snippet to generate tag_uri auto from tag_string
+## TODO: Add as scheming_datastore_choices (helpers.py/#102) http://github.com/ckan/ckanext-scheming/issues/270
+## Only for ckanext-dcat profiles.py
+- field_name: tag_uri
+  label: 
+    en: Keyword URIs
+    es: URI de palabras clave
+    fr: URI des mots-clés
+  preset: multiple_text
+  display_snippet: schemingdcat/display_snippets/list_keywords.html
+  form_placeholder: 'http://inspire.ec.europa.eu/metadata-codelist/IACSData/gsaa'
+  help_text:
+    en: 'e.g. Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    es: 'ej: Registro de listas controladas de metadatos (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    fr: 'p. ex. Registre des listes de codes de métadonnées (INSPIRE) : http://inspire.ec.europa.eu/metadata-codelist'
+  form_group_id: general_info
+
+# TODO: Probably better include contact_role and contact_organization (boolean) to distinguish between vcard:Individual and vcard:Organizationto use in ckanext-dcat/profiles.py
+# Metadata point of contact URI (M)
+- field_name: contact_uri
+  label:
+    en: URI of the Metadata contact point
+    es: URI del punto de contacto de los metadatos
+    fr: URI du point de contact des métadonnées
+  display_snippet: schemingdcat/display_snippets/link_name.html
+  form_placeholder: http://orgs.vocab.org/some-org
+  form_group_id: general_info
+
+# Metadata point of contact name (M)
+- field_name: contact_name
+  label:
+    en: Metadata contact point name
+    es: Nombre del punto de contacto de los metadatos
+    fr: Nom du point de contact des métadonnées
+  display_property: dcat:contactPoint
+  form_placeholder: José Blanco
+  form_attrs:
+    data-module: "auto-contact"
+    data-module-source: "user"
+    data-module-field: "name"
+  form_group_id: contact
+
+# Metadata point of contact email (M)
+- field_name: contact_email
+  label:
+    en: Metadata contact point email
+    es: Email del punto de contacto de los Metadatos
+    fr: Courriel du point de contact des métadonnées
+  validators: not_empty scheming_required schemingdcat_valid_email
+  required: True
+  display_property: vcard:hasEmail
+  display_snippet: email.html
+  form_placeholder: joseblanco@example.com
+  form_attrs:
+    data-module: "auto-contact"
+    data-module-source: "user"
+    data-module-field: "email"
+  form_group_id: contact
+
+# Metadata point of contact Web (R)
+- field_name: contact_url
+  label:
+    en: Website of the Metadata contact point
+    es: Web del punto de contacto de los metadatos
+    fr: Site web du point de contact des métadonnées
+  preset: valid_url
+  display_property: vcard:hasURL
+  form_placeholder: http://www.example.com
+  form_group_id: contact
+
+
+
+#--Resource/Distribution (dcat:Distribution) fields--#
+resource_fields:
+
+# Access URL (M)
+- field_name: url
+  label:
+    en: Access URL
+    es: URL de acceso
+    fr: URL d'accès
+  preset: resource_url_upload
+  display_property: dcat:accessURL
+  display_snippet: schemingdcat/display_snippets/link.html
+  form_group_id: resource_url
+
+#FIX: Resource title (M) -- name_translated field dont work
+- field_name: name
+  label:
+    en: Distribution title
+    es: Título de la distribución
+    fr: Titre de la distribution
+  form_placeholder:
+    en: e.g. Web Map Service
+    es: ej. Web Map Service
+    fr: p.ex. Service de cartographie Web
+  display_property: dct:title
+  form_group_id: resource_title
+
+#FIX: Resource abstract (M) -- description_translated field dont work
+- field_name: description
+  label:
+    en: Distribution abstract
+    es: Descripción de la distribución
+    fr: Résumé de la distribution
+  form_snippet: markdown.html
+  form_placeholder:
+    en: Some useful notes about the data.
+    es: Algunas notas útiles sobre los datos.
+    fr: Quelques notes utiles sur les données.
+  display_property: dct:description
+  form_group_id: resource_notes
+
+# Date of creation (M)
+- field_name: created
+  label: 
+    en: Date of creation
+    es: Fecha de creación
+    fr: Date de création
+  display_property: dct:created
+  preset: date_created
+  form_group_id: resource_identification
+
+# Date of last revision (M)
+- field_name: modified
+  label: 
+    en: Date of last revision
+    es: Fecha de última modificación
+    fr: Date de la dernière révision
+  display_property: dct:modified
+  preset: date_modified
+  form_group_id: resource_identification
+
+# Resource status (O)
+- field_name: availability
+  label:
+    en: Resource availability
+    es: Disponibilidad de la distribución
+    fr: Disponibilité de la distribution
+  preset: select
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  display_property: dcatap:availability
+  form_include_blank_choice: False
+  choices:
+  - label:
+      en: Available
+      es: Disponible
+      fr: Disponible
+    value: http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE
+  - label:
+      en: Stable
+      es: Estable
+      fr: Stable
+    value: http://publications.europa.eu/resource/authority/planned-availability/STABLE
+  - label:
+      en: Experimental
+      es: Experimental
+      fr: Expérimental
+    value: http://publications.europa.eu/resource/authority/planned-availability/EXPERIMENTAL
+  - label:
+      en: Provisional data
+      es: Datos provisionales
+      fr: Données provisoires
+    value: http://publications.europa.eu/resource/authority/planned-availability/OP_DATPRO
+  - label:
+      en: Temporary
+      es: Temporal
+      fr: Temporaire
+    value: http://publications.europa.eu/resource/authority/planned-availability/TEMPORARY
+  help_text:
+    en: 'This property indicates how long it is planned to keep the Distribution of the Dataset available according to <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Distribution availability vocabulary</a>.'
+    es: 'Esta propiedad indica durante cuánto tiempo se prevé mantener disponible la distribución del conjunto de datos de acuerdo con el <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Vocabulario de disponibilidad de la distribución</a>.'
+    fr: "Cette propriété indique la durée pendant laquelle il est prévu de maintenir la distribution de l'ensemble de données disponible selon le <a href='http://publications.europa.eu/resource/authority/planned-availability' target='_blank' rel='noopener'>vocabulaire de disponibilité de la distribution</a>."
+  help_allow_html: True
+  form_group_id: resource_lineage
+
+# Resource format (O)
+- field_name: format
+  label:
+    en: Format
+    es: Formato
+    fr: Format
+  preset: resource_format_autocomplete
+  display_property: dct:format
+  form_group_id: resource_type
+
+# Media type (O)
+- field_name: mimetype
+  label:
+    en: Media type
+    es: Tipo de medio
+    fr: Type de média
+  display_snippet: schemingdcat/display_snippets/link.html
+  display_property: dct:MediaType
+  form_placeholder: http://www.iana.org/assignments/media-types/application/vnd.shp
+  help_text:
+    en: 'This property refers to the media type of the Distribution as defined in the official <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">register of media types</a> (IANA)'
+    es: 'Esta propiedad se refiere al tipo de medio de la Distribución tal y como se define en el <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">registro oficial de tipos de medios</a> (IANA)'
+    fr: 'Cette propriété fait référence au type de média de la distribution tel que défini dans le <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">registre officiel des types de médias</a> (IANA)'
+  help_allow_html: True
+  form_group_id: resource_type
+
+# Resource status (O)
+- field_name: status
+  label:
+    en: Resource status
+    es: Estado de la distribución
+    fr: État de la distribution
+  preset: select
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  display_property: adms:status
+  form_include_blank_choice: False
+  choices:
+  - label:
+      en: Completed
+      es: Completado
+      fr: Complété
+    value: http://purl.org/adms/status/Completed
+  - label:
+      en: Under development
+      es: En desarrollo
+      fr: En développement
+    value: http://purl.org/adms/status/UnderDevelopment
+  - label:
+      en: Deprecated
+      es: Obsoleto
+      fr: Obsolète
+    value: http://purl.org/adms/status/Deprecated
+  - label:
+      en: Withdrawn
+      es: Retirado
+      fr: Retiré
+    value: http://purl.org/adms/status/Withdrawn
+  help_text:
+    en: 'This property refers to the maturity of the Distribution. It MUST take one of the values from the <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a> list.'
+    es: 'Esta propiedad hace referencia a la madurez de la distribución y debe tomar uno de los valores de la lista <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a>.'
+    fr: 'Cette propriété fait référence à la maturité de la distribution. Elle DOIT prendre une des valeurs de la liste <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a>.'
+  help_allow_html: True
+  form_group_id: resource_type
+
+# Resource character encoding (C)
+- field_name: encoding
+  label:
+    en: Character encoding
+    es: Codificación
+    fr: Codage des caractères
+  display_property: cnt:characterEncoding
+  form_placeholder: UTF-8
+  help_text:
+    en: 'Character encoding in ISO-19115 metadata is specified with a code list that can be mapped to the corresponding codes in <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>'
+    es: 'La codificación de caracteres en los metadatos ISO-19115 se especifica con una lista de códigos que puede asignarse a los códigos correspondientes en <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
+    fr: 'Le codage des caractères dans les métadonnées ISO-19115 est spécifié avec une liste de codes qui peuvent être mappés aux codes correspondants dans <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
+  help_allow_html: True
+  form_group_id: resource_type

@@ -47,7 +47,9 @@ schema_form_groups:
       es: Información de contacto
       fr: Informations de contact
     fa_icon: fa-address-book
+  
   # Responsible parties form_page (#2)
+  #merge with quality form_page (#3)
   - form_group_id: publisher
     label:
       en: Publisher information
@@ -66,7 +68,7 @@ schema_form_groups:
       es: Información del autor
       fr: Informations sur l'auteur
     fa_icon: fa-pencil-square-o
-  # Quality form_page (#3)
+
   - form_group_id: standards
     label:
       en: Standards compliance
@@ -98,6 +100,21 @@ schema_form_groups:
       es: Conjunto de datos destacado para UNESDOC
       fr: Ensemble de données en vedette pour UNESDOC
     fa_icon: fa-question-circle
+
+  - form_group_id: license_info
+    label:
+      en: License and restrictions
+      es: Licencia y restricciones
+      fr: Licence et restrictions
+    fa_icon: fa-lock
+  - form_group_id: version_notes
+    label:
+      en: Version information
+      es: Información sobre versiones
+      fr: Informations sur la version
+    fa_icon: fa-info-circle
+
+
   # Spatial form_page (#4)
   - form_group_id: spatial_info
     label:
@@ -111,19 +128,7 @@ schema_form_groups:
       es: Información INSPIRE
       fr: Informations INSPIRE
     fa_icon: fa-globe
-  # License form_page (#5)
-  - form_group_id: license_info
-    label:
-      en: License and restrictions
-      es: Licencia y restricciones
-      fr: Licence et restrictions
-    fa_icon: fa-lock
-  - form_group_id: version_notes
-    label:
-      en: Version information
-      es: Información sobre versiones
-      fr: Informations sur la version
-    fa_icon: fa-info-circle
+ 
   # Resources form_page
   - form_group_id: resource_title
     label:
@@ -211,6 +216,14 @@ dataset_fields:
   required_language: "en"
   form_group_id: title
 
+- field_name: form_mode
+  label: 
+      en: Form Mode
+      es: Modo del formulario
+      fr: Mode du formulaire
+  display_snippet: null
+  form_snippet: null
+  validators: ignore_missing
 # Metadata template for schemingdcat_xls harvester
 - field_name: schemingdcat_xls_metadata_template
   label:
@@ -271,15 +284,23 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
-# - field_name: groups__0__id
-#   label:
-#     en: Group
-#     es: Grupo
-#     fr: Grappe
-#   required: FalseW
-#   preset: dataset_group
-#   form_group_id: general_info
+- field_name: groups__0__id
+  label:
+    en: Member State
+    es: Estado Miembro
+    fr: État membre
+  required: False
+  preset: dataset_group
+  form_group_id: general_info
 
+- field_name: groups__1__id
+  label:
+    en: Initiative
+    es: Iniciativa
+    fr: Initiative
+  required: False
+  preset: dataset_group2
+  form_group_id: general_info
 # Graphic overview (O)
 - field_name: graphic_overview
   label:
@@ -983,16 +1004,6 @@ dataset_fields:
   form_placeholder: http://www.example.com
   form_group_id: contact
 
-#--Responsible party--#
-- start_form_page:
-    title: 
-      en: Responsible party
-      es: Responsable
-      fr: Partie responsable
-    description: 
-      en: Organization(s) responsible for the creation, management, maintenance and distribution of datasets.
-      es: Organización(es) responsable(s) de la creación, gestión, mantenimiento y distribución de los conjuntos de datos.
-      fr: Organisation(s) responsable(s) de la création, de la gestion, de la maintenance et de la distribution des jeux de données.
 
 # Publisher name (M)
   field_name: publisher_name
@@ -1007,6 +1018,7 @@ dataset_fields:
     es: "Persona u organización que pone a disposición de otros el conjunto de datos."
     fr: "Partie qui rend un jeu de données disponible pour d'autres."
   form_group_id: publisher
+  validators: ignore_missing unicode_safe
   form_attrs:
     data-module: "autofill-responsible-party"
 
@@ -1262,16 +1274,6 @@ dataset_fields:
   form_attrs:
     data-module: "autofill-responsible-party"
 
-#--Quality--#
-- start_form_page:
-    title: 
-      en: Quality
-      es: Calidad
-      fr: Qualité
-    description: 
-      en: Data quality information.
-      es: Información sobre calidad de los datos.
-      fr: Informations sur la qualité des données.
 
 # Other identifier (O)
   field_name: alternate_identifier
@@ -1635,9 +1637,129 @@ dataset_fields:
   help_allow_html: True
   form_group_id: standards
 
-##TODO: temporal_resolution
-## ISO 8601: http://www.google.com/url?q=http://www.w3.org/TR/xmlschema11-2/%23duration&sa=D&source=editors&ust=1677159514756434&usg=AOvVaw3Xyh6wn0UVcwFCy3-_9P8i
 
+# License URI (M)
+  field_name: license_id
+  label: 
+    en: License
+    es: Licencia
+    fr: Licence
+  form_snippet: license.html
+  display_property: dct:license
+  help_text:
+    en: 'License definitions and additional information can be found at: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+    es: 'Las definiciones de las licencias y la información adicional pueden encontrarse en: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+    fr: 'Les définitions des licences et les informations supplémentaires sont disponibles sur : <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+  help_allow_html: True
+  form_group_id: license_info
+  default: cc-by-sa
+
+# Conditions for access and use and limitations on public access (M)
+- field_name: access_rights
+  label:
+    en: Access Rights
+    es: Derechos de acceso
+    fr: Droits d'accès
+  preset: select
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  display_property: dct:accessRights
+  form_include_blank_choice: False
+  choices:
+  - label:
+      en: No limitations to public access
+      es: No hay limitaciones al acceso del público
+      fr: Aucune limitation à l'accès public
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations
+  - label:
+      en: Public access limited according to Article 13(1)(a) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(a) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(a) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1a
+  - label:
+      en: Public access limited according to Article 13(1)(b) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(b) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(b) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1b
+  - label:
+      en: Public access limited according to Article 13(1)(c) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(c) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(c) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1c
+  - label:
+      en: Public access limited according to Article 13(1)(d) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(d) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(d) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1d
+  - label:
+      en: Public access limited according to Article 13(1)(e) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(e) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(e) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1e
+  - label:
+      en: Public access limited according to Article 13(1)(f) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(f) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(f) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1f
+  - label:
+      en: Public access limited according to Article 13(1)(g) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(g) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(g) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1g
+  - label:
+      en: Public access limited according to Article 13(1)(h) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(h) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(h) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1h
+  help_text:
+    en: 'Conditions for access and use and <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitations on public access</a> (INSPIRE)'
+    es: 'Condiciones de acceso y utilización y <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitaciones de acceso público</a> (INSPIRE)'
+    fr: "Conditions d'accès et d'utilisation et <a href='http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess' target='_blank' rel='noopener'>limitations à l'accès public</a> (INSPIRE)"
+  help_allow_html: True
+  form_group_id: license_info
+
+# Version number (O)
+- field_name: version
+  label:
+    en: Version
+    es: Versión
+    fr: Version
+  help_text:
+    en: Version number or other version designation of the Dataset.
+    es: Número de versión u otra designación de versión del conjunto de datos.
+    fr: Numéro de version ou autre désignation de version de l'ensemble de données.
+  display_property: owl:versionInfo
+  validators: ignore_missing unicode_safe package_version_validator
+  form_placeholder: '1.0'
+  form_group_id: version_notes
+
+# Version information (O)
+- field_name: version_notes
+  label:
+    en: Version notes
+    es: Notas sobre la versión
+    fr: Notes sur la version
+  help_text:
+    en: A description of the differences between this version and a previous version of the Dataset.
+    es: Una descripción de las diferencias entre esta versión y una versión anterior del Dataset.
+    fr: Une description des différences entre cette version et une version antérieure de l'ensemble de données.
+  preset: schemingdcat_fluent_markdown
+  display_property: adms:versionNotes
+  form_placeholder:
+    en: e.g. Some useful version notes about the dataset.
+    es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
+    fr: p.ex. Quelques notes utiles sur cette version de l'ensemble de données.
+  form_languages: ["en", "es", "fr"]
+  form_group_id: version_notes
+
+# Dataset validity (O)
+- field_name: valid
+  label: 
+    en: Dataset validity
+    es: Vigencia del conjunto de datos
+    fr: Validité de l'ensemble de données
+  display_property: dct:valid
+  preset: date
+  form_group_id: version_notes
 
 #--Spatial--#
 - start_form_page:
@@ -5005,6 +5127,7 @@ dataset_fields:
       es: Vídeo
       fr: Vidéo
     value: http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/video
+  default: http://inspire.ec.europa.eu/metadata-codelist/SpatialRepresentationType/vector
   form_group_id: inspire
 
 # Spatial resolution (C)
@@ -5021,138 +5144,7 @@ dataset_fields:
     fr: Spécifiez la résolution spatiale comme distance en mètres
   form_group_id: inspire
 
-#--License--#
-- start_form_page:
-    title: 
-      en: License info
-      es: Licencia
-      fr: Informations sur la licence
-    description: 
-      en: Information on licenses and restrictions on use and access.
-      es: Información sobre licencias y restricciones de uso y acceso.
-      fr: Informations sur les licences et les restrictions d'utilisation et d'accès.
 
-# License URI (M)
-  field_name: license_id
-  label: 
-    en: License
-    es: Licencia
-    fr: Licence
-  form_snippet: license.html
-  display_property: dct:license
-  help_text:
-    en: 'License definitions and additional information can be found at: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
-    es: 'Las definiciones de las licencias y la información adicional pueden encontrarse en: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
-    fr: 'Les définitions des licences et les informations supplémentaires sont disponibles sur : <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
-  help_allow_html: True
-  form_group_id: license_info
-
-# Conditions for access and use and limitations on public access (M)
-- field_name: access_rights
-  label:
-    en: Access Rights
-    es: Derechos de acceso
-    fr: Droits d'accès
-  preset: select
-  display_snippet: schemingdcat/display_snippets/link_schema.html
-  display_property: dct:accessRights
-  form_include_blank_choice: False
-  choices:
-  - label:
-      en: No limitations to public access
-      es: No hay limitaciones al acceso del público
-      fr: Aucune limitation à l'accès public
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations
-  - label:
-      en: Public access limited according to Article 13(1)(a) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(a) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(a) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1a
-  - label:
-      en: Public access limited according to Article 13(1)(b) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(b) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(b) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1b
-  - label:
-      en: Public access limited according to Article 13(1)(c) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(c) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(c) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1c
-  - label:
-      en: Public access limited according to Article 13(1)(d) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(d) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(d) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1d
-  - label:
-      en: Public access limited according to Article 13(1)(e) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(e) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(e) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1e
-  - label:
-      en: Public access limited according to Article 13(1)(f) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(f) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(f) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1f
-  - label:
-      en: Public access limited according to Article 13(1)(g) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(g) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(g) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1g
-  - label:
-      en: Public access limited according to Article 13(1)(h) of the INSPIRE Directive
-      es: Acceso público limitado según el artículo 13(1)(h) de la Directiva INSPIRE
-      fr: Accès public limité selon l'article 13(1)(h) de la directive INSPIRE
-    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1h
-  help_text:
-    en: 'Conditions for access and use and <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitations on public access</a> (INSPIRE)'
-    es: 'Condiciones de acceso y utilización y <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitaciones de acceso público</a> (INSPIRE)'
-    fr: "Conditions d'accès et d'utilisation et <a href='http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess' target='_blank' rel='noopener'>limitations à l'accès public</a> (INSPIRE)"
-  help_allow_html: True
-  form_group_id: license_info
-
-# Version number (O)
-- field_name: version
-  label:
-    en: Version
-    es: Versión
-    fr: Version
-  help_text:
-    en: Version number or other version designation of the Dataset.
-    es: Número de versión u otra designación de versión del conjunto de datos.
-    fr: Numéro de version ou autre désignation de version de l'ensemble de données.
-  display_property: owl:versionInfo
-  validators: ignore_missing unicode_safe package_version_validator
-  form_placeholder: '1.0'
-  form_group_id: version_notes
-
-# Version information (O)
-- field_name: version_notes
-  label:
-    en: Version notes
-    es: Notas sobre la versión
-    fr: Notes sur la version
-  help_text:
-    en: A description of the differences between this version and a previous version of the Dataset.
-    es: Una descripción de las diferencias entre esta versión y una versión anterior del Dataset.
-    fr: Une description des différences entre cette version et une version antérieure de l'ensemble de données.
-  preset: schemingdcat_fluent_markdown
-  display_property: adms:versionNotes
-  form_placeholder:
-    en: e.g. Some useful version notes about the dataset.
-    es: ej. Una descripción útil sobre las diferencias de esta versión del conjunto de datos.
-    fr: p.ex. Quelques notes utiles sur cette version de l'ensemble de données.
-  form_languages: ["en", "es", "fr"]
-  form_group_id: version_notes
-
-# Dataset validity (O)
-- field_name: valid
-  label: 
-    en: Dataset validity
-    es: Vigencia del conjunto de datos
-    fr: Validité de l'ensemble de données
-  display_property: dct:valid
-  preset: date
-  form_group_id: version_notes
 
 #--Resource/Distribution (dcat:Distribution) fields--#
 resource_fields:

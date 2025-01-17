@@ -64,7 +64,14 @@
       "preset_name": "dataset_group",
       "values": {
         "validators": "unicode_safe ignore_missing",
-        "form_snippet": "schemingdcat/form_snippets/group_select.html"
+        "form_snippet": "schemingdcat/form_snippets/group_select_member.html"
+      }
+    },
+    {
+      "preset_name": "dataset_group2",
+      "values": {
+        "validators": "unicode_safe ignore_missing",
+        "form_snippet": "schemingdcat/form_snippets/group_select_iniciatives.html"
       }
     },
     {

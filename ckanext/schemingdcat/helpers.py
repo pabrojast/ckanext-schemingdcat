@@ -1353,7 +1353,68 @@ def schemingdcat_check_valid_url(url):
 
 @helper
 def get_memberstates():
-    memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'member-states', 'include_groups': True, 'all_fields': True })
-    #memberstates = p.toolkit.get_action('group_show')( data_dict={'id': 'grupo-papa', 'include_groups': True })
-    nombres_grupos_s = [item['name'] for item in memberstates["groups"]]
-    return nombres_grupos_s
+    """
+    Get the list of member states groups.
+    
+    Returns:
+        list: List of group names, or ['Not available'] if the group doesn't exist
+    """
+    try:
+        memberstates = p.toolkit.get_action('group_show')(
+            data_dict={'id': 'member-states', 'include_groups': True, 'all_fields': True}
+        )
+        return [item['name'] for item in memberstates["groups"]]
+    except (p.toolkit.ObjectNotFound, KeyError):
+        return ['Not available']
+
+@helper
+def schemingdcat_get_current_user():
+    """
+    Obtiene la información del usuario actualmente conectado.
+
+    Returns:
+        dict: Diccionario con la información del usuario o None si no hay usuario conectado
+    """
+    try:
+        user = p.toolkit.g.userobj  # Para Flask
+        if not user:
+            return None
+            
+        return {
+            'name': user.fullname or user.name,
+            'email': user.email,
+            'url': None  # Podrías añadir más campos si los necesitas
+        }
+    except:
+        return None
+
+@helper
+def get_initiatives():
+    """
+    Get the list of initiative groups by excluding member states groups.
+    
+    Returns:
+        list: List of initiative group names, or ['Not available'] if there's an error
+    """
+    try:
+        # Get all groups
+        groups = p.toolkit.get_action('group_list')(
+            data_dict={'include_dataset_count': True}
+        )
+        
+        # Get member states groups to exclude
+        memberstates = p.toolkit.get_action('group_show')(
+            data_dict={'id': 'member-states', 'include_groups': True}
+        )
+        
+        # Create list of groups to exclude (member states and the main member-states group)
+        exclude_groups = [item['name'] for item in memberstates["groups"]]
+        exclude_groups.append('member-states')
+        
+        # Get the difference between all groups and excluded groups
+        initiatives = list(set(groups) - set(exclude_groups))
+        
+        return initiatives
+        
+    except (p.toolkit.ObjectNotFound, KeyError):
+        return ['Not available']

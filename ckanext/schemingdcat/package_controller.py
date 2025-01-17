@@ -98,9 +98,15 @@ class PackageController():
         return data_dict
 
     def before_view(self, pkg_dict):
+        # Asegurarnos de que el modo del formulario esté disponible
+        if 'form_mode' not in pkg_dict:
+            pkg_dict['form_mode'] = 'basic'
         return pkg_dict
 
     def after_create(self, context, data_dict):
+        # Limpiar el modo del formulario si es necesario
+        if 'form_mode' in data_dict:
+            del data_dict['form_mode']
         return data_dict
 
     def after_update(self, context, data_dict):

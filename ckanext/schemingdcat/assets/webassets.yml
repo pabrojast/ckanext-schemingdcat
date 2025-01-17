@@ -43,6 +43,15 @@ schemingdcat-autofill-today:
   contents:
     - js/modules/schemingdcat-autofill-today.js
 
+schemingdcat-auto-contact:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_auto_contact.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-auto-contact.js
+
 schemingdcat-metadata-sidebar:
   filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_metadata_sidebar.js
@@ -74,3 +83,21 @@ main:
       - base/main
   contents:
     - plugins/jquery.schemingdcat-slug-preview.js
+
+schemingdcat-toggle-optional:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_toggle_optional.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-toggle-optional.js
+
+schemingdcat-publisher-uri:
+  filter: rjsmin
+  output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
+  contents:
+    - js/modules/schemingdcat-publisher-uri.js
+  extra:
+    preload:
+      - base/main

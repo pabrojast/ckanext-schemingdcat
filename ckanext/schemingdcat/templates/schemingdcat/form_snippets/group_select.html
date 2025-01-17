@@ -1,18 +1,40 @@
-{% set grupos = h.get_memberstates() %}
-{% set existing_groups = data.groups if data.groups else [] %}
-{% set disponibles = h.groups_available() %}
+{% import 'macros/form.html' as form %}
 
+{# Este snippet está diseñado para ser utilizado en un formulario #}
 
-<label class="checkbox" for="field-group-0">Member State:</label>
-<select id="field-group-0" name="groups__0__id" class="form-control form-select">
-    <option value=""></option>
-    {% for group in disponibles %}
-        {% set selected_org = False %}
-            {% if group.name in grupos %}
-			      {% if existing_groups|length > 0 %}
-						{% set selected_org = existing_groups[0].id == group.id %}
-				  {% endif %}
-                <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
-            {% endif %}
-    {% endfor %}
-</select>
+{% macro _group() %}
+  {% set existing_group = data.group_id %}
+  {% call form.input_block('field-groups',
+    label=h.scheming_language_text(field.label),
+    error=errors[field.field_name],
+    is_required=field.required,
+    classes=field.classes if 'classes' in field else ['form-group', 'control-medium'],
+    extra_html=caller() if caller,
+    ) %}
+    <div {{
+      form.attributes(field.form_attrs) if 'form_attrs' in field else '' }}>
+    <select id="field-groups" name="group_id" {{ form.attributes(
+        field.get('form_select_attrs', {'data-module':'autocomplete'})) }}>
+      {% if not field.required or field.get('form_include_blank_choice', false) %}
+        <option value="">{% if not field.required
+          %}{{ _('No group') }}{% endif %}</option>
+      {% endif %}
+      
+      {# Obtener la lista de grupos disponibles #}
+      
+      {# Iterar sobre la lista de grupos para crear las opciones del select #}
+      {% for group in group_list %}
+        {% set selected_group = existing_group == group.id %}
+        <option value="{{ group.id }}"{% if selected_group %} selected="selected"{% endif %}>
+          {{ group.display_name }}
+        </option>
+      {% endfor %}
+    </select>
+    </div>
+  {% endcall %}
+{% endmacro %}
+
+{# Llamada al macro para renderizar el select de grupos #}
+{% call _group() %}
+  {%- snippet 'scheming/form_snippets/help_text.html', field=field %}
+{% endcall %}

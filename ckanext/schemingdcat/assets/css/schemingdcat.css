@@ -48,6 +48,9 @@
   border-top-color: #4c537f;
   border-bottom-color: #4c537f;
 }
+.stages li:after {
+  margin-top: -23px !important;
+}
 
 .stages li.active:before {
   color: #252525;
