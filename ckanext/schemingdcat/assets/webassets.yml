@@ -75,15 +75,6 @@ schemingdcat-autofill-responsible-party:
   contents:
     - js/modules/schemingdcat-autofill-responsible-party.js
 
-main:
-  filters: rjsmin
-  output: base/%(version)s_main.js
-  extra:
-    preload:
-      - base/main
-  contents:
-    - plugins/jquery.schemingdcat-slug-preview.js
-
 schemingdcat-toggle-optional:
   filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_toggle_optional.js
@@ -101,3 +92,13 @@ schemingdcat-publisher-uri:
   extra:
     preload:
       - base/main
+
+main:
+  filters: rjsmin
+  output: base/%(version)s_main.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - plugins/jquery.schemingdcat-slug-preview.js
+
