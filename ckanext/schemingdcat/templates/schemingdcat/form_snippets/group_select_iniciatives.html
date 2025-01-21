@@ -7,12 +7,12 @@
 <select id="field-group-1" name="groups__1__id" class="form-control form-select">
     <option value=""></option>
     {% for group in disponibles %}
-        {% set selected_org = False %}
-            {% if group.name in iniciativas %}
-                {% if existing_groups|length > 0 %}
-                    {% set selected_org = existing_groups[1].id == group.id %}
-                {% endif %}
-                <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
+        {% if group.name in iniciativas %}
+            {% set selected_org = False %}
+            {% if existing_groups|length > 1 %}
+                {% set selected_org = existing_groups[1].id == group.id %}
             {% endif %}
+            <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
+        {% endif %}
     {% endfor %}
 </select>
