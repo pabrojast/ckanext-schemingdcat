@@ -17,7 +17,6 @@ schemingdcat-table-collapsible-rows:
     - js/modules/schemingdcat-table-collapsible-rows.js
 
 schemingdcat-permanent-url:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_permanent_url.js
   extra:
     preload:
@@ -26,7 +25,6 @@ schemingdcat-permanent-url:
     - js/modules/schemingdcat-permanent-url.js
 
 schemingdcat-copy-from-title:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_copy_from_title.js
   extra:
     preload:
@@ -35,7 +33,6 @@ schemingdcat-copy-from-title:
     - js/modules/schemingdcat-copy-from-title.js
 
 schemingdcat-autofill-today:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_autofill_today.js
   extra:
     preload:
@@ -44,7 +41,6 @@ schemingdcat-autofill-today:
     - js/modules/schemingdcat-autofill-today.js
 
 schemingdcat-auto-contact:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_auto_contact.js
   extra:
     preload:
@@ -53,7 +49,6 @@ schemingdcat-auto-contact:
     - js/modules/schemingdcat-auto-contact.js
 
 schemingdcat-metadata-sidebar:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_metadata_sidebar.js
   extra:
     preload:
@@ -67,7 +62,6 @@ schemingdcat-icons:
   output: schemingdcat_icons/%(version)s_schemingdcat_icons.css
 
 schemingdcat-autofill-responsible-party:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_autofill_responsible_party.js
   extra:
     preload:
@@ -76,7 +70,6 @@ schemingdcat-autofill-responsible-party:
     - js/modules/schemingdcat-autofill-responsible-party.js
 
 schemingdcat-toggle-optional:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s-schemingdcat_toggle_optional.js
   extra:
     preload:
@@ -85,7 +78,6 @@ schemingdcat-toggle-optional:
     - js/modules/schemingdcat-toggle-optional.js
 
 schemingdcat-publisher-uri:
-  filter: rjsmin
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:
     - js/modules/schemingdcat-publisher-uri.js
