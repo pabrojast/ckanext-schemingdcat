@@ -86,7 +86,6 @@ schemingdcat-publisher-uri:
       - base/main
 
 main:
-  filters: rjsmin
   output: base/%(version)s_main.js
   extra:
     preload:

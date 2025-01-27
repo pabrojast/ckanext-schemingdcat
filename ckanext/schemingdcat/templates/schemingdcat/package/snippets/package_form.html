@@ -122,7 +122,11 @@
       {%- do elements.append(field) -%}
     {%- endif -%}
   {%- endfor -%}
-
+  {# Añadir indicador de carga #}
+  <div id="form-loading" class="text-center" style="padding: 20px;">
+    <i class="fa fa-spinner fa-spin fa-2x"></i>
+    <p>Loading form...</p>
+  </div>
   {# Añadir div contenedor con estado de carga inicial #}
   <div id="form-fields-container" style="visibility: hidden">
     {# Render each element (field or form group) in the order they appear in the fields list #}
@@ -189,12 +193,6 @@
         {%- endif -%}
       {%- endif -%}
     {%- endfor -%}
-  </div>
-
-  {# Añadir indicador de carga #}
-  <div id="form-loading" class="text-center" style="padding: 20px;">
-    <i class="fa fa-spinner fa-spin fa-2x"></i>
-    <p>Loading form...</p>
   </div>
 
   {# Render hidden input based on whether pages are defined #}
