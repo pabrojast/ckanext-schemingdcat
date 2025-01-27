@@ -91,5 +91,5 @@ main:
     preload:
       - base/main
   contents:
-    - plugins/jquery.schemingdcat-slug-preview.js
+    - js/plugins/jquery.schemingdcat-slug-preview.js
 
