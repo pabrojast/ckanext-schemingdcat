@@ -270,3 +270,5 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
 
   {% endblock %} {% endif %} {# md #} {% endwith %} {# md #}
 </section>
+
+{% snippet "doi/snippets/package_citation.html", pkg_dict=g.pkg_dict %}
