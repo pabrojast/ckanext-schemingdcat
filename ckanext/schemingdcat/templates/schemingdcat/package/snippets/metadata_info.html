@@ -20,8 +20,6 @@ set dataset_fields = schema.dataset_fields %} {% set metadata_fields = {} %} {%
 for field in dataset_fields if field.field_name not in exclude_fields %} {% set
 _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
 
-{% snippet "doi/snippets/package_citation.html", pkg_dict=g.pkg_dict %}
-
 <section class="additional-info">
   {% with md = dataset_type %} {% if md %}
   <header>
