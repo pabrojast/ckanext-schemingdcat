@@ -19,9 +19,7 @@ Provenance info: Sublist #} {% set responsible_party = [ 'author', 'maintainer',
 set dataset_fields = schema.dataset_fields %} {% set metadata_fields = {} %} {%
 for field in dataset_fields if field.field_name not in exclude_fields %} {% set
 _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
-{% if pkg['doi_status'] and pkg.get('doi') %}
-    {% set basic = basic + ['doi'] %}
-{% endif %}
+
 
 <section class="additional-info">
   {% with md = dataset_type %} {% if md %}
@@ -47,6 +45,21 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
       </tr>
     </thead>
     <tbody>
+      {% if pkg.get('doi') %}
+      <tr class="toggle-not">
+        <th scope="row" class="dataset-label">{{ _('DOI') }}</th>
+        <td class="dataset-details">
+          {% set doi_link = 'https://doi.org/' + pkg['doi'] %}
+          <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
+          {% if not pkg['doi_status'] %}
+          <span class="dataset-private label label-inverse" title="This DOI has not yet been published">
+            <i class="fa fa-lock"></i> {{ _('Private DOI') }}
+          </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+      
       {% for field_name in basic %} {% set field =
       metadata_fields.get(field_name) %} {% if field %}
       <tr class="toggle-not">
