@@ -19,10 +19,8 @@ Provenance info: Sublist #} {% set responsible_party = [ 'author', 'maintainer',
 set dataset_fields = schema.dataset_fields %} {% set metadata_fields = {} %} {%
 for field in dataset_fields if field.field_name not in exclude_fields %} {% set
 _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
-{% if pkg['doi_status'] %}
-{% if pkg.get('doi') %}
-{% set basic['doi'] = pkg.get('doi') %}
-{% endif %}
+{% if pkg['doi_status'] and pkg.get('doi') %}
+    {% set basic = basic + ['doi'] %}
 {% endif %}
 
 <section class="additional-info">
