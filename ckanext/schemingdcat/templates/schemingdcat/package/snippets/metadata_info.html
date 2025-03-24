@@ -3,7 +3,7 @@
 'access_rights', 'publisher_uri', 'publisher_name', 'publisher_identifier',
 'publisher_url', 'publisher_email', 'publisher_type', 'contact_uri',
 'contact_name', 'contact_email', 'contact_url', 'reference' ] %} {# MD Fields #}
-{# Basic info: Sublist #} {% set basic = [ 'dcat_type', 'created', 'issued',
+{# Basic info: Sublist #} {% set basic = [ 'dcat_type', 'doi', 'created', 'issued',
 'modified', 'identifier', 'language', 'theme_es', 'theme_eu','hvd_category', 'topic', ] %} {%
 set basic_toggle = [ 'alternate_identifier', 'tag_uri', 'encoding', ] %} {#
 Spatial info: Sublist #} {% set spatial = [ 'inspire_id', 'theme',
@@ -44,20 +44,6 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% if not pkg_dict['doi_status'] %}
-      <tr class="toggle-not">
-        <th scope="row" class="dataset-label">
-          {{ _('DOI') }}
-        </th>
-        <td class="dataset-details" property="dct:type">
-          {% if pkg_dict.get('doi') %}
-            {{ pkg_dict.doi }}
-          {% else %}
-            {{ _('No DOI assigned') }}
-          {% endif %}
-        </td>
-      </tr>
-      {% endif %}
       {% for field_name in basic %} {% set field =
       metadata_fields.get(field_name) %} {% if field %}
       <tr class="toggle-not">
