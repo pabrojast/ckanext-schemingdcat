@@ -3,7 +3,7 @@
 'access_rights', 'publisher_uri', 'publisher_name', 'publisher_identifier',
 'publisher_url', 'publisher_email', 'publisher_type', 'contact_uri',
 'contact_name', 'contact_email', 'contact_url', 'reference' ] %} {# MD Fields #}
-{# Basic info: Sublist #} {% set basic = [ 'dcat_type', 'doi', 'created', 'issued',
+{# Basic info: Sublist #} {% set basic = [ 'dcat_type', 'created', 'issued',
 'modified', 'identifier', 'language', 'theme_es', 'theme_eu','hvd_category', 'topic', ] %} {%
 set basic_toggle = [ 'alternate_identifier', 'tag_uri', 'encoding', ] %} {#
 Spatial info: Sublist #} {% set spatial = [ 'inspire_id', 'theme',
@@ -19,6 +19,11 @@ Provenance info: Sublist #} {% set responsible_party = [ 'author', 'maintainer',
 set dataset_fields = schema.dataset_fields %} {% set metadata_fields = {} %} {%
 for field in dataset_fields if field.field_name not in exclude_fields %} {% set
 _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
+{% if pkg['doi_status'] %}
+{% if pkg.get('doi') %}
+{% set basic['doi'] = pkg.get('doi') %}
+{% endif %}
+{% endif %}
 
 <section class="additional-info">
   {% with md = dataset_type %} {% if md %}
