@@ -3,18 +3,21 @@ ckan.module('schemingdcat-autofill-today', function ($) {
       initialize: function () {
         var el = this.el;
         
-        // Función para obtener la fecha de hoy en formato YYYY-MM-DD
-        function getTodayDate() {
-          var today = new Date();
-          var dd = String(today.getDate()).padStart(2, '0');
-          var mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0!
-          var yyyy = today.getFullYear();
-          return yyyy + '-' + mm + '-' + dd;
-        }
-        
-        // Si el campo está vacío, llenarlo con la fecha de hoy
-        if (!el.val()) {
-          el.val(getTodayDate());
+        // Solo autorrellena en modo de creación, no en edición
+        if (window.location.href.indexOf('/edit/') === -1) {
+          // Función para obtener la fecha de hoy en formato YYYY-MM-DD
+          function getTodayDate() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0!
+            var yyyy = today.getFullYear();
+            return yyyy + '-' + mm + '-' + dd;
+          }
+          
+          // Si el campo está vacío, llenarlo con la fecha de hoy sin disparar eventos
+          if (!el.val().trim()) {
+            el[0].value = getTodayDate();
+          }
         }
         
         // Convertir la fecha al formato dd-mm-YYYY cuando se envíe el formulario
