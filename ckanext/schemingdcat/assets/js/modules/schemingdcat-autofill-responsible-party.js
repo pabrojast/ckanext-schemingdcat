@@ -1,8 +1,11 @@
 ckan.module('autofill-responsible-party', function ($) {
     return {
       initialize: function () {
-        // Solo autorrellena en modo de creación, no en edición
-        if (window.location.href.indexOf('/edit/') === -1) {
+        // Determinar si estamos en modo edición
+        var isEditMode = window.location.href.indexOf('/edit/') !== -1;
+        
+        // En modo creación, rellenar campos automáticamente
+        if (!isEditMode) {
           try {
             var formData = JSON.parse($('#form_data').val());
             
@@ -30,10 +33,9 @@ ckan.module('autofill-responsible-party', function ($) {
         if (!value) return; // No hacemos nada si no hay valor
         
         var field = $('input[name="' + fieldName + '"]');
-        // Solo rellenamos si el campo existe, está vacío y tenemos un valor para rellenar
-        if (field.length && !field.val().trim()) {
-          // Establecemos el valor directamente sin disparar eventos
-          field[0].value = value;
+        if (field.length && !field.val()) {
+          field.val(value);
+          field.trigger('change');
         }
       }
     };

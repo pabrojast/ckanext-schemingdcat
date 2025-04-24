@@ -1,30 +1,38 @@
 ckan.module('copy-from-title', function ($) {
     return {
       initialize: function () {
-        // Solo configuramos el comportamiento en modo de creación, no en edición
-        if (window.location.href.indexOf('/edit/') === -1) {
-          var titleInput = $('input[name="title_translated-en"]');
-          var identifierInput = this.el;
-          var slugInput = $('input[name="name"]');
-          
-          function updateIdentifier() {
-            var titleValue = titleInput.val();
-            
-            // Actualizar el identificador solo si está vacío
-            if (identifierInput.length && !identifierInput.val().trim() && titleValue) {
-              identifierInput[0].value = titleValue;
-            }
-            
-            // Actualizar el slug solo si está vacío
-            if (slugInput.length && !slugInput.val().trim() && titleValue) {
-              // Para el slug necesitamos disparar el evento change para que se genere correctamente
-              slugInput.val(titleValue).trigger('change');
-            }
-          }
-
-          // Usar 'input' para actualizar en tiempo real, pero solo en modo creación
-          titleInput.on('input', updateIdentifier);
+        var titleInput = $('input[name="title_translated-en"]');
+        var identifierInput = this.el;
+        var slugInput = $('input[name="name"]');
+        
+        // Determinar si estamos en modo edición
+        var isEditMode = window.location.href.indexOf('/edit/') !== -1;
+        
+        // Guardar valores iniciales en modo edición
+        var initialValues = {};
+        if (isEditMode) {
+          initialValues.identifier = identifierInput.val();
+          initialValues.slug = slugInput.val();
         }
+        
+        function updateIdentifier() {
+          var titleValue = titleInput.val();
+          
+          // En modo edición, solo actualizar si el campo estaba inicialmente vacío
+          // En modo creación, actualizar siempre
+          if (!isEditMode || !initialValues.identifier) {
+            identifierInput.val(titleValue);
+          }
+          
+          // En modo edición, solo actualizar el slug si estaba inicialmente vacío
+          // En modo creación, actualizar siempre
+          if (!isEditMode || !initialValues.slug) {
+            slugInput.val(titleValue).trigger('change');
+          }
+        }
+
+        // Usar 'input' para actualizar en tiempo real
+        titleInput.on('input', updateIdentifier);
       }
     };
   });

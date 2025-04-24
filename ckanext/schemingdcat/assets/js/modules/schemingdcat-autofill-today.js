@@ -3,8 +3,11 @@ ckan.module('schemingdcat-autofill-today', function ($) {
       initialize: function () {
         var el = this.el;
         
-        // Solo autorrellena en modo de creación, no en edición
-        if (window.location.href.indexOf('/edit/') === -1) {
+        // Determinar si estamos en modo edición
+        var isEditMode = window.location.href.indexOf('/edit/') !== -1;
+        
+        // En modo creación, rellenar con la fecha de hoy si está vacío
+        if (!isEditMode) {
           // Función para obtener la fecha de hoy en formato YYYY-MM-DD
           function getTodayDate() {
             var today = new Date();
@@ -14,9 +17,9 @@ ckan.module('schemingdcat-autofill-today', function ($) {
             return yyyy + '-' + mm + '-' + dd;
           }
           
-          // Si el campo está vacío, llenarlo con la fecha de hoy sin disparar eventos
-          if (!el.val().trim()) {
-            el[0].value = getTodayDate();
+          // Si el campo está vacío, llenarlo con la fecha de hoy
+          if (!el.val()) {
+            el.val(getTodayDate());
           }
         }
         
