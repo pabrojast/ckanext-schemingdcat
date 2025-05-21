@@ -1150,6 +1150,25 @@ dataset_fields:
     value: http://purl.org/adms/publishertype/StandardisationBody
   form_group_id: publisher
 
+# custom_doi 
+- field_name: custom_doi
+  label:
+    en: Custom DOI
+    es: DOI personalizado
+    fr: DOI personnalisé
+  display_property: adms:identifier
+  form_placeholder: https://doi.org/10.63253/ilrsgq77
+  form_group_id: publisher
+
+# Publisher email (M)
+- field_name: custom_citation
+  label:
+    en: Custom Citation
+    es: Citación personalizada
+    fr: Citation personnalisée
+  form_placeholder: Author (2025). Name of the dataset [Data set]. UNESCO IHP WINS.
+  form_group_id: publisher
+
 
 
 # Maintainer name (O)
