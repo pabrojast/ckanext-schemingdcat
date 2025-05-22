@@ -45,16 +45,21 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% if pkg.get('doi') %}
+      {% if pkg.get('custom_doi') or pkg.get('doi') %}
       <tr class="toggle-not">
         <th scope="row" class="dataset-label">{{ _('DOI') }}</th>
         <td class="dataset-details">
-          {% set doi_link = 'https://doi.org/' + pkg['doi'] %}
-          <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
-          {% if not pkg['doi_status'] %}
-          <span class="dataset-private label label-inverse" title="This DOI has not yet been published">
-            <i class="fa fa-lock"></i> {{ _('Private DOI') }}
-          </span>
+          {% if pkg.get('custom_doi') %}
+            {% set doi_link = pkg['custom_doi'] %}
+            <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
+          {% else %}
+            {% set doi_link = 'https://doi.org/' + pkg['doi'] %}
+            <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
+            {% if not pkg['doi_status'] %}
+            <span class="dataset-private label label-inverse" title="{{ _('This DOI has not yet been published') }}">
+              <i class="fa fa-lock"></i> {{ _('Private DOI') }}
+            </span>
+            {% endif %}
           {% endif %}
         </td>
       </tr>
