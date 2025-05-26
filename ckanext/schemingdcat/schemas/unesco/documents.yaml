@@ -1,5 +1,5 @@
 scheming_version: 2
-dataset_type: documents
+dataset_type: document
 about: "Datasets/Distributions: Adaptation for CKAN of the GeoDCAT-AP metadata schema extended (2.0.0) with ISO-19115 (INSPIRE) mandatory elements. European context (EU27)"
 about_url: https://github.com/mjanez/ckanext-schemingdcat
 form_languages: ["en", "es", "fr"]

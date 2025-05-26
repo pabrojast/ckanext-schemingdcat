@@ -1,0 +1,697 @@
+scheming_version: 2
+dataset_type: software
+about: "Software Products: Adaptation for CKAN to manage open-source software products, example applications and associated open learning courses for IHP-WINS"
+about_url: https://github.com/mjanez/ckanext-schemingdcat
+form_languages: ["en", "es", "fr"]
+required_language: "en"
+schema_version: 2.1
+schema_date: 2024-05-01
+schema_name: ihp_wins_software
+schema_title: IHP-WINS Software Products
+schema_description: Schema for managing open-source software products, example applications and learning courses
+schema_form_groups:
+  # Basic Info form groups
+  - form_group_id: title
+    label:
+      en: Title
+      es: Título
+      fr: Titre
+    fa_icon: fa-code
+  - form_group_id: general_info
+    label:
+      en: General information
+      es: Información general
+      fr: Informations générales
+    fa_icon: fa-info-circle 
+  - form_group_id: identification
+    label:
+      en: Software identification
+      es: Identificación del software
+      fr: Identification du logiciel
+    fa_icon: fa-id-card
+  - form_group_id: notes
+    label:
+      en: Description
+      es: Descripción
+      fr: Description
+    fa_icon: fa-file-text
+  - form_group_id: software_details
+    label:
+      en: Software details
+      es: Detalles del software
+      fr: Détails du logiciel
+    fa_icon: fa-cogs
+  - form_group_id: development
+    label:
+      en: Development information
+      es: Información de desarrollo
+      fr: Informations de développement
+    fa_icon: fa-code-branch
+  - form_group_id: learning
+    label:
+      en: Learning resources
+      es: Recursos de aprendizaje
+      fr: Ressources d'apprentissage
+    fa_icon: fa-graduation-cap
+  - form_group_id: contact
+    label:
+      en: Contact information
+      es: Información de contacto
+      fr: Informations de contact
+    fa_icon: fa-address-book
+
+  # Resources form groups
+  - form_group_id: resource_title
+    label:
+      en: Title
+      es: Título
+      fr: Titre
+    fa_icon: fa-sticky-note
+  - form_group_id: resource_notes
+    label:
+      en: Description
+      es: Descripción
+      fr: Description
+    fa_icon: fa-file-text
+  - form_group_id: resource_identification
+    label:
+      en: Resource identification
+      es: Identificación del recurso
+      fr: Identification de la ressource
+    fa_icon: fa-id-card
+  - form_group_id: resource_url
+    label:
+      en: Resource locator
+      es: Localizador del recurso
+      fr: Localisateur de ressource
+    fa_icon: fa-link
+  - form_group_id: resource_type
+    label:
+      en: Resource type information 
+      es: Información del tipo de recurso
+      fr: Informations sur le type de ressource
+    fa_icon: fa-file-code-o 
+  - form_group_id: resource_license_info
+    label:
+      en: License and restrictions
+      es: Licencia y restricciones
+      fr: Licence et restrictions
+    fa_icon: fa-lock
+
+### Codes in Schema
+# (M): Mandatory
+# (R): Recommended
+# (C): Conditional
+# (O): Optional
+
+#--Dataset (Software Product) fields--#
+dataset_fields:
+
+# Software title translated (M)
+- field_name: title_translated
+  label: 
+    en: Software title
+    es: Título del software
+    fr: Titre du logiciel
+  preset: schemingdcat_fluent_title_translated
+  required: True
+  display_property: dct:title
+  form_placeholder:
+    en: e.g. HydroShare - Collaborative Water Data Platform
+    es: ej. HydroShare - Plataforma Colaborativa de Datos Hídricos
+    fr: p. ex. HydroShare - Plateforme collaborative de données hydrologiques
+  form_languages: ["en", "es", "fr"]
+  required_language: "en"
+  form_group_id: title
+
+# Software description translated (M)
+- field_name: notes_translated
+  label: 
+    en: Software description 
+    es: Descripción del software
+    fr: Description du logiciel
+  preset: schemingdcat_fluent_notes_translated
+  required: True
+  display_property: dct:description
+  form_placeholder:
+    en: e.g. A comprehensive description of the software functionality and purpose.
+    es: ej. Una descripción completa de la funcionalidad y propósito del software.
+    fr: p. ex. Une description complète de la fonctionnalité et du but du logiciel.
+  form_languages: ["en", "es", "fr"]
+  required_language: "en"
+  form_group_id: notes
+
+# Software type (M)
+- field_name: software_type
+  label:
+    en: Software type
+    es: Tipo de software
+    fr: Type de logiciel
+  preset: select
+  required: True
+  choices:
+    - label:
+        en: "Open-source software product"
+        es: "Producto de software de código abierto"
+        fr: "Produit logiciel open source"
+      value: open_source_product
+    - label:
+        en: "Example application"
+        es: "Aplicación de ejemplo"
+        fr: "Application d'exemple"
+      value: example_application
+    - label:
+        en: "Learning course/tutorial"
+        es: "Curso/tutorial de aprendizaje"
+        fr: "Cours/tutoriel d'apprentissage"
+      value: learning_course
+    - label:
+        en: "Development tool"
+        es: "Herramienta de desarrollo"
+        fr: "Outil de développement"
+      value: development_tool
+  form_group_id: software_details
+
+# Programming language (R)
+- field_name: programming_language
+  label:
+    en: Programming language
+    es: Lenguaje de programación
+    fr: Langage de programmation
+  preset: multiple_select
+  choices:
+    - label: Python
+      value: python
+    - label: R
+      value: r
+    - label: JavaScript
+      value: javascript
+    - label: Java
+      value: java
+    - label: C++
+      value: cpp
+    - label: C#
+      value: csharp
+    - label: MATLAB
+      value: matlab
+    - label: Fortran
+      value: fortran
+    - label: PHP
+      value: php
+    - label: Go
+      value: go
+    - label: Rust
+      value: rust
+    - label: Other
+      value: other
+  form_group_id: development
+
+# Operating system compatibility (R)
+- field_name: operating_system
+  label:
+    en: Operating system compatibility
+    es: Compatibilidad con sistemas operativos
+    fr: Compatibilité du système d'exploitation
+  preset: multiple_select
+  choices:
+    - label: Windows
+      value: windows
+    - label: Linux
+      value: linux
+    - label: macOS
+      value: macos
+    - label: Web-based
+      value: web_based
+    - label: Cross-platform
+      value: cross_platform
+  form_group_id: software_details
+
+# Software version (R)
+- field_name: software_version
+  label:
+    en: Software version
+    es: Versión del software
+    fr: Version du logiciel
+  form_placeholder: "1.0.0"
+  help_text:
+    en: Current version of the software (e.g., 1.0.0, v2.1.3)
+    es: Versión actual del software (ej. 1.0.0, v2.1.3)
+    fr: Version actuelle du logiciel (p. ex. 1.0.0, v2.1.3)
+  form_group_id: development
+
+# License (M)
+- field_name: license_id
+  label:
+    en: License
+    es: Licencia
+    fr: Licence
+  preset: select
+  required: True
+  choices:
+    - label: MIT License
+      value: mit
+    - label: Apache License 2.0
+      value: apache-2.0
+    - label: GNU General Public License v3.0
+      value: gpl-3.0
+    - label: BSD 3-Clause License
+      value: bsd-3-clause
+    - label: Creative Commons Attribution 4.0
+      value: cc-by-4.0
+    - label: Creative Commons Attribution-ShareAlike 4.0
+      value: cc-by-sa-4.0
+    - label: Other Open Source
+      value: other-open
+    - label: Proprietary
+      value: proprietary
+  form_group_id: software_details
+
+# Repository URL (R)
+- field_name: repository_url
+  label:
+    en: Repository URL
+    es: URL del repositorio
+    fr: URL du dépôt
+  preset: valid_url
+  form_placeholder: https://github.com/organization/repository
+  help_text:
+    en: Link to the source code repository (GitHub, GitLab, etc.)
+    es: Enlace al repositorio de código fuente (GitHub, GitLab, etc.)
+    fr: Lien vers le dépôt de code source (GitHub, GitLab, etc.)
+  form_group_id: development
+
+# Documentation URL (R)
+- field_name: documentation_url
+  label:
+    en: Documentation URL
+    es: URL de documentación
+    fr: URL de documentation
+  preset: valid_url
+  form_placeholder: https://docs.example.com
+  help_text:
+    en: Link to the software documentation
+    es: Enlace a la documentación del software
+    fr: Lien vers la documentation du logiciel
+  form_group_id: learning
+
+# Demo URL (O)
+- field_name: demo_url
+  label:
+    en: Demo/Live instance URL
+    es: URL de demo/instancia en vivo
+    fr: URL de démo/instance en direct
+  preset: valid_url
+  form_placeholder: https://demo.example.com
+  help_text:
+    en: Link to a live demonstration or working instance
+    es: Enlace a una demostración en vivo o instancia funcional
+    fr: Lien vers une démonstration en direct ou une instance fonctionnelle
+  form_group_id: learning
+
+# Learning resources (O)
+- field_name: learning_resources
+  label:
+    en: Associated learning courses
+    es: Cursos de aprendizaje asociados
+    fr: Cours d'apprentissage associés
+  preset: multiple_text
+  form_placeholder: https://course.example.com/water-modeling
+  help_text:
+    en: URLs to related tutorials, courses, or learning materials
+    es: URLs a tutoriales, cursos o materiales de aprendizaje relacionados
+    fr: URLs vers des tutoriels, cours ou matériels d'apprentissage connexes
+  form_group_id: learning
+
+# Target audience (R)
+- field_name: target_audience
+  label:
+    en: Target audience
+    es: Audiencia objetivo
+    fr: Public cible
+  preset: multiple_select
+  choices:
+    - label:
+        en: Researchers
+        es: Investigadores
+        fr: Chercheurs
+      value: researchers
+    - label:
+        en: Students
+        es: Estudiantes
+        fr: Étudiants
+      value: students
+    - label:
+        en: Water professionals
+        es: Profesionales del agua
+        fr: Professionnels de l'eau
+      value: water_professionals
+    - label:
+        en: Developers
+        es: Desarrolladores
+        fr: Développeurs
+      value: developers
+    - label:
+        en: Policy makers
+        es: Responsables políticos
+        fr: Décideurs politiques
+      value: policy_makers
+    - label:
+        en: General public
+        es: Público general
+        fr: Grand public
+      value: general_public
+  form_group_id: software_details
+
+# Water domain application (R)
+- field_name: water_domain
+  label:
+    en: Water domain application
+    es: Aplicación en el dominio hídrico
+    fr: Application dans le domaine de l'eau
+  preset: multiple_select
+  choices:
+    - label:
+        en: Hydrology
+        es: Hidrología
+        fr: Hydrologie
+      value: hydrology
+    - label:
+        en: Water quality
+        es: Calidad del agua
+        fr: Qualité de l'eau
+      value: water_quality
+    - label:
+        en: Groundwater
+        es: Aguas subterráneas
+        fr: Eaux souterraines
+      value: groundwater
+    - label:
+        en: Surface water
+        es: Aguas superficiales
+        fr: Eaux de surface
+      value: surface_water
+    - label:
+        en: Water management
+        es: Gestión del agua
+        fr: Gestion de l'eau
+      value: water_management
+    - label:
+        en: Climate and water
+        es: Clima y agua
+        fr: Climat et eau
+      value: climate_water
+    - label:
+        en: Water modeling
+        es: Modelado hídrico
+        fr: Modélisation de l'eau
+      value: water_modeling
+    - label:
+        en: Data analysis
+        es: Análisis de datos
+        fr: Analyse de données
+      value: data_analysis
+  form_group_id: software_details
+
+# CKAN Organization (M)
+- field_name: owner_org
+  label:
+    en: Organization
+    es: Organización
+    fr: Organisation
+  required: True
+  help_text:
+    en: Entity (organisation) responsible for the software.
+    es: Entidad (organización) responsable del software.
+    fr: Entité (organisation) responsable du logiciel.
+  preset: dataset_organization
+  form_group_id: general_info
+
+# Metadata language (M)
+- field_name: language
+  label:
+    en: Metadata language
+    es: Idioma de los metadatos
+    fr: Langue des métadonnées
+  preset: select
+  display_property: dct:language
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  form_include_blank_choice: False
+  validators: not_empty scheming_required
+  required: True
+  sorted_choices: True
+  choices:
+  - label:
+      en: English
+      es: Inglés
+      fr: Anglais
+    value: http://publications.europa.eu/resource/authority/language/ENG
+  - label:
+      en: Spanish
+      es: Español
+      fr: Espagnol
+    value: http://publications.europa.eu/resource/authority/language/SPA
+  - label:
+      en: French
+      es: Francés
+      fr: Français
+    value: http://publications.europa.eu/resource/authority/language/FRA
+  form_group_id: general_info
+  default: "http://publications.europa.eu/resource/authority/language/ENG"
+
+# Software identifier (M)
+- field_name: identifier
+  label: 
+    en: Software identifier
+    es: Identificador del software
+    fr: Identifiant du logiciel
+  required: True
+  display_property: dct:identifier
+  form_placeholder: 123e4567-e89b-12d3-a456-426614174000
+  help_text:
+    en: e.g. Unique software identifier (UUID).
+    es: Ej. Identificador único del software (UUID).
+    fr: p. ex. Identifiant unique du logiciel (UUID).
+  help_allow_html: True
+  validators: "not_empty scheming_required schemingdcat_clean_identifier"
+  form_group_id: identification
+  form_attrs:
+    data-module: "copy-from-title slug-preview-target"
+
+# Software URL slug (O)
+- field_name: name
+  label: 
+    en: URL
+    es: URL
+    fr: URL
+  preset: schemingdcat_dataset_slug
+  display_property: dcat:landingPage
+  form_placeholder:
+    en: URL title for software
+    es: Título de la URL del software
+    fr: Titre de l'URL du logiciel
+  form_slug_related: identifier
+  form_group_id: identification
+
+# Keywords/Tags (R)
+- field_name: tag_uri
+  label: 
+    en: Keyword URIs
+    es: URI de palabras clave
+    fr: URI des mots-clés
+  preset: multiple_text
+  display_snippet: schemingdcat/display_snippets/list_keywords.html
+  form_placeholder: 'http://example.com/vocab/water-modeling'
+  help_text:
+    en: 'e.g. Controlled vocabulary terms related to the software'
+    es: 'ej: Términos de vocabulario controlado relacionados con el software'
+    fr: 'p. ex. Termes de vocabulaire contrôlé liés au logiciel'
+  form_group_id: general_info
+
+# Contact information
+- field_name: contact_uri
+  label:
+    en: URI of the contact point
+    es: URI del punto de contacto
+    fr: URI du point de contact
+  display_snippet: schemingdcat/display_snippets/link_name.html
+  form_placeholder: http://orgs.vocab.org/some-org
+  form_group_id: contact
+
+- field_name: contact_name
+  label:
+    en: Contact point name
+    es: Nombre del punto de contacto
+    fr: Nom du point de contact
+  display_property: dcat:contactPoint
+  form_placeholder: José Blanco
+  form_attrs:
+    data-module: "auto-contact"
+    data-module-source: "user"
+    data-module-field: "name"
+  form_group_id: contact
+
+- field_name: contact_email
+  label:
+    en: Contact point email
+    es: Email del punto de contacto
+    fr: Courriel du point de contact
+  validators: not_empty scheming_required schemingdcat_valid_email
+  required: True
+  display_property: vcard:hasEmail
+  display_snippet: email.html
+  form_placeholder: joseblanco@example.com
+  form_attrs:
+    data-module: "auto-contact"
+    data-module-source: "user"
+    data-module-field: "email"
+  form_group_id: contact
+
+- field_name: contact_url
+  label:
+    en: Website of the contact point
+    es: Web del punto de contacto
+    fr: Site web du point de contact
+  preset: valid_url
+  display_property: vcard:hasURL
+  form_placeholder: http://www.example.com
+  form_group_id: contact
+
+#--Resource/Distribution fields--#
+resource_fields:
+
+# Access URL (M)
+- field_name: url
+  label:
+    en: Access URL
+    es: URL de acceso
+    fr: URL d'accès
+  preset: resource_url_upload
+  display_property: dcat:accessURL
+  display_snippet: schemingdcat/display_snippets/link.html
+  form_group_id: resource_url
+
+# Resource title (M)
+- field_name: name
+  label:
+    en: Resource title
+    es: Título del recurso
+    fr: Titre de la ressource
+  form_placeholder:
+    en: e.g. Source Code, Documentation, Tutorial
+    es: ej. Código Fuente, Documentación, Tutorial
+    fr: p.ex. Code Source, Documentation, Tutoriel
+  display_property: dct:title
+  form_group_id: resource_title
+
+# Resource description (M)
+- field_name: description
+  label:
+    en: Resource description
+    es: Descripción del recurso
+    fr: Description de la ressource
+  form_snippet: markdown.html
+  form_placeholder:
+    en: Some useful notes about this resource.
+    es: Algunas notas útiles sobre este recurso.
+    fr: Quelques notes utiles sur cette ressource.
+  display_property: dct:description
+  form_group_id: resource_notes
+
+# Resource type (R)
+- field_name: resource_type
+  label:
+    en: Resource type
+    es: Tipo de recurso
+    fr: Type de ressource
+  preset: select
+  choices:
+    - label:
+        en: Source code
+        es: Código fuente
+        fr: Code source
+      value: source_code
+    - label:
+        en: Documentation
+        es: Documentación
+        fr: Documentation
+      value: documentation
+    - label:
+        en: Tutorial
+        es: Tutorial
+        fr: Tutoriel
+      value: tutorial
+    - label:
+        en: Example data
+        es: Datos de ejemplo
+        fr: Données d'exemple
+      value: example_data
+    - label:
+        en: Installation package
+        es: Paquete de instalación
+        fr: Package d'installation
+      value: installation_package
+    - label:
+        en: Demo/Live instance
+        es: Demo/Instancia en vivo
+        fr: Démo/Instance en direct
+      value: demo
+  form_group_id: resource_type
+
+# Date of creation (M)
+- field_name: created
+  label: 
+    en: Date of creation
+    es: Fecha de creación
+    fr: Date de création
+  display_property: dct:created
+  preset: date_created
+  form_group_id: resource_identification
+
+# Date of last revision (M)
+- field_name: modified
+  label: 
+    en: Date of last revision
+    es: Fecha de última modificación
+    fr: Date de la dernière révision
+  display_property: dct:modified
+  preset: date_modified
+  form_group_id: resource_identification
+
+# Resource format (O)
+- field_name: format
+  label:
+    en: Format
+    es: Formato
+    fr: Format
+  preset: resource_format_autocomplete
+  display_property: dct:format
+  form_group_id: resource_type
+
+# Media type (O)
+- field_name: mimetype
+  label:
+    en: Media type
+    es: Tipo de medio
+    fr: Type de média
+  display_snippet: schemingdcat/display_snippets/link.html
+  display_property: dct:MediaType
+  form_placeholder: application/zip
+  help_text:
+    en: 'This property refers to the media type of the resource'
+    es: 'Esta propiedad se refiere al tipo de medio del recurso'
+    fr: 'Cette propriété fait référence au type de média de la ressource'
+  help_allow_html: True
+  form_group_id: resource_type
+
+# Resource license (R)
+- field_name: license
+  label:
+    en: Resource license
+    es: Licencia del recurso
+    fr: Licence de la ressource
+  form_placeholder: MIT License
+  help_text:
+    en: License specific to this resource if different from the main software license
+    es: Licencia específica para este recurso si es diferente de la licencia principal del software
+    fr: Licence spécifique à cette ressource si différente de la licence principale du logiciel
+  form_group_id: resource_license_info 
