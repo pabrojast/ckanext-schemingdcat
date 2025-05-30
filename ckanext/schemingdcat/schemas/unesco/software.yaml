@@ -492,6 +492,25 @@ dataset_fields:
   form_slug_related: identifier
   form_group_id: identification
 
+# custom_doi 
+- field_name: custom_doi
+  label:
+    en: Custom DOI
+    es: DOI personalizado
+    fr: DOI personnalisé
+  display_property: adms:identifier
+  form_placeholder: https://doi.org/10.63253/ilrsgq77
+  form_group_id: identification
+
+# Publisher email (M)
+- field_name: custom_citation
+  label:
+    en: Custom Citation
+    es: Citación personalizada
+    fr: Citation personnalisée
+  form_placeholder: Author (2025). Name of the dataset [Data set]. UNESCO IHP WINS.
+  form_group_id: identification
+
 # Keywords/Tags (R)
 - field_name: tag_uri
   label: 
@@ -555,6 +574,7 @@ dataset_fields:
   display_property: vcard:hasURL
   form_placeholder: http://www.example.com
   form_group_id: contact
+
 
 #--Resource/Distribution fields--#
 resource_fields:
