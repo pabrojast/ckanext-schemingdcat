@@ -1,5 +1,8 @@
 {% extends 'package/snippets/resource_form.html' %}
 
+{% asset 'ckanext-schemingdcat/schemingdcat-form-navigation' %}
+<div data-module="schemingdcat-form-navigation"></div>
+
 {% block stages %}
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages and stage -%}

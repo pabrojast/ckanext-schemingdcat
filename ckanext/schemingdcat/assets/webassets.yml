@@ -85,6 +85,14 @@ schemingdcat-publisher-uri:
     preload:
       - base/main
 
+schemingdcat-form-navigation:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_form_navigation.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-form-navigation.js
+
 main:
   output: base/%(version)s_main.js
   extra:

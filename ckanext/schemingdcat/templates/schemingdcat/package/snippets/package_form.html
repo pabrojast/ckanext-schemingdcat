@@ -23,8 +23,11 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-auto-contact' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-toggle-optional' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-form-navigation' %}
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
+{# Añadir módulo para manejar navegación del formulario #}
+<div data-module="schemingdcat-form-navigation"></div>
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages -%}
     {%- set active_page = data.get('_form_page', 1) | int -%}
