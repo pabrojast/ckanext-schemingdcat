@@ -93,6 +93,14 @@ schemingdcat-form-navigation:
   contents:
     - js/modules/schemingdcat-form-navigation.js
 
+schemingdcat-simple-navigation:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_simple_navigation.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-simple-navigation.js
+
 main:
   output: base/%(version)s_main.js
   extra:

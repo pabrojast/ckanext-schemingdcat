@@ -23,11 +23,11 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-auto-contact' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-toggle-optional' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
-{% asset 'ckanext-schemingdcat/schemingdcat-form-navigation' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
-<div data-module="schemingdcat-form-navigation"></div>
+<div data-module="schemingdcat-simple-navigation"></div>
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages -%}
     {%- set active_page = data.get('_form_page', 1) | int -%}
@@ -131,7 +131,7 @@
     <p>Loading form...</p>
   </div>
   {# Añadir div contenedor con estado de carga inicial #}
-  <div id="form-fields-container" style="visibility: hidden">
+  <div id="form-fields-container" style="visibility: hidden;">
     {# Render each element (field or form group) in the order they appear in the fields list #}
     {%- for element in elements -%}
       {%- if element is mapping and 'form_group_id' in element and element.form_group_id is defined -%}
@@ -146,28 +146,28 @@
             <div class="card2-body">
               {# Render each field in the form group #}
               {%- for field in group_fields -%}
-              {%- if field.form_snippet is not none -%}
-                {%- if field.field_name not in data and field.field_name not in exclude_fields %}
-                  {# Set the field default value before rendering #}
-                  {% if field.default_jinja2 %}
-                    {% do data.__setitem__(
-                      field.field_name,
-                      h.scheming_render_from_string(field.default_jinja2)) %}
-                  {% elif field.default %}
-                    {% do data.__setitem__(field.field_name, field.default) %}
-                  {% endif %}
-                {% endif -%}
-                <div class="form-group">
-                  {%- snippet 'scheming/snippets/form_field.html',
-                    field=field,
-                    data=data,
-                    errors=errors,
-                    licenses=c.licenses,
-                    entity_type='dataset',
-                    object_type=dataset_type
-                  -%}
-                </div>
-              {%- endif -%}
+                {%- if field.form_snippet is not none -%}
+                  {%- if field.field_name not in data %}
+                    {# Set the field default value before rendering #}
+                    {% if field.default_jinja2 %}
+                      {% do data.__setitem__(
+                        field.field_name,
+                        h.scheming_render_from_string(field.default_jinja2)) %}
+                    {% elif field.default %}
+                      {% do data.__setitem__(field.field_name, field.default) %}
+                    {% endif %}
+                  {% endif -%}
+                  <div class="form-group">
+                    {%- snippet 'scheming/snippets/form_field.html',
+                      field=field,
+                      data=data,
+                      errors=errors,
+                      licenses=c.licenses,
+                      entity_type='dataset',
+                      object_type=dataset_type
+                    -%}
+                  </div>
+                {%- endif -%}
               {%- endfor -%}
             </div>
           </div>
