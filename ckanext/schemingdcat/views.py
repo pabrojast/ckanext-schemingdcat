@@ -7,10 +7,10 @@ from ckanext.schemingdcat.rate_limiter import rate_limiter
 import logging
 log = logging.getLogger(__name__)
 
-dataset_rate_limit = Blueprint('dataset_rate_limit', __name__, url_prefix='/dataset')
+dataset_rate_limit = Blueprint('dataset_rate_limit', __name__)
 
 
-def search():
+def search(package_type='dataset'):
     """
     Override CKAN's dataset search to add rate limiting for unauthenticated users.
     """
@@ -44,7 +44,7 @@ def search():
             )
     
     # Call the original search function
-    return core_search()
+    return core_search(package_type)
 
 
 # Register the overridden route with higher priority
@@ -53,4 +53,5 @@ def get_blueprints():
 
 
 # Add route that overrides core CKAN search
-dataset_rate_limit.add_url_rule('/', view_func=search, strict_slashes=False)
+dataset_rate_limit.add_url_rule('/dataset/', view_func=search, strict_slashes=False)
+dataset_rate_limit.add_url_rule('/dataset', view_func=search, strict_slashes=False)
