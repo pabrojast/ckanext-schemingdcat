@@ -168,6 +168,26 @@ The same custom fields for faceting can be used when browsing organizations and 
 
 This two last settings are not mandatory. You can omit one or both (or set them to `false`), and the default fields for faceting will be used instead.
 
+### Rate Limiting (Anti-Bot Protection)
+To protect the `/dataset/` search endpoint from bots and automated requests, the extension includes a rate limiting system with captcha verification:
+
+  ```ini
+  # Number of searches allowed before rate limiting kicks in (default: 10)
+  schemingdcat.search_rate_limit = 10
+  
+  # Time window in seconds for rate limiting (default: 300 seconds = 5 minutes)
+  schemingdcat.search_time_window = 300
+  
+  # Number of searches before captcha is required (default: 10)
+  schemingdcat.captcha_after_searches = 10
+  ```
+
+The rate limiting system:
+- Only applies to unauthenticated users (logged-in users have no limits)
+- Tracks searches per session within the time window
+- Shows a simple math captcha after the configured number of searches
+- Automatically resets after the time window expires
+
 #### Facet Scheming integration with Solr
 1. Clear the index in solr:
 

@@ -4,10 +4,11 @@ import ckan.lib.base as base
 import ckan.logic as logic
 from flask import Blueprint, request, redirect, url_for
 from ckan.logic import ValidationError
-from ckan.plugins.toolkit import render, g
+from ckan.plugins.toolkit import render, g, h, _
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
+from ckanext.schemingdcat.rate_limiter import rate_limiter
 
 from logging import getLogger
 
@@ -77,4 +78,26 @@ def geospatial_metadata(id):
             u'pkg_dict': pkg_dict,
             u'id': id,
             u'data_list': sdct_utils.get_geospatial_metadata(),
+        })
+
+@schemingdcat.route('/verify-captcha', methods=['POST'])
+def verify_captcha():
+    """Verify captcha answer and redirect back."""
+    captcha_answer = request.form.get('captcha_answer', '')
+    redirect_url = request.form.get('redirect_url', h.url_for('dataset.search'))
+    
+    if rate_limiter.verify_captcha(captcha_answer):
+        # Captcha verified successfully
+        h.flash_success(_('Verification successful. You can continue searching.'))
+        return redirect(redirect_url)
+    else:
+        # Captcha failed - show rate limited page with error
+        captcha_question = rate_limiter.generate_captcha()
+        return render('schemingdcat/rate_limited.html', extra_vars={
+            'needs_captcha': True,
+            'captcha_question': captcha_question,
+            'captcha_error': True,
+            'search_limit': rate_limiter.search_limit,
+            'time_window': rate_limiter.time_window,
+            'captcha_after': rate_limiter.captcha_required_after
         })

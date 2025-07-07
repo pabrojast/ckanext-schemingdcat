@@ -14,7 +14,7 @@ import ckanext.schemingdcat.config as sdct_config
 from ckanext.schemingdcat.faceted import Faceted
 from ckanext.schemingdcat.utils import init_config
 from ckanext.schemingdcat.package_controller import PackageController
-from ckanext.schemingdcat import helpers, validators, logic, blueprint
+from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
 
 import logging
 
@@ -114,7 +114,10 @@ class SchemingDCATPlugin(
 
     # IBlueprint
     def get_blueprint(self):
-        return [blueprint.schemingdcat]
+        blueprints = [blueprint.schemingdcat]
+        # Add rate limiting blueprint
+        blueprints.extend(views.get_blueprints())
+        return blueprints
 
     # IClick
     def get_commands(self):
