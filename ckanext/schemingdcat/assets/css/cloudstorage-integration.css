@@ -86,44 +86,102 @@
 /* Upload Method Tabs */
 .upload-method-tabs {
     margin-bottom: 20px;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .upload-method-tabs .nav-tabs {
-    border-bottom: 2px solid #f8f9fa;
+    border-bottom: none;
     margin-bottom: 0;
 }
 
+.upload-method-tabs .nav-item {
+    margin-bottom: -1px;
+}
+
 .upload-method-tabs .nav-link {
-    border: none;
-    border-bottom: 3px solid transparent;
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
     color: #6c757d;
     font-weight: 500;
     padding: 12px 20px;
     transition: all 0.3s ease;
     background: none;
+    text-decoration: none;
+    display: block;
 }
 
 .upload-method-tabs .nav-link:hover {
     color: #495057;
     background: #f8f9fa;
-    border-bottom-color: #dee2e6;
+    border-color: #e9ecef #e9ecef #dee2e6;
+    text-decoration: none;
 }
 
 .upload-method-tabs .nav-link.active {
     color: #007bff;
-    border-bottom-color: #007bff;
-    background: #f8f9fa;
+    background: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    font-weight: 600;
+}
+
+.upload-method-tabs .nav-link:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
 }
 
 .upload-method-tabs .nav-link i {
     margin-right: 8px;
 }
 
+/* Bootstrap nav styles override */
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+}
+
+.nav-tabs .nav-link:hover, .nav-tabs .nav-link:focus {
+    border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
 /* Tab Content */
 .upload-tab-content {
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 0 0 8px 8px;
     padding: 20px;
+    border: 1px solid #dee2e6;
+    border-top: none;
+}
+
+/* Tab Panes */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.tab-pane.show.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Fade effect */
+.fade {
+    transition: opacity 0.15s linear;
+    opacity: 0;
+}
+
+.fade.show {
+    opacity: 1;
 }
 
 /* Drag & Drop Zone */
@@ -510,4 +568,51 @@
         background: none;
         padding: 0;
     }
+}
+
+/* Force override Bootstrap styles for tabs - Higher specificity */
+.modern-upload-container .upload-method-tabs .nav-tabs {
+    border-bottom: none !important;
+}
+
+.modern-upload-container .upload-method-tabs .nav-tabs .nav-item {
+    margin-bottom: -1px;
+}
+
+.modern-upload-container .upload-method-tabs .nav-tabs .nav-link {
+    border: 1px solid transparent !important;
+    border-radius: 0.25rem 0.25rem 0 0 !important;
+    color: #6c757d !important;
+    background: none !important;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.modern-upload-container .upload-method-tabs .nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6 !important;
+    color: #495057 !important;
+    background-color: #f8f9fa !important;
+}
+
+.modern-upload-container .upload-method-tabs .nav-tabs .nav-link.active {
+    color: #007bff !important;
+    background-color: #fff !important;
+    border-color: #dee2e6 #dee2e6 #fff !important;
+    font-weight: 600 !important;
+}
+
+.modern-upload-container .tab-content {
+    border: 1px solid #dee2e6 !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+.modern-upload-container .tab-pane {
+    display: none !important;
+}
+
+.modern-upload-container .tab-pane.active,
+.modern-upload-container .tab-pane.show.active {
+    display: block !important;
+    opacity: 1 !important;
 } 

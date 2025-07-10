@@ -446,6 +446,44 @@ function initModernUpload() {
             }, 3000);
         }
     }
+    
+    // Tab functionality
+    function initTabs() {
+        var tabLinks = document.querySelectorAll('#upload-container-{{ field.field_name }} .upload-method-tabs .nav-link');
+        var tabPanes = document.querySelectorAll('#upload-container-{{ field.field_name }} .tab-pane');
+        
+        for (var i = 0; i < tabLinks.length; i++) {
+            tabLinks[i].addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all tabs and panes
+                var allTabs = document.querySelectorAll('#upload-container-{{ field.field_name }} .upload-method-tabs .nav-link');
+                var allPanes = document.querySelectorAll('#upload-container-{{ field.field_name }} .tab-pane');
+                
+                for (var j = 0; j < allTabs.length; j++) {
+                    allTabs[j].classList.remove('active');
+                }
+                for (var k = 0; k < allPanes.length; k++) {
+                    allPanes[k].classList.remove('show', 'active');
+                }
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Show corresponding pane
+                var targetId = this.getAttribute('href');
+                if (targetId) {
+                    var targetPane = document.querySelector(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                    }
+                }
+            });
+        }
+    }
+    
+    // Initialize tabs
+    initTabs();
 }
 
 // Initialize when DOM is ready
