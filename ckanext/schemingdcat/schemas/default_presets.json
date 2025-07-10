@@ -99,7 +99,7 @@
         "validators": "schemingdcat_if_empty_guess_format ignore_missing clean_format unicode_safe",
         "form_placeholder": "e.g. CSV, XML or JSON",
         "form_attrs": {
-          "data-module": "autocomplete",
+          "data-module": "autocomplete schemingdcat-autofill-format",
           "data-module-source": "/api/2/util/resource/format_autocomplete?incomplete=?"
         }
       }
