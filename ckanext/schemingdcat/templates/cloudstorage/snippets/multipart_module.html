@@ -3,7 +3,6 @@
 
 {# Include custom CSS for enhanced styling #}
 <link rel="stylesheet" href="{{ h.url_for_static('/css/cloudstorage-integration.css', qualified=true) }}" type="text/css">
-<link rel="stylesheet" href="{{ h.url_for_static('/css/modern-upload.css', qualified=true) }}" type="text/css">
 
 {% if h.cloudstorage_use_enhanced_upload is defined and h.cloudstorage_use_enhanced_upload() %}
     {# Enhanced upload interface notification #}
@@ -474,7 +473,7 @@
             }, 350 + Math.random() * 400);
         }
         
-        // Function to initialize cloudstorage when jQuery is available
+        // Function to initialize cloudstorage (vanilla JS first, jQuery fallback)
         function initCloudStorage() {
             console.log('[schemingdcat-cloudstorage] Enhanced CloudStorage with Azure integration initialized');
             console.log('[schemingdcat-cloudstorage] Azure Direct Upload:', azureDirectUploadEnabled);
@@ -484,92 +483,51 @@
             var cloudStorageAvailable = enhancedUploadEnabled || azureDirectUploadEnabled;
             
             if (cloudStorageAvailable) {
-                // Use jQuery if available, otherwise vanilla JS
-                if (typeof $ !== 'undefined' && $) {
-                    // jQuery is available
-                    var $fileInputs = $('input[type="file"][name="upload"]');
-                    console.log('[schemingdcat-cloudstorage] Found ' + $fileInputs.length + ' file input(s)');
+                // Always use vanilla JavaScript first for better reliability
+                var fileInputs = document.querySelectorAll('input[type="file"][name="upload"]');
+                console.log('[schemingdcat-cloudstorage] Found ' + fileInputs.length + ' file input(s)');
+                
+                for (var i = 0; i < fileInputs.length; i++) {
+                    var input = fileInputs[i];
                     
-                    $fileInputs.each(function() {
-                        var $input = $(this);
-                        
-                        // Add enhanced visual indication
-                        if (!$input.siblings('.cloudstorage-indicator').length) {
-                            var indicator = '<div class="cloudstorage-indicator alert alert-success" style="margin-top: 10px; padding: 12px;">' +
-                                          '<i class="fa fa-cloud-upload"></i> ' +
-                                          '<strong>{{ _("Enhanced CloudStorage Ready") }}</strong><br>' +
-                                          '<small>{{ _("Intelligent field auto-population and real-time progress tracking enabled") }}</small>' +
-                                          '</div>';
-                            $input.after(indicator);
-                        }
-                        
-                        // Enhanced change handler
-                        $input.on('change', function() {
-                            if (this.files && this.files.length > 0) {
-                                var file = this.files[0];
-                                handleFileUpload(this, file);
-                            }
-                        });
-                    });
-                } else {
-                    // Fallback to vanilla JavaScript
-                    console.log('[schemingdcat-cloudstorage] jQuery not available, using vanilla JS');
-                    var fileInputs = document.querySelectorAll('input[type="file"][name="upload"]');
-                    console.log('[schemingdcat-cloudstorage] Found ' + fileInputs.length + ' file input(s)');
-                    
-                    for (var i = 0; i < fileInputs.length; i++) {
-                        var input = fileInputs[i];
-                        
-                        // Add enhanced visual indication
-                        var existingIndicator = input.parentNode.querySelector('.cloudstorage-indicator');
-                        if (!existingIndicator) {
-                            var indicator = document.createElement('div');
-                            indicator.className = 'cloudstorage-indicator alert alert-success';
-                            indicator.style.marginTop = '10px';
-                            indicator.style.padding = '12px';
-                            indicator.innerHTML = '<i class="fa fa-cloud-upload"></i> ' +
-                                                '<strong>{{ _("Enhanced CloudStorage Ready") }}</strong><br>' +
-                                                '<small>{{ _("Intelligent field auto-population and real-time progress tracking enabled") }}</small>';
-                            input.parentNode.insertBefore(indicator, input.nextSibling);
-                        }
-                        
-                        // Enhanced change handler
-                        input.addEventListener('change', function() {
-                            if (this.files && this.files.length > 0) {
-                                var file = this.files[0];
-                                handleFileUpload(this, file);
-                            }
-                        });
+                    // Add enhanced visual indication
+                    var existingIndicator = input.parentNode.querySelector('.cloudstorage-indicator');
+                    if (!existingIndicator) {
+                        var indicator = document.createElement('div');
+                        indicator.className = 'cloudstorage-indicator alert alert-success';
+                        indicator.style.marginTop = '10px';
+                        indicator.style.padding = '12px';
+                        indicator.innerHTML = '<i class="fa fa-cloud-upload"></i> ' +
+                                            '<strong>{{ _("Enhanced CloudStorage Ready") }}</strong><br>' +
+                                            '<small>{{ _("Intelligent field auto-population and real-time progress tracking enabled") }}</small>';
+                        input.parentNode.insertBefore(indicator, input.nextSibling);
                     }
+                    
+                    // Enhanced change handler
+                    input.addEventListener('change', function() {
+                        if (this.files && this.files.length > 0) {
+                            var file = this.files[0];
+                            handleFileUpload(this, file);
+                        }
+                    });
                 }
             } else {
                 console.log('[schemingdcat-cloudstorage] CloudStorage not configured, using standard upload');
             }
         }
         
-        // Wait for jQuery or DOM to be ready
-        if (typeof $ !== 'undefined' && $) {
-            // jQuery is available, use it
-            $(document).ready(function() {
-                initCloudStorage();
-            });
-        } else {
-            // jQuery not available, wait for DOM ready
+        // Initialize when DOM is ready (vanilla JS approach)
+        function initWhenReady() {
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initCloudStorage);
             } else {
                 // DOM is already ready
                 initCloudStorage();
             }
-            
-            // Also try again after a short delay in case jQuery loads later
-            setTimeout(function() {
-                if (typeof $ !== 'undefined' && $ && !document.querySelector('.cloudstorage-indicator')) {
-                    // jQuery became available and we haven't initialized yet
-                    initCloudStorage();
-                }
-            }, 1000);
         }
+        
+        // Start initialization
+        initWhenReady();
     </script>
 {% else %}
     {# Fallback: cloudstorage not available #}

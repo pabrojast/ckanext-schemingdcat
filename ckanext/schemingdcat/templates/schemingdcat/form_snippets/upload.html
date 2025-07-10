@@ -151,68 +151,100 @@
 
 {# Enhanced JavaScript for Modern Upload Functionality #}
 <script>
-$(document).ready(function() {
-    var uploadContainer = $('#upload-container-{{ field.field_name }}');
-    var dragDropZone = $('#drag-drop-{{ field.field_name }}');
-    var fileInput = $('#{{ field.upload_field }}');
-    var urlInput = $('#{{ field.field_name }}');
-    var clearField = $('input[name="{{ field.upload_clear }}"]');
+function initModernUpload() {
+    // Check if already initialized
+    if (document.getElementById('modern-upload-initialized')) {
+        return;
+    }
+    
+    // Mark as initialized
+    var marker = document.createElement('div');
+    marker.id = 'modern-upload-initialized';
+    marker.style.display = 'none';
+    document.body.appendChild(marker);
+    var uploadContainer = document.getElementById('upload-container-{{ field.field_name }}');
+    var dragDropZone = document.getElementById('drag-drop-{{ field.field_name }}');
+    var fileInput = document.getElementById('{{ field.upload_field }}');
+    var urlInput = document.getElementById('{{ field.field_name }}');
+    var clearField = document.querySelector('input[name="{{ field.upload_clear }}"]');
     
     // Drag and Drop Functionality
-    dragDropZone.on('dragover dragenter', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).addClass('drag-over');
-    });
-    
-    dragDropZone.on('dragleave dragend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).removeClass('drag-over');
-    });
-    
-    dragDropZone.on('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).removeClass('drag-over');
+    if (dragDropZone) {
+        dragDropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('drag-over');
+        });
         
-        var files = e.originalEvent.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileSelection(files[0]);
+        dragDropZone.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('drag-over');
+        });
+        
+        dragDropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+        });
+        
+        dragDropZone.addEventListener('dragend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+        });
+        
+        dragDropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+            
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+        
+        // Click to Upload
+        var uploadTrigger = dragDropZone.querySelector('.btn-upload-trigger');
+        if (uploadTrigger) {
+            uploadTrigger.addEventListener('click', function() {
+                fileInput.click();
+            });
         }
-    });
-    
-    // Click to Upload
-    $('.btn-upload-trigger').on('click', function() {
-        fileInput.click();
-    });
-    
-    dragDropZone.on('click', function(e) {
-        if (e.target === this || $(e.target).hasClass('drag-drop-content')) {
-            fileInput.click();
-        }
-    });
+        
+        dragDropZone.addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('drag-drop-content')) {
+                fileInput.click();
+            }
+        });
+    }
     
     // File Input Change
-    fileInput.on('change', function() {
-        if (this.files && this.files.length > 0) {
-            handleFileSelection(this.files[0]);
-        }
-    });
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileSelection(this.files[0]);
+            }
+        });
+    }
     
     // Handle File Selection
     function handleFileSelection(file) {
-        var progressArea = dragDropZone.find('.upload-progress-area');
-        var dragDropContent = dragDropZone.find('.drag-drop-content');
+        var progressArea = dragDropZone.querySelector('.upload-progress-area');
+        var dragDropContent = dragDropZone.querySelector('.drag-drop-content');
         
-        // Show file info
-        progressArea.find('.file-name').text(file.name);
-        progressArea.find('.file-size').text(formatFileSize(file.size));
-        
-        // Hide drag-drop content and show progress area
-        dragDropContent.fadeOut(300, function() {
-            progressArea.fadeIn(300);
-        });
+        if (progressArea && dragDropContent) {
+            // Show file info
+            var fileName = progressArea.querySelector('.file-name');
+            var fileSize = progressArea.querySelector('.file-size');
+            if (fileName) fileName.textContent = file.name;
+            if (fileSize) fileSize.textContent = formatFileSize(file.size);
+            
+            // Hide drag-drop content and show progress area
+            dragDropContent.style.display = 'none';
+            progressArea.style.display = 'block';
+        }
         
         // Auto-populate related fields
         autoPopulateResourceFields(file);
@@ -228,35 +260,39 @@ $(document).ready(function() {
         var cleanName = nameWithoutExt.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
         
         // Auto-populate name field
-        var nameField = $('input[name="name"], #field-name').first();
-        if (nameField.length && !nameField.val().trim()) {
-            nameField.val(cleanName).trigger('change');
+        var nameField = document.querySelector('input[name="name"], #field-name');
+        if (nameField && !nameField.value.trim()) {
+            nameField.value = cleanName;
+            nameField.dispatchEvent(new Event('change', { bubbles: true }));
             showFieldAnimation(nameField, 'success');
         }
         
         // Auto-populate format field (enhanced detection)
-        var formatField = $('input[name="format"], #field-format').first();
-        if (formatField.length && !formatField.val().trim()) {
+        var formatField = document.querySelector('input[name="format"], #field-format');
+        if (formatField && !formatField.value.trim()) {
             var detectedFormat = detectFileFormat(fileExtension);
-            formatField.val(detectedFormat).trigger('change');
+            formatField.value = detectedFormat;
+            formatField.dispatchEvent(new Event('change', { bubbles: true }));
             showFieldAnimation(formatField, 'success');
         }
         
         // Auto-populate date of creation field
-        var dateField = $('input[name="creation_date"], input[name="issued"], #field-creation_date, #field-issued').first();
-        if (dateField.length && !dateField.val().trim()) {
+        var dateField = document.querySelector('input[name="creation_date"], input[name="issued"], #field-creation_date, #field-issued');
+        if (dateField && !dateField.value.trim()) {
             var today = new Date().toISOString().split('T')[0];
-            dateField.val(today).trigger('change');
+            dateField.value = today;
+            dateField.dispatchEvent(new Event('change', { bubbles: true }));
             showFieldAnimation(dateField, 'info');
         }
         
         // Auto-populate description with file info
-        var descField = $('textarea[name="description"], #field-description').first();
-        if (descField.length && !descField.val().trim()) {
+        var descField = document.querySelector('textarea[name="description"], #field-description');
+        if (descField && !descField.value.trim()) {
             var description = '{{ _("Resource file") }}: ' + fileName + '\n' + 
                             '{{ _("File type") }}: ' + detectedFormat.toUpperCase() + '\n' +
                             '{{ _("Uploaded on") }}: ' + new Date().toLocaleDateString();
-            descField.val(description).trigger('change');
+            descField.value = description;
+            descField.dispatchEvent(new Event('change', { bubbles: true }));
             showFieldAnimation(descField, 'info');
         }
     }
@@ -296,16 +332,21 @@ $(document).ready(function() {
     // Visual feedback for auto-populated fields
     function showFieldAnimation(field, type) {
         var colorClass = type === 'success' ? 'border-success' : 'border-info';
-        var bgClass = type === 'success' ? 'bg-success' : 'bg-info';
         
-        field.addClass(colorClass);
-        field.parent().append('<small class="auto-fill-indicator text-' + type + '"><i class="fa fa-magic"></i> {{ _("Auto-filled") }}</small>');
+        field.classList.add(colorClass);
+        field.style.backgroundColor = type === 'success' ? '#d4edda' : '#d1ecf1';
+        
+        var indicator = document.createElement('small');
+        indicator.className = 'auto-fill-indicator text-' + type;
+        indicator.innerHTML = '<i class="fa fa-magic"></i> {{ _("Auto-filled") }}';
+        field.parentNode.appendChild(indicator);
         
         setTimeout(function() {
-            field.removeClass(colorClass);
-            field.parent().find('.auto-fill-indicator').fadeOut(function() {
-                $(this).remove();
-            });
+            field.classList.remove(colorClass);
+            field.style.backgroundColor = '';
+            if (indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
         }, 3000);
     }
     
@@ -319,72 +360,98 @@ $(document).ready(function() {
     }
     
     // Remove upload functionality
-    $('.remove-upload-btn').on('click', function() {
-        var clearFieldName = $(this).data('clear-field');
-        $('input[name="' + clearFieldName + '"]').val('1');
-        $(this).closest('.current-upload-display').fadeOut();
-        
-        // Reset the drag-drop area
-        var progressArea = dragDropZone.find('.upload-progress-area');
-        var dragDropContent = dragDropZone.find('.drag-drop-content');
-        
-        progressArea.fadeOut(300, function() {
-            dragDropContent.fadeIn(300);
+    var removeUploadBtns = document.querySelectorAll('.remove-upload-btn');
+    for (var i = 0; i < removeUploadBtns.length; i++) {
+        removeUploadBtns[i].addEventListener('click', function() {
+            var clearFieldName = this.getAttribute('data-clear-field');
+            var clearField = document.querySelector('input[name="' + clearFieldName + '"]');
+            if (clearField) {
+                clearField.value = '1';
+            }
+            
+            var currentUploadDisplay = this.closest('.current-upload-display');
+            if (currentUploadDisplay) {
+                currentUploadDisplay.style.display = 'none';
+            }
+            
+            // Reset the drag-drop area
+            var progressArea = dragDropZone.querySelector('.upload-progress-area');
+            var dragDropContent = dragDropZone.querySelector('.drag-drop-content');
+            
+            if (progressArea && dragDropContent) {
+                progressArea.style.display = 'none';
+                dragDropContent.style.display = 'block';
+            }
+            
+            // Clear file input
+            if (fileInput) {
+                fileInput.value = '';
+            }
         });
-        
-        // Clear file input
-        fileInput.val('');
-    });
+    }
     
     // URL Validation
-    $('.validate-url-btn').on('click', function() {
-        var url = urlInput.val().trim();
-        var feedback = $('.url-validation-feedback');
-        
-        if (!url) {
-            showUrlFeedback('error', '{{ _("Please enter a URL") }}');
-            return;
-        }
-        
-        // Basic URL validation
-        try {
-            new URL(url);
-            // Show loading state
-            $(this).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Validating...") }}').prop('disabled', true);
+    var validateUrlBtn = document.querySelector('.validate-url-btn');
+    if (validateUrlBtn) {
+        validateUrlBtn.addEventListener('click', function() {
+            var url = urlInput.value.trim();
+            var feedback = document.querySelector('.url-validation-feedback');
             
-            // Simulate validation (you can replace with actual HEAD request)
-            setTimeout(function() {
-                $('.validate-url-btn').html('<i class="fa fa-check"></i> {{ _("Validate") }}').prop('disabled', false);
-                showUrlFeedback('success', '{{ _("URL format is valid") }}');
+            if (!url) {
+                showUrlFeedback('error', '{{ _("Please enter a URL") }}');
+                return;
+            }
+            
+            // Basic URL validation
+            try {
+                new URL(url);
+                // Show loading state
+                this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Validating...") }}';
+                this.disabled = true;
                 
-                // Auto-populate format from URL extension
-                var urlExtension = url.split('.').pop().split(/\#|\?/)[0].toLowerCase();
-                var formatField = $('input[name="format"], #field-format').first();
-                if (formatField.length && !formatField.val().trim() && urlExtension) {
-                    var detectedFormat = detectFileFormat(urlExtension);
-                    formatField.val(detectedFormat).trigger('change');
-                    showFieldAnimation(formatField, 'success');
-                }
-            }, 1500);
-            
-        } catch (e) {
-            showUrlFeedback('error', '{{ _("Invalid URL format") }}');
-        }
-    });
+                // Simulate validation
+                setTimeout(function() {
+                    validateUrlBtn.innerHTML = '<i class="fa fa-check"></i> {{ _("Validate") }}';
+                    validateUrlBtn.disabled = false;
+                    showUrlFeedback('success', '{{ _("URL format is valid") }}');
+                    
+                    // Auto-populate format from URL extension
+                    var urlExtension = url.split('.').pop().split(/\#|\?/)[0].toLowerCase();
+                    var formatField = document.querySelector('input[name="format"], #field-format');
+                    if (formatField && !formatField.value.trim() && urlExtension) {
+                        var detectedFormat = detectFileFormat(urlExtension);
+                        formatField.value = detectedFormat;
+                        formatField.dispatchEvent(new Event('change', { bubbles: true }));
+                        showFieldAnimation(formatField, 'success');
+                    }
+                }, 1500);
+                
+            } catch (e) {
+                showUrlFeedback('error', '{{ _("Invalid URL format") }}');
+            }
+        });
+    }
     
     function showUrlFeedback(type, message) {
-        var feedback = $('.url-validation-feedback');
+        var feedback = document.querySelector('.url-validation-feedback');
         var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
         
-        feedback.html('<div class="alert ' + alertClass + ' mt-2"><i class="fa ' + iconClass + '"></i> ' + message + '</div>');
-        feedback.fadeIn();
+        feedback.innerHTML = '<div class="alert ' + alertClass + ' mt-2"><i class="fa ' + iconClass + '"></i> ' + message + '</div>';
+        feedback.style.display = 'block';
         
         if (type === 'success') {
             setTimeout(function() {
-                feedback.fadeOut();
+                feedback.style.display = 'none';
             }, 3000);
         }
     }
-});
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initModernUpload);
+} else {
+    initModernUpload();
+}
 </script>
