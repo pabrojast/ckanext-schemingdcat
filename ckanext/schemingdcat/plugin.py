@@ -142,9 +142,12 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         # Call parent update_config first
         super(SchemingDCATDatasetsPlugin, self).update_config(config_)
         
+        # Add custom CSS for cloudstorage integration
+        toolkit.add_public_directory(config_, 'public')
+        
         # Note: cloudstorage assets are registered by the cloudstorage plugin
         # We don't need to register them here to avoid conflicts
-        log.info("SchemingDCAT-CloudStorage integration configured")
+        log.info("SchemingDCAT-CloudStorage integration configured with enhanced UI")
 
     def read_template(self):
         return "schemingdcat/package/read.html"
