@@ -142,19 +142,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         # Call parent update_config first
         super(SchemingDCATDatasetsPlugin, self).update_config(config_)
         
-        # Register cloudstorage assets if available
-        import os
-        cloudstorage_fanstatic_path = os.path.join(
-            os.path.dirname(__file__), 
-            '..', '..', '..', '..', 'ckanext', 'cloudstorage', 'fanstatic', 'scripts'
-        )
-        
-        # Check if cloudstorage assets exist
-        if os.path.exists(cloudstorage_fanstatic_path):
-            toolkit.add_resource(cloudstorage_fanstatic_path, 'cloudstorage-js')
-            log.info("CloudStorage assets registered successfully")
-        else:
-            log.warning("CloudStorage assets not found at: %s", cloudstorage_fanstatic_path)
+        # Note: cloudstorage assets are registered by the cloudstorage plugin
+        # We don't need to register them here to avoid conflicts
+        log.info("SchemingDCAT-CloudStorage integration configured")
 
     def read_template(self):
         return "schemingdcat/package/read.html"
