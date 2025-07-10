@@ -9,6 +9,13 @@ from ckanext.scheming.plugins import (
 )
 from ckanext.scheming import logic as scheming_logic
 
+# Cloudstorage integration imports
+from ckanext.cloudstorage import storage
+from ckanext.cloudstorage import helpers as cloudstorage_helpers
+import ckanext.cloudstorage.logic.action.multipart as m_action
+import ckanext.cloudstorage.logic.auth.multipart as m_auth
+from ckanext.cloudstorage.uploader import DummyUploader
+
 import ckanext.schemingdcat.cli as cli
 import ckanext.schemingdcat.config as sdct_config
 from ckanext.schemingdcat.faceted import Faceted
@@ -130,6 +137,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IDatasetForm, inherit=True)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IValidators)
+    # Add cloudstorage support
+    plugins.implements(plugins.IUploader)
+    plugins.implements(plugins.IAuthFunctions)
+    plugins.implements(plugins.IResourceController, inherit=True)
+
+    def update_config(self, config_):
+        # Add cloudstorage assets and templates
+        toolkit.add_template_directory(config_, '../../../ckanext/cloudstorage/templates')
+        toolkit.add_resource('../../../ckanext/cloudstorage/fanstatic/scripts', 'cloudstorage-js')
+        super(SchemingDCATDatasetsPlugin, self).update_config(config_)
 
     def read_template(self):
         return "schemingdcat/package/read.html"
@@ -143,12 +160,98 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def resource_form(self):
         return "schemingdcat/package/snippets/resource_form.html"
 
+    def get_helpers(self):
+        # Merge schemingdcat helpers with cloudstorage helpers
+        schemingdcat_helpers = super(SchemingDCATDatasetsPlugin, self).get_helpers()
+        cloudstorage_helper_dict = {
+            'cloudstorage_use_secure_urls': cloudstorage_helpers.use_secure_urls,
+            'cloudstorage_use_azure_direct_upload': cloudstorage_helpers.use_azure_direct_upload,
+            'cloudstorage_get_cloud_storage_type': cloudstorage_helpers.get_cloud_storage_type,
+            'cloudstorage_use_enhanced_upload': cloudstorage_helpers.use_enhanced_upload
+        }
+        schemingdcat_helpers.update(cloudstorage_helper_dict)
+        return schemingdcat_helpers
+
+    # IUploader implementation - integrate cloudstorage
+    def get_resource_uploader(self, data_dict):
+        """Use cloudstorage ResourceCloudStorage for resource uploads"""
+        return storage.ResourceCloudStorage(data_dict)
+
+    def get_uploader(self, upload_to, old_filename=None):
+        """For non-resource uploads, use default uploader"""
+        return None
+
     def get_actions(self):
-        return {
+        # Merge schemingdcat actions with cloudstorage actions
+        actions = {
             "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,
             "scheming_dataset_schema_list": scheming_logic.scheming_dataset_schema_list,
             "scheming_dataset_schema_show": scheming_logic.scheming_dataset_schema_show,
         }
+        cloudstorage_actions = {
+            'cloudstorage_initiate_multipart': m_action.initiate_multipart,
+            'cloudstorage_upload_multipart': m_action.upload_multipart,
+            'cloudstorage_finish_multipart': m_action.finish_multipart,
+            'cloudstorage_abort_multipart': m_action.abort_multipart,
+            'cloudstorage_check_multipart': m_action.check_multipart,
+            'cloudstorage_clean_multipart': m_action.clean_multipart,
+        }
+        actions.update(cloudstorage_actions)
+        return actions
+
+    # IAuthFunctions - add cloudstorage auth functions
+    def get_auth_functions(self):
+        return {
+            'cloudstorage_initiate_multipart': m_auth.initiate_multipart,
+            'cloudstorage_upload_multipart': m_auth.upload_multipart,
+            'cloudstorage_finish_multipart': m_auth.finish_multipart,
+            'cloudstorage_abort_multipart': m_auth.abort_multipart,
+            'cloudstorage_check_multipart': m_auth.check_multipart,
+            'cloudstorage_clean_multipart': m_auth.clean_multipart,
+        }
+
+    # IResourceController - handle resource deletion
+    def before_delete(self, context, resource, resources):
+        """Handle cloudstorage file deletion when resource is deleted"""
+        import os.path
+        
+        # Find the resource info in the resources list
+        for res in resources:
+            if res['id'] == resource['id']:
+                break
+        else:
+            return
+        
+        # Ignore simple links (not uploaded files)
+        if res['url_type'] != 'upload':
+            return
+
+        # Create a copy of resource dict and add clear_upload flag
+        res_dict = res.copy()
+        res_dict.update([('clear_upload', True)])
+
+        uploader = self.get_resource_uploader(res_dict)
+
+        # Check if container exists
+        container = getattr(uploader, 'container', None)
+        if container is None:
+            return
+
+        # Remove the file using uploader
+        uploader.upload(resource['id'])
+
+        # Remove all other files linked to this resource if configured
+        if not uploader.leave_files:
+            upload_path = os.path.dirname(
+                uploader.path_from_filename(
+                    resource['id'],
+                    'fake-name'
+                )
+            )
+
+            for old_file in uploader.container.iterate_objects():
+                if old_file.name.startswith(upload_path):
+                    old_file.delete()
 
 
 class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):

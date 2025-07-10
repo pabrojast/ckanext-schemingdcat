@@ -3,6 +3,9 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 <div data-module="schemingdcat-simple-navigation"></div>
 
+{# Include cloudstorage assets for upload functionality #}
+{% asset 'cloudstorage-js/main' %}
+
 {% block stages %}
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages and stage -%}
@@ -44,6 +47,17 @@
     dataset_type not passed to template. your version of CKAN
     might not be compatible with ckanext-scheming
     </p>
+  {%- endif -%}
+
+  {# Include cloudstorage upload module for enhanced file upload #}
+  {%- if h.cloudstorage_use_enhanced_upload() or h.cloudstorage_use_azure_direct_upload() -%}
+    {%- snippet 'cloudstorage/snippets/multipart_module.html',
+      pkg_name=pkg_name or data.get('name', ''),
+      resource_id=data.get('id', ''),
+      use_azure_direct=h.cloudstorage_use_azure_direct_upload(),
+      use_multipart=true,
+      use_enhanced_upload=h.cloudstorage_use_enhanced_upload()
+    -%}
   {%- endif -%}
 
   {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
