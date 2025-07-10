@@ -1,25 +1,28 @@
 {% import 'macros/form2.html' as form %}
 
-{# Modern Professional Upload Interface #}
+{# Modern Professional Upload Interface - CSP Compatible #}
 <div class="modern-upload-container" id="upload-container-{{ field.field_name }}">
   {# Upload Method Selector (Tabs) #}
   <div class="upload-method-tabs">
     <ul class="nav nav-tabs" role="tablist">
       {% if h.uploads_enabled() %}
         <li class="nav-item">
-          <a class="nav-link active" id="upload-tab-{{ field.field_name }}" data-toggle="tab" 
-             href="#upload-panel-{{ field.field_name }}" role="tab" aria-controls="upload-panel-{{ field.field_name }}" 
-             aria-selected="true">
+          <button class="nav-link active" id="upload-tab-{{ field.field_name }}" 
+                  data-target="upload-panel-{{ field.field_name }}" type="button"
+                  role="tab" aria-controls="upload-panel-{{ field.field_name }}" 
+                  aria-selected="true">
             <i class="fa fa-cloud-upload"></i> {{ _('Upload File') }}
-          </a>
+          </button>
         </li>
       {% endif %}
       <li class="nav-item">
-        <a class="nav-link {% if not h.uploads_enabled() %}active{% endif %}" id="url-tab-{{ field.field_name }}" 
-           data-toggle="tab" href="#url-panel-{{ field.field_name }}" role="tab" 
-           aria-controls="url-panel-{{ field.field_name }}" aria-selected="{% if not h.uploads_enabled() %}true{% else %}false{% endif %}">
+        <button class="nav-link {% if not h.uploads_enabled() %}active{% endif %}" 
+                id="url-tab-{{ field.field_name }}" 
+                data-target="url-panel-{{ field.field_name }}" type="button"
+                role="tab" aria-controls="url-panel-{{ field.field_name }}" 
+                aria-selected="{% if not h.uploads_enabled() %}true{% else %}false{% endif %}">
           <i class="fa fa-link"></i> {{ _('Link to Resource') }}
-        </a>
+        </button>
       </li>
     </ul>
   </div>
@@ -27,7 +30,8 @@
   <div class="tab-content upload-tab-content">
     {% if h.uploads_enabled() %}
       {# File Upload Panel with Drag & Drop #}
-      <div class="tab-pane fade show active" id="upload-panel-{{ field.field_name }}" role="tabpanel" 
+      <div class="tab-pane fade {% if h.uploads_enabled() %}show active{% endif %}" 
+           id="upload-panel-{{ field.field_name }}" role="tabpanel" 
            aria-labelledby="upload-tab-{{ field.field_name }}">
         
         {# Drag & Drop Zone #}
@@ -65,8 +69,6 @@
               <span class="file-name"></span>
               <span class="file-size"></span>
             </div>
-            
-            {# Our enhanced CloudStorage progress will appear here #}
           </div>
           
           {# Current Upload Display #}
@@ -107,6 +109,7 @@
                  value="{{ data[field.field_name] or '' }}"
                  class="form-control url-input"
                  placeholder="{{ field.form_placeholder or _('https://example.com/data.csv') }}"
+                 autocomplete="url"
                  {% if field.get('form_attrs', {}) %}
                    {% for attr, value in field.form_attrs.items() %}
                      {{ attr }}="{{ value }}"
@@ -149,79 +152,100 @@
   {% endif %}
 </div>
 
-{# Enhanced JavaScript for Modern Upload Functionality #}
-<script>
-function initModernUpload() {
-    // Check if already initialized
-    if (document.getElementById('modern-upload-initialized')) {
+{# Simple CSP-Compatible JavaScript #}
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+    
+    console.log('[modern-upload] DOM loaded, initializing...');
+    
+    // Get container
+    var container = document.getElementById('upload-container-{{ field.field_name }}');
+    if (!container) {
+        console.error('[modern-upload] Container not found');
         return;
     }
     
-    // Mark as initialized
-    var marker = document.createElement('div');
-    marker.id = 'modern-upload-initialized';
-    marker.style.display = 'none';
-    document.body.appendChild(marker);
-    var uploadContainer = document.getElementById('upload-container-{{ field.field_name }}');
-    var dragDropZone = document.getElementById('drag-drop-{{ field.field_name }}');
-    var fileInput = document.getElementById('{{ field.upload_field }}');
-    var urlInput = document.getElementById('{{ field.field_name }}');
-    var clearField = document.querySelector('input[name="{{ field.upload_clear }}"]');
+    console.log('[modern-upload] Container found:', container.id);
     
-    // Drag and Drop Functionality
-    if (dragDropZone) {
-        dragDropZone.addEventListener('dragover', function(e) {
+    // Initialize tabs
+    var tabButtons = container.querySelectorAll('.nav-link');
+    var tabPanes = container.querySelectorAll('.tab-pane');
+    
+    console.log('[modern-upload] Found', tabButtons.length, 'tabs and', tabPanes.length, 'panes');
+    
+    // Add event listeners to tab buttons
+    for (var i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            
+            var targetId = this.getAttribute('data-target');
+            console.log('[modern-upload] Tab clicked, target:', targetId);
+            
+            // Hide all panes
+            for (var j = 0; j < tabPanes.length; j++) {
+                tabPanes[j].classList.remove('show', 'active');
+                tabPanes[j].style.display = 'none';
+            }
+            
+            // Remove active from all tabs
+            for (var k = 0; k < tabButtons.length; k++) {
+                tabButtons[k].classList.remove('active');
+                tabButtons[k].setAttribute('aria-selected', 'false');
+            }
+            
+            // Show target pane
+            var targetPane = document.getElementById(targetId);
+            if (targetPane) {
+                targetPane.style.display = 'block';
+                targetPane.classList.add('show', 'active');
+                console.log('[modern-upload] Showed pane:', targetId);
+            }
+            
+            // Mark this tab as active
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+        });
+    }
+    
+    // Initialize drag and drop
+    var dragZone = container.querySelector('.drag-drop-zone');
+    var fileInput = container.querySelector('input[type="file"]');
+    var uploadBtn = container.querySelector('.btn-upload-trigger');
+    
+    if (dragZone && fileInput) {
+        console.log('[modern-upload] Setting up drag & drop');
+        
+        // Drag events
+        dragZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
             this.classList.add('drag-over');
         });
         
-        dragDropZone.addEventListener('dragenter', function(e) {
+        dragZone.addEventListener('dragleave', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            this.classList.add('drag-over');
-        });
-        
-        dragDropZone.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
             this.classList.remove('drag-over');
         });
         
-        dragDropZone.addEventListener('dragend', function(e) {
+        dragZone.addEventListener('drop', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            this.classList.remove('drag-over');
-        });
-        
-        dragDropZone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
             this.classList.remove('drag-over');
             
             var files = e.dataTransfer.files;
             if (files.length > 0) {
+                fileInput.files = files;
                 handleFileSelection(files[0]);
             }
         });
         
-        // Click to Upload
-        var uploadTrigger = dragDropZone.querySelector('.btn-upload-trigger');
-        if (uploadTrigger) {
-            uploadTrigger.addEventListener('click', function() {
+        // Click to upload
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', function() {
                 fileInput.click();
             });
         }
         
-        dragDropZone.addEventListener('click', function(e) {
-            if (e.target === this || e.target.classList.contains('drag-drop-content')) {
-                fileInput.click();
-            }
-        });
-    }
-    
-    // File Input Change
-    if (fileInput) {
+        // File input change
         fileInput.addEventListener('change', function() {
             if (this.files && this.files.length > 0) {
                 handleFileSelection(this.files[0]);
@@ -229,125 +253,65 @@ function initModernUpload() {
         });
     }
     
-    // Handle File Selection
+    // Handle file selection
     function handleFileSelection(file) {
-        var progressArea = dragDropZone.querySelector('.upload-progress-area');
-        var dragDropContent = dragDropZone.querySelector('.drag-drop-content');
+        console.log('[modern-upload] File selected:', file.name);
         
-        if (progressArea && dragDropContent) {
-            // Show file info
-            var fileName = progressArea.querySelector('.file-name');
-            var fileSize = progressArea.querySelector('.file-size');
-            if (fileName) fileName.textContent = file.name;
-            if (fileSize) fileSize.textContent = formatFileSize(file.size);
+        var progressArea = container.querySelector('.upload-progress-area');
+        var dragContent = container.querySelector('.drag-drop-content');
+        
+        if (progressArea && dragContent) {
+            var fileNameSpan = progressArea.querySelector('.file-name');
+            var fileSizeSpan = progressArea.querySelector('.file-size');
             
-            // Hide drag-drop content and show progress area
-            dragDropContent.style.display = 'none';
+            if (fileNameSpan) fileNameSpan.textContent = file.name;
+            if (fileSizeSpan) fileSizeSpan.textContent = formatFileSize(file.size);
+            
+            dragContent.style.display = 'none';
             progressArea.style.display = 'block';
         }
         
-        // Auto-populate related fields
-        autoPopulateResourceFields(file);
-        
-        console.log('[modern-upload] File selected:', file.name, 'Size:', formatFileSize(file.size));
+        // Auto-populate fields
+        autoPopulateFields(file);
     }
     
-    // Auto-populate resource fields
-    function autoPopulateResourceFields(file) {
+    // Auto populate form fields
+    function autoPopulateFields(file) {
         var fileName = file.name;
-        var fileExtension = fileName.split('.').pop().toLowerCase();
-        var nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
-        var cleanName = nameWithoutExt.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+        var cleanName = fileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+        var extension = fileName.split('.').pop().toLowerCase();
+        var today = new Date().toISOString().split('T')[0];
         
-        // Auto-populate name field
+        // Name field
         var nameField = document.querySelector('input[name="name"], #field-name');
-        if (nameField && !nameField.value.trim()) {
+        if (nameField && !nameField.value) {
             nameField.value = cleanName;
-            nameField.dispatchEvent(new Event('change', { bubbles: true }));
-            showFieldAnimation(nameField, 'success');
+            console.log('[modern-upload] Auto-filled name:', cleanName);
         }
         
-        // Auto-populate format field (enhanced detection)
+        // Format field
         var formatField = document.querySelector('input[name="format"], #field-format');
-        if (formatField && !formatField.value.trim()) {
-            var detectedFormat = detectFileFormat(fileExtension);
-            formatField.value = detectedFormat;
-            formatField.dispatchEvent(new Event('change', { bubbles: true }));
-            showFieldAnimation(formatField, 'success');
+        if (formatField && !formatField.value) {
+            var format = getFormatFromExtension(extension);
+            formatField.value = format;
+            console.log('[modern-upload] Auto-filled format:', format);
         }
         
-        // Auto-populate date of creation field
-        var dateField = document.querySelector('input[name="creation_date"], input[name="issued"], #field-creation_date, #field-issued');
-        if (dateField && !dateField.value.trim()) {
-            var today = new Date().toISOString().split('T')[0];
+        // Date field
+        var dateField = document.querySelector('input[name="created"], #field-created');
+        if (dateField && !dateField.value) {
             dateField.value = today;
-            dateField.dispatchEvent(new Event('change', { bubbles: true }));
-            showFieldAnimation(dateField, 'info');
-        }
-        
-        // Auto-populate description with file info
-        var descField = document.querySelector('textarea[name="description"], #field-description');
-        if (descField && !descField.value.trim()) {
-            var description = '{{ _("Resource file") }}: ' + fileName + '\n' + 
-                            '{{ _("File type") }}: ' + detectedFormat.toUpperCase() + '\n' +
-                            '{{ _("Uploaded on") }}: ' + new Date().toLocaleDateString();
-            descField.value = description;
-            descField.dispatchEvent(new Event('change', { bubbles: true }));
-            showFieldAnimation(descField, 'info');
+            console.log('[modern-upload] Auto-filled date:', today);
         }
     }
     
-    // Enhanced file format detection
-    function detectFileFormat(extension) {
-        var formatMap = {
-            'csv': 'CSV',
-            'json': 'JSON',
-            'xml': 'XML',
-            'xlsx': 'XLSX',
-            'xls': 'XLS', 
-            'pdf': 'PDF',
-            'txt': 'TXT',
-            'zip': 'ZIP',
-            'geojson': 'GeoJSON',
-            'kml': 'KML',
-            'shp': 'SHP',
-            'gpx': 'GPX',
-            'rdf': 'RDF',
-            'ttl': 'TTL',
-            'owl': 'OWL',
-            'jsonld': 'JSON-LD',
-            'api': 'API',
-            'html': 'HTML',
-            'doc': 'DOC',
-            'docx': 'DOCX',
-            'odt': 'ODT',
-            'ods': 'ODS',
-            'ppt': 'PPT',
-            'pptx': 'PPTX'
+    // Get format from file extension
+    function getFormatFromExtension(ext) {
+        var formats = {
+            'csv': 'CSV', 'json': 'JSON', 'xml': 'XML', 'xlsx': 'XLSX', 
+            'xls': 'XLS', 'pdf': 'PDF', 'txt': 'TXT', 'zip': 'ZIP'
         };
-        
-        return formatMap[extension] || extension.toUpperCase();
-    }
-    
-    // Visual feedback for auto-populated fields
-    function showFieldAnimation(field, type) {
-        var colorClass = type === 'success' ? 'border-success' : 'border-info';
-        
-        field.classList.add(colorClass);
-        field.style.backgroundColor = type === 'success' ? '#d4edda' : '#d1ecf1';
-        
-        var indicator = document.createElement('small');
-        indicator.className = 'auto-fill-indicator text-' + type;
-        indicator.innerHTML = '<i class="fa fa-magic"></i> {{ _("Auto-filled") }}';
-        field.parentNode.appendChild(indicator);
-        
-        setTimeout(function() {
-            field.classList.remove(colorClass);
-            field.style.backgroundColor = '';
-            if (indicator.parentNode) {
-                indicator.parentNode.removeChild(indicator);
-            }
-        }, 3000);
+        return formats[ext] || ext.toUpperCase();
     }
     
     // Format file size
@@ -359,180 +323,8 @@ function initModernUpload() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
-    // Remove upload functionality
-    var removeUploadBtns = document.querySelectorAll('.remove-upload-btn');
-    for (var i = 0; i < removeUploadBtns.length; i++) {
-        removeUploadBtns[i].addEventListener('click', function() {
-            var clearFieldName = this.getAttribute('data-clear-field');
-            var clearField = document.querySelector('input[name="' + clearFieldName + '"]');
-            if (clearField) {
-                clearField.value = '1';
-            }
-            
-            var currentUploadDisplay = this.closest('.current-upload-display');
-            if (currentUploadDisplay) {
-                currentUploadDisplay.style.display = 'none';
-            }
-            
-            // Reset the drag-drop area
-            var progressArea = dragDropZone.querySelector('.upload-progress-area');
-            var dragDropContent = dragDropZone.querySelector('.drag-drop-content');
-            
-            if (progressArea && dragDropContent) {
-                progressArea.style.display = 'none';
-                dragDropContent.style.display = 'block';
-            }
-            
-            // Clear file input
-            if (fileInput) {
-                fileInput.value = '';
-            }
-        });
-    }
-    
-    // URL Validation
-    var validateUrlBtn = document.querySelector('.validate-url-btn');
-    if (validateUrlBtn) {
-        validateUrlBtn.addEventListener('click', function() {
-            var url = urlInput.value.trim();
-            var feedback = document.querySelector('.url-validation-feedback');
-            
-            if (!url) {
-                showUrlFeedback('error', '{{ _("Please enter a URL") }}');
-                return;
-            }
-            
-            // Basic URL validation
-            try {
-                new URL(url);
-                // Show loading state
-                this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Validating...") }}';
-                this.disabled = true;
-                
-                // Simulate validation
-                setTimeout(function() {
-                    validateUrlBtn.innerHTML = '<i class="fa fa-check"></i> {{ _("Validate") }}';
-                    validateUrlBtn.disabled = false;
-                    showUrlFeedback('success', '{{ _("URL format is valid") }}');
-                    
-                    // Auto-populate format from URL extension
-                    var urlExtension = url.split('.').pop().split(/\#|\?/)[0].toLowerCase();
-                    var formatField = document.querySelector('input[name="format"], #field-format');
-                    if (formatField && !formatField.value.trim() && urlExtension) {
-                        var detectedFormat = detectFileFormat(urlExtension);
-                        formatField.value = detectedFormat;
-                        formatField.dispatchEvent(new Event('change', { bubbles: true }));
-                        showFieldAnimation(formatField, 'success');
-                    }
-                }, 1500);
-                
-            } catch (e) {
-                showUrlFeedback('error', '{{ _("Invalid URL format") }}');
-            }
-        });
-    }
-    
-    function showUrlFeedback(type, message) {
-        var feedback = document.querySelector('.url-validation-feedback');
-        var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-        var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-        
-        feedback.innerHTML = '<div class="alert ' + alertClass + ' mt-2"><i class="fa ' + iconClass + '"></i> ' + message + '</div>';
-        feedback.style.display = 'block';
-        
-        if (type === 'success') {
-            setTimeout(function() {
-                feedback.style.display = 'none';
-            }, 3000);
-        }
-    }
-    
-    // Tab functionality
-    function initTabs() {
-        var containerId = uploadContainer.id;
-        var tabLinks = document.querySelectorAll('#' + containerId + ' .upload-method-tabs .nav-link');
-        var tabPanes = document.querySelectorAll('#' + containerId + ' .tab-pane');
-        
-        console.log('[modern-upload] Initializing tabs. Found', tabLinks.length, 'tabs and', tabPanes.length, 'panes');
-        
-        for (var i = 0; i < tabLinks.length; i++) {
-            tabLinks[i].addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                console.log('[modern-upload] Tab clicked:', this.textContent.trim());
-                
-                // Remove active class from all tabs and panes
-                var allTabs = document.querySelectorAll('#' + containerId + ' .upload-method-tabs .nav-link');
-                var allPanes = document.querySelectorAll('#' + containerId + ' .tab-pane');
-                
-                for (var j = 0; j < allTabs.length; j++) {
-                    allTabs[j].classList.remove('active');
-                    allTabs[j].setAttribute('aria-selected', 'false');
-                }
-                for (var k = 0; k < allPanes.length; k++) {
-                    allPanes[k].classList.remove('show', 'active');
-                    allPanes[k].style.display = 'none';
-                }
-                
-                // Add active class to clicked tab
-                this.classList.add('active');
-                this.setAttribute('aria-selected', 'true');
-                
-                // Show corresponding pane
-                var targetId = this.getAttribute('href');
-                console.log('[modern-upload] Target panel ID:', targetId);
-                
-                if (targetId) {
-                    var targetPane = document.querySelector(targetId);
-                    if (targetPane) {
-                        // Force show the panel
-                        targetPane.style.display = 'block';
-                        targetPane.classList.add('show', 'active');
-                        
-                        // Ensure inner content is visible
-                        var dragZone = targetPane.querySelector('.drag-drop-zone');
-                        var urlContainer = targetPane.querySelector('.url-input-container');
-                        
-                        if (dragZone) {
-                            dragZone.style.display = 'flex';
-                            dragZone.style.visibility = 'visible';
-                        }
-                        if (urlContainer) {
-                            urlContainer.style.display = 'block';
-                            urlContainer.style.visibility = 'visible';
-                        }
-                        
-                        console.log('[modern-upload] Panel shown:', targetId);
-                    } else {
-                        console.error('[modern-upload] Target panel not found:', targetId);
-                    }
-                }
-            });
-        }
-        
-        // Ensure initial state is correct
-        var activeTab = document.querySelector('#' + containerId + ' .nav-link.active');
-        if (activeTab) {
-            var activeTargetId = activeTab.getAttribute('href');
-            if (activeTargetId) {
-                var activePane = document.querySelector(activeTargetId);
-                if (activePane) {
-                    activePane.style.display = 'block';
-                    activePane.classList.add('show', 'active');
-                }
-            }
-        }
-    }
-    
-    // Initialize tabs
-    initTabs();
-}
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initModernUpload);
-} else {
-    initModernUpload();
-}
+    console.log('[modern-upload] Initialization complete');
+});
+</script>
+</script>
 </script>

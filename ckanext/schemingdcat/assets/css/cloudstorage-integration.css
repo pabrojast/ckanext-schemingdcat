@@ -666,29 +666,32 @@
     max-width: calc(100% - 10px);
 }
 
-/* Debug styles - Remove after testing */
+/* Clean styles for production */
 .modern-upload-container .tab-pane {
-    border: 2px solid red !important; /* Temporary debug border */
-    min-height: 100px !important;
+    min-height: 100px;
+    padding: 0;
 }
 
 .modern-upload-container .tab-pane.active {
-    border-color: green !important; /* Active pane should be green */
-    background: rgba(0, 255, 0, 0.1) !important; /* Light green background */
-}
-
-.modern-upload-container .drag-drop-zone {
-    border: 2px solid blue !important; /* Debug drag zone */
-}
-
-.modern-upload-container .url-input-container {
-    border: 2px solid orange !important; /* Debug URL container */
-    padding: 10px !important;
+    background: transparent;
 }
 
 /* Force visibility for all content */
 .modern-upload-container .tab-pane * {
     visibility: visible !important;
+}
+
+/* Fix button styling */
+.modern-upload-container .nav-link {
+    border: 1px solid transparent !important;
+    background: none !important;
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.modern-upload-container .nav-link.active {
+    border-color: #dee2e6 #dee2e6 #fff !important;
+    background: #fff !important;
 }
 
 /* Responsive adjustments */
