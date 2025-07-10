@@ -1,21 +1,390 @@
 {% import 'macros/form2.html' as form %}
-{% set upload_label = _('Upload')  %}
-{%- set is_upload = (1 == 1) -%}
-{% call form.image_upload(
-    data,
-    errors,
-    field_url=field.field_name,
-    field_upload=field.upload_field,
-    field_clear=field.upload_clear,
-    is_upload_enabled=h.uploads_enabled(),
-    is_url=data[field.field_name] and not is_upload,
-    is_upload=is_upload,
-    upload_label=h.scheming_language_text(field.upload_label),
-    url_label=h.scheming_language_text(field.label),
-    classes=field.classes if 'classes' in field else ['control-medium'],
-    attrs=dict({"class": "form-control"}, **(field.get('form_attrs', {}))),
-    placeholder=field.form_placeholder
-    ) 
-%}
-  {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
-{% endcall %}
+
+{# Modern Professional Upload Interface #}
+<div class="modern-upload-container" id="upload-container-{{ field.field_name }}">
+  {# Upload Method Selector (Tabs) #}
+  <div class="upload-method-tabs">
+    <ul class="nav nav-tabs" role="tablist">
+      {% if h.uploads_enabled() %}
+        <li class="nav-item">
+          <a class="nav-link active" id="upload-tab-{{ field.field_name }}" data-toggle="tab" 
+             href="#upload-panel-{{ field.field_name }}" role="tab" aria-controls="upload-panel-{{ field.field_name }}" 
+             aria-selected="true">
+            <i class="fa fa-cloud-upload"></i> {{ _('Upload File') }}
+          </a>
+        </li>
+      {% endif %}
+      <li class="nav-item">
+        <a class="nav-link {% if not h.uploads_enabled() %}active{% endif %}" id="url-tab-{{ field.field_name }}" 
+           data-toggle="tab" href="#url-panel-{{ field.field_name }}" role="tab" 
+           aria-controls="url-panel-{{ field.field_name }}" aria-selected="{% if not h.uploads_enabled() %}true{% else %}false{% endif %}">
+          <i class="fa fa-link"></i> {{ _('Link to Resource') }}
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content upload-tab-content">
+    {% if h.uploads_enabled() %}
+      {# File Upload Panel with Drag & Drop #}
+      <div class="tab-pane fade show active" id="upload-panel-{{ field.field_name }}" role="tabpanel" 
+           aria-labelledby="upload-tab-{{ field.field_name }}">
+        
+        {# Drag & Drop Zone #}
+        <div class="drag-drop-zone" id="drag-drop-{{ field.field_name }}">
+          <div class="drag-drop-content">
+            <div class="drag-drop-icon">
+              <i class="fa fa-cloud-upload fa-3x"></i>
+            </div>
+            <h4>{{ _('Drag & Drop your file here') }}</h4>
+            <p class="text-muted">{{ _('or click to browse and select a file') }}</p>
+            
+            {# Hidden File Input #}
+            <input type="file" 
+                   id="{{ field.upload_field }}" 
+                   name="{{ field.upload_field }}"
+                   class="file-input-hidden"
+                   {% if field.get('form_attrs', {}) %}
+                     {% for attr, value in field.form_attrs.items() %}
+                       {{ attr }}="{{ value }}"
+                     {% endfor %}
+                   {% endif %}
+            />
+            
+            {# Upload Button #}
+            <button type="button" class="btn btn-primary btn-upload-trigger" 
+                    data-target="{{ field.upload_field }}">
+              <i class="fa fa-folder-open"></i> {{ _('Choose File') }}
+            </button>
+          </div>
+          
+          {# Upload Progress Area (Hidden initially) #}
+          <div class="upload-progress-area" style="display: none;">
+            <div class="selected-file-info">
+              <i class="fa fa-file"></i>
+              <span class="file-name"></span>
+              <span class="file-size"></span>
+            </div>
+            
+            {# Our enhanced CloudStorage progress will appear here #}
+          </div>
+          
+          {# Current Upload Display #}
+          {% if data[field.field_name] and not data[field.field_name].startswith('http') %}
+            <div class="current-upload-display">
+              <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i>
+                <strong>{{ _('Current file') }}:</strong> {{ data[field.field_name] }}
+                <button type="button" class="btn btn-sm btn-outline-danger float-right remove-upload-btn"
+                        data-clear-field="{{ field.upload_clear }}">
+                  <i class="fa fa-times"></i> {{ _('Remove File') }}
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+        
+        {# Hidden Clear Upload Field #}
+        <input type="hidden" name="{{ field.upload_clear }}" value="" />
+      </div>
+    {% endif %}
+
+    {# URL Panel #}
+    <div class="tab-pane fade {% if not h.uploads_enabled() %}show active{% endif %}" 
+         id="url-panel-{{ field.field_name }}" role="tabpanel" 
+         aria-labelledby="url-tab-{{ field.field_name }}">
+      
+      <div class="url-input-container">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">
+              <i class="fa fa-link"></i>
+            </span>
+          </div>
+          <input type="url" 
+                 id="{{ field.field_name }}" 
+                 name="{{ field.field_name }}" 
+                 value="{{ data[field.field_name] or '' }}"
+                 class="form-control url-input"
+                 placeholder="{{ field.form_placeholder or _('https://example.com/data.csv') }}"
+                 {% if field.get('form_attrs', {}) %}
+                   {% for attr, value in field.form_attrs.items() %}
+                     {{ attr }}="{{ value }}"
+                   {% endfor %}
+                 {% endif %}
+          />
+          <div class="input-group-append">
+            <button type="button" class="btn btn-outline-secondary validate-url-btn">
+              <i class="fa fa-check"></i> {{ _('Validate') }}
+            </button>
+          </div>
+        </div>
+        
+        <small class="form-text text-muted">
+          <i class="fa fa-info-circle"></i> 
+          {{ _('Enter a direct link to your data file (CSV, JSON, XML, etc.)') }}
+        </small>
+        
+        {# URL Validation Feedback #}
+        <div class="url-validation-feedback" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  {# Help Text #}
+  {% if field.help_text %}
+    <div class="upload-help-text">
+      {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
+    </div>
+  {% endif %}
+
+  {# Error Display #}
+  {% if errors[field.field_name] %}
+    <div class="alert alert-danger upload-errors">
+      <i class="fa fa-exclamation-triangle"></i>
+      {% for error in errors[field.field_name] %}
+        <div>{{ error }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+{# Enhanced JavaScript for Modern Upload Functionality #}
+<script>
+$(document).ready(function() {
+    var uploadContainer = $('#upload-container-{{ field.field_name }}');
+    var dragDropZone = $('#drag-drop-{{ field.field_name }}');
+    var fileInput = $('#{{ field.upload_field }}');
+    var urlInput = $('#{{ field.field_name }}');
+    var clearField = $('input[name="{{ field.upload_clear }}"]');
+    
+    // Drag and Drop Functionality
+    dragDropZone.on('dragover dragenter', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('drag-over');
+    });
+    
+    dragDropZone.on('dragleave dragend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('drag-over');
+    });
+    
+    dragDropZone.on('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('drag-over');
+        
+        var files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+    
+    // Click to Upload
+    $('.btn-upload-trigger').on('click', function() {
+        fileInput.click();
+    });
+    
+    dragDropZone.on('click', function(e) {
+        if (e.target === this || $(e.target).hasClass('drag-drop-content')) {
+            fileInput.click();
+        }
+    });
+    
+    // File Input Change
+    fileInput.on('change', function() {
+        if (this.files && this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+    
+    // Handle File Selection
+    function handleFileSelection(file) {
+        var progressArea = dragDropZone.find('.upload-progress-area');
+        var dragDropContent = dragDropZone.find('.drag-drop-content');
+        
+        // Show file info
+        progressArea.find('.file-name').text(file.name);
+        progressArea.find('.file-size').text(formatFileSize(file.size));
+        
+        // Hide drag-drop content and show progress area
+        dragDropContent.fadeOut(300, function() {
+            progressArea.fadeIn(300);
+        });
+        
+        // Auto-populate related fields
+        autoPopulateResourceFields(file);
+        
+        console.log('[modern-upload] File selected:', file.name, 'Size:', formatFileSize(file.size));
+    }
+    
+    // Auto-populate resource fields
+    function autoPopulateResourceFields(file) {
+        var fileName = file.name;
+        var fileExtension = fileName.split('.').pop().toLowerCase();
+        var nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+        var cleanName = nameWithoutExt.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        // Auto-populate name field
+        var nameField = $('input[name="name"], #field-name').first();
+        if (nameField.length && !nameField.val().trim()) {
+            nameField.val(cleanName).trigger('change');
+            showFieldAnimation(nameField, 'success');
+        }
+        
+        // Auto-populate format field (enhanced detection)
+        var formatField = $('input[name="format"], #field-format').first();
+        if (formatField.length && !formatField.val().trim()) {
+            var detectedFormat = detectFileFormat(fileExtension);
+            formatField.val(detectedFormat).trigger('change');
+            showFieldAnimation(formatField, 'success');
+        }
+        
+        // Auto-populate date of creation field
+        var dateField = $('input[name="creation_date"], input[name="issued"], #field-creation_date, #field-issued').first();
+        if (dateField.length && !dateField.val().trim()) {
+            var today = new Date().toISOString().split('T')[0];
+            dateField.val(today).trigger('change');
+            showFieldAnimation(dateField, 'info');
+        }
+        
+        // Auto-populate description with file info
+        var descField = $('textarea[name="description"], #field-description').first();
+        if (descField.length && !descField.val().trim()) {
+            var description = '{{ _("Resource file") }}: ' + fileName + '\n' + 
+                            '{{ _("File type") }}: ' + detectedFormat.toUpperCase() + '\n' +
+                            '{{ _("Uploaded on") }}: ' + new Date().toLocaleDateString();
+            descField.val(description).trigger('change');
+            showFieldAnimation(descField, 'info');
+        }
+    }
+    
+    // Enhanced file format detection
+    function detectFileFormat(extension) {
+        var formatMap = {
+            'csv': 'CSV',
+            'json': 'JSON',
+            'xml': 'XML',
+            'xlsx': 'XLSX',
+            'xls': 'XLS', 
+            'pdf': 'PDF',
+            'txt': 'TXT',
+            'zip': 'ZIP',
+            'geojson': 'GeoJSON',
+            'kml': 'KML',
+            'shp': 'SHP',
+            'gpx': 'GPX',
+            'rdf': 'RDF',
+            'ttl': 'TTL',
+            'owl': 'OWL',
+            'jsonld': 'JSON-LD',
+            'api': 'API',
+            'html': 'HTML',
+            'doc': 'DOC',
+            'docx': 'DOCX',
+            'odt': 'ODT',
+            'ods': 'ODS',
+            'ppt': 'PPT',
+            'pptx': 'PPTX'
+        };
+        
+        return formatMap[extension] || extension.toUpperCase();
+    }
+    
+    // Visual feedback for auto-populated fields
+    function showFieldAnimation(field, type) {
+        var colorClass = type === 'success' ? 'border-success' : 'border-info';
+        var bgClass = type === 'success' ? 'bg-success' : 'bg-info';
+        
+        field.addClass(colorClass);
+        field.parent().append('<small class="auto-fill-indicator text-' + type + '"><i class="fa fa-magic"></i> {{ _("Auto-filled") }}</small>');
+        
+        setTimeout(function() {
+            field.removeClass(colorClass);
+            field.parent().find('.auto-fill-indicator').fadeOut(function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+    
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        var k = 1024;
+        var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Remove upload functionality
+    $('.remove-upload-btn').on('click', function() {
+        var clearFieldName = $(this).data('clear-field');
+        $('input[name="' + clearFieldName + '"]').val('1');
+        $(this).closest('.current-upload-display').fadeOut();
+        
+        // Reset the drag-drop area
+        var progressArea = dragDropZone.find('.upload-progress-area');
+        var dragDropContent = dragDropZone.find('.drag-drop-content');
+        
+        progressArea.fadeOut(300, function() {
+            dragDropContent.fadeIn(300);
+        });
+        
+        // Clear file input
+        fileInput.val('');
+    });
+    
+    // URL Validation
+    $('.validate-url-btn').on('click', function() {
+        var url = urlInput.val().trim();
+        var feedback = $('.url-validation-feedback');
+        
+        if (!url) {
+            showUrlFeedback('error', '{{ _("Please enter a URL") }}');
+            return;
+        }
+        
+        // Basic URL validation
+        try {
+            new URL(url);
+            // Show loading state
+            $(this).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Validating...") }}').prop('disabled', true);
+            
+            // Simulate validation (you can replace with actual HEAD request)
+            setTimeout(function() {
+                $('.validate-url-btn').html('<i class="fa fa-check"></i> {{ _("Validate") }}').prop('disabled', false);
+                showUrlFeedback('success', '{{ _("URL format is valid") }}');
+                
+                // Auto-populate format from URL extension
+                var urlExtension = url.split('.').pop().split(/\#|\?/)[0].toLowerCase();
+                var formatField = $('input[name="format"], #field-format').first();
+                if (formatField.length && !formatField.val().trim() && urlExtension) {
+                    var detectedFormat = detectFileFormat(urlExtension);
+                    formatField.val(detectedFormat).trigger('change');
+                    showFieldAnimation(formatField, 'success');
+                }
+            }, 1500);
+            
+        } catch (e) {
+            showUrlFeedback('error', '{{ _("Invalid URL format") }}');
+        }
+    });
+    
+    function showUrlFeedback(type, message) {
+        var feedback = $('.url-validation-feedback');
+        var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        
+        feedback.html('<div class="alert ' + alertClass + ' mt-2"><i class="fa ' + iconClass + '"></i> ' + message + '</div>');
+        feedback.fadeIn();
+        
+        if (type === 'success') {
+            setTimeout(function() {
+                feedback.fadeOut();
+            }, 3000);
+        }
+    }
+});
+</script>

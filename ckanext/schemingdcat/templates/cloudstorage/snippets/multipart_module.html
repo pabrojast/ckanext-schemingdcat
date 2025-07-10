@@ -3,12 +3,13 @@
 
 {# Include custom CSS for enhanced styling #}
 <link rel="stylesheet" href="{{ h.url_for_static('/css/cloudstorage-integration.css', qualified=true) }}" type="text/css">
+<link rel="stylesheet" href="{{ h.url_for_static('/css/modern-upload.css', qualified=true) }}" type="text/css">
 
 {% if h.cloudstorage_use_enhanced_upload is defined and h.cloudstorage_use_enhanced_upload() %}
     {# Enhanced upload interface notification #}
     <div class="cloudstorage-enhanced-upload alert alert-info">
         <i class="fa fa-info-circle"></i>
-        {{ _('Enhanced upload interface is enabled') }}
+        {{ _('Enhanced upload interface is enabled with intelligent field auto-population') }}
         {% if h.cloudstorage_use_azure_direct_upload is defined and h.cloudstorage_use_azure_direct_upload() %}
             <br><small><i class="fa fa-cloud"></i> {{ _('Azure Direct Upload: Files will be uploaded directly to Azure Blob Storage') }}</small>
         {% endif %}
@@ -100,17 +101,19 @@
             }
         }
         
-        // Enhanced auto-populate function with better field detection
+        // Enhanced auto-populate function with better schemingdcat field detection
         function autoPopulateFilename(fileName, inputElement) {
             // Remove file extension for the name field
             var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
+            var fileExtension = fileName.split('.').pop().toLowerCase();
+            
             // Clean up the name (remove special characters, etc.)
             var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
             
             // Find form fields to populate
             var form = inputElement.closest('form');
             if (form) {
-                // Priority order for name field detection
+                // Enhanced name field detection for schemingdcat
                 var nameSelectors = [
                     'input[name="name"]',
                     'input[name="title"]', 
@@ -132,15 +135,67 @@
                     nameField.dispatchEvent(new Event('input', { bubbles: true }));
                     
                     // Add visual feedback
-                    nameField.style.backgroundColor = '#d4edda';
-                    setTimeout(function() {
-                        nameField.style.backgroundColor = '';
-                    }, 2000);
-                    
+                    animateFieldUpdate(nameField, 'success', '{{ _("Name auto-filled") }}');
                     console.log('[schemingdcat-cloudstorage] Auto-populated name field:', cleanName);
                 }
                 
-                // Look for description field
+                // Enhanced format field detection and auto-population
+                var formatSelectors = [
+                    'input[name="format"]',
+                    '#field-format',
+                    'input[id*="format"]'
+                ];
+                
+                var formatField = null;
+                for (var j = 0; j < formatSelectors.length; j++) {
+                    formatField = form.querySelector(formatSelectors[j]);
+                    if (formatField) break;
+                }
+                
+                if (formatField && !formatField.value.trim()) {
+                    var detectedFormat = detectEnhancedFormat(fileExtension);
+                    formatField.value = detectedFormat;
+                    formatField.dispatchEvent(new Event('change', { bubbles: true }));
+                    formatField.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // Add visual feedback
+                    animateFieldUpdate(formatField, 'info', '{{ _("Format detected") }}');
+                    console.log('[schemingdcat-cloudstorage] Auto-populated format field:', detectedFormat);
+                }
+                
+                // Enhanced date field detection for schemingdcat
+                var dateSelectors = [
+                    'input[name="creation_date"]',
+                    'input[name="issued"]',
+                    'input[name="created"]',
+                    'input[name="date_created"]',
+                    '#field-creation_date',
+                    '#field-issued',
+                    '#field-created',
+                    '#field-date_created',
+                    'input[id*="creation"]',
+                    'input[id*="issued"]',
+                    'input[id*="created"]'
+                ];
+                
+                var dateField = null;
+                for (var k = 0; k < dateSelectors.length; k++) {
+                    dateField = form.querySelector(dateSelectors[k]);
+                    if (dateField) break;
+                }
+                
+                if (dateField && !dateField.value.trim()) {
+                    var today = new Date().toISOString().split('T')[0];
+                    dateField.value = today;
+                    dateField.dispatchEvent(new Event('change', { bubbles: true }));
+                    dateField.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // Add visual feedback
+                    animateFieldUpdate(dateField, 'info', '{{ _("Date set to today") }}');
+                    console.log('[schemingdcat-cloudstorage] Auto-populated date field:', today);
+                }
+                
+                // Enhanced description field with better formatting
                 var descSelectors = [
                     'textarea[name="description"]',
                     '#field-description',
@@ -148,20 +203,143 @@
                 ];
                 
                 var descField = null;
-                for (var j = 0; j < descSelectors.length; j++) {
-                    descField = form.querySelector(descSelectors[j]);
+                for (var l = 0; l < descSelectors.length; l++) {
+                    descField = form.querySelector(descSelectors[l]);
                     if (descField) break;
                 }
                 
                 if (descField && !descField.value.trim()) {
-                    var fileInfo = '{{ _("File uploaded") }}: ' + fileName + '\n{{ _("Auto-generated description") }}';
+                    var fileInfo = '{{ _("Data resource file") }}: ' + fileName + '\n' +
+                                  '{{ _("Format") }}: ' + detectEnhancedFormat(fileExtension) + '\n' +
+                                  '{{ _("Uploaded") }}: ' + new Date().toLocaleDateString() + '\n' +
+                                  '{{ _("Auto-generated description - please update as needed") }}';
                     descField.value = fileInfo;
                     descField.dispatchEvent(new Event('change', { bubbles: true }));
                     descField.dispatchEvent(new Event('input', { bubbles: true }));
                     
+                    // Add visual feedback
+                    animateFieldUpdate(descField, 'info', '{{ _("Description auto-filled") }}');
                     console.log('[schemingdcat-cloudstorage] Auto-populated description field');
                 }
             }
+        }
+        
+        // Enhanced file format detection with extensive mapping
+        function detectEnhancedFormat(extension) {
+            var formatMap = {
+                // Data formats
+                'csv': 'CSV',
+                'json': 'JSON',
+                'xml': 'XML',
+                'xlsx': 'XLSX',
+                'xls': 'XLS',
+                'ods': 'ODS',
+                'txt': 'TXT',
+                'tsv': 'TSV',
+                'jsonl': 'JSONL',
+                'ndjson': 'NDJSON',
+                'yaml': 'YAML',
+                'yml': 'YAML',
+                
+                // Geographic formats
+                'geojson': 'GeoJSON',
+                'kml': 'KML',
+                'kmz': 'KMZ',
+                'shp': 'SHP',
+                'gpx': 'GPX',
+                'gml': 'GML',
+                'wkt': 'WKT',
+                'topojson': 'TopoJSON',
+                
+                // Document formats
+                'pdf': 'PDF',
+                'doc': 'DOC',
+                'docx': 'DOCX',
+                'odt': 'ODT',
+                'rtf': 'RTF',
+                'html': 'HTML',
+                'htm': 'HTML',
+                'markdown': 'Markdown',
+                'md': 'Markdown',
+                
+                // Archive formats
+                'zip': 'ZIP',
+                'tar': 'TAR',
+                'gz': 'GZ',
+                'rar': 'RAR',
+                '7z': '7Z',
+                
+                // Semantic web formats
+                'rdf': 'RDF',
+                'ttl': 'TTL',
+                'n3': 'N3',
+                'nt': 'N-Triples',
+                'owl': 'OWL',
+                'jsonld': 'JSON-LD',
+                'trig': 'TriG',
+                'trix': 'TriX',
+                
+                // Image formats
+                'png': 'PNG',
+                'jpg': 'JPEG',
+                'jpeg': 'JPEG',
+                'gif': 'GIF',
+                'svg': 'SVG',
+                'tiff': 'TIFF',
+                'tif': 'TIFF',
+                'bmp': 'BMP',
+                
+                // Other formats
+                'api': 'API',
+                'wms': 'WMS',
+                'wfs': 'WFS',
+                'wcs': 'WCS',
+                'sparql': 'SPARQL'
+            };
+            
+            return formatMap[extension] || extension.toUpperCase();
+        }
+        
+        // Enhanced visual feedback for field updates
+        function animateFieldUpdate(field, type, message) {
+            var colorClass = type === 'success' ? 'border-success' : 'border-info';
+            var textClass = type === 'success' ? 'text-success' : 'text-info';
+            var bgClass = type === 'success' ? 'bg-success' : 'bg-info';
+            
+            // Add border animation
+            field.style.transition = 'all 0.3s ease';
+            field.classList.add(colorClass);
+            field.style.backgroundColor = type === 'success' ? '#d4edda' : '#d1ecf1';
+            
+            // Add floating indicator
+            var indicator = document.createElement('div');
+            indicator.className = 'auto-fill-indicator ' + textClass;
+            indicator.innerHTML = '<i class="fa fa-magic"></i> ' + message;
+            indicator.style.cssText = 'position: absolute; right: 10px; top: 50%; transform: translateY(-50%); ' +
+                                     'background: rgba(255,255,255,0.95); padding: 4px 8px; border-radius: 12px; ' +
+                                     'font-size: 12px; font-weight: 600; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+            
+            // Position indicator
+            var fieldContainer = field.parentNode;
+            fieldContainer.style.position = 'relative';
+            fieldContainer.appendChild(indicator);
+            
+            // Remove effects after delay
+            setTimeout(function() {
+                field.classList.remove(colorClass);
+                field.style.backgroundColor = '';
+                field.style.transition = '';
+                
+                if (indicator && indicator.parentNode) {
+                    indicator.style.opacity = '0';
+                    indicator.style.transform = 'translateY(-50%) scale(0.8)';
+                    setTimeout(function() {
+                        if (indicator.parentNode) {
+                            indicator.parentNode.removeChild(indicator);
+                        }
+                    }, 300);
+                }
+            }, 3000);
         }
         
         // Enhanced file upload handler with better Azure integration
@@ -319,8 +497,8 @@
                         if (!$input.siblings('.cloudstorage-indicator').length) {
                             var indicator = '<div class="cloudstorage-indicator alert alert-success" style="margin-top: 10px; padding: 12px;">' +
                                           '<i class="fa fa-cloud-upload"></i> ' +
-                                          '<strong>{{ _("CloudStorage Ready") }}</strong><br>' +
-                                          '<small>{{ _("Files will be uploaded with real-time progress tracking") }}</small>' +
+                                          '<strong>{{ _("Enhanced CloudStorage Ready") }}</strong><br>' +
+                                          '<small>{{ _("Intelligent field auto-population and real-time progress tracking enabled") }}</small>' +
                                           '</div>';
                             $input.after(indicator);
                         }
@@ -350,8 +528,8 @@
                             indicator.style.marginTop = '10px';
                             indicator.style.padding = '12px';
                             indicator.innerHTML = '<i class="fa fa-cloud-upload"></i> ' +
-                                                '<strong>{{ _("CloudStorage Ready") }}</strong><br>' +
-                                                '<small>{{ _("Files will be uploaded with real-time progress tracking") }}</small>';
+                                                '<strong>{{ _("Enhanced CloudStorage Ready") }}</strong><br>' +
+                                                '<small>{{ _("Intelligent field auto-population and real-time progress tracking enabled") }}</small>';
                             input.parentNode.insertBefore(indicator, input.nextSibling);
                         }
                         
