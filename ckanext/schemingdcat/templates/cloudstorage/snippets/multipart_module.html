@@ -1,0 +1,91 @@
+{# CloudStorage integration for SchemingDCAT #}
+{# This template integrates cloudstorage upload functionality into schemingdcat forms #}
+
+{% if h.cloudstorage_use_enhanced_upload() %}
+    {# Enhanced upload interface - simplified version #}
+    <div class="cloudstorage-enhanced-upload">
+        <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i>
+            {{ _('Enhanced upload interface is enabled') }}
+        </div>
+    </div>
+{% endif %}
+
+{# Load CloudStorage JavaScript assets only if helpers are available #}
+{% if h.cloudstorage_use_azure_direct_upload is defined or h.cloudstorage_use_enhanced_upload is defined %}
+    {% asset 'cloudstorage-js/main' %}
+    
+    <script>
+        $(document).ready(function() {
+            console.log('[schemingdcat-cloudstorage] Inicializando módulo multipart');
+            
+            // Esperar a que el formulario esté completamente renderizado
+            setTimeout(function() {
+                var $fileInputs = $('input[type="file"][name="upload"]');
+                console.log('[schemingdcat-cloudstorage] Campos de archivo encontrados:', $fileInputs.length);
+                
+                if ($fileInputs.length > 0) {
+                    $fileInputs.each(function() {
+                        var $input = $(this);
+                        var $form = $input.closest('form');
+                        
+                        // Obtener el nombre del paquete
+                        var pkgName = '{{ pkg_name }}' || 
+                                      $form.find('input[name="name"]').val() || 
+                                      $form.find('input[name="id"]').val() || 
+                                      '';
+                        
+                        // ID del recurso si está editando
+                        var resourceId = '{{ resource_id or "" }}';
+                        
+                        // Determinar qué módulo usar basado en configuración
+                        var moduleName = null;
+                        
+                        {% if use_azure_direct %}
+                            moduleName = 'cloudstorage-azure-direct-upload';
+                        {% elif use_multipart %}
+                            moduleName = 'cloudstorage-multipart-upload';
+                        {% else %}
+                            // Usar módulo por defecto si cloudstorage está disponible
+                            if (typeof window.ckan !== 'undefined' && window.ckan.module) {
+                                moduleName = 'cloudstorage-multipart-upload';
+                            }
+                        {% endif %}
+                        
+                        if (moduleName) {
+                            console.log('[schemingdcat-cloudstorage] Configurando módulo:', moduleName, 'para paquete:', pkgName);
+                            
+                            // Crear wrapper para el input
+                            var $wrapper = $('<div></div>');
+                            $input.wrap($wrapper);
+                            
+                            // Agregar atributos data-module al wrapper
+                            $wrapper.attr({
+                                'data-module': moduleName,
+                                'data-module-cloud': '{{ h.cloudstorage_get_cloud_storage_type() if h.cloudstorage_get_cloud_storage_type is defined else "S3" }}',
+                                'data-module-package-id': '_' + pkgName
+                            });
+                            
+                            // Inicializar el módulo CKAN si está disponible
+                            if (window.ckan && window.ckan.module) {
+                                try {
+                                    window.ckan.module.initializeElement($wrapper[0]);
+                                    console.log('[schemingdcat-cloudstorage] Módulo inicializado correctamente');
+                                } catch (e) {
+                                    console.warn('[schemingdcat-cloudstorage] Error al inicializar módulo:', e);
+                                }
+                            }
+                        } else {
+                            console.log('[schemingdcat-cloudstorage] No se configuró módulo específico, usando funcionalidad estándar');
+                        }
+                    });
+                }
+            }, 100);
+        });
+    </script>
+{% else %}
+    {# Fallback: cloudstorage helpers not available, using standard upload #}
+    <script>
+        console.log('[schemingdcat-cloudstorage] Cloudstorage helpers no disponibles, usando subida estándar');
+    </script>
+{% endif %} 

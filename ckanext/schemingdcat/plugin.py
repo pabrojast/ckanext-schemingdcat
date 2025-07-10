@@ -139,10 +139,22 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
 
     def update_config(self, config_):
-        # Add cloudstorage assets and templates
-        toolkit.add_template_directory(config_, '../../../ckanext/cloudstorage/templates')
-        toolkit.add_resource('../../../ckanext/cloudstorage/fanstatic/scripts', 'cloudstorage-js')
+        # Call parent update_config first
         super(SchemingDCATDatasetsPlugin, self).update_config(config_)
+        
+        # Register cloudstorage assets if available
+        import os
+        cloudstorage_fanstatic_path = os.path.join(
+            os.path.dirname(__file__), 
+            '..', '..', '..', '..', 'ckanext', 'cloudstorage', 'fanstatic', 'scripts'
+        )
+        
+        # Check if cloudstorage assets exist
+        if os.path.exists(cloudstorage_fanstatic_path):
+            toolkit.add_resource(cloudstorage_fanstatic_path, 'cloudstorage-js')
+            log.info("CloudStorage assets registered successfully")
+        else:
+            log.warning("CloudStorage assets not found at: %s", cloudstorage_fanstatic_path)
 
     def read_template(self):
         return "schemingdcat/package/read.html"
