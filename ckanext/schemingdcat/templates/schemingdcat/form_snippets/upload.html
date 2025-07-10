@@ -153,68 +153,84 @@
 </div>
 
 {# Simple CSP-Compatible JavaScript #}
-<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function() {
-    'use strict';
+<script>
+(function() {
+    "use strict";
     
-    console.log('[modern-upload] DOM loaded, initializing...');
-    
-    // Get container
-    var container = document.getElementById('upload-container-{{ field.field_name }}');
-    if (!container) {
-        console.error('[modern-upload] Container not found');
-        return;
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeUpload);
+    } else {
+        initializeUpload();
     }
     
-    console.log('[modern-upload] Container found:', container.id);
+    function initializeUpload() {
+        // Get container
+        var containerElement = document.getElementById('upload-container-{{ field.field_name }}');
+        if (!containerElement) {
+            return;
+        }
+        
+        // Initialize tab functionality
+        initializeTabs(containerElement);
+        
+        // Initialize drag and drop if available
+        initializeDragAndDrop(containerElement);
+        
+        // Initialize URL validation
+        initializeUrlValidation(containerElement);
+        
+        // Initialize clear upload functionality
+        initializeClearUpload(containerElement);
+    }
     
-    // Initialize tabs
-    var tabButtons = container.querySelectorAll('.nav-link');
-    var tabPanes = container.querySelectorAll('.tab-pane');
-    
-    console.log('[modern-upload] Found', tabButtons.length, 'tabs and', tabPanes.length, 'panes');
-    
-    // Add event listeners to tab buttons
-    for (var i = 0; i < tabButtons.length; i++) {
-        tabButtons[i].addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            var targetId = this.getAttribute('data-target');
-            console.log('[modern-upload] Tab clicked, target:', targetId);
-            
-            // Hide all panes
-            for (var j = 0; j < tabPanes.length; j++) {
-                tabPanes[j].classList.remove('show', 'active');
-                tabPanes[j].style.display = 'none';
-            }
-            
-            // Remove active from all tabs
-            for (var k = 0; k < tabButtons.length; k++) {
-                tabButtons[k].classList.remove('active');
-                tabButtons[k].setAttribute('aria-selected', 'false');
-            }
-            
-            // Show target pane
-            var targetPane = document.getElementById(targetId);
-            if (targetPane) {
+    function initializeTabs(container) {
+        var tabButtons = container.querySelectorAll('.nav-link');
+        var tabPanes = container.querySelectorAll('.tab-pane');
+        
+        // Add click handlers to tab buttons
+        Array.prototype.forEach.call(tabButtons, function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                var targetId = this.getAttribute('data-target');
+                var targetPane = document.getElementById(targetId);
+                
+                if (!targetPane) {
+                    return;
+                }
+                
+                // Hide all panes
+                Array.prototype.forEach.call(tabPanes, function(pane) {
+                    pane.classList.remove('show', 'active');
+                    pane.style.display = 'none';
+                });
+                
+                // Remove active from all tabs
+                Array.prototype.forEach.call(tabButtons, function(btn) {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                
+                // Show target pane
                 targetPane.style.display = 'block';
                 targetPane.classList.add('show', 'active');
-                console.log('[modern-upload] Showed pane:', targetId);
-            }
-            
-            // Mark this tab as active
-            this.classList.add('active');
-            this.setAttribute('aria-selected', 'true');
+                
+                // Mark this tab as active
+                this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
+            });
         });
     }
     
-    // Initialize drag and drop
-    var dragZone = container.querySelector('.drag-drop-zone');
-    var fileInput = container.querySelector('input[type="file"]');
-    var uploadBtn = container.querySelector('.btn-upload-trigger');
-    
-    if (dragZone && fileInput) {
-        console.log('[modern-upload] Setting up drag & drop');
+    function initializeDragAndDrop(container) {
+        var dragZone = container.querySelector('.drag-drop-zone');
+        var fileInput = container.querySelector('input[type="file"]');
+        var uploadBtn = container.querySelector('.btn-upload-trigger');
+        
+        if (!dragZone || !fileInput) {
+            return;
+        }
         
         // Drag events
         dragZone.addEventListener('dragover', function(e) {
@@ -234,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var files = e.dataTransfer.files;
             if (files.length > 0) {
                 fileInput.files = files;
-                handleFileSelection(files[0]);
+                handleFileSelection(files[0], container);
             }
         });
         
@@ -248,15 +264,77 @@ document.addEventListener('DOMContentLoaded', function() {
         // File input change
         fileInput.addEventListener('change', function() {
             if (this.files && this.files.length > 0) {
-                handleFileSelection(this.files[0]);
+                handleFileSelection(this.files[0], container);
             }
         });
     }
     
-    // Handle file selection
-    function handleFileSelection(file) {
-        console.log('[modern-upload] File selected:', file.name);
+    function initializeUrlValidation(container) {
+        var validateBtn = container.querySelector('.validate-url-btn');
+        var urlInput = container.querySelector('.url-input');
         
+        if (!validateBtn || !urlInput) {
+            return;
+        }
+        
+        validateBtn.addEventListener('click', function() {
+            var url = urlInput.value.trim();
+            var feedback = container.querySelector('.url-validation-feedback');
+            
+            if (!url) {
+                showUrlFeedback(feedback, 'Please enter a URL', 'error');
+                return;
+            }
+            
+            if (!isValidUrl(url)) {
+                showUrlFeedback(feedback, 'Please enter a valid URL', 'error');
+                return;
+            }
+            
+            showUrlFeedback(feedback, 'URL appears valid', 'success');
+            
+            // Try to detect format from URL
+            var extension = getExtensionFromUrl(url);
+            if (extension) {
+                var formatField = document.querySelector('input[name="format"], #field-format');
+                if (formatField && !formatField.value) {
+                    formatField.value = getFormatFromExtension(extension);
+                }
+            }
+        });
+        
+        // Auto-validate on input change
+        urlInput.addEventListener('input', function() {
+            var feedback = container.querySelector('.url-validation-feedback');
+            if (feedback) {
+                feedback.style.display = 'none';
+            }
+        });
+    }
+    
+    function initializeClearUpload(container) {
+        var clearBtn = container.querySelector('.remove-upload-btn');
+        
+        if (!clearBtn) {
+            return;
+        }
+        
+        clearBtn.addEventListener('click', function() {
+            var clearField = clearBtn.getAttribute('data-clear-field');
+            var clearInput = document.querySelector('input[name="' + clearField + '"]');
+            
+            if (clearInput) {
+                clearInput.value = '1';
+            }
+            
+            var currentDisplay = container.querySelector('.current-upload-display');
+            if (currentDisplay) {
+                currentDisplay.style.display = 'none';
+            }
+        });
+    }
+    
+    function handleFileSelection(file, container) {
         var progressArea = container.querySelector('.upload-progress-area');
         var dragContent = container.querySelector('.drag-drop-content');
         
@@ -264,8 +342,12 @@ document.addEventListener('DOMContentLoaded', function() {
             var fileNameSpan = progressArea.querySelector('.file-name');
             var fileSizeSpan = progressArea.querySelector('.file-size');
             
-            if (fileNameSpan) fileNameSpan.textContent = file.name;
-            if (fileSizeSpan) fileSizeSpan.textContent = formatFileSize(file.size);
+            if (fileNameSpan) {
+                fileNameSpan.textContent = file.name;
+            }
+            if (fileSizeSpan) {
+                fileSizeSpan.textContent = formatFileSize(file.size);
+            }
             
             dragContent.style.display = 'none';
             progressArea.style.display = 'block';
@@ -275,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
         autoPopulateFields(file);
     }
     
-    // Auto populate form fields
     function autoPopulateFields(file) {
         var fileName = file.name;
         var cleanName = fileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
@@ -286,7 +367,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var nameField = document.querySelector('input[name="name"], #field-name');
         if (nameField && !nameField.value) {
             nameField.value = cleanName;
-            console.log('[modern-upload] Auto-filled name:', cleanName);
         }
         
         // Format field
@@ -294,27 +374,80 @@ document.addEventListener('DOMContentLoaded', function() {
         if (formatField && !formatField.value) {
             var format = getFormatFromExtension(extension);
             formatField.value = format;
-            console.log('[modern-upload] Auto-filled format:', format);
         }
         
         // Date field
         var dateField = document.querySelector('input[name="created"], #field-created');
         if (dateField && !dateField.value) {
             dateField.value = today;
-            console.log('[modern-upload] Auto-filled date:', today);
+        }
+        
+        // Description field
+        var descField = document.querySelector('textarea[name="description"], #field-description');
+        if (descField && !descField.value) {
+            descField.value = 'File uploaded: ' + fileName;
         }
     }
     
-    // Get format from file extension
     function getFormatFromExtension(ext) {
         var formats = {
-            'csv': 'CSV', 'json': 'JSON', 'xml': 'XML', 'xlsx': 'XLSX', 
-            'xls': 'XLS', 'pdf': 'PDF', 'txt': 'TXT', 'zip': 'ZIP'
+            'csv': 'CSV',
+            'json': 'JSON',
+            'geojson': 'GeoJSON',
+            'xml': 'XML',
+            'xlsx': 'XLSX',
+            'xls': 'XLS',
+            'pdf': 'PDF',
+            'txt': 'TXT',
+            'zip': 'ZIP',
+            'rar': 'RAR',
+            'kml': 'KML',
+            'kmz': 'KMZ',
+            'shp': 'SHP',
+            'gpx': 'GPX',
+            'png': 'PNG',
+            'jpg': 'JPG',
+            'jpeg': 'JPEG',
+            'gif': 'GIF',
+            'mp4': 'MP4',
+            'mp3': 'MP3',
+            'wav': 'WAV',
+            'doc': 'DOC',
+            'docx': 'DOCX',
+            'ppt': 'PPT',
+            'pptx': 'PPTX',
+            'html': 'HTML',
+            'htm': 'HTML',
+            'rdf': 'RDF',
+            'ttl': 'TTL',
+            'n3': 'N3',
+            'nt': 'NT',
+            'owl': 'OWL',
+            'jsonld': 'JSON-LD',
+            'tiff': 'TIFF',
+            'tif': 'TIFF',
+            'svg': 'SVG',
+            'wkt': 'WKT',
+            'wkb': 'WKB',
+            'gml': 'GML',
+            'api': 'API',
+            'rest': 'REST',
+            'soap': 'SOAP',
+            'wms': 'WMS',
+            'wfs': 'WFS',
+            'wcs': 'WCS',
+            'wmts': 'WMTS'
         };
+        
         return formats[ext] || ext.toUpperCase();
     }
     
-    // Format file size
+    function getExtensionFromUrl(url) {
+        var pathname = url.split('?')[0];
+        var parts = pathname.split('.');
+        return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : null;
+    }
+    
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
         var k = 1024;
@@ -323,8 +456,22 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
-    console.log('[modern-upload] Initialization complete');
-});
-</script>
-</script>
+    function isValidUrl(string) {
+        try {
+            var url = new URL(string);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    function showUrlFeedback(element, message, type) {
+        if (!element) return;
+        
+        element.textContent = message;
+        element.className = 'url-validation-feedback alert alert-' + (type === 'error' ? 'danger' : 'success');
+        element.style.display = 'block';
+    }
+    
+})();
 </script>
