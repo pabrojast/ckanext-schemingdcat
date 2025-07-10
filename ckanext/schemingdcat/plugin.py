@@ -12,9 +12,6 @@ from ckanext.scheming import logic as scheming_logic
 # Cloudstorage integration imports
 from ckanext.cloudstorage import storage
 from ckanext.cloudstorage import helpers as cloudstorage_helpers
-import ckanext.cloudstorage.logic.action.multipart as m_action
-import ckanext.cloudstorage.logic.auth.multipart as m_auth
-from ckanext.cloudstorage.uploader import DummyUploader
 
 import ckanext.schemingdcat.cli as cli
 import ckanext.schemingdcat.config as sdct_config
@@ -139,7 +136,6 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IValidators)
     # Add cloudstorage support
     plugins.implements(plugins.IUploader)
-    plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IResourceController, inherit=True)
 
     def update_config(self, config_):
@@ -182,33 +178,19 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         return None
 
     def get_actions(self):
-        # Merge schemingdcat actions with cloudstorage actions
-        actions = {
+        # Only return schemingdcat-specific actions
+        # cloudstorage actions are provided by the cloudstorage plugin
+        return {
             "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,
             "scheming_dataset_schema_list": scheming_logic.scheming_dataset_schema_list,
             "scheming_dataset_schema_show": scheming_logic.scheming_dataset_schema_show,
         }
-        cloudstorage_actions = {
-            'cloudstorage_initiate_multipart': m_action.initiate_multipart,
-            'cloudstorage_upload_multipart': m_action.upload_multipart,
-            'cloudstorage_finish_multipart': m_action.finish_multipart,
-            'cloudstorage_abort_multipart': m_action.abort_multipart,
-            'cloudstorage_check_multipart': m_action.check_multipart,
-            'cloudstorage_clean_multipart': m_action.clean_multipart,
-        }
-        actions.update(cloudstorage_actions)
-        return actions
 
-    # IAuthFunctions - add cloudstorage auth functions
+    # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
     def get_auth_functions(self):
-        return {
-            'cloudstorage_initiate_multipart': m_auth.initiate_multipart,
-            'cloudstorage_upload_multipart': m_auth.upload_multipart,
-            'cloudstorage_finish_multipart': m_auth.finish_multipart,
-            'cloudstorage_abort_multipart': m_auth.abort_multipart,
-            'cloudstorage_check_multipart': m_auth.check_multipart,
-            'cloudstorage_clean_multipart': m_auth.clean_multipart,
-        }
+        # cloudstorage auth functions are provided by the cloudstorage plugin
+        # We don't need to register them here to avoid conflicts
+        return {}
 
     # IResourceController - handle resource deletion
     def before_delete(self, context, resource, resources):
