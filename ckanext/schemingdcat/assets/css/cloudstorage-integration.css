@@ -194,9 +194,11 @@
     background: #ffffff;
     position: relative;
     min-height: 200px;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .drag-drop-zone:hover {
@@ -332,6 +334,9 @@
 /* URL Input Container */
 .url-input-container {
     max-width: 100%;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .url-input-container .input-group {
@@ -571,12 +576,28 @@
 }
 
 /* Force override Bootstrap styles for tabs - Higher specificity */
+.modern-upload-container {
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.modern-upload-container .upload-method-tabs {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
 .modern-upload-container .upload-method-tabs .nav-tabs {
     border-bottom: none !important;
+    margin-bottom: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
 
 .modern-upload-container .upload-method-tabs .nav-tabs .nav-item {
     margin-bottom: -1px;
+    flex-shrink: 0;
 }
 
 .modern-upload-container .upload-method-tabs .nav-tabs .nav-link {
@@ -586,12 +607,16 @@
     background: none !important;
     text-decoration: none !important;
     cursor: pointer;
+    white-space: nowrap;
+    padding: 8px 16px;
+    font-size: 14px;
 }
 
 .modern-upload-container .upload-method-tabs .nav-tabs .nav-link:hover {
     border-color: #e9ecef #e9ecef #dee2e6 !important;
     color: #495057 !important;
     background-color: #f8f9fa !important;
+    text-decoration: none !important;
 }
 
 .modern-upload-container .upload-method-tabs .nav-tabs .nav-link.active {
@@ -601,18 +626,79 @@
     font-weight: 600 !important;
 }
 
-.modern-upload-container .tab-content {
+.modern-upload-container .upload-tab-content {
     border: 1px solid #dee2e6 !important;
     border-top: none !important;
     border-radius: 0 0 8px 8px !important;
+    background: #f8f9fa !important;
+    padding: 20px !important;
+    min-height: 200px;
 }
 
+/* Critical: Fix tab pane visibility */
 .modern-upload-container .tab-pane {
     display: none !important;
+    opacity: 0;
+    transition: opacity 0.15s linear;
 }
 
-.modern-upload-container .tab-pane.active,
+.modern-upload-container .tab-pane.active {
+    display: block !important;
+    opacity: 1 !important;
+}
+
 .modern-upload-container .tab-pane.show.active {
     display: block !important;
     opacity: 1 !important;
+}
+
+/* Ensure content is visible when active */
+.modern-upload-container .tab-pane.active .drag-drop-zone,
+.modern-upload-container .tab-pane.active .url-input-container {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Container constraints */
+.card2-body .modern-upload-container {
+    margin: 0;
+    padding: 15px;
+    max-width: calc(100% - 10px);
+}
+
+/* Debug styles - Remove after testing */
+.modern-upload-container .tab-pane {
+    border: 2px solid red !important; /* Temporary debug border */
+    min-height: 100px !important;
+}
+
+.modern-upload-container .tab-pane.active {
+    border-color: green !important; /* Active pane should be green */
+    background: rgba(0, 255, 0, 0.1) !important; /* Light green background */
+}
+
+.modern-upload-container .drag-drop-zone {
+    border: 2px solid blue !important; /* Debug drag zone */
+}
+
+.modern-upload-container .url-input-container {
+    border: 2px solid orange !important; /* Debug URL container */
+    padding: 10px !important;
+}
+
+/* Force visibility for all content */
+.modern-upload-container .tab-pane * {
+    visibility: visible !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modern-upload-container .upload-method-tabs .nav-tabs .nav-link {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .modern-upload-container .upload-tab-content {
+        padding: 15px !important;
+    }
 } 

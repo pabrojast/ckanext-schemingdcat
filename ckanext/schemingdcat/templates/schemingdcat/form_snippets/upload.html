@@ -449,36 +449,79 @@ function initModernUpload() {
     
     // Tab functionality
     function initTabs() {
-        var tabLinks = document.querySelectorAll('#upload-container-{{ field.field_name }} .upload-method-tabs .nav-link');
-        var tabPanes = document.querySelectorAll('#upload-container-{{ field.field_name }} .tab-pane');
+        var containerId = uploadContainer.id;
+        var tabLinks = document.querySelectorAll('#' + containerId + ' .upload-method-tabs .nav-link');
+        var tabPanes = document.querySelectorAll('#' + containerId + ' .tab-pane');
+        
+        console.log('[modern-upload] Initializing tabs. Found', tabLinks.length, 'tabs and', tabPanes.length, 'panes');
         
         for (var i = 0; i < tabLinks.length; i++) {
             tabLinks[i].addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('[modern-upload] Tab clicked:', this.textContent.trim());
                 
                 // Remove active class from all tabs and panes
-                var allTabs = document.querySelectorAll('#upload-container-{{ field.field_name }} .upload-method-tabs .nav-link');
-                var allPanes = document.querySelectorAll('#upload-container-{{ field.field_name }} .tab-pane');
+                var allTabs = document.querySelectorAll('#' + containerId + ' .upload-method-tabs .nav-link');
+                var allPanes = document.querySelectorAll('#' + containerId + ' .tab-pane');
                 
                 for (var j = 0; j < allTabs.length; j++) {
                     allTabs[j].classList.remove('active');
+                    allTabs[j].setAttribute('aria-selected', 'false');
                 }
                 for (var k = 0; k < allPanes.length; k++) {
                     allPanes[k].classList.remove('show', 'active');
+                    allPanes[k].style.display = 'none';
                 }
                 
                 // Add active class to clicked tab
                 this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
                 
                 // Show corresponding pane
                 var targetId = this.getAttribute('href');
+                console.log('[modern-upload] Target panel ID:', targetId);
+                
                 if (targetId) {
                     var targetPane = document.querySelector(targetId);
                     if (targetPane) {
+                        // Force show the panel
+                        targetPane.style.display = 'block';
                         targetPane.classList.add('show', 'active');
+                        
+                        // Ensure inner content is visible
+                        var dragZone = targetPane.querySelector('.drag-drop-zone');
+                        var urlContainer = targetPane.querySelector('.url-input-container');
+                        
+                        if (dragZone) {
+                            dragZone.style.display = 'flex';
+                            dragZone.style.visibility = 'visible';
+                        }
+                        if (urlContainer) {
+                            urlContainer.style.display = 'block';
+                            urlContainer.style.visibility = 'visible';
+                        }
+                        
+                        console.log('[modern-upload] Panel shown:', targetId);
+                    } else {
+                        console.error('[modern-upload] Target panel not found:', targetId);
                     }
                 }
             });
+        }
+        
+        // Ensure initial state is correct
+        var activeTab = document.querySelector('#' + containerId + ' .nav-link.active');
+        if (activeTab) {
+            var activeTargetId = activeTab.getAttribute('href');
+            if (activeTargetId) {
+                var activePane = document.querySelector(activeTargetId);
+                if (activePane) {
+                    activePane.style.display = 'block';
+                    activePane.classList.add('show', 'active');
+                }
+            }
         }
     }
     
