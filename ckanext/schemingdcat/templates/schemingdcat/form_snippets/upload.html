@@ -288,7 +288,7 @@
             progressFill.style.width = '100%';
           }
           if (progressText) {
-            progressText.textContent = 'Listo';
+            progressText.textContent = 'Done';
           }
         }, 2000);
       }
@@ -318,7 +318,7 @@
           }
           // Completo
           if (width && width.indexOf('100%') !== -1) {
-            if (progressText) progressText.textContent = 'Listo';
+            if (progressText) progressText.textContent = 'Done';
             clearInterval(timer);
           }
         }, 300);
