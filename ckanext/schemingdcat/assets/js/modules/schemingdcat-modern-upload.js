@@ -33,14 +33,20 @@ ckan.module('schemingdcat-modern-upload', function ($) {
         self.clearFile();
       });
       
+      // Prevent default drag behaviors
+      $(document).on('dragenter dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      
       // Drag and drop functionality
-      dropzone.on('dragover', function(e) {
+      dropzone.on('dragenter dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
         $(this).addClass('dragover');
       });
       
-      dropzone.on('dragleave drop', function(e) {
+      dropzone.on('dragleave', function(e) {
         e.preventDefault();
         e.stopPropagation();
         $(this).removeClass('dragover');
@@ -49,13 +55,24 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       dropzone.on('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        $(this).removeClass('dragover');
         
         var dt = e.originalEvent.dataTransfer;
         if (dt && dt.files && dt.files.length > 0) {
-          // Set files to input
-          fileInput[0].files = dt.files;
+          // Try to set files to input (may not work in all browsers)
+          try {
+            if (typeof DataTransfer !== 'undefined') {
+              var dataTransfer = new DataTransfer();
+              dataTransfer.items.add(dt.files[0]);
+              fileInput[0].files = dataTransfer.files;
+            }
+          } catch(err) {
+            // Fallback: just display the file info
+            console.log('DataTransfer not supported, using fallback');
+          }
+          
           self.displayFile(dt.files[0]);
-          // Trigger change event
+          // Trigger change event for validation
           fileInput.trigger('change');
         }
       });

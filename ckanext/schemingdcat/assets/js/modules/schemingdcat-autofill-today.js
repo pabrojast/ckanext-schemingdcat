@@ -32,17 +32,6 @@ ckan.module('schemingdcat-autofill-today', function ($) {
             el.val(getTodayDate());
           }
         }
-        
-        // Convertir la fecha al formato dd-mm-YYYY cuando se envíe el formulario
-        el.closest('form').on('submit', function() {
-          var dateValue = el.val();
-          if (dateValue) {
-            var parts = dateValue.split('-');
-            if (parts.length === 3) {
-              el.val(parts[2] + '-' + parts[1] + '-' + parts[0]);
-            }
-          }
-        });
       }
     };
   });
