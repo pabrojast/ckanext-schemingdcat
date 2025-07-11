@@ -502,37 +502,37 @@ msgstr "Sólo los administradores de la instancia pueden reindexar todas las fue
 
 # Multi-upload translations
 msgid "Add Another Resource"
-msgstr "Añadir Otro Recurso"
+msgstr "Add Another Resource"
 
 msgid "Select multiple files in the upload field above to automatically create multiple resources"
-msgstr "Selecciona múltiples archivos en el campo de subida de arriba para crear múltiples recursos automáticamente"
+msgstr "Select multiple files in the upload field above to automatically create multiple resources"
 
 msgid "Drag and drop files here"
-msgstr "Arrastra y suelta archivos aquí"
+msgstr "Drag and drop files here"
 
 msgid "Browse Files"
-msgstr "Examinar Archivos"
+msgstr "Browse Files"
 
 msgid "Select multiple files to create multiple resources automatically"
-msgstr "Selecciona múltiples archivos para crear múltiples recursos automáticamente"
+msgstr "Select multiple files to create multiple resources automatically"
 
 msgid "Upload file"
-msgstr "Subir archivo"
+msgstr "Upload file"
 
 msgid "or"
-msgstr "o"
+msgstr "or"
 
 msgid "Supported formats: CSV, XLS, JSON, XML, PDF, and more"
-msgstr "Formatos soportados: CSV, XLS, JSON, XML, PDF, y más"
+msgstr "Supported formats: CSV, XLS, JSON, XML, PDF, and more"
 
 msgid "Link to a file"
-msgstr "Enlace a un archivo"
+msgstr "Link to a file"
 
 msgid "Processing..."
-msgstr "Procesando..."
+msgstr "Processing..."
 
 msgid "Remove"
-msgstr "Quitar"
+msgstr "Remove"
 
 #: ckanext/harvest/templates/snippets/add_source_button.html:6
 #: ckanext/harvest/templates/source/org_source_list.html:11

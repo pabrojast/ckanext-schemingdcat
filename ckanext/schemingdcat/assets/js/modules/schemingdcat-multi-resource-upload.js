@@ -3,40 +3,40 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
     initialize: function () {
       var self = this;
       
-      console.log('[schemingdcat-multi-upload] Inicializando módulo de subida múltiple');
+      console.log('[schemingdcat-multi-upload] Initializing multiple file upload module');
 
-      // Permitir selección múltiple en todos los file inputs de resources
+      // Enable multiple selection in all resource file inputs
       self._enableMultipleSelection();
       
-      // Añadir soporte para drag & drop múltiple
+      // Add drag & drop support for multiple files
       self._enableMultipleDragDrop();
 
-      // Delegamos el evento change para capturar selecciones múltiples
+      // Delegate change event to capture multiple selections
       $(document).on('change', 'input[type="file"][id^="field-resource-upload"]', function (e) {
         var $input = $(this);
         var files = e.target.files;
         if (!files || files.length <= 1) {
-          // Caso normal (un solo fichero): dejamos que CKAN actúe con su flow habitual
+          // Normal case (single file): let CKAN handle with its usual flow
           return;
         }
         self._handleMultipleFiles($input, files);
       });
       
-      // Mejorar el botón existente si ya está presente
+      // Enhance existing button if present
       self._enhanceAddButton();
     },
 
-    /* Añade atributo multiple a los inputs existentes (y futuros mediante delegación) */
+    /* Add multiple attribute to existing inputs */
     _enableMultipleSelection: function () {
       $('input[type="file"][id^="field-resource-upload"]').attr('multiple', 'multiple');
-      console.log('[schemingdcat-multi-upload] Habilitada selección múltiple en inputs de archivo');
+      console.log('[schemingdcat-multi-upload] Enabled multiple selection on file inputs');
     },
     
-    /* Habilita drag & drop múltiple en las zonas de subida */
+    /* Enable multiple drag & drop in upload zones */
     _enableMultipleDragDrop: function () {
       var self = this;
       
-      // Buscar todas las zonas de upload existentes
+      // Find all existing upload zones
       $('.upload-dropzone, .schemingdcat-upload-wrapper').each(function() {
         var $dropzone = $(this);
         
@@ -46,14 +46,14 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Encontrar el input file asociado
+            // Find associated file input
             var $fileInput = $dropzone.find('input[type="file"]').first();
             if (!$fileInput.length) {
               $fileInput = $dropzone.closest('.form-group').find('input[type="file"]').first();
             }
             
             if ($fileInput.length) {
-              console.log('[schemingdcat-multi-upload] Detectados ' + dt.files.length + ' archivos en drag & drop');
+              console.log('[schemingdcat-multi-upload] Detected ' + dt.files.length + ' files in drag & drop');
               self._handleMultipleFiles($fileInput, dt.files);
             }
           }
@@ -61,23 +61,26 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       });
     },
     
-    /* Mejora el botón de añadir recurso existente */
+    /* Enhance existing add resource button */
     _enhanceAddButton: function () {
       var $addBtn = this._findAddButton();
       if ($addBtn.length) {
-        console.log('[schemingdcat-multi-upload] Botón "Añadir recurso" encontrado y mejorado');
+        console.log('[schemingdcat-multi-upload] Add resource button found and enhanced');
         
-        // Añadir icono si no lo tiene
+        // Add icon if it doesn't have one
         if (!$addBtn.find('i').length) {
-          $addBtn.prepend('<i class="fa fa-plus"></i> ');
+          var icon = document.createElement('i');
+          icon.className = 'fa fa-plus';
+          icon.style.marginRight = '5px';
+          $addBtn.prepend(icon);
         }
         
-        // Añadir tooltip
-        $addBtn.attr('title', 'Haz clic para añadir otro recurso, o selecciona múltiples archivos arriba para crearlos automáticamente');
+        // Add tooltip
+        $addBtn.attr('title', 'Click to add another resource, or select multiple files above to create them automatically');
       }
     },
     
-    /* Encuentra el botón de añadir recurso con mejor lógica */
+    /* Find add resource button with better logic */
     _findAddButton: function () {
       var selectors = [
         '#add-resource',
@@ -91,26 +94,26 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       for (var i = 0; i < selectors.length; i++) {
         var $btn = $(selectors[i]);
         if ($btn.length) {
-          console.log('[schemingdcat-multi-upload] Botón encontrado con selector: ' + selectors[i]);
+          console.log('[schemingdcat-multi-upload] Button found with selector: ' + selectors[i]);
           return $btn;
         }
       }
       
-      console.warn('[schemingdcat-multi-upload] No se encontró ningún botón "Añadir recurso"');
+      console.warn('[schemingdcat-multi-upload] No add resource button found');
       return $();
     },
 
-    /* Gestiona la selección múltiple dividiendo los ficheros en varios bloques resource */
+    /* Handle multiple selection by splitting files into resource blocks */
     _handleMultipleFiles: function ($originInput, files) {
       var filesArr = Array.prototype.slice.call(files);
       if (!filesArr.length) return;
       
-      console.log('[schemingdcat-multi-upload] Procesando ' + filesArr.length + ' archivos');
+      console.log('[schemingdcat-multi-upload] Processing ' + filesArr.length + ' files');
       
-      // Mostrar feedback visual
+      // Show visual feedback
       this._showProcessingFeedback(filesArr.length);
 
-      // Dejamos el primer fichero en el bloque actual
+      // Keep first file in current block
       var firstFile = filesArr.shift();
       this._setInputFile($originInput, firstFile);
       this._autoFillFields($originInput.closest('.resource-upload-field, .form-group'), firstFile);
@@ -118,7 +121,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       var self = this;
       var processed = 1;
       
-      // Procesar archivos restantes con delay
+      // Process remaining files with delay
       filesArr.forEach(function (file, index) {
         setTimeout(function() {
           self._addResourceWithFile(file, function() {
@@ -130,24 +133,24 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
               self._showSuccessFeedback(processed);
             }
           });
-        }, (index + 1) * 300); // Delay escalonado para mejor UX
+        }, (index + 1) * 300); // Staggered delay for better UX
       });
     },
 
-    /* Crea un nuevo bloque resource pulsando el botón estándar y rellena los datos */
+    /* Create new resource block by clicking standard button and fill data */
     _addResourceWithFile: function (file, callback) {
       var self = this;
       var $addBtn = this._findAddButton();
       
       if (!$addBtn.length) {
-        console.error('[schemingdcat-multi-upload] No se encontró el botón "Añadir recurso"');
+        console.error('[schemingdcat-multi-upload] Add resource button not found');
         if (callback) callback(false);
         return;
       }
 
       $addBtn.trigger('click');
 
-      // Esperamos a que el DOM se actualice con timeout más largo si es necesario
+      // Wait for DOM to update with longer timeout if needed
       var attempts = 0;
       var maxAttempts = 10;
       
@@ -158,11 +161,11 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
         if ($wrapper.length) {
           var $fileInput = $wrapper.find('input[type="file"][id^="field-resource-upload"]');
           if ($fileInput.length) {
-            // forzar multiple por si la plantilla no lo trae
+            // Force multiple attribute in case template doesn't have it
             $fileInput.attr('multiple', 'multiple');
             self._setInputFile($fileInput, file);
             self._autoFillFields($wrapper, file);
-            console.log('[schemingdcat-multi-upload] Recurso añadido exitosamente: ' + file.name);
+            console.log('[schemingdcat-multi-upload] Resource added successfully: ' + file.name);
             if (callback) callback(true);
             return;
           }
@@ -171,7 +174,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
         if (attempts < maxAttempts) {
           setTimeout(tryFindNewResource, 250);
         } else {
-          console.error('[schemingdcat-multi-upload] No se pudo crear el nuevo recurso después de ' + maxAttempts + ' intentos');
+          console.error('[schemingdcat-multi-upload] Could not create new resource after ' + maxAttempts + ' attempts');
           if (callback) callback(false);
         }
       }
@@ -179,7 +182,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       setTimeout(tryFindNewResource, 250);
     },
 
-    /* Asigna un objeto File a un input mediante DataTransfer */
+    /* Assign File object to input using DataTransfer */
     _setInputFile: function ($input, file) {
       if (typeof DataTransfer !== 'undefined') {
         try {
@@ -187,24 +190,24 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
           dt.items.add(file);
           $input[0].files = dt.files;
           
-          // Trigger change event para que otros módulos respondan
+          // Trigger change event for other modules to respond
           $input.trigger('change');
         } catch (err) {
-          console.warn('[schemingdcat-multi-upload] DataTransfer no soportado en este navegador: ' + err.message);
+          console.warn('[schemingdcat-multi-upload] DataTransfer not supported in this browser: ' + err.message);
         }
       }
     },
 
-    /* Rellena automáticamente campos básicos (name, format, created) con mejor lógica */
+    /* Auto-fill basic fields (name, format, created) with better logic */
     _autoFillFields: function ($wrapper, file) {
-      // Nombre (sin extensión)
+      // Name (without extension)
       var baseName = file.name.replace(/\.[^.]+$/, '');
       var $nameField = $wrapper.find('input[name$="name"], input[name*="name"]').first();
       if ($nameField.length && !$nameField.val()) {
         $nameField.val(baseName);
       }
 
-      // Formato (extensión) con mapeo mejorado
+      // Format (extension) with improved mapping
       var ext = file.name.split('.').pop().toUpperCase();
       var formatMap = {
         'XLSX': 'XLS',
@@ -225,21 +228,21 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
         $formatField.val(format);
       }
 
-      // Fecha (created) si existe y está vacía
+      // Date (created) if exists and empty
       var $created = $wrapper.find('input[name$="created"], input[name*="created"]').first();
       if ($created.length && !$created.val()) {
         var today = new Date().toISOString().slice(0, 10);
         $created.val(today);
       }
       
-      // Descripción automática
+      // Automatic description
       var $description = $wrapper.find('textarea[name$="description"], textarea[name*="description"]').first();
       if ($description.length && !$description.val()) {
-        $description.val('Archivo subido: ' + file.name + ' (' + this._formatFileSize(file.size) + ')');
+        $description.val('Uploaded file: ' + file.name + ' (' + this._formatFileSize(file.size) + ')');
       }
     },
     
-    /* Formatea el tamaño del archivo */
+    /* Format file size */
     _formatFileSize: function (bytes) {
       if (bytes === 0) return '0 Bytes';
       var k = 1024;
@@ -248,53 +251,128 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     },
     
-    /* Muestra feedback visual durante el procesamiento */
+    /* Show visual feedback during processing */
     _showProcessingFeedback: function (totalFiles) {
-      var $feedback = $('<div class="multi-upload-feedback alert alert-info">' +
-        '<i class="fa fa-spinner fa-spin"></i> ' +
-        'Procesando ' + totalFiles + ' archivos...' +
-        '<div class="progress" style="margin-top: 10px;">' +
-        '<div class="progress-bar" style="width: 0%"></div>' +
-        '</div>' +
-        '</div>');
+      // Create feedback container
+      var feedbackDiv = document.createElement('div');
+      feedbackDiv.className = 'multi-upload-feedback alert alert-info';
       
-      $('.multi-resource-controls').after($feedback);
+      // Create spinner icon
+      var spinner = document.createElement('i');
+      spinner.className = 'fa fa-spinner fa-spin';
+      spinner.style.marginRight = '8px';
+      
+      // Create text
+      var text = document.createTextNode('Processing ' + totalFiles + ' files...');
+      
+      // Create progress container
+      var progressContainer = document.createElement('div');
+      progressContainer.className = 'progress';
+      progressContainer.style.marginTop = '10px';
+      
+      // Create progress bar
+      var progressBar = document.createElement('div');
+      progressBar.className = 'progress-bar';
+      progressBar.style.width = '0%';
+      
+      // Assemble elements
+      progressContainer.appendChild(progressBar);
+      feedbackDiv.appendChild(spinner);
+      feedbackDiv.appendChild(text);
+      feedbackDiv.appendChild(progressContainer);
+      
+      // Add to DOM
+      var controlsElement = document.querySelector('.multi-resource-controls');
+      if (controlsElement && controlsElement.parentNode) {
+        controlsElement.parentNode.insertBefore(feedbackDiv, controlsElement.nextSibling);
+      }
     },
     
-    /* Actualiza el feedback del progreso */
+    /* Update progress feedback */
     _updateProcessingFeedback: function (processed, total) {
       var percentage = (processed / total) * 100;
-      $('.multi-upload-feedback .progress-bar').css('width', percentage + '%');
-      $('.multi-upload-feedback').html(
-        '<i class="fa fa-spinner fa-spin"></i> ' +
-        'Procesando archivos: ' + processed + '/' + total +
-        '<div class="progress" style="margin-top: 10px;">' +
-        '<div class="progress-bar" style="width: ' + percentage + '%"></div>' +
-        '</div>'
-      );
+      var feedbackElement = document.querySelector('.multi-upload-feedback');
+      
+      if (feedbackElement) {
+        // Update progress bar
+        var progressBar = feedbackElement.querySelector('.progress-bar');
+        if (progressBar) {
+          progressBar.style.width = percentage + '%';
+        }
+        
+        // Clear and rebuild content
+        feedbackElement.innerHTML = '';
+        
+        // Create spinner
+        var spinner = document.createElement('i');
+        spinner.className = 'fa fa-spinner fa-spin';
+        spinner.style.marginRight = '8px';
+        
+        // Create text
+        var text = document.createTextNode('Processing files: ' + processed + '/' + total);
+        
+        // Create progress container
+        var progressContainer = document.createElement('div');
+        progressContainer.className = 'progress';
+        progressContainer.style.marginTop = '10px';
+        
+        // Create progress bar
+        var newProgressBar = document.createElement('div');
+        newProgressBar.className = 'progress-bar';
+        newProgressBar.style.width = percentage + '%';
+        
+        // Assemble
+        progressContainer.appendChild(newProgressBar);
+        feedbackElement.appendChild(spinner);
+        feedbackElement.appendChild(text);
+        feedbackElement.appendChild(progressContainer);
+      }
     },
     
-    /* Oculta el feedback de procesamiento */
+    /* Hide processing feedback */
     _hideProcessingFeedback: function () {
       setTimeout(function() {
-        $('.multi-upload-feedback').fadeOut(500, function() {
-          $(this).remove();
-        });
+        var feedbackElement = document.querySelector('.multi-upload-feedback');
+        if (feedbackElement) {
+          $(feedbackElement).fadeOut(500, function() {
+            if (feedbackElement.parentNode) {
+              feedbackElement.parentNode.removeChild(feedbackElement);
+            }
+          });
+        }
       }, 1000);
     },
     
-    /* Muestra feedback de éxito */
+    /* Show success feedback */
     _showSuccessFeedback: function (totalProcessed) {
-      var $success = $('<div class="multi-upload-success alert alert-success">' +
-        '<i class="fa fa-check"></i> ' +
-        '¡Éxito! Se han creado ' + totalProcessed + ' recursos.' +
-        '</div>');
+      // Create success container
+      var successDiv = document.createElement('div');
+      successDiv.className = 'multi-upload-success alert alert-success';
       
-      $('.multi-resource-controls').after($success);
+      // Create check icon
+      var checkIcon = document.createElement('i');
+      checkIcon.className = 'fa fa-check';
+      checkIcon.style.marginRight = '8px';
       
+      // Create text
+      var text = document.createTextNode('Success! Created ' + totalProcessed + ' resources.');
+      
+      // Assemble elements
+      successDiv.appendChild(checkIcon);
+      successDiv.appendChild(text);
+      
+      // Add to DOM
+      var controlsElement = document.querySelector('.multi-resource-controls');
+      if (controlsElement && controlsElement.parentNode) {
+        controlsElement.parentNode.insertBefore(successDiv, controlsElement.nextSibling);
+      }
+      
+      // Remove after delay
       setTimeout(function() {
-        $success.fadeOut(500, function() {
-          $(this).remove();
+        $(successDiv).fadeOut(500, function() {
+          if (successDiv.parentNode) {
+            successDiv.parentNode.removeChild(successDiv);
+          }
         });
       }, 3000);
     }

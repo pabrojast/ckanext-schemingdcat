@@ -129,7 +129,14 @@
     fileInput.addEventListener('change', function(e) {
       var files = e.target.files;
       if (files && files.length > 0) {
-        displayFile(files[0]);
+        if (files.length === 1) {
+          // Single file - normal display
+          displayFile(files[0]);
+        } else {
+          // Multiple files - show first file but indicate multiple selection
+          displayFile(files[0]);
+          showMultipleFileIndicator(files.length);
+        }
         
         // Auto-fill format field if exists
         var formatFields = document.querySelectorAll('input[name*="format"]');
@@ -303,7 +310,15 @@
       var progressBar = filePreview.querySelector('.upload-progress');
       var progressText = filePreview.querySelector('.progress-text');
       
-      fileName.textContent = file.name;
+      // Check if there are multiple files selected
+      var totalFiles = fileInput.files ? fileInput.files.length : 1;
+      
+      if (totalFiles > 1) {
+        fileName.textContent = file.name + ' (+ ' + (totalFiles - 1) + ' more files)';
+      } else {
+        fileName.textContent = file.name;
+      }
+      
       fileSize.textContent = formatFileSize(file.size);
       
       // Update icon
@@ -315,11 +330,11 @@
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
       
-      // Mostrar animación de progreso y marcar como completada al finalizar la animación inicial
+      // Show progress animation and mark as completed at the end of initial animation
       if (progressBar) {
         progressBar.style.display = 'block';
         var progressFill = progressBar.querySelector('.progress-fill');
-        // Pasados 2 s (fin de la animación CSS), fijar barra al 100 % y cambiar el texto
+        // After 2s (end of CSS animation), set bar to 100% and change text
         setTimeout(function() {
           if (progressFill) {
             progressFill.style.animation = 'none';
@@ -337,24 +352,24 @@
         clearCheckbox.checked = true;
       }
 
-      // Sincronizar con CloudStorage (si está disponible) para mostrar progreso real
+      // Sync with CloudStorage (if available) to show real progress
       setTimeout(function() {
         var csContainer = wrapper.querySelector('.cloudstorage-progress-container');
-        if (!csContainer) return; // sin CloudStorage
+        if (!csContainer) return; // no CloudStorage
         var csBar = csContainer.querySelector('.progress-bar');
         var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
         if (!csBar) return;
         previewSyncTimer = setInterval(function() {
-          // Copiar ancho de barra
+          // Copy bar width
           var width = csBar.style.width;
           if (width) {
             if (progressFill) progressFill.style.width = width;
           }
-          // Copiar texto de estado
+          // Copy status text
           if (csStatus && csStatus.textContent) {
             progressText.textContent = csStatus.textContent;
           }
-          // Completo
+          // Complete
           if (width && width.indexOf('100%') !== -1) {
             if (progressText) progressText.textContent = 'Done';
             clearInterval(previewSyncTimer);
@@ -434,13 +449,25 @@
       dropzone.style.position = 'relative';
       dropzone.appendChild(indicator);
       
-      // Show temporary message
+      // Show temporary message using safe DOM methods
       var message = document.createElement('div');
       message.className = 'multi-upload-message alert alert-info';
       message.style.marginTop = '10px';
-      message.innerHTML = '<i class="fa fa-info-circle"></i> ' + 
-        fileCount + ' archivos seleccionados. El primer archivo se muestra arriba, ' +
-        'los demás se crearán como recursos adicionales automáticamente.';
+      
+      // Create icon
+      var icon = document.createElement('i');
+      icon.className = 'fa fa-info-circle';
+      icon.style.marginRight = '8px';
+      
+      // Create text content
+      var textContent = document.createTextNode(
+        fileCount + ' files selected. The first file is shown above, ' +
+        'others will be created as additional resources automatically.'
+      );
+      
+      // Assemble message
+      message.appendChild(icon);
+      message.appendChild(textContent);
       
       dropzone.parentNode.appendChild(message);
       
@@ -464,7 +491,15 @@
       note.style.fontWeight = 'bold';
       note.style.color = '#007bff';
       note.style.marginTop = '5px';
-      note.innerHTML = '<i class="fa fa-magic"></i> ¡Selecciona múltiples archivos para crear varios recursos a la vez!';
+      
+      var icon = document.createElement('i');
+      icon.className = 'fa fa-magic';
+      icon.style.marginRight = '5px';
+      
+      var text = document.createTextNode('Select multiple files to create several resources at once!');
+      
+      note.appendChild(icon);
+      note.appendChild(text);
       helpText.appendChild(note);
     }
   }
