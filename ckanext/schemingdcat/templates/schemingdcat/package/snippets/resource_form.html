@@ -1,9 +1,7 @@
 {% extends 'package/snippets/resource_form.html' %}
 
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
-{% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}  <!-- NUEVO -->
 <div data-module="schemingdcat-simple-navigation"></div>
-<div data-module="schemingdcat-multi-resource-upload"></div>
 
 {# Only include cloudstorage assets if the plugin is active and helpers are available #}
 {# This will be handled by the cloudstorage plugin itself #}
@@ -44,6 +42,10 @@
 {% endblock %}
 
 {% block basic_fields %}
+  {# --- MÓDULO MULTI-UPLOAD --- #}
+  {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
+  <div data-module="schemingdcat-multi-resource-upload"></div>
+
   {%- if not dataset_type -%}
     <p>
     dataset_type not passed to template. your version of CKAN
@@ -89,7 +91,6 @@
   {%- for element in elements -%}
     {%- if element is mapping and 'form_group_id' in element and element.form_group_id is defined -%}
       {# This is a form group #}
-      {# Check if any field in this form group is in the current page #}
       {%- set group_fields = fields | selectattr("form_group_id", "equalto", element.form_group_id) | list -%}
       {%- if group_fields | length > 0 -%}
         <div class="{{ element.form_group_id }}-group card2 mb-3">
@@ -97,11 +98,9 @@
             <h3 class="mb-0"><i class="fa {{ element.fa_icon }}" style="padding-right:5px;"></i>{{ h.scheming_language_text(element.label) }}</h3>
           </div>
           <div class="card2-body">
-            {# Render each field in the form group #}
             {%- for field in group_fields -%}
               {%- if field.form_snippet is not none -%}
                 {%- if field.field_name not in data %}
-                  {# Set the field default value before rendering #}
                   {% if field.default_jinja2 %}
                     {% do data.__setitem__(
                       field.field_name,
@@ -125,11 +124,9 @@
           </div>
         </div>
       {%- endif -%}
-      {%- else -%}
-      {# This is a field #}
+    {%- else -%}
       {%- if element.form_snippet is not none -%}
         {%- if element.field_name not in data %}
-          {# Set the field default value before rendering #}
           {% if element.default_jinja2 %}
             {% do data.__setitem__(
               element.field_name,
@@ -150,11 +147,10 @@
     {%- endif -%}
   {%- endfor -%}
 
-  {# Render hidden input based on whether pages are defined #}
+  {# Hidden input for controller phase #}
   {%- if pages -%}
     <input type="hidden" name="_ckan_phase" value="{{ active_page }}" />
   {%- elif 'resource_fields' not in schema -%}
-    <!-- force controller to skip resource-editing step for this type -->
     <input type="hidden" name="_ckan_phase" value="" />
   {%- endif -%}
 
