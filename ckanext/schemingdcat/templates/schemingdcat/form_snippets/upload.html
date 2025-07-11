@@ -25,9 +25,11 @@
       <label class="control-label">{{ _('Upload file') }}</label>
       <div class="upload-dropzone" id="dropzone-{{ field_url }}">
         <div class="dropzone-content">
-          <i class="fa fa-cloud-upload fa-3x"></i>
+          <div class="dropzone-icon">
+            <i class="fa fa-cloud-upload"></i>
+          </div>
           <h4>{{ _('Drag and drop a file here') }}</h4>
-          <p>{{ _('or') }}</p>
+          <p class="drop-hint">{{ _('or') }}</p>
           <label for="{{ field_upload }}" class="btn btn-primary browse-button">
             <i class="fa fa-folder-open"></i> {{ _('Browse File') }}
           </label>
@@ -51,6 +53,12 @@
             <button type="button" class="btn btn-sm btn-danger remove-file">
               <i class="fa fa-times"></i> {{ _('Remove') }}
             </button>
+          </div>
+          <div class="upload-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+            <p class="progress-text">{{ _('Processing...') }}</p>
           </div>
         </div>
       </div>
@@ -243,6 +251,8 @@
       var fileName = filePreview.querySelector('.file-name');
       var fileSize = filePreview.querySelector('.file-size');
       var fileIcon = filePreview.querySelector('.file-icon');
+      var progressBar = filePreview.querySelector('.upload-progress');
+      var progressText = filePreview.querySelector('.progress-text');
       
       fileName.textContent = file.name;
       fileSize.textContent = formatFileSize(file.size);
@@ -255,6 +265,15 @@
       // Show preview, hide dropzone content
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
+      
+      // Show progress bar animation
+      if (progressBar) {
+        progressBar.style.display = 'block';
+        // Hide progress bar after animation
+        setTimeout(function() {
+          progressBar.style.display = 'none';
+        }, 2000);
+      }
       
       // Check clear checkbox if exists
       var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
@@ -316,42 +335,101 @@
 }
 
 .schemingdcat-upload-wrapper .upload-dropzone {
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  padding: 30px;
+  border: 3px dashed #c8d6e5;
+  border-radius: 12px;
+  padding: 40px;
   text-align: center;
-  background: #fafafa;
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8f9fa 25%, transparent 25%) -50px 0,
+              linear-gradient(225deg, #f8f9fa 25%, transparent 25%) -50px 0,
+              linear-gradient(315deg, #f8f9fa 25%, transparent 25%),
+              linear-gradient(45deg, #f8f9fa 25%, transparent 25%);
+  background-size: 100px 100px;
+  background-color: #fafbfc;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  min-height: 180px;
+  min-height: 220px;
   margin-top: 10px;
+  overflow: hidden;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #2572B4, #4a90e2, #2572B4);
+  border-radius: 12px;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
 }
 
 .schemingdcat-upload-wrapper .upload-dropzone:hover {
-  border-color: #999;
-  background: #f5f5f5;
+  border-color: #a0b3c7;
+  background-color: #f5f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .schemingdcat-upload-wrapper .upload-dropzone.dragover {
   border-color: #2572B4;
-  background: #f0f7ff;
+  background-color: #e8f2ff;
   border-style: solid;
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(37, 114, 180, 0.25);
 }
 
-.schemingdcat-upload-wrapper .dropzone-content i {
-  color: #999;
-  margin-bottom: 15px;
+.schemingdcat-upload-wrapper .upload-dropzone.dragover::before {
+  opacity: 0.1;
+}
+
+.schemingdcat-upload-wrapper .dropzone-icon {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.schemingdcat-upload-wrapper .dropzone-icon i {
+  font-size: 60px;
+  color: #7f8c9b;
+  transition: all 0.3s ease;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone:hover .dropzone-icon i,
+.schemingdcat-upload-wrapper .upload-dropzone.dragover .dropzone-icon i {
+  color: #2572B4;
+  transform: translateY(-5px);
 }
 
 .schemingdcat-upload-wrapper .dropzone-content h4 {
-  color: #666;
+  color: #495057;
+  margin: 15px 0 10px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.schemingdcat-upload-wrapper .drop-hint {
+  color: #6c757d;
   margin: 10px 0;
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .schemingdcat-upload-wrapper .browse-button {
-  margin: 10px 0;
+  margin: 15px 0;
   cursor: pointer;
+  background: #2572B4;
+  border: none;
+  padding: 10px 24px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(37, 114, 180, 0.3);
+}
+
+.schemingdcat-upload-wrapper .browse-button:hover {
+  background: #1e5a90;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 114, 180, 0.4);
 }
 
 .schemingdcat-upload-wrapper .file-preview {
@@ -386,6 +464,50 @@
 
 .schemingdcat-upload-wrapper .current-file-info {
   margin-bottom: 20px;
+}
+
+/* Upload progress styles */
+.schemingdcat-upload-wrapper .upload-progress {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.schemingdcat-upload-wrapper .progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.schemingdcat-upload-wrapper .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2572B4 0%, #4a90e2 50%, #2572B4 100%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: progressAnimation 2s ease-in-out infinite, shimmer 1.5s linear infinite;
+  width: 0%;
+}
+
+@keyframes progressAnimation {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.schemingdcat-upload-wrapper .progress-text {
+  text-align: center;
+  margin-top: 10px;
+  color: #6c757d;
+  font-size: 14px;
+  font-style: italic;
 }
 
 .schemingdcat-upload-wrapper .url-or-separator {

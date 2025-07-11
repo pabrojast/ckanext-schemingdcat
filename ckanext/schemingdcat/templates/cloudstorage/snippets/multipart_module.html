@@ -5,14 +5,16 @@
 <link rel="stylesheet" href="{{ h.url_for_static('/css/cloudstorage-integration.css', qualified=true) }}" type="text/css">
 
 {% if h.cloudstorage_use_enhanced_upload is defined and h.cloudstorage_use_enhanced_upload() %}
-    {# Enhanced upload interface notification #}
-    <div class="cloudstorage-enhanced-upload alert alert-info">
-        <i class="fa fa-info-circle"></i>
-        {{ _('Enhanced upload interface is enabled') }}
-        {% if h.cloudstorage_use_azure_direct_upload is defined and h.cloudstorage_use_azure_direct_upload() %}
-            <br><small><i class="fa fa-cloud"></i> {{ _('Azure Direct Upload: Files will be uploaded directly to Azure Blob Storage') }}</small>
-        {% endif %}
-    </div>
+    {# Enhanced upload interface notification - only for admins #}
+    {% if h.check_access('sysadmin') %}
+        <div class="cloudstorage-enhanced-upload alert alert-info">
+            <i class="fa fa-info-circle"></i>
+            {{ _('Enhanced upload interface is enabled') }}
+            {% if h.cloudstorage_use_azure_direct_upload is defined and h.cloudstorage_use_azure_direct_upload() %}
+                <br><small><i class="fa fa-cloud"></i> {{ _('Azure Direct Upload: Files will be uploaded directly to Azure Blob Storage') }}</small>
+            {% endif %}
+        </div>
+    {% endif %}
 {% endif %}
 
 {# Enhanced JavaScript integration with Azure progress tracking #}
