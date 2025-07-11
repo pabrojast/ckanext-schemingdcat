@@ -96,12 +96,64 @@
     var removeButton = wrapper.querySelector('.remove-file');
     
     if (!fileInput || !dropzone) return;
+    
+    // Auto-fill date field if exists and is empty
+    // Look for resource date fields specifically
+    var dateFields = document.querySelectorAll('input[type="date"]');
+    dateFields.forEach(function(field) {
+      if ((field.name.indexOf('created') !== -1 || field.name.indexOf('__0__created') !== -1) && !field.value) {
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = today.getMonth() + 1;
+        var dd = today.getDate();
+        
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+        
+        field.value = yyyy + '-' + mm + '-' + dd;
+      }
+    });
 
     // File input change
     fileInput.addEventListener('change', function(e) {
       var files = e.target.files;
       if (files && files.length > 0) {
         displayFile(files[0]);
+        
+        // Auto-fill format field if exists
+        var formatFields = document.querySelectorAll('input[name*="format"]');
+        var formatField = null;
+        formatFields.forEach(function(field) {
+          if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+            formatField = field;
+          }
+        });
+        
+        if (formatField && !formatField.value) {
+          var fileName = files[0].name;
+          var ext = fileName.split('.').pop().toUpperCase();
+          
+          // Format mapping
+          var formatMap = {
+            'CSV': 'CSV',
+            'XLS': 'XLS', 
+            'XLSX': 'XLS',
+            'JSON': 'JSON',
+            'GEOJSON': 'GeoJSON',
+            'XML': 'XML',
+            'RDF': 'RDF',
+            'PDF': 'PDF',
+            'DOC': 'DOC',
+            'DOCX': 'DOC',
+            'TXT': 'TXT',
+            'ZIP': 'ZIP'
+          };
+          
+          formatField.value = formatMap[ext] || ext;
+          // Trigger change event
+          var event = new Event('change', { bubbles: true });
+          formatField.dispatchEvent(event);
+        }
       }
     });
 
@@ -140,6 +192,52 @@
         fileInput.dispatchEvent(event);
       }
     });
+    
+    // URL input change for format detection
+    var urlInput = wrapper.querySelector('input[name="{{ field_url }}"]');
+    if (urlInput) {
+      urlInput.addEventListener('blur', function(e) {
+        var url = e.target.value;
+        if (url) {
+          var formatFields = document.querySelectorAll('input[name*="format"]');
+          var formatField = null;
+          formatFields.forEach(function(field) {
+            if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+              formatField = field;
+            }
+          });
+          
+          if (formatField && !formatField.value) {
+            // Extract extension from URL
+            var urlParts = url.split('?')[0].split('.');
+            if (urlParts.length > 1) {
+              var ext = urlParts[urlParts.length - 1].toUpperCase();
+              
+              // Format mapping
+              var formatMap = {
+                'CSV': 'CSV',
+                'XLS': 'XLS', 
+                'XLSX': 'XLS',
+                'JSON': 'JSON',
+                'GEOJSON': 'GeoJSON',
+                'XML': 'XML',
+                'RDF': 'RDF',
+                'PDF': 'PDF',
+                'DOC': 'DOC',
+                'DOCX': 'DOC',
+                'TXT': 'TXT',
+                'ZIP': 'ZIP'
+              };
+              
+              formatField.value = formatMap[ext] || ext;
+              // Trigger change event
+              var event = new Event('change', { bubbles: true });
+              formatField.dispatchEvent(event);
+            }
+          }
+        }
+      });
+    }
 
     function displayFile(file) {
       var fileName = filePreview.querySelector('.file-name');
