@@ -62,6 +62,8 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
           console.warn('schemingdcat: El nuevo recurso no contiene input file.');
           return;
         }
+        // forzar multiple por si la plantilla no lo trae
+        $fileInput.attr('multiple', 'multiple');
         self._setInputFile($fileInput, file);
         self._autoFillFields($wrapper, file);
       }, 250); // 250 ms suele bastar
