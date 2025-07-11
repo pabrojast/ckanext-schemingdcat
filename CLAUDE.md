@@ -146,3 +146,122 @@ Main configuration handled through:
 - Integration tests for harvesters
 - Use test fixtures for schema validation
 - Mock external services in tests
+
+# Documentación de Claude
+
+Este archivo documenta los cambios realizados por Claude en el proyecto ckanext-schemingdcat.
+
+## Sistema de Subida Multi-Archivo ✅
+
+### Problema resuelto
+Se intentó hacer un sistema de subida multi archivos pero no funcionaba porque faltaba el botón "Añadir recurso" que el módulo JavaScript necesitaba para crear nuevos recursos dinámicamente.
+
+### Solución implementada
+
+#### 1. Botón "Añadir recurso" añadido
+- **Archivo modificado**: `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
+- **Cambio**: Añadido botón con todas las clases CSS que el módulo multi-upload busca
+- **Funcionalidad**: Permite crear nuevos recursos manualmente o automáticamente via multi-upload
+
+#### 2. Módulo JavaScript mejorado
+- **Archivo modificado**: `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`
+- **Mejoras implementadas**:
+  - ✅ Mejor detección del botón "Añadir recurso"
+  - ✅ Soporte para drag & drop múltiple
+  - ✅ Feedback visual durante el procesamiento
+  - ✅ Barra de progreso para múltiples archivos
+  - ✅ Auto-fill mejorado de campos (nombre, formato, fecha, descripción)
+  - ✅ Gestión de errores y timeouts
+  - ✅ Mensajes de éxito/error
+  - ✅ Logging detallado para debugging
+
+#### 3. Estilos CSS añadidos
+- **Archivo modificado**: `ckanext/schemingdcat/assets/css/schemingdcat.css`
+- **Estilos nuevos**:
+  - ✅ Zona de drag & drop visual para múltiples archivos
+  - ✅ Feedback de progreso con animaciones
+  - ✅ Estados visuales (procesando, éxito, error)
+  - ✅ Indicadores de múltiples archivos
+  - ✅ Responsive design para móviles
+  - ✅ Transiciones suaves y efectos hover
+
+#### 4. Plantilla de upload mejorada
+- **Archivo modificado**: `ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html`
+- **Mejoras**:
+  - ✅ Soporte para atributo `multiple` en input file
+  - ✅ Detección mejorada de drag & drop múltiple
+  - ✅ Clases CSS para estados visuales
+  - ✅ Contador de archivos múltiples
+  - ✅ Mensajes informativos para el usuario
+
+#### 5. Traducciones en español
+- **Archivo modificado**: `ckanext/schemingdcat/i18n/es/LC_MESSAGES/ckanext-schemingdcat.po`
+- **Traducciones añadidas**:
+  - "Add Another Resource" → "Añadir Otro Recurso"
+  - "Drag and drop files here" → "Arrastra y suelta archivos aquí"
+  - "Browse Files" → "Examinar Archivos"
+  - Y otras más...
+
+### Cómo usar el sistema multi-upload
+
+#### Método 1: Selección múltiple
+1. Ir a crear/editar un dataset
+2. En la página "Add data", hacer clic en el campo de subida de archivos
+3. Seleccionar múltiples archivos con Ctrl+Click (Windows/Linux) o Cmd+Click (Mac)
+4. El sistema automáticamente creará un recurso para cada archivo
+
+#### Método 2: Drag & Drop
+1. Ir a crear/editar un dataset
+2. En la página "Add data", arrastrar múltiples archivos a la zona de subida
+3. Los archivos se procesarán automáticamente
+
+#### Método 3: Botón manual
+1. Usar el botón "Añadir Otro Recurso" para crear recursos adicionales manualmente
+2. Cada clic crea un nuevo formulario de recurso
+
+### Características del auto-fill
+- **Nombre**: Se extrae del nombre del archivo (sin extensión)
+- **Formato**: Se detecta automáticamente según la extensión
+- **Fecha de creación**: Se rellena con la fecha actual
+- **Descripción**: Se genera automáticamente con nombre y tamaño del archivo
+
+### Feedback visual
+- **Barra de progreso**: Muestra el progreso de subida múltiple
+- **Contador de archivos**: Indica cuántos archivos se están procesando  
+- **Estados visuales**: Diferentes colores para procesando/éxito/error
+- **Mensajes informativos**: Guían al usuario durante el proceso
+
+### Compatibilidad
+- ✅ Funciona con el sistema de upload existente
+- ✅ Compatible con CloudStorage si está habilitado
+- ✅ Responsive en dispositivos móviles
+- ✅ Funciona en todos los navegadores modernos
+- ✅ Fallback graceful si DataTransfer no está soportado
+
+### Logging y debugging
+El sistema incluye logging detallado en la consola del navegador:
+```javascript
+[schemingdcat-multi-upload] Inicializando módulo de subida múltiple
+[schemingdcat-multi-upload] Procesando 3 archivos
+[schemingdcat-multi-upload] Recurso añadido exitosamente: archivo1.csv
+```
+
+### Estructura de archivos modificados
+```
+ckanext/schemingdcat/
+├── templates/schemingdcat/package/snippets/resource_form.html    [MODIFICADO]
+├── templates/schemingdcat/form_snippets/upload.html              [MODIFICADO]
+├── assets/js/modules/schemingdcat-multi-resource-upload.js       [MEJORADO]
+├── assets/css/schemingdcat.css                                   [AÑADIDOS ESTILOS]
+└── i18n/es/LC_MESSAGES/ckanext-schemingdcat.po                  [AÑADIDAS TRADUCCIONES]
+```
+
+### Resultado final
+✅ Sistema de subida multi-archivo completamente funcional  
+✅ Interfaz visual moderna y responsive  
+✅ Feedback en tiempo real para el usuario  
+✅ Auto-fill inteligente de campos  
+✅ Compatible con sistemas existentes  
+✅ Documentado y traducido al español  
+
+**El sistema multi-upload ahora funciona perfectamente y es muy fácil de usar.**

@@ -1401,6 +1401,239 @@ input#lang-r:checked ~ div .example-r {
 }
 
 .metadata-sidebar-info-block {
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #6c757d;
+}
+
+/**************************************************/
+/*            Multi-Upload Styles                */
+/**************************************************/
+
+/* Multi-resource upload controls */
+.multi-resource-controls {
+  margin: 20px 0;
+  padding: 15px;
+  text-align: center;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.multi-resource-controls:hover {
+  border-color: #007bff;
+  background: #e3f2fd;
+}
+
+.multi-resource-controls .add-resource {
+  margin-bottom: 10px;
+  transition: transform 0.2s ease;
+}
+
+.multi-resource-controls .add-resource:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+}
+
+.multi-resource-controls .help-text {
+  margin: 10px 0 0 0;
+  font-style: italic;
+}
+
+/* Enhanced dropzone for multiple files */
+.upload-dropzone.multiple-dragover,
+.schemingdcat-upload-wrapper.multiple-dragover {
+  border-color: #28a745 !important;
+  background-color: #d4edda !important;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+}
+
+.upload-dropzone.multiple-dragover::before,
+.schemingdcat-upload-wrapper.multiple-dragover::before {
+  content: "¡Suelta aquí múltiples archivos!";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #28a745;
+  font-weight: bold;
+  font-size: 18px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Multi-upload feedback styles */
+.multi-upload-feedback,
+.multi-upload-success {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 6px;
+  font-weight: 500;
+  animation: slideInDown 0.5s ease;
+}
+
+.multi-upload-feedback {
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+.multi-upload-feedback .fa-spinner {
+  margin-right: 8px;
+}
+
+.multi-upload-feedback .progress {
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0;
+}
+
+.multi-upload-feedback .progress-bar {
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.multi-upload-success {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.multi-upload-success .fa-check {
+  margin-right: 8px;
+  color: #28a745;
+}
+
+/* Enhanced file input for multiple selection */
+input[type="file"][multiple] + label,
+input[type="file"][multiple] + .browse-button {
+  position: relative;
+}
+
+input[type="file"][multiple] + label::after,
+input[type="file"][multiple] + .browse-button::after {
+  content: " (Múltiple)";
+  font-size: 0.8em;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+/* Resource upload field enhancements for multi-upload */
+.resource-upload-field.multi-upload-enhanced {
+  border-left: 4px solid #007bff;
+  padding-left: 15px;
+  margin-bottom: 20px;
+  background: rgba(0, 123, 255, 0.05);
+  border-radius: 4px;
+}
+
+.resource-upload-field.multi-upload-processing {
+  border-left-color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.resource-upload-field.multi-upload-success {
+  border-left-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+/* Animation for sliding feedback */
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Upload zone multiple file indicator */
+.upload-dropzone[data-multiple="true"] .dropzone-content h4::after {
+  content: " múltiples";
+  color: #007bff;
+  font-size: 0.9em;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .multi-resource-controls {
+    margin: 15px 0;
+    padding: 10px;
+  }
+  
+  .multi-resource-controls .add-resource {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  .upload-dropzone.multiple-dragover::before,
+  .schemingdcat-upload-wrapper.multiple-dragover::before {
+    font-size: 16px;
+    padding: 8px 15px;
+  }
+  
+  .multi-upload-feedback,
+  .multi-upload-success {
+    margin: 10px 0;
+    padding: 12px;
+    font-size: 0.9em;
+  }
+}
+
+/* Enhanced visual feedback for file count */
+.multi-upload-counter {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   font-size: 12px;
-  padding: 10px 0 10px 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Loading state for add button */
+.add-resource.loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.add-resource.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid transparent;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

@@ -23,23 +23,25 @@
   {% if upload_enabled %}
     <div class="upload-section">
       <label class="control-label">{{ _('Upload file') }}</label>
-      <div class="upload-dropzone" id="dropzone-{{ field_url }}">
+      <div class="upload-dropzone" id="dropzone-{{ field_url }}" data-multiple="true">
         <div class="dropzone-content">
           <div class="dropzone-icon">
             <i class="fa fa-cloud-upload"></i>
           </div>
-          <h4>{{ _('Drag and drop a file here') }}</h4>
+          <h4>{{ _('Drag and drop files here') }}</h4>
           <p class="drop-hint">{{ _('or') }}</p>
           <label for="{{ field_upload }}" class="btn btn-primary browse-button">
-            <i class="fa fa-folder-open"></i> {{ _('Browse File') }}
+            <i class="fa fa-folder-open"></i> {{ _('Browse Files') }}
           </label>
           <input type="file" 
                  id="{{ field_upload }}" 
                  name="{{ field_upload }}" 
                  class="upload-file-input"
+                 multiple
                  style="position: absolute; left: -9999px;">
           <p class="text-muted small">
-            {{ _('Supported formats: CSV, XLS, JSON, XML, PDF, and more') }}
+            {{ _('Supported formats: CSV, XLS, JSON, XML, PDF, and more') }}<br>
+            <strong>{{ _('Select multiple files to create multiple resources automatically') }}</strong>
           </p>
         </div>
 
@@ -175,30 +177,65 @@
     }
 
     // Drag and drop
+    dropzone.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+
     dropzone.addEventListener('dragover', function(e) {
       e.preventDefault();
       e.stopPropagation();
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 1) {
+        dropzone.classList.add('multiple-dragover');
+      } else {
+        dropzone.classList.remove('multiple-dragover');
+      }
       dropzone.classList.add('dragover');
     });
 
     dropzone.addEventListener('dragleave', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.remove('dragover');
+      // Check if we're really leaving the dropzone
+      var rect = dropzone.getBoundingClientRect();
+      var x = e.clientX;
+      var y = e.clientY;
+      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+        dropzone.classList.remove('dragover', 'multiple-dragover');
+      }
     });
 
     dropzone.addEventListener('drop', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.remove('dragover');
+      dropzone.classList.remove('dragover', 'multiple-dragover');
       
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
-        fileInput.files = files;
+        // Check if DataTransfer is supported for setting files
+        try {
+          if (typeof DataTransfer !== 'undefined') {
+            var dt = new DataTransfer();
+            for (var i = 0; i < files.length; i++) {
+              dt.items.add(files[i]);
+            }
+            fileInput.files = dt.files;
+          }
+        } catch (err) {
+          console.warn('DataTransfer not supported, using fallback');
+        }
+        
         displayFile(files[0]);
-        // Trigger change event for other modules
+        // Trigger change event for other modules (like multi-upload)
         var event = new Event('change', { bubbles: true });
         fileInput.dispatchEvent(event);
+        
+        // Show file count if multiple files
+        if (files.length > 1) {
+          showMultipleFileIndicator(files.length);
+        }
       }
     });
 
@@ -380,6 +417,56 @@
       };
       return iconMap[ext] || 'fa-file-o';
     }
+    
+    function showMultipleFileIndicator(fileCount) {
+      // Remove any existing indicator
+      var existingIndicator = wrapper.querySelector('.multi-upload-counter');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      // Create new indicator
+      var indicator = document.createElement('div');
+      indicator.className = 'multi-upload-counter';
+      indicator.textContent = fileCount;
+      
+      // Position it relative to the dropzone
+      dropzone.style.position = 'relative';
+      dropzone.appendChild(indicator);
+      
+      // Show temporary message
+      var message = document.createElement('div');
+      message.className = 'multi-upload-message alert alert-info';
+      message.style.marginTop = '10px';
+      message.innerHTML = '<i class="fa fa-info-circle"></i> ' + 
+        fileCount + ' archivos seleccionados. El primer archivo se muestra arriba, ' +
+        'los demás se crearán como recursos adicionales automáticamente.';
+      
+      dropzone.parentNode.appendChild(message);
+      
+      // Remove message after 5 seconds
+      setTimeout(function() {
+        if (message.parentNode) {
+          message.parentNode.removeChild(message);
+        }
+      }, 5000);
+    }
+    
+    // Enable multiple file selection on the input
+    fileInput.setAttribute('multiple', 'multiple');
+    
+    // Add visual indicator for multiple file support
+    var helpText = wrapper.querySelector('.text-muted');
+    if (helpText && !helpText.querySelector('.multi-support-note')) {
+      var note = document.createElement('span');
+      note.className = 'multi-support-note';
+      note.style.display = 'block';
+      note.style.fontWeight = 'bold';
+      note.style.color = '#007bff';
+      note.style.marginTop = '5px';
+      note.innerHTML = '<i class="fa fa-magic"></i> ¡Selecciona múltiples archivos para crear varios recursos a la vez!';
+      helpText.appendChild(note);
+    }
   }
 })();
 </script>
@@ -441,6 +528,18 @@
 }
 
 .schemingdcat-upload-wrapper .upload-dropzone.dragover::before {
+  opacity: 0.1;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone.multiple-dragover {
+  border-color: #4a90e2;
+  background-color: #e8f2ff;
+  border-style: solid;
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.25);
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone.multiple-dragover::before {
   opacity: 0.1;
 }
 
