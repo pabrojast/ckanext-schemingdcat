@@ -4,18 +4,27 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       var self = this;
       var container = this.el;
       var dropzone = container.find('.upload-dropzone');
-      var fileInput = container.find('.upload-file-input');
-      var browseButton = container.find('.browse-button');
-      var dropzoneContent = container.find('.dropzone-content');
-      var filePreview = container.find('.file-preview');
-      var removeButton = container.find('.remove-file');
+      var fileInput = dropzone.find('.upload-file-input');
+      var browseButton = dropzone.find('.browse-button');
+      var dropzoneContent = dropzone.find('.dropzone-content');
+      var filePreview = dropzone.find('.file-preview');
+      var removeButton = filePreview.find('.remove-file');
       var clearCheckbox = container.find('input[type="checkbox"][id*="clear"]');
       
       // Browse button click
       browseButton.on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        fileInput.click();
+        fileInput.trigger('click');
+      });
+      
+      // Alternative click on dropzone
+      dropzone.on('click', function(e) {
+        if ($(e.target).closest('.browse-button').length === 0 && 
+            $(e.target).closest('.remove-file').length === 0 &&
+            $(e.target).closest('.file-preview').length === 0) {
+          fileInput.trigger('click');
+        }
       });
       
       // File input change
@@ -68,7 +77,7 @@ ckan.module('schemingdcat-modern-upload', function ($) {
             }
           } catch(err) {
             // Fallback: just display the file info
-            console.log('DataTransfer not supported, using fallback');
+            // DataTransfer not supported, using fallback
           }
           
           self.displayFile(dt.files[0]);
