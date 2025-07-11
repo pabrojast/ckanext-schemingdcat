@@ -259,6 +259,11 @@
                 
                 increment = Math.random() * 1.5 + 0.3; // Vary increment for realism
             }, 200 + Math.random() * 300);
+
+            // Guardar el ID del intervalo para poder abortarlo más tarde
+            if (window.cloudStorageUploads[fileId]) {
+                window.cloudStorageUploads[fileId].intervalId = uploadInterval;
+            }
         }
         
         // Standard upload simulation (unchanged but enhanced)
@@ -296,6 +301,10 @@
                     increment *= 0.6;
                 }
             }, 350 + Math.random() * 400);
+
+            if (window.cloudStorageUploads[fileId]) {
+                window.cloudStorageUploads[fileId].intervalId = uploadInterval;
+            }
         }
         
         // Function to initialize cloudstorage when jQuery is available
@@ -394,6 +403,35 @@
                 }
             }, 1000);
         }
+
+        /*
+         * Aborta todas las subidas simuladas en curso. Se invoca cuando el
+         * usuario pulsa cualquiera de los botones de eliminación (Remove / Clear Upload).
+         */
+        function abortAllUploads() {
+            if (!window.cloudStorageUploads) return;
+            Object.keys(window.cloudStorageUploads).forEach(function (key) {
+                var up = window.cloudStorageUploads[key];
+                if (!up) return;
+                // Cancelar intervalo de progreso si existe
+                if (up.intervalId) {
+                    clearInterval(up.intervalId);
+                }
+                // Eliminar barra de progreso del DOM
+                if (up.progress && up.progress.container && up.progress.container.parentNode) {
+                    up.progress.container.parentNode.removeChild(up.progress.container);
+                }
+                delete window.cloudStorageUploads[key];
+            });
+        }
+
+        // Registrar listener global para los botones .btn-remove-url
+        document.addEventListener('click', function (ev) {
+            var target = ev.target;
+            if (target && target.classList && target.classList.contains('btn-remove-url')) {
+                abortAllUploads();
+            }
+        });
     </script>
 {% else %}
     {# Fallback: cloudstorage not available #}
