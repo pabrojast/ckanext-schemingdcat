@@ -200,6 +200,17 @@
         fileInput.dispatchEvent(event);
       }
     });
+
+    dropzone.addEventListener('click', function(e) {
+      // Evitar abrir el diálogo si el clic proviene de botones específicos o del preview
+      var isBrowseBtn = e.target.closest('.browse-button');
+      var isRemoveBtn = e.target.closest('.remove-file');
+      var isPreviewArea = filePreview.contains(e.target);
+      if (!isBrowseBtn && !isRemoveBtn && !isPreviewArea) {
+        // Abrir selector de archivo
+        fileInput.click();
+      }
+    });
     
     // URL input change for format detection
     var urlInput = wrapper.querySelector('input[name="{{ field_url }}"]');
@@ -266,9 +277,20 @@
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
       
-      // Show progress bar animation
+      // Mostrar animación de progreso y marcar como completada al finalizar la animación inicial
       if (progressBar) {
         progressBar.style.display = 'block';
+        var progressFill = progressBar.querySelector('.progress-fill');
+        // Pasados 2 s (fin de la animación CSS), fijar barra al 100 % y cambiar el texto
+        setTimeout(function() {
+          if (progressFill) {
+            progressFill.style.animation = 'none';
+            progressFill.style.width = '100%';
+          }
+          if (progressText) {
+            progressText.textContent = 'Listo';
+          }
+        }, 2000);
       }
       
       // Check clear checkbox if exists
@@ -276,6 +298,31 @@
       if (clearCheckbox) {
         clearCheckbox.checked = true;
       }
+
+      // Sincronizar con CloudStorage (si está disponible) para mostrar progreso real
+      setTimeout(function() {
+        var csContainer = wrapper.querySelector('.cloudstorage-progress-container');
+        if (!csContainer) return; // sin CloudStorage
+        var csBar = csContainer.querySelector('.progress-bar');
+        var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
+        if (!csBar) return;
+        var timer = setInterval(function() {
+          // Copiar ancho de barra
+          var width = csBar.style.width;
+          if (width) {
+            if (progressFill) progressFill.style.width = width;
+          }
+          // Copiar texto de estado
+          if (csStatus && csStatus.textContent) {
+            progressText.textContent = csStatus.textContent;
+          }
+          // Completo
+          if (width && width.indexOf('100%') !== -1) {
+            if (progressText) progressText.textContent = 'Listo';
+            clearInterval(timer);
+          }
+        }, 300);
+      }, 300);
     }
 
     function clearFile() {
