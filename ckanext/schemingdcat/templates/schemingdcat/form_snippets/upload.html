@@ -7,7 +7,7 @@
 {%- set field_upload = field.upload_field or 'upload' -%}
 {%- set field_clear = field.upload_clear or 'clear_upload' -%}
 
-<div class="schemingdcat-upload-wrapper" data-module="schemingdcat-modern-upload" data-module-field_upload="{{ field_upload }}" data-module-field_url="{{ field_url }}" data-module-field_clear="{{ field_clear }}">
+<div class="schemingdcat-upload-wrapper">
   {% if is_upload and data.get('url') %}
     <div class="current-file-info alert alert-info">
       <i class="fa fa-info-circle"></i>
@@ -24,19 +24,18 @@
     <div class="upload-section">
       <label class="control-label">{{ _('Upload file') }}</label>
       <div class="upload-dropzone" id="dropzone-{{ field_url }}">
-        <input type="file" 
-               id="{{ field_upload }}" 
-               name="{{ field_upload }}" 
-               class="upload-file-input"
-               style="display: none;">
-        
         <div class="dropzone-content">
           <i class="fa fa-cloud-upload fa-3x"></i>
           <h4>{{ _('Drag and drop a file here') }}</h4>
           <p>{{ _('or') }}</p>
-          <button type="button" class="btn btn-primary browse-button">
+          <label for="{{ field_upload }}" class="btn btn-primary browse-button">
             <i class="fa fa-folder-open"></i> {{ _('Browse File') }}
-          </button>
+          </label>
+          <input type="file" 
+                 id="{{ field_upload }}" 
+                 name="{{ field_upload }}" 
+                 class="upload-file-input"
+                 style="position: absolute; left: -9999px;">
           <p class="text-muted small">
             {{ _('Supported formats: CSV, XLS, JSON, XML, PDF, and more') }}
           </p>
@@ -76,6 +75,138 @@
 
   {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
 </div>
+
+<script>
+(function() {
+  // Wait for DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUpload);
+  } else {
+    initUpload();
+  }
+
+  function initUpload() {
+    var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+    if (!wrapper) return;
+
+    var fileInput = wrapper.querySelector('.upload-file-input');
+    var dropzone = wrapper.querySelector('.upload-dropzone');
+    var dropzoneContent = wrapper.querySelector('.dropzone-content');
+    var filePreview = wrapper.querySelector('.file-preview');
+    var removeButton = wrapper.querySelector('.remove-file');
+    
+    if (!fileInput || !dropzone) return;
+
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+      var files = e.target.files;
+      if (files && files.length > 0) {
+        displayFile(files[0]);
+      }
+    });
+
+    // Remove file button
+    if (removeButton) {
+      removeButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearFile();
+      });
+    }
+
+    // Drag and drop
+    dropzone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+      
+      var files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        fileInput.files = files;
+        displayFile(files[0]);
+        // Trigger change event for other modules
+        var event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
+      }
+    });
+
+    function displayFile(file) {
+      var fileName = filePreview.querySelector('.file-name');
+      var fileSize = filePreview.querySelector('.file-size');
+      var fileIcon = filePreview.querySelector('.file-icon');
+      
+      fileName.textContent = file.name;
+      fileSize.textContent = formatFileSize(file.size);
+      
+      // Update icon
+      var ext = file.name.split('.').pop().toLowerCase();
+      var iconClass = getFileIcon(ext);
+      fileIcon.className = 'fa fa-2x file-icon ' + iconClass;
+      
+      // Show preview, hide dropzone content
+      dropzoneContent.style.display = 'none';
+      filePreview.style.display = 'block';
+      
+      // Check clear checkbox if exists
+      var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
+      if (clearCheckbox) {
+        clearCheckbox.checked = true;
+      }
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      dropzoneContent.style.display = 'block';
+      filePreview.style.display = 'none';
+      
+      // Uncheck clear checkbox if exists
+      var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
+      if (clearCheckbox) {
+        clearCheckbox.checked = false;
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      var k = 1024;
+      var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(ext) {
+      var iconMap = {
+        'pdf': 'fa-file-pdf-o',
+        'doc': 'fa-file-word-o',
+        'docx': 'fa-file-word-o',
+        'xls': 'fa-file-excel-o',
+        'xlsx': 'fa-file-excel-o',
+        'csv': 'fa-file-text-o',
+        'txt': 'fa-file-text-o',
+        'json': 'fa-file-code-o',
+        'xml': 'fa-file-code-o',
+        'zip': 'fa-file-archive-o',
+        'jpg': 'fa-file-image-o',
+        'jpeg': 'fa-file-image-o',
+        'png': 'fa-file-image-o',
+        'gif': 'fa-file-image-o'
+      };
+      return iconMap[ext] || 'fa-file-o';
+    }
+  }
+})();
+</script>
 
 <style>
 .schemingdcat-upload-wrapper {
@@ -122,7 +253,7 @@
 
 .schemingdcat-upload-wrapper .browse-button {
   margin: 10px 0;
-  position: relative;
+  cursor: pointer;
 }
 
 .schemingdcat-upload-wrapper .file-preview {
@@ -193,11 +324,11 @@
 }
 
 @media (max-width: 768px) {
-  .upload-dropzone {
+  .schemingdcat-upload-wrapper .upload-dropzone {
     padding: 20px;
   }
   
-  .dropzone-content h4 {
+  .schemingdcat-upload-wrapper .dropzone-content h4 {
     font-size: 16px;
   }
 }
