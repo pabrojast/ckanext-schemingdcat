@@ -50,8 +50,8 @@
               <p class="file-name"></p>
               <p class="file-size text-muted"></p>
             </div>
-            <button type="button" class="btn btn-sm btn-danger remove-file">
-              <i class="fa fa-times"></i> {{ _('Remove') }}
+            <button type="button" class="btn btn-sm btn-danger remove-file" title="{{ _('Remove file and cancel upload') }}">
+              <i class="fa fa-trash"></i> {{ _('Remove') }}
             </button>
           </div>
           <div class="upload-progress">
@@ -127,44 +127,57 @@
     fileInput.addEventListener('change', function(e) {
       var files = e.target.files;
       if (files && files.length > 0) {
-        displayFile(files[0]);
-        
-        // Auto-fill format field if exists
-        var formatFields = document.querySelectorAll('input[name*="format"]');
-        var formatField = null;
-        formatFields.forEach(function(field) {
-          if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-            formatField = field;
-          }
-        });
-        
-        if (formatField && !formatField.value) {
-          var fileName = files[0].name;
-          var ext = fileName.split('.').pop().toUpperCase();
-          
-          // Format mapping
-          var formatMap = {
-            'CSV': 'CSV',
-            'XLS': 'XLS', 
-            'XLSX': 'XLS',
-            'JSON': 'JSON',
-            'GEOJSON': 'GeoJSON',
-            'XML': 'XML',
-            'RDF': 'RDF',
-            'PDF': 'PDF',
-            'DOC': 'DOC',
-            'DOCX': 'DOC',
-            'TXT': 'TXT',
-            'ZIP': 'ZIP'
-          };
-          
-          formatField.value = formatMap[ext] || ext;
-          // Trigger change event
-          var event = new Event('change', { bubbles: true });
-          formatField.dispatchEvent(event);
+        // Limpiar cualquier archivo/subida anterior antes de mostrar el nuevo
+        if (filePreview.style.display !== 'none') {
+          clearFile();
+          // Pequeña pausa para que el usuario vea la transición
+          setTimeout(function() {
+            processNewFile(files[0]);
+          }, 100);
+        } else {
+          processNewFile(files[0]);
         }
       }
     });
+    
+    function processNewFile(file) {
+      displayFile(file);
+      
+      // Auto-fill format field if exists
+      var formatFields = document.querySelectorAll('input[name*="format"]');
+      var formatField = null;
+      formatFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+          formatField = field;
+        }
+      });
+      
+      if (formatField && !formatField.value) {
+        var fileName = file.name;
+        var ext = fileName.split('.').pop().toUpperCase();
+        
+        // Format mapping
+        var formatMap = {
+          'CSV': 'CSV',
+          'XLS': 'XLS', 
+          'XLSX': 'XLS',
+          'JSON': 'JSON',
+          'GEOJSON': 'GeoJSON',
+          'XML': 'XML',
+          'RDF': 'RDF',
+          'PDF': 'PDF',
+          'DOC': 'DOC',
+          'DOCX': 'DOC',
+          'TXT': 'TXT',
+          'ZIP': 'ZIP'
+        };
+        
+        formatField.value = formatMap[ext] || ext;
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        formatField.dispatchEvent(event);
+      }
+    }
 
     // Remove file button
     if (removeButton) {
@@ -195,10 +208,23 @@
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
         fileInput.files = files;
-        displayFile(files[0]);
-        // Trigger change event for other modules
-        var event = new Event('change', { bubbles: true });
-        fileInput.dispatchEvent(event);
+        
+        // Limpiar cualquier archivo/subida anterior antes de mostrar el nuevo
+        if (filePreview.style.display !== 'none') {
+          clearFile();
+          // Pequeña pausa para que el usuario vea la transición
+          setTimeout(function() {
+            processNewFile(files[0]);
+            // Trigger change event for other modules
+            var event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+          }, 100);
+        } else {
+          processNewFile(files[0]);
+          // Trigger change event for other modules
+          var event = new Event('change', { bubbles: true });
+          fileInput.dispatchEvent(event);
+        }
       }
     });
 
@@ -340,6 +366,7 @@
       var progressFill = filePreview.querySelector('.progress-fill');
       if (progressFill) {
         progressFill.style.width = '0%';
+        progressFill.style.animation = 'progressAnimation 2s ease-in-out infinite, shimmer 1.5s linear infinite';
       }
       var progressText = filePreview.querySelector('.progress-text');
       if (progressText) {
@@ -351,6 +378,44 @@
       if (clearCheckbox) {
         clearCheckbox.checked = false;
       }
+      
+      // Cancelar/ocultar CloudStorage si está activo
+      var cloudStorageContainers = document.querySelectorAll('.cloudstorage-progress-container');
+      cloudStorageContainers.forEach(function(container) {
+        // Ocultar el contenedor de progreso de CloudStorage
+        container.style.display = 'none';
+        
+        // Opcionalmente, intentar cancelar la subida si es posible
+        var uploadId = container.getAttribute('data-upload-id');
+        if (uploadId && window.cloudStorageUploads && window.cloudStorageUploads[uploadId]) {
+          window.cloudStorageUploads[uploadId].cancelled = true;
+        }
+      });
+      
+      // Limpiar también el indicador de CloudStorage si existe
+      var cloudStorageIndicator = wrapper.parentElement.querySelector('.cloudstorage-indicator');
+      if (cloudStorageIndicator) {
+        cloudStorageIndicator.style.display = 'none';
+      }
+      
+      // Disparar evento personalizado para que otros módulos sepan que se canceló
+      var cancelEvent = new CustomEvent('schemingdcat:upload-cancelled', {
+        detail: { wrapper: wrapper },
+        bubbles: true
+      });
+      wrapper.dispatchEvent(cancelEvent);
+      
+      // Mostrar notificación temporal de cancelación
+      var notification = document.createElement('div');
+      notification.className = 'upload-cancelled-notification';
+      notification.innerHTML = '<i class="fa fa-check-circle"></i> ' + 'Upload cancelled';
+      dropzone.appendChild(notification);
+      
+      setTimeout(function() {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 2000);
     }
 
     function formatFileSize(bytes) {
@@ -521,6 +586,22 @@
   word-break: break-all;
 }
 
+.schemingdcat-upload-wrapper .remove-file {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.schemingdcat-upload-wrapper .remove-file:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.schemingdcat-upload-wrapper .remove-file i {
+  margin-right: 4px;
+}
+
 .schemingdcat-upload-wrapper .current-file-info {
   margin-bottom: 20px;
 }
@@ -600,6 +681,33 @@
 
 .schemingdcat-upload-wrapper .url-section .form-control {
   margin-top: 10px;
+}
+
+/* Upload cancelled notification */
+.upload-cancelled-notification {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+.upload-cancelled-notification i {
+  margin-right: 8px;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 }
 
 @media (max-width: 768px) {
