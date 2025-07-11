@@ -4,38 +4,17 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       var self = this;
       var container = this.el;
       var dropzone = container.find('.upload-dropzone');
-      var fileInput = dropzone.find('.upload-file-input');
-      var browseButton = dropzone.find('.browse-button');
-      var dropzoneContent = dropzone.find('.dropzone-content');
-      var filePreview = dropzone.find('.file-preview');
-      var removeButton = filePreview.find('.remove-file');
-      var urlInput = container.find('input[type="url"]');
+      var fileInput = container.find('.upload-file-input');
+      var browseButton = container.find('.browse-button');
+      var dropzoneContent = container.find('.dropzone-content');
+      var filePreview = container.find('.file-preview');
+      var removeButton = container.find('.remove-file');
       var clearCheckbox = container.find('input[type="checkbox"][id*="clear"]');
-      
-      // Tab switching functionality
-      container.find('.nav-link').on('click', function(e) {
-        e.preventDefault();
-        var target = $(this).attr('href');
-        
-        // Update active states
-        container.find('.nav-item').removeClass('active');
-        $(this).parent().addClass('active');
-        
-        container.find('.tab-pane').removeClass('active in');
-        $(target).addClass('active in');
-        
-        // Enable/disable URL input based on active tab
-        if (target.indexOf('url-tab') !== -1) {
-          urlInput.prop('disabled', false);
-          fileInput.val(''); // Clear file input when switching to URL
-        } else {
-          urlInput.prop('disabled', true);
-        }
-      });
       
       // Browse button click
       browseButton.on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         fileInput.click();
       });
       
@@ -50,17 +29,18 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       // Remove file button
       removeButton.on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         self.clearFile();
       });
       
       // Drag and drop functionality
-      dropzone.on('dragover dragenter', function(e) {
+      dropzone.on('dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
         $(this).addClass('dragover');
       });
       
-      dropzone.on('dragleave dragend', function(e) {
+      dropzone.on('dragleave drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
         $(this).removeClass('dragover');
@@ -69,23 +49,16 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       dropzone.on('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        $(this).removeClass('dragover');
         
-        var files = e.originalEvent.dataTransfer.files;
-        if (files && files.length > 0) {
-          // Update the file input
-          fileInput[0].files = files;
-          self.displayFile(files[0]);
-          
-          // Trigger change event for other modules
+        var dt = e.originalEvent.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          // Set files to input
+          fileInput[0].files = dt.files;
+          self.displayFile(dt.files[0]);
+          // Trigger change event
           fileInput.trigger('change');
         }
       });
-      
-      // If there's a clear checkbox and it's checked on load, uncheck it
-      if (clearCheckbox.length && clearCheckbox.is(':checked')) {
-        clearCheckbox.prop('checked', false);
-      }
     },
     
     displayFile: function(file) {
@@ -103,7 +76,7 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       fileSize.text(size);
       
       // Update icon based on file type
-      var iconClass = this.getFileIcon(file.type, file.name);
+      var iconClass = this.getFileIcon(file.name);
       fileIcon.removeClass().addClass('fa fa-2x file-icon ' + iconClass);
       
       // Show preview, hide dropzone content
@@ -143,12 +116,14 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       var sizes = ['Bytes', 'KB', 'MB', 'GB'];
       var i = Math.floor(Math.log(bytes) / Math.log(k));
       
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      var result = (bytes / Math.pow(k, i)).toFixed(2);
+      return result + ' ' + sizes[i];
     },
     
-    getFileIcon: function(mimeType, fileName) {
+    getFileIcon: function(fileName) {
       // Get extension from filename
-      var ext = fileName.split('.').pop().toLowerCase();
+      var parts = fileName.split('.');
+      var ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
       
       // Icon mapping
       var iconMap = {

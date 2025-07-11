@@ -6,9 +6,14 @@ ckan.module('schemingdcat-autofill-today', function ($) {
         // Función para obtener la fecha de hoy en formato YYYY-MM-DD
         function getTodayDate() {
           var today = new Date();
-          var dd = String(today.getDate()).padStart(2, '0');
-          var mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0!
+          var dd = today.getDate();
+          var mm = today.getMonth() + 1; // Enero es 0!
           var yyyy = today.getFullYear();
+          
+          // Asegurar dos dígitos
+          if (dd < 10) dd = '0' + dd;
+          if (mm < 10) mm = '0' + mm;
+          
           return yyyy + '-' + mm + '-' + dd;
         }
         

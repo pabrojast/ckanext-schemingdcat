@@ -7,33 +7,27 @@
 {%- set field_upload = field.upload_field or 'upload' -%}
 {%- set field_clear = field.upload_clear or 'clear_upload' -%}
 
-<div class="schemingdcat-upload-container" data-module="schemingdcat-modern-upload">
-  <div class="upload-tabs">
-    <ul class="nav nav-tabs" role="tablist">
-      {% if upload_enabled %}
-      <li class="nav-item active">
-        <a href="#upload-tab-{{ field_url }}" class="nav-link" data-toggle="tab" role="tab">
-          <i class="fa fa-upload"></i> {{ _('Upload File') }}
-        </a>
-      </li>
-      {% endif %}
-      <li class="nav-item {% if not upload_enabled %}active{% endif %}">
-        <a href="#url-tab-{{ field_url }}" class="nav-link" data-toggle="tab" role="tab">
-          <i class="fa fa-link"></i> {{ _('Link to File') }}
-        </a>
-      </li>
-    </ul>
-  </div>
+<div class="image-upload" data-module="schemingdcat-modern-upload" data-module-field_upload="{{ field_upload }}" data-module-field_url="{{ field_url }}" data-module-field_clear="{{ field_clear }}">
+  {% if is_upload and data.get('url') %}
+    <div class="current-file-info alert alert-info">
+      <i class="fa fa-info-circle"></i>
+      <strong>{{ _('Current file:') }}</strong> 
+      <span class="current-filename">{{ data.get('name', data.get('url', '')) }}</span>
+      <label class="checkbox pull-right">
+        <input type="checkbox" id="{{ field_clear }}" name="{{ field_clear }}" value="true">
+        {{ _('Replace existing file') }}
+      </label>
+    </div>
+  {% endif %}
 
-  <div class="tab-content">
-    {% if upload_enabled %}
-    <div id="upload-tab-{{ field_url }}" class="tab-pane fade {% if not is_url %}active in{% endif %}">
+  {% if upload_enabled %}
+    <div class="upload-section">
+      <label class="control-label">{{ _('Upload file') }}</label>
       <div class="upload-dropzone" id="dropzone-{{ field_url }}">
         <input type="file" 
                id="{{ field_upload }}" 
                name="{{ field_upload }}" 
-               class="upload-file-input"
-               {% if field.get('accept') %}accept="{{ field.accept }}"{% endif %}>
+               class="upload-file-input">
         
         <div class="dropzone-content">
           <i class="fa fa-cloud-upload fa-3x"></i>
@@ -42,7 +36,7 @@
           <button type="button" class="btn btn-primary browse-button">
             <i class="fa fa-folder-open"></i> {{ _('Browse Files') }}
           </button>
-          <p class="text-muted small mt-2">
+          <p class="text-muted small">
             {{ _('Supported formats: CSV, XLS, JSON, XML, PDF, and more') }}
           </p>
         </div>
@@ -60,93 +54,58 @@
           </div>
         </div>
       </div>
-
-      {% if is_upload %}
-        {# Existing file info #}
-        <div class="current-file-info alert alert-info">
-          <i class="fa fa-info-circle"></i>
-          <strong>{{ _('Current file:') }}</strong> 
-          <span class="current-filename">{{ data.get('name', data.get('url', '')) }}</span>
-          <label class="checkbox pull-right">
-            <input type="checkbox" id="{{ field_clear }}" name="{{ field_clear }}">
-            {{ _('Replace existing file') }}
-          </label>
-        </div>
-      {% endif %}
     </div>
-    {% endif %}
 
-    <div id="url-tab-{{ field_url }}" class="tab-pane fade {% if is_url or not upload_enabled %}active in{% endif %}">
-      <div class="url-input-container">
-        <label class="control-label" for="{{ field_url }}">
-          <i class="fa fa-link"></i> {{ _('File URL') }}
-        </label>
-        <input type="url" 
-               id="{{ field_url }}" 
-               name="{{ field_url }}" 
-               value="{{ data.get(field_url, '') }}"
-               placeholder="{{ field.form_placeholder or _('https://example.com/data.csv') }}"
-               class="form-control"
-               {% if not is_url %}disabled{% endif %}>
-        <p class="help-block">
-          {{ _('Enter the URL of the file you want to link to.') }}
-        </p>
-      </div>
+    <div class="url-or-separator">
+      <span>{{ _('OR') }}</span>
     </div>
+  {% endif %}
+
+  <div class="url-section">
+    <label class="control-label" for="{{ field_url }}">
+      {{ _('Link to a file') }}
+    </label>
+    <input type="text" 
+           id="{{ field_url }}" 
+           name="{{ field_url }}" 
+           value="{{ data.get(field_url, '') }}"
+           placeholder="{{ field.form_placeholder or _('https://example.com/data.csv') }}"
+           class="form-control">
   </div>
 
   {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
 </div>
 
 <style>
-.schemingdcat-upload-container {
+.image-upload {
   margin-bottom: 20px;
 }
 
-.upload-tabs {
-  margin-bottom: 0;
-}
-
-.upload-tabs .nav-tabs {
-  border-bottom: 2px solid #ddd;
-}
-
-.upload-tabs .nav-link {
-  color: #666;
-  padding: 10px 20px;
-  border: none;
-  border-bottom: 3px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.upload-tabs .nav-item.active .nav-link {
-  color: #2572B4;
-  border-bottom-color: #2572B4;
-  background: none;
-}
-
-.tab-content {
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-top: none;
-  padding: 20px;
-  border-radius: 0 0 4px 4px;
+.upload-section {
+  margin-bottom: 25px;
 }
 
 .upload-dropzone {
   border: 2px dashed #ddd;
   border-radius: 8px;
-  padding: 40px;
+  padding: 30px;
   text-align: center;
-  background: white;
+  background: #fafafa;
   transition: all 0.3s ease;
   position: relative;
-  min-height: 200px;
+  min-height: 180px;
+  margin-top: 10px;
+}
+
+.upload-dropzone:hover {
+  border-color: #999;
+  background: #f5f5f5;
 }
 
 .upload-dropzone.dragover {
   border-color: #2572B4;
   background: #f0f7ff;
+  border-style: solid;
 }
 
 .upload-file-input {
@@ -157,6 +116,12 @@
   left: 0;
   opacity: 0;
   cursor: pointer;
+  z-index: 2;
+}
+
+.dropzone-content {
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dropzone-content i {
@@ -167,10 +132,14 @@
 .dropzone-content h4 {
   color: #666;
   margin: 10px 0;
+  font-size: 18px;
 }
 
 .browse-button {
+  pointer-events: auto;
   margin: 10px 0;
+  z-index: 3;
+  position: relative;
 }
 
 .file-preview {
@@ -195,7 +164,7 @@
 }
 
 .file-details p {
-  margin: 0;
+  margin: 0 0 5px 0;
 }
 
 .file-name {
@@ -204,40 +173,49 @@
 }
 
 .current-file-info {
-  margin-top: 15px;
+  margin-bottom: 20px;
 }
 
-.url-input-container {
+.url-or-separator {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.url-or-separator span {
   background: white;
-  padding: 20px;
-  border-radius: 6px;
+  padding: 0 15px;
+  color: #999;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
 }
 
-.url-input-container label {
-  font-weight: 600;
-  margin-bottom: 10px;
+.url-or-separator:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
 }
 
-.url-input-container .form-control {
-  font-size: 16px;
-  padding: 10px 15px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+.url-section {
+  margin-bottom: 15px;
 }
 
-.url-input-container .form-control:focus {
-  border-color: #2572B4;
-  box-shadow: 0 0 0 0.2rem rgba(37, 114, 180, 0.25);
+.url-section .form-control {
+  margin-top: 10px;
 }
 
 @media (max-width: 768px) {
-  .upload-tabs .nav-link {
-    padding: 8px 15px;
-    font-size: 14px;
-  }
-  
   .upload-dropzone {
     padding: 20px;
+  }
+  
+  .dropzone-content h4 {
+    font-size: 16px;
   }
 }
 </style>
