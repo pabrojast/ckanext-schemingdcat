@@ -109,3 +109,11 @@ main:
   contents:
     - js/plugins/jquery.schemingdcat-slug-preview.js
 
+schemingdcat-multi-resource-upload:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_multi_resource_upload.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-multi-resource-upload.js
+
