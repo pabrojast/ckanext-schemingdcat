@@ -147,16 +147,6 @@
     {%- endif -%}
   {%- endfor -%}
 
-  {# Multi-resource upload add button - needed by schemingdcat-multi-resource-upload.js #}
-  <div class="multi-resource-controls" style="margin-top: 20px; text-align: center;">
-    <button type="button" class="btn btn-success add-resource" id="add-resource" data-module="add-resource" data-action="add-resource">
-      <i class="fa fa-plus"></i> {{ _('Add Another Resource') }}
-    </button>
-    <p class="help-text text-muted">
-      <small>{{ _('Select multiple files in the upload field above to automatically create multiple resources') }}</small>
-    </p>
-  </div>
-
   {# Hidden input for controller phase #}
   {%- if pages -%}
     <input type="hidden" name="_ckan_phase" value="{{ active_page }}" />
