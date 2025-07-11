@@ -147,214 +147,106 @@ Main configuration handled through:
 - Use test fixtures for schema validation
 - Mock external services in tests
 
-# Documentación de Claude
+# Claude Documentation
 
-Este archivo documenta los cambios realizados por Claude en el proyecto ckanext-schemingdcat.
+This file documents the changes made by Claude to the ckanext-schemingdcat project.
 
-## Sistema de Subida Multi-Archivo ✅
+## ✅ Multi-File Upload System - COMPLETED
 
-### Problema resuelto
-Se intentó hacer un sistema de subida multi archivos pero no funcionaba porque faltaba el botón "Añadir recurso" que el módulo JavaScript necesitaba para crear nuevos recursos dinámicamente.
+### Problem solved
+The multi-file upload system wasn't working because it was missing the "Add resource" button that the JavaScript module needed to create new resources dynamically, plus there were Content Security Policy violations.
 
-### Solución implementada
+### Implemented solution
 
-#### 1. Botón "Añadir recurso" añadido
-- **Archivo modificado**: `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
-- **Cambio**: Añadido botón con todas las clases CSS que el módulo multi-upload busca
-- **Funcionalidad**: Permite crear nuevos recursos manualmente o automáticamente via multi-upload
+#### 1. "Add resource" button added
+- **Modified file**: `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
+- **Change**: Added button with all CSS classes that the multi-upload module searches for
+- **Functionality**: Allows creating new resources manually or automatically via multi-upload
 
-#### 2. Módulo JavaScript mejorado
-- **Archivo modificado**: `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`
-- **Mejoras implementadas**:
-  - ✅ Mejor detección del botón "Añadir recurso"
-  - ✅ Soporte para drag & drop múltiple
-  - ✅ Feedback visual durante el procesamiento
-  - ✅ Barra de progreso para múltiples archivos
-  - ✅ Auto-fill mejorado de campos (nombre, formato, fecha, descripción)
-  - ✅ Gestión de errores y timeouts
-  - ✅ Mensajes de éxito/error
-  - ✅ Logging detallado para debugging
+#### 2. JavaScript module improved
+- **Modified file**: `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`
+- **Enhancements**:
+  - Better button detection with multiple fallback selectors
+  - Complete drag & drop support for multiple files
+  - Visual feedback with progress bars and status messages
+  - Smart auto-fill for fields (name, format, date)
+  - Clear error messages and user guidance
 
-#### 3. Estilos CSS añadidos
-- **Archivo modificado**: `ckanext/schemingdcat/assets/css/schemingdcat.css`
-- **Estilos nuevos**:
-  - ✅ Zona de drag & drop visual para múltiples archivos
-  - ✅ Feedback de progreso con animaciones
-  - ✅ Estados visuales (procesando, éxito, error)
-  - ✅ Indicadores de múltiples archivos
-  - ✅ Responsive design para móviles
-  - ✅ Transiciones suaves y efectos hover
+#### 3. Enhanced CSS for drag & drop
+- **Modified file**: `ckanext/schemingdcat/assets/css/schemingdcat.css`
+- **Improvements**:
+  - Animated drag & drop zones with visual feedback
+  - Progress indicators for file uploads
+  - Multiple file counters and notifications
+  - Improved responsiveness and accessibility
 
-#### 4. Plantilla de upload mejorada
-- **Archivo modificado**: `ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html`
-- **Mejoras**:
-  - ✅ Soporte para atributo `multiple` en input file
-  - ✅ Detección mejorada de drag & drop múltiple
-  - ✅ Clases CSS para estados visuales
-  - ✅ Contador de archivos múltiples
-  - ✅ Mensajes informativos para el usuario
+#### 4. Enhanced upload template
+- **Modified file**: `ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html`
+- **Features**:
+  - Intelligent multiple file detection
+  - Improved file preview system
+  - Auto-format detection from file extensions
+  - Better integration with existing CKAN workflows
 
-#### 5. Traducciones en español
-- **Archivo modificado**: `ckanext/schemingdcat/i18n/es/LC_MESSAGES/ckanext-schemingdcat.po`
-- **Traducciones añadidas**:
-  - "Add Another Resource" → "Añadir Otro Recurso"
-  - "Drag and drop files here" → "Arrastra y suelta archivos aquí"
-  - "Browse Files" → "Examinar Archivos"
-  - Y otras más...
+#### 5. Complete English translation
+- **Modified file**: `ckanext/schemingdcat/i18n/es/LC_MESSAGES/ckanext-schemingdcat.po`
+- **Changes**: All new multi-upload texts now in English
 
-### Cómo usar el sistema multi-upload
+## ✅ CSP (Content Security Policy) Fixes - COMPLETED
 
-#### Método 1: Selección múltiple
-1. Ir a crear/editar un dataset
-2. En la página "Add data", hacer clic en el campo de subida de archivos
-3. Seleccionar múltiples archivos con Ctrl+Click (Windows/Linux) o Cmd+Click (Mac)
-4. El sistema automáticamente creará un recurso para cada archivo
+### Problems found
+1. **CSP Error**: JavaScript used `innerHTML` with dynamic content that violated Content Security Policy
+2. **Inline JavaScript**: Mixed Jinja2 templating with JavaScript caused CSP violations
+3. **UI showed only one file**: Although multiple files were selected, interface only showed one
 
-#### Método 2: Drag & Drop
-1. Ir a crear/editar un dataset
-2. En la página "Add data", arrastrar múltiples archivos a la zona de subida
-3. Los archivos se procesarán automáticamente
+### Solutions implemented
 
-#### Método 3: Botón manual
-1. Usar el botón "Añadir Otro Recurso" para crear recursos adicionales manualmente
-2. Cada clic crea un nuevo formulario de recurso
+#### 1. Content Security Policy fix
+- **Problem**: Inline JavaScript mixing server templating with client-side code
+- **Solution**: Moved all JavaScript to external modules using safe DOM methods:
 
-### Características del auto-fill
-- **Nombre**: Se extrae del nombre del archivo (sin extensión)
-- **Formato**: Se detecta automáticamente según la extensión
-- **Fecha de creación**: Se rellena con la fecha actual
-- **Descripción**: Se genera automáticamente con nombre y tamaño del archivo
-
-### Feedback visual
-- **Barra de progreso**: Muestra el progreso de subida múltiple
-- **Contador de archivos**: Indica cuántos archivos se están procesando  
-- **Estados visuales**: Diferentes colores para procesando/éxito/error
-- **Mensajes informativos**: Guían al usuario durante el proceso
-
-### Compatibilidad
-- ✅ Funciona con el sistema de upload existente
-- ✅ Compatible con CloudStorage si está habilitado
-- ✅ Responsive en dispositivos móviles
-- ✅ Funciona en todos los navegadores modernos
-- ✅ Fallback graceful si DataTransfer no está soportado
-
-### Logging y debugging
-El sistema incluye logging detallado en la consola del navegador:
+**Before (CSP-violating):**
 ```javascript
-[schemingdcat-multi-upload] Inicializando módulo de subida múltiple
-[schemingdcat-multi-upload] Procesando 3 archivos
-[schemingdcat-multi-upload] Recurso añadido exitosamente: archivo1.csv
+// Inline JavaScript in template
+var urlInput = wrapper.querySelector('input[name="{{ field_url }}"]');
+message.innerHTML = '<i class="fa fa-info-circle"></i> ' + text;
 ```
 
-### Estructura de archivos modificados
-```
-ckanext/schemingdcat/
-├── templates/schemingdcat/package/snippets/resource_form.html    [MODIFICADO]
-├── templates/schemingdcat/form_snippets/upload.html              [MODIFICADO]
-├── assets/js/modules/schemingdcat-multi-resource-upload.js       [MEJORADO]
-├── assets/css/schemingdcat.css                                   [AÑADIDOS ESTILOS]
-└── i18n/es/LC_MESSAGES/ckanext-schemingdcat.po                  [AÑADIDAS TRADUCCIONES]
-```
-
-### Resultado final
-✅ Sistema de subida multi-archivo completamente funcional  
-✅ Interfaz visual moderna y responsive  
-✅ Feedback en tiempo real para el usuario  
-✅ Auto-fill inteligente de campos  
-✅ Compatible con sistemas existentes  
-✅ Documentado y traducido al español  
-
-**El sistema multi-upload ahora funciona perfectamente y es muy fácil de usar.**
-
-## Correcciones de CSP y UI (Content Security Policy) ✅
-
-### Problemas encontrados
-1. **Error CSP**: El JavaScript usaba `innerHTML` con contenido dinámico que violaba Content Security Policy
-2. **UI mostró solo un archivo**: Aunque se seleccionaban múltiples archivos, la interfaz solo mostraba uno
-3. **Textos en español**: El usuario requería todo en inglés
-
-### Soluciones implementadas
-
-#### 1. Arreglo del Content Security Policy
-- **Problema**: `innerHTML` con interpolación de strings causaba bloqueo CSP
-- **Solución**: Reescrito todo para usar métodos seguros del DOM:
-  ```javascript
-  // ANTES (bloqueado por CSP):
-  message.innerHTML = '<i class="fa fa-info-circle"></i> ' + text;
-  
-  // DESPUÉS (CSP-compatible):
-  var icon = document.createElement('i');
-  icon.className = 'fa fa-info-circle';
-  var textNode = document.createTextNode(text);
-  message.appendChild(icon);
-  message.appendChild(textNode);
-  ```
-
-#### 2. Mejora de la UI para múltiples archivos
-- **Problema**: Solo se mostraba el primer archivo seleccionado
-- **Solución**: 
-  - Modificado `displayFile()` para mostrar `"archivo.csv (+ 2 more files)"`
-  - El evento `change` del input ahora detecta múltiples archivos
-  - `showMultipleFileIndicator()` se llama automáticamente
-  - Contador visual muestra número total de archivos
-
-#### 3. Textos cambiados a inglés
-- **JavaScript**: Todos los console.log y mensajes en inglés
-- **Traducciones**: msgstr cambiados a inglés en lugar de español  
-- **UI**: Todos los textos de ayuda y feedback en inglés
-
-### Funcionalidad mejorada
-
-#### Selección visual multiple
-- **Contador de archivos**: Badge rojo mostrando cantidad
-- **Texto informativo**: `"3 files selected. First file shown above..."`
-- **Preview mejorado**: `"document.pdf (+ 2 more files)"`
-
-#### Drag & Drop mejorado  
-- **Detección múltiple**: Estados visuales diferentes para múltiples archivos
-- **Clases CSS**: `.multiple-dragover` para efectos visuales distintos
-
-#### Compatibilidad CSP
-- ✅ Sin `innerHTML` con variables
-- ✅ Sin `eval()` o similares  
-- ✅ Solo métodos seguros del DOM
-- ✅ Compatible con políticas de seguridad estrictas
-
-### Archivos corregidos
-
-```
-ckanext/schemingdcat/
-├── assets/js/modules/schemingdcat-multi-resource-upload.js    [CSP-SAFE + ENGLISH]
-├── templates/schemingdcat/form_snippets/upload.html           [UI MEJORADA + CSP-SAFE]
-└── i18n/es/LC_MESSAGES/ckanext-schemingdcat.po              [ENGLISH STRINGS]
+**After (CSP-compatible):**
+```javascript
+// External module with safe DOM methods
+var fieldUrl = wrapper.data('field-url');
+var urlInput = wrapper.find('.url-input');
+var icon = document.createElement('i');
+icon.className = 'fa fa-info-circle';
+message.appendChild(icon);
+message.appendChild(document.createTextNode(text));
 ```
 
-### Testing de funcionalidad
-Para probar que funciona:
+#### 2. Improved multi-file UI
+- **Problem**: Interface only showed first file of selection
+- **Solution**: Enhanced feedback showing "(+ N more files)" and file counters
+- **Visual indicators**: Animated badges and temporary messages for multiple files
 
-1. **Selección múltiple normal**:
-   - Ir a crear dataset → Add data
-   - Click en "Browse Files" 
-   - Ctrl+Click para seleccionar múltiples archivos
-   - ✅ Debe mostrar: `"file1.csv (+ 2 more files)"`
-   - ✅ Debe aparecer contador rojo con número
-   - ✅ Debe mostrar mensaje: `"3 files selected..."`
+#### 3. Template restructuring
+- **Problem**: Inline styles and scripts violating CSP
+- **Solution**: 
+  - Moved all CSS to external stylesheet
+  - Converted inline JavaScript to external module
+  - Uses data attributes to pass server data safely
 
-2. **Drag & Drop múltiple**:
-   - Arrastrar múltiples archivos a la zona
-   - ✅ Debe cambiar a color azul durante arrastre
-   - ✅ Al soltar, debe procesar todos los archivos
+#### 4. Enhanced modern-upload module
+- **Modified file**: `ckanext/schemingdcat/assets/js/modules/schemingdcat-modern-upload.js`
+- **Complete rewrite**: Now handles all upload functionality without CSP violations
+- **Features**: Auto-fill, drag & drop, multiple file support, format detection
 
-3. **Console logging**:
-   - Abrir DevTools → Console
-   - ✅ No debe haber errores de CSP
-   - ✅ Debe ver: `"[schemingdcat-multi-upload] Processing 3 files"`
+### Current status
+✅ **All CSP errors eliminated**  
+✅ **Multiple file selection working perfectly**  
+✅ **UI shows proper feedback for multiple files**  
+✅ **All text in English**  
+✅ **Drag & drop functionality enhanced**  
+✅ **Auto-format detection working**  
+✅ **Compatible with existing CKAN workflows**
 
-### Resultado final
-✅ **Sin errores CSP** - JavaScript completamente seguro  
-✅ **UI mejorada** - Muestra todos los archivos seleccionados  
-✅ **Todo en inglés** - Textos, mensajes y logging en inglés  
-✅ **Funcionalidad robusta** - Manejo de errores y fallbacks  
-✅ **Compatible** - Funciona en todos los navegadores modernos  
-
-**El sistema multi-upload ahora es completamente funcional, seguro y fácil de usar.**
+**The multi-upload system now works flawlessly and is very user-friendly.**
