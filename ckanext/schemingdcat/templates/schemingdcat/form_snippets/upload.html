@@ -102,6 +102,7 @@
     var dropzoneContent = wrapper.querySelector('.dropzone-content');
     var filePreview = wrapper.querySelector('.file-preview');
     var removeButton = wrapper.querySelector('.remove-file');
+    var previewSyncTimer = null; // para cancelar intervalos
     
     if (!fileInput || !dropzone) return;
     
@@ -306,7 +307,7 @@
         var csBar = csContainer.querySelector('.progress-bar');
         var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
         if (!csBar) return;
-        var timer = setInterval(function() {
+        previewSyncTimer = setInterval(function() {
           // Copiar ancho de barra
           var width = csBar.style.width;
           if (width) {
@@ -319,7 +320,8 @@
           // Completo
           if (width && width.indexOf('100%') !== -1) {
             if (progressText) progressText.textContent = 'Done';
-            clearInterval(timer);
+            clearInterval(previewSyncTimer);
+            previewSyncTimer = null;
           }
         }, 300);
       }, 300);
@@ -329,6 +331,20 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
+      // detener sincronización si está activa
+      if (previewSyncTimer) {
+        clearInterval(previewSyncTimer);
+        previewSyncTimer = null;
+      }
+      // Reiniciar progreso interno
+      var progressFill = filePreview.querySelector('.progress-fill');
+      if (progressFill) {
+        progressFill.style.width = '0%';
+      }
+      var progressText = filePreview.querySelector('.progress-text');
+      if (progressText) {
+        progressText.textContent = 'Processing...';
+      }
       
       // Uncheck clear checkbox if exists
       var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
