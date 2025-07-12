@@ -5236,7 +5236,6 @@ resource_fields:
   display_snippet: schemingdcat/display_snippets/link_schema.html
   display_property: dcatap:availability
   form_include_blank_choice: False
-  value: http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE
   choices:
   - label:
       en: Available
@@ -5263,6 +5262,7 @@ resource_fields:
       es: Temporal
       fr: Temporaire
     value: http://publications.europa.eu/resource/authority/planned-availability/TEMPORARY
+  default: http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE
   help_text:
     en: 'This property indicates how long it is planned to keep the Distribution of the Dataset available according to <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Distribution availability vocabulary</a>.'
     es: 'Esta propiedad indica durante cuánto tiempo se prevé mantener disponible la distribución del conjunto de datos de acuerdo con el <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Vocabulario de disponibilidad de la distribución</a>.'
@@ -5306,7 +5306,6 @@ resource_fields:
   display_snippet: schemingdcat/display_snippets/link_schema.html
   display_property: adms:status
   form_include_blank_choice: False
-  value: http://purl.org/adms/status/Completed
   choices:
   - label:
       en: Completed
@@ -5328,6 +5327,7 @@ resource_fields:
       es: Retirado
       fr: Retiré
     value: http://purl.org/adms/status/Withdrawn
+  default: http://purl.org/adms/status/Completed
   help_text:
     en: 'This property refers to the maturity of the Distribution. It MUST take one of the values from the <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a> list.'
     es: 'Esta propiedad hace referencia a la madurez de la distribución y debe tomar uno de los valores de la lista <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a>.'
@@ -5343,7 +5343,7 @@ resource_fields:
     fr: Codage des caractères
   display_property: cnt:characterEncoding
   form_placeholder: UTF-8
-  value: UTF-8
+  default: UTF-8
   help_text:
     en: 'Character encoding in ISO-19115 metadata is specified with a code list that can be mapped to the corresponding codes in <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>'
     es: 'La codificación de caracteres en los metadatos ISO-19115 se especifica con una lista de códigos que puede asignarse a los códigos correspondientes en <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
