@@ -21,6 +21,7 @@ import json
 import logging
 import tempfile
 import os
+import zipfile
 from typing import Optional, Dict, Any, Tuple
 
 log = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class SpatialExtentExtractor:
     
     SUPPORTED_EXTENSIONS = {
         'shp': 'shapefile',
+        'zip': 'zip_shapefile',  # ZIP files containing shapefiles
         'tif': 'geotiff',
         'tiff': 'geotiff',
         'geotiff': 'geotiff',
@@ -70,11 +72,30 @@ class SpatialExtentExtractor:
         """Check which file format handlers are available."""
         return {
             'shapefile': FIONA_AVAILABLE,
+            'zip_shapefile': FIONA_AVAILABLE,
             'geotiff': RASTERIO_AVAILABLE,
             'kml': FIONA_AVAILABLE,
             'geopackage': FIONA_AVAILABLE,
             'geojson': FIONA_AVAILABLE
         }
+    
+    def _is_shapefile_zip(self, file_path: str) -> bool:
+        """Check if a ZIP file contains a shapefile."""
+        try:
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                file_list = zip_ref.namelist()
+                
+                # Check if we have the essential shapefile components
+                has_shp = any(f.lower().endswith('.shp') for f in file_list)
+                has_shx = any(f.lower().endswith('.shx') for f in file_list)
+                has_dbf = any(f.lower().endswith('.dbf') for f in file_list)
+                
+                # A valid shapefile ZIP should have at least .shp, .shx, and .dbf
+                return has_shp and has_shx and has_dbf
+                
+        except Exception as e:
+            log.debug(f"Error checking ZIP contents {file_path}: {str(e)}")
+            return False
     
     def can_extract_extent(self, file_path: str) -> bool:
         """Check if extent can be extracted from the given file."""
@@ -83,6 +104,11 @@ class SpatialExtentExtractor:
             return False
         
         format_type = self.SUPPORTED_EXTENSIONS[ext]
+        
+        # Special handling for ZIP files - check if they contain shapefiles
+        if format_type == 'zip_shapefile':
+            return self.available_handlers.get(format_type, False) and self._is_shapefile_zip(file_path)
+        
         return self.available_handlers.get(format_type, False)
     
     def _get_file_extension(self, file_path: str) -> str:
@@ -113,6 +139,8 @@ class SpatialExtentExtractor:
             
             if format_type == 'shapefile':
                 return self._extract_shapefile_extent(file_path)
+            elif format_type == 'zip_shapefile':
+                return self._extract_zip_shapefile_extent(file_path)
             elif format_type == 'geotiff':
                 return self._extract_raster_extent(file_path)
             elif format_type in ['kml', 'geopackage', 'geojson']:
@@ -184,6 +212,39 @@ class SpatialExtentExtractor:
                 
         except Exception as e:
             log.debug(f"Error reading vector file {file_path}: {str(e)}")
+            return None
+    
+    def _extract_zip_shapefile_extent(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Extract extent from ZIP file containing Shapefile."""
+        if not FIONA_AVAILABLE:
+            return None
+        
+        try:
+            # Create temporary directory to extract ZIP contents
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Extract ZIP file
+                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                    zip_ref.extractall(temp_dir)
+                
+                # Look for .shp file in extracted contents
+                shp_file = None
+                for root, dirs, files in os.walk(temp_dir):
+                    for file in files:
+                        if file.lower().endswith('.shp'):
+                            shp_file = os.path.join(root, file)
+                            break
+                    if shp_file:
+                        break
+                
+                if not shp_file:
+                    log.debug(f"No .shp file found in ZIP: {file_path}")
+                    return None
+                
+                # Extract extent from the shapefile
+                return self._extract_shapefile_extent(shp_file)
+                
+        except Exception as e:
+            log.debug(f"Error reading ZIP shapefile {file_path}: {str(e)}")
             return None
     
     def _transform_bounds(self, bounds: Tuple[float, float, float, float], 
