@@ -89,6 +89,8 @@
   // Cache for CSV data
   var mimeTypeCache = null;
   var csvDataPromise = null;
+  var charsetCache = null;
+  var charsetDataPromise = null;
   
   // Function to load CSV data and create extension to MIME type mapping
   function loadMimeTypeData() {
@@ -174,6 +176,105 @@
     });
     
     return csvDataPromise;
+  }
+  
+  // Function to load character sets CSV data
+  function loadCharsetData() {
+    if (charsetDataPromise) {
+      return charsetDataPromise;
+    }
+    
+    charsetDataPromise = new Promise(function(resolve, reject) {
+      if (charsetCache) {
+        resolve(charsetCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/character-sets-1.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              
+              // The CSV format is complex with line breaks inside cells
+              // We'll use a simpler approach with known mappings for common file types
+              var lines = csvData.split('\n');
+              
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line || line.startsWith(',')) continue;
+                
+                // Try to extract the preferred MIME name (first column)
+                var commaIndex = line.indexOf(',');
+                if (commaIndex > 0) {
+                  var mimeName = line.substring(0, commaIndex).trim();
+                  if (mimeName) {
+                    mapping[mimeName.toLowerCase()] = mimeName;
+                  }
+                }
+              }
+              
+              // Add common charset mappings for file types
+              mapping['utf-8'] = 'UTF-8';
+              mapping['utf8'] = 'UTF-8';
+              mapping['iso-8859-1'] = 'ISO-8859-1';
+              mapping['latin1'] = 'ISO-8859-1';
+              mapping['windows-1252'] = 'windows-1252';
+              mapping['ascii'] = 'US-ASCII';
+              mapping['us-ascii'] = 'US-ASCII';
+              
+              charsetCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load charset data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return charsetDataPromise;
+  }
+  
+  // Function to get character encoding for a file extension or format
+  function getCharsetForFormat(extension, format, callback) {
+    // Default charset mappings based on file type
+    var defaultCharsets = {
+      'csv': 'UTF-8',
+      'json': 'UTF-8',
+      'geojson': 'UTF-8',
+      'xml': 'UTF-8',
+      'rdf': 'UTF-8',
+      'txt': 'UTF-8',
+      'kml': 'UTF-8',
+      'gml': 'UTF-8',
+      'sld': 'UTF-8',
+      'html': 'UTF-8',
+      'htm': 'UTF-8',
+      'js': 'UTF-8',
+      'css': 'UTF-8'
+    };
+    
+    var ext = extension ? extension.toLowerCase() : '';
+    var fmt = format ? format.toLowerCase() : '';
+    
+    // First try to get from extension, then from format
+    var defaultCharset = defaultCharsets[ext] || defaultCharsets[fmt] || 'UTF-8';
+    
+    loadCharsetData().then(function(mapping) {
+      // For text-based formats, default to UTF-8
+      callback(defaultCharset);
+    }).catch(function(error) {
+      console.warn('Failed to load charset data:', error);
+      // Use default charset
+      callback(defaultCharset);
+    });
   }
   
   // Function to get MIME type for a file extension
@@ -346,6 +447,27 @@
           }
         });
       }
+      
+      // Auto-fill encoding field if exists
+      var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+      var encodingField = null;
+      encodingFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
+          encodingField = field;
+        }
+      });
+      
+      if (encodingField && !encodingField.value) {
+        var currentFormat = formatField ? formatField.value : '';
+        getCharsetForFormat(ext, currentFormat, function(charset) {
+          if (charset) {
+            encodingField.value = charset;
+            // Trigger change event
+            var event = new Event('change', { bubbles: true });
+            encodingField.dispatchEvent(event);
+          }
+        });
+      }
     }
 
     // Remove file button
@@ -481,6 +603,27 @@
                   // Trigger change event
                   var event = new Event('change', { bubbles: true });
                   mimetypeField.dispatchEvent(event);
+                }
+              });
+            }
+            
+            // Auto-fill encoding field
+            var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+            var encodingField = null;
+            encodingFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
+                encodingField = field;
+              }
+            });
+            
+            if (encodingField && !encodingField.value) {
+              var currentFormat = formatField ? formatField.value : '';
+              getCharsetForFormat(ext, currentFormat, function(charset) {
+                if (charset) {
+                  encodingField.value = charset;
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  encodingField.dispatchEvent(event);
                 }
               });
             }
