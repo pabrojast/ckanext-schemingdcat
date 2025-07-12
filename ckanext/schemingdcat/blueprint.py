@@ -2,13 +2,16 @@
 import ckan.model as model
 import ckan.lib.base as base
 import ckan.logic as logic
-from flask import Blueprint, request, redirect, url_for
+from flask import Blueprint, request, redirect, url_for, jsonify
 from ckan.logic import ValidationError
 from ckan.plugins.toolkit import render, g, h, _
+import tempfile
+import os
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
 from ckanext.schemingdcat.rate_limiter import rate_limiter
+from ckanext.schemingdcat.spatial_extent import extent_extractor
 
 from logging import getLogger
 
@@ -101,3 +104,65 @@ def verify_captcha():
             'time_window': rate_limiter.time_window,
             'captcha_after': rate_limiter.captcha_required_after
         })
+
+@schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])
+def extract_spatial_extent():
+    """Extract spatial extent from uploaded geospatial file."""
+    try:
+        # Check if file is in request
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file provided'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected'
+            }), 400
+        
+        # Check if it's a supported spatial file
+        if not extent_extractor.can_extract_extent(file.filename):
+            return jsonify({
+                'success': False,
+                'error': 'Unsupported file type for spatial extent extraction'
+            }), 400
+        
+        # Create temporary file with proper cleanup
+        tmp_file = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, 
+                                           suffix=os.path.splitext(file.filename)[1]) as tmp_file:
+                # Save uploaded file to temporary location
+                file.save(tmp_file.name)
+                
+                # Extract spatial extent
+                extent = extent_extractor.extract_extent(tmp_file.name)
+                
+                if extent:
+                    return jsonify({
+                        'success': True,
+                        'extent': extent,
+                        'message': 'Spatial extent extracted successfully'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to extract spatial extent from file'
+                    }), 400
+        finally:
+            # Ensure cleanup even if extraction fails
+            if tmp_file and os.path.exists(tmp_file.name):
+                try:
+                    os.unlink(tmp_file.name)
+                except OSError:
+                    pass  # Silent cleanup failure
+                
+    except Exception as e:
+        logger.debug(f"Error extracting spatial extent: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error during spatial extent extraction'
+        }), 500

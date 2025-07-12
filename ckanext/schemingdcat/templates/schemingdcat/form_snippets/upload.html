@@ -468,6 +468,16 @@
           }
         });
       }
+      
+      // Check if file is spatial and try to extract extent
+      if (isSpatialFile(ext)) {
+        try {
+          extractSpatialExtent(file);
+        } catch (e) {
+          console.debug('Error in spatial extent extraction:', e);
+          // Silent failure - don't interrupt the upload process
+        }
+      }
     }
 
     // Remove file button
@@ -800,12 +810,148 @@
         'mov': 'fa-file-video-o',
         'shp': 'fa-map-o',
         'gpkg': 'fa-map-o',
+        'tif': 'fa-file-image-o',
+        'tiff': 'fa-file-image-o',
         'jpg': 'fa-file-image-o',
         'jpeg': 'fa-file-image-o',
         'png': 'fa-file-image-o',
         'gif': 'fa-file-image-o'
       };
       return iconMap[ext] || 'fa-file-o';
+    }
+    
+    // Spatial file handling functions
+    function isSpatialFile(extension) {
+      var spatialExtensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson'];
+      return spatialExtensions.indexOf(extension.toLowerCase()) !== -1;
+    }
+    
+    function extractSpatialExtent(file) {
+      // Find spatial extent field
+      var spatialExtentFields = document.querySelectorAll('textarea[name*="spatial_extent"]');
+      var spatialExtentField = null;
+      spatialExtentFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'spatial_extent') {
+          spatialExtentField = field;
+        }
+      });
+      
+      if (!spatialExtentField) {
+        return; // No spatial extent field found - silent return
+      }
+      
+      // Only proceed if field is empty to avoid overwriting existing data
+      if (spatialExtentField.value && spatialExtentField.value.trim() !== '') {
+        return; // Field already has content - don't overwrite
+      }
+      
+      // Show processing indicator
+      showSpatialProcessingIndicator(spatialExtentField);
+      
+      // Create FormData to send file to server
+      var formData = new FormData();
+      formData.append('file', file);
+      
+      // Send request to extract spatial extent
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/extract-spatial-extent', true);
+      
+      // Set timeout to avoid hanging
+      xhr.timeout = 30000; // 30 seconds
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          hideSpatialProcessingIndicator(spatialExtentField);
+          
+          if (xhr.status === 200) {
+            try {
+              var response = JSON.parse(xhr.responseText);
+              if (response.success && response.extent) {
+                // Update the spatial extent field only if still empty
+                if (!spatialExtentField.value || spatialExtentField.value.trim() === '') {
+                  spatialExtentField.value = JSON.stringify(response.extent, null, 2);
+                  
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  spatialExtentField.dispatchEvent(event);
+                  
+                  // Show success notification
+                  showSpatialExtractionNotification('success', 'Spatial extent extracted successfully!');
+                }
+              } else {
+                // Silent failure for unsupported files - don't show error to user
+                console.debug('Could not extract spatial extent:', response.error);
+              }
+            } catch (e) {
+              console.debug('Error parsing spatial extent response:', e);
+            }
+          } else if (xhr.status !== 0) { // Ignore aborted requests (status 0)
+            console.debug('Spatial extent extraction failed:', xhr.status);
+          }
+        }
+      };
+      
+      xhr.ontimeout = function() {
+        hideSpatialProcessingIndicator(spatialExtentField);
+        console.debug('Spatial extent extraction timed out');
+      };
+      
+      xhr.onerror = function() {
+        hideSpatialProcessingIndicator(spatialExtentField);
+        console.debug('Spatial extent extraction network error');
+      };
+      
+      try {
+        xhr.send(formData);
+      } catch (e) {
+        hideSpatialProcessingIndicator(spatialExtentField);
+        console.debug('Error sending spatial extent request:', e);
+      }
+    }
+    
+    function showSpatialProcessingIndicator(field) {
+      // Remove any existing indicator first
+      hideSpatialProcessingIndicator(field);
+      
+      var indicator = document.createElement('div');
+      indicator.className = 'spatial-processing-indicator';
+      indicator.style.cssText = 'font-size: 12px; color: #666; margin-top: 5px;';
+      indicator.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Extracting spatial extent...';
+      field.parentNode.appendChild(indicator);
+    }
+    
+    function hideSpatialProcessingIndicator(field) {
+      var indicator = field.parentNode.querySelector('.spatial-processing-indicator');
+      if (indicator) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }
+    
+    function showSpatialExtractionNotification(type, message) {
+      // Only show success notifications to avoid noise
+      if (type !== 'success') {
+        return;
+      }
+      
+      var notification = document.createElement('div');
+      notification.className = 'spatial-extraction-notification ' + type;
+      notification.style.cssText = 'padding: 8px 12px; margin: 5px 0; border-radius: 4px; font-size: 13px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;';
+      
+      var icon = 'fa-check-circle';
+      notification.innerHTML = '<i class="fa ' + icon + '"></i> ' + message;
+      
+      // Add to the upload wrapper
+      var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+      if (wrapper) {
+        wrapper.appendChild(notification);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(function() {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 3000);
+      }
     }
   }
 })();
@@ -1079,6 +1225,66 @@
   
   .schemingdcat-upload-wrapper .dropzone-content h4 {
     font-size: 16px;
+  }
+}
+
+/* Spatial extent extraction styles */
+.spatial-processing-indicator {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 4px;
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.spatial-processing-indicator i {
+  margin-right: 8px;
+}
+
+.spatial-extraction-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.spatial-extraction-notification.success {
+  background-color: #28a745;
+  border-left: 4px solid #1e7e34;
+}
+
+.spatial-extraction-notification.warning {
+  background-color: #ffc107;
+  color: #212529;
+  border-left: 4px solid #e0a800;
+}
+
+.spatial-extraction-notification.error {
+  background-color: #dc3545;
+  border-left: 4px solid #c82333;
+}
+
+.spatial-extraction-notification i {
+  margin-right: 8px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 </style>

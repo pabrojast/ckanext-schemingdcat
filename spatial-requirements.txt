@@ -1,0 +1,18 @@
+# Optional spatial dependencies for spatial extent extraction
+# Install these if you want to enable automatic spatial extent extraction from files
+
+# For reading vector files (Shapefiles, KML, GeoPackage, etc.)
+fiona>=1.8.0
+
+# For reading raster files (GeoTIFF, etc.)  
+rasterio>=1.3.0
+
+# For coordinate reference system transformations
+pyproj>=3.2.0
+
+# GDAL bindings (required by fiona and rasterio)
+# Note: GDAL should be installed at system level first
+# Ubuntu/Debian: apt-get install gdal-bin libgdal-dev
+# CentOS/RHEL: yum install gdal gdal-devel
+# Windows: Use conda or OSGeo4W
+GDAL>=3.0.0
