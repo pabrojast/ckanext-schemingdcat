@@ -5236,6 +5236,7 @@ resource_fields:
   display_snippet: schemingdcat/display_snippets/link_schema.html
   display_property: dcatap:availability
   form_include_blank_choice: False
+  value: http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE
   choices:
   - label:
       en: Available
@@ -5305,6 +5306,7 @@ resource_fields:
   display_snippet: schemingdcat/display_snippets/link_schema.html
   display_property: adms:status
   form_include_blank_choice: False
+  value: http://purl.org/adms/status/Completed
   choices:
   - label:
       en: Completed
@@ -5341,6 +5343,7 @@ resource_fields:
     fr: Codage des caractères
   display_property: cnt:characterEncoding
   form_placeholder: UTF-8
+  value: UTF-8
   help_text:
     en: 'Character encoding in ISO-19115 metadata is specified with a code list that can be mapped to the corresponding codes in <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>'
     es: 'La codificación de caracteres en los metadatos ISO-19115 se especifica con una lista de códigos que puede asignarse a los códigos correspondientes en <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
