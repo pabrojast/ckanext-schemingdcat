@@ -86,6 +86,140 @@
 
 <script>
 (function() {
+  // Cache for CSV data
+  var mimeTypeCache = null;
+  var csvDataPromise = null;
+  
+  // Function to load CSV data and create extension to MIME type mapping
+  function loadMimeTypeData() {
+    if (csvDataPromise) {
+      return csvDataPromise;
+    }
+    
+    csvDataPromise = new Promise(function(resolve, reject) {
+      if (mimeTypeCache) {
+        resolve(mimeTypeCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/application.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              var lines = csvData.split('\n');
+              
+              // Skip header line
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                
+                var parts = line.split(',');
+                if (parts.length >= 2) {
+                  var name = parts[0].trim().toLowerCase();
+                  var template = parts[1].trim();
+                  
+                  // Map common file extensions to MIME types
+                  mapping[name] = template;
+                  
+                  // Add additional mappings for common extensions
+                  if (name === 'json') {
+                    mapping['geojson'] = 'application/geo+json';
+                  } else if (name === 'msword') {
+                    mapping['doc'] = template;
+                  } else if (name === 'vnd.ms-excel') {
+                    mapping['xls'] = template;
+                    mapping['xlsx'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                  } else if (name === 'vnd.ms-powerpoint') {
+                    mapping['ppt'] = template;
+                    mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                  } else if (name === 'xml') {
+                    mapping['rdf'] = 'application/rdf+xml';
+                    mapping['kml'] = 'application/vnd.google-earth.kml+xml';
+                    mapping['gml'] = 'application/gml+xml';
+                    mapping['sld'] = 'application/vnd.ogc.sld+xml';
+                  } else if (name === 'zip') {
+                    mapping['kmz'] = 'application/vnd.google-earth.kmz';
+                    mapping['gpkg'] = 'application/geopackage+sqlite3';
+                  }
+                }
+              }
+              
+              // Add common MIME types not in the CSV
+              mapping['csv'] = 'text/csv';
+              mapping['txt'] = 'text/plain';
+              mapping['docx'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+              mapping['tar'] = 'application/x-tar';
+              mapping['gz'] = 'application/gzip';
+              mapping['mp4'] = 'video/mp4';
+              mapping['avi'] = 'video/x-msvideo';
+              mapping['mov'] = 'video/quicktime';
+              mapping['shp'] = 'application/x-esri-shape';
+              
+              mimeTypeCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load CSV data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return csvDataPromise;
+  }
+  
+  // Function to get MIME type for a file extension
+  function getMimeTypeForExtension(extension, callback) {
+    // Fallback MIME types for common extensions
+    var fallbackMimeTypes = {
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'geojson': 'application/geo+json',
+      'xml': 'application/xml',
+      'rdf': 'application/rdf+xml',
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'txt': 'text/plain',
+      'zip': 'application/zip',
+      'tar': 'application/x-tar',
+      'gz': 'application/gzip',
+      'mp4': 'video/mp4',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+      'shp': 'application/x-esri-shape',
+      'kml': 'application/vnd.google-earth.kml+xml',
+      'kmz': 'application/vnd.google-earth.kmz',
+      'gml': 'application/gml+xml',
+      'gpkg': 'application/geopackage+sqlite3',
+      'sld': 'application/vnd.ogc.sld+xml'
+    };
+    
+    loadMimeTypeData().then(function(mapping) {
+      var ext = extension.toLowerCase();
+      var mimeType = mapping[ext] || fallbackMimeTypes[ext];
+      callback(mimeType);
+    }).catch(function(error) {
+      console.warn('Failed to load MIME type data:', error);
+      // Use fallback MIME types
+      var ext = extension.toLowerCase();
+      var mimeType = fallbackMimeTypes[ext];
+      callback(mimeType);
+    });
+  }
+
   // Wait for DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initUpload);
@@ -143,6 +277,9 @@
     function processNewFile(file) {
       displayFile(file);
       
+      var fileName = file.name;
+      var ext = fileName.split('.').pop().toLowerCase();
+      
       // Auto-fill format field if exists
       var formatFields = document.querySelectorAll('input[name*="format"]');
       var formatField = null;
@@ -153,8 +290,7 @@
       });
       
       if (formatField && !formatField.value) {
-        var fileName = file.name;
-        var ext = fileName.split('.').pop().toUpperCase();
+        var extUpper = ext.toUpperCase();
         
         // Format mapping
         var formatMap = {
@@ -168,14 +304,47 @@
           'PDF': 'PDF',
           'DOC': 'DOC',
           'DOCX': 'DOC',
+          'PPT': 'PPT',
+          'PPTX': 'PPT',
           'TXT': 'TXT',
-          'ZIP': 'ZIP'
+          'ZIP': 'ZIP',
+          'TAR': 'TAR',
+          'GZ': 'GZ',
+          'MP4': 'MP4',
+          'AVI': 'AVI',
+          'MOV': 'MOV',
+          'SHP': 'SHP',
+          'KML': 'KML',
+          'KMZ': 'KMZ',
+          'GML': 'GML',
+          'GPKG': 'GPKG',
+          'SLD': 'SLD'
         };
         
-        formatField.value = formatMap[ext] || ext;
+        formatField.value = formatMap[extUpper] || extUpper;
         // Trigger change event
         var event = new Event('change', { bubbles: true });
         formatField.dispatchEvent(event);
+      }
+      
+      // Auto-fill mimetype field if exists
+      var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+      var mimetypeField = null;
+      mimetypeFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
+          mimetypeField = field;
+        }
+      });
+      
+      if (mimetypeField && !mimetypeField.value) {
+        getMimeTypeForExtension(ext, function(mimeType) {
+          if (mimeType) {
+            mimetypeField.value = mimeType;
+            // Trigger change event
+            var event = new Event('change', { bubbles: true });
+            mimetypeField.dispatchEvent(event);
+          }
+        });
       }
     }
 
@@ -245,20 +414,22 @@
       urlInput.addEventListener('blur', function(e) {
         var url = e.target.value;
         if (url) {
-          var formatFields = document.querySelectorAll('input[name*="format"]');
-          var formatField = null;
-          formatFields.forEach(function(field) {
-            if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-              formatField = field;
-            }
-          });
-          
-          if (formatField && !formatField.value) {
-            // Extract extension from URL
-            var urlParts = url.split('?')[0].split('.');
-            if (urlParts.length > 1) {
-              var ext = urlParts[urlParts.length - 1].toUpperCase();
-              
+          // Extract extension from URL
+          var urlParts = url.split('?')[0].split('.');
+          if (urlParts.length > 1) {
+            var ext = urlParts[urlParts.length - 1].toLowerCase();
+            var extUpper = ext.toUpperCase();
+            
+            // Auto-fill format field
+            var formatFields = document.querySelectorAll('input[name*="format"]');
+            var formatField = null;
+            formatFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+                formatField = field;
+              }
+            });
+            
+            if (formatField && !formatField.value) {
               // Format mapping
               var formatMap = {
                 'CSV': 'CSV',
@@ -271,14 +442,47 @@
                 'PDF': 'PDF',
                 'DOC': 'DOC',
                 'DOCX': 'DOC',
+                'PPT': 'PPT',
+                'PPTX': 'PPT',
                 'TXT': 'TXT',
-                'ZIP': 'ZIP'
+                'ZIP': 'ZIP',
+                'TAR': 'TAR',
+                'GZ': 'GZ',
+                'MP4': 'MP4',
+                'AVI': 'AVI',
+                'MOV': 'MOV',
+                'SHP': 'SHP',
+                'KML': 'KML',
+                'KMZ': 'KMZ',
+                'GML': 'GML',
+                'GPKG': 'GPKG',
+                'SLD': 'SLD'
               };
               
-              formatField.value = formatMap[ext] || ext;
+              formatField.value = formatMap[extUpper] || extUpper;
               // Trigger change event
               var event = new Event('change', { bubbles: true });
               formatField.dispatchEvent(event);
+            }
+            
+            // Auto-fill mimetype field
+            var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+            var mimetypeField = null;
+            mimetypeFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
+                mimetypeField = field;
+              }
+            });
+            
+            if (mimetypeField && !mimetypeField.value) {
+              getMimeTypeForExtension(ext, function(mimeType) {
+                if (mimeType) {
+                  mimetypeField.value = mimeType;
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  mimetypeField.dispatchEvent(event);
+                }
+              });
             }
           }
         }
@@ -431,13 +635,28 @@
         'pdf': 'fa-file-pdf-o',
         'doc': 'fa-file-word-o',
         'docx': 'fa-file-word-o',
+        'ppt': 'fa-file-powerpoint-o',
+        'pptx': 'fa-file-powerpoint-o',
         'xls': 'fa-file-excel-o',
         'xlsx': 'fa-file-excel-o',
         'csv': 'fa-file-text-o',
         'txt': 'fa-file-text-o',
         'json': 'fa-file-code-o',
+        'geojson': 'fa-file-code-o',
         'xml': 'fa-file-code-o',
+        'rdf': 'fa-file-code-o',
+        'kml': 'fa-file-code-o',
+        'gml': 'fa-file-code-o',
+        'sld': 'fa-file-code-o',
         'zip': 'fa-file-archive-o',
+        'tar': 'fa-file-archive-o',
+        'gz': 'fa-file-archive-o',
+        'kmz': 'fa-file-archive-o',
+        'mp4': 'fa-file-video-o',
+        'avi': 'fa-file-video-o',
+        'mov': 'fa-file-video-o',
+        'shp': 'fa-map-o',
+        'gpkg': 'fa-map-o',
         'jpg': 'fa-file-image-o',
         'jpeg': 'fa-file-image-o',
         'png': 'fa-file-image-o',
