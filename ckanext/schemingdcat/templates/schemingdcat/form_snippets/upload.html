@@ -738,16 +738,30 @@
         clearCheckbox.checked = false;
       }
       
-      // Cancelar/ocultar CloudStorage si está activo
+      // Cancelar/ocultar CloudStorage si está activo y eliminar archivo del cloud storage
       var cloudStorageContainers = document.querySelectorAll('.cloudstorage-progress-container');
       cloudStorageContainers.forEach(function(container) {
         // Ocultar el contenedor de progreso de CloudStorage
         container.style.display = 'none';
         
-        // Opcionalmente, intentar cancelar la subida si es posible
+        // Obtener información de la subida para poder eliminar el archivo
         var uploadId = container.getAttribute('data-upload-id');
+        var fileName = container.getAttribute('data-file-name');
+        var resourceId = container.getAttribute('data-resource-id');
+        
         if (uploadId && window.cloudStorageUploads && window.cloudStorageUploads[uploadId]) {
+          // Marcar como cancelada
           window.cloudStorageUploads[uploadId].cancelled = true;
+          
+          // Si es una subida multipart, intentar abortarla
+          if (window.cloudStorageUploads[uploadId].isMultipart) {
+            abortMultipartUpload(uploadId);
+          }
+        }
+        
+        // Si tenemos información del archivo, intentar eliminarlo del cloud storage
+        if (resourceId && fileName) {
+          deleteCloudStorageFile(resourceId, fileName);
         }
       });
       
@@ -775,6 +789,92 @@
           notification.parentNode.removeChild(notification);
         }
       }, 2000);
+    }
+    
+    // Función para abortar subida multipart
+    function abortMultipartUpload(uploadId) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/cloudstorage_abort_multipart', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          upload_id: uploadId
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Multipart upload aborted successfully:', uploadId);
+            } else {
+              console.warn('Failed to abort multipart upload:', xhr.status, xhr.responseText);
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error aborting multipart upload:', e);
+      }
+    }
+    
+    // Función para eliminar archivo del cloud storage
+    function deleteCloudStorageFile(resourceId, fileName) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/cloudstorage_delete_file', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          resource_id: resourceId,
+          filename: fileName
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Cloud storage file deleted successfully:', fileName);
+            } else {
+              console.warn('Failed to delete cloud storage file:', xhr.status, xhr.responseText);
+              // Intentar método alternativo usando resource_delete si el archivo ya se creó como recurso
+              if (resourceId) {
+                deleteResourceAndFile(resourceId);
+              }
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error deleting cloud storage file:', e);
+      }
+    }
+    
+    // Función alternativa para eliminar recurso completo (incluye archivo)
+    function deleteResourceAndFile(resourceId) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/resource_delete', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          id: resourceId
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Resource and file deleted successfully:', resourceId);
+            } else {
+              console.warn('Failed to delete resource:', xhr.status, xhr.responseText);
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error deleting resource:', e);
+      }
     }
 
     function formatFileSize(bytes) {
