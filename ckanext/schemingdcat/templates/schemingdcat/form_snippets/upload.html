@@ -337,7 +337,7 @@
     var dropzoneContent = wrapper.querySelector('.dropzone-content');
     var filePreview = wrapper.querySelector('.file-preview');
     var removeButton = wrapper.querySelector('.remove-file');
-    var previewSyncTimer = null; // para cancelar intervalos
+    var previewSyncTimer = null; // to cancel intervals
     
     if (!fileInput || !dropzone) return;
     
@@ -362,10 +362,10 @@
     fileInput.addEventListener('change', function(e) {
       var files = e.target.files;
       if (files && files.length > 0) {
-        // Limpiar cualquier archivo/subida anterior antes de mostrar el nuevo
+        // Clear any previous file/upload before showing the new one
         if (filePreview.style.display !== 'none') {
           clearFile();
-          // Pequeña pausa para que el usuario vea la transición
+          // Small pause for user to see the transition
           setTimeout(function() {
             processNewFile(files[0]);
           }, 100);
@@ -512,10 +512,10 @@
       if (files && files.length > 0) {
         fileInput.files = files;
         
-        // Limpiar cualquier archivo/subida anterior antes de mostrar el nuevo
+        // Clear any previous file/upload before showing the new one
         if (filePreview.style.display !== 'none') {
           clearFile();
-          // Pequeña pausa para que el usuario vea la transición
+          // Small pause for user to see the transition
           setTimeout(function() {
             processNewFile(files[0]);
             // Trigger change event for other modules
@@ -532,12 +532,12 @@
     });
 
     dropzone.addEventListener('click', function(e) {
-      // Evitar abrir el diálogo si el clic proviene de botones específicos o del preview
+      // Avoid opening dialog if click comes from specific buttons or preview area
       var isBrowseBtn = e.target.closest('.browse-button');
       var isRemoveBtn = e.target.closest('.remove-file');
       var isPreviewArea = filePreview.contains(e.target);
       if (!isBrowseBtn && !isRemoveBtn && !isPreviewArea) {
-        // Abrir selector de archivo
+        // Open file selector
         fileInput.click();
       }
     });
@@ -663,11 +663,11 @@
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
       
-      // Mostrar animación de progreso y marcar como completada al finalizar la animación inicial
+      // Show progress animation and mark as completed when initial animation finishes
       if (progressBar) {
         progressBar.style.display = 'block';
         var progressFill = progressBar.querySelector('.progress-fill');
-        // Pasados 2 s (fin de la animación CSS), fijar barra al 100 % y cambiar el texto
+        // After 2s (end of CSS animation), set bar to 100% and change text
         setTimeout(function() {
           if (progressFill) {
             progressFill.style.animation = 'none';
@@ -685,24 +685,24 @@
         clearCheckbox.checked = true;
       }
 
-      // Sincronizar con CloudStorage (si está disponible) para mostrar progreso real
+      // Synchronize with CloudStorage (if available) to show real progress
       setTimeout(function() {
         var csContainer = wrapper.querySelector('.cloudstorage-progress-container');
-        if (!csContainer) return; // sin CloudStorage
+        if (!csContainer) return; // no CloudStorage
         var csBar = csContainer.querySelector('.progress-bar');
         var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
         if (!csBar) return;
         previewSyncTimer = setInterval(function() {
-          // Copiar ancho de barra
+          // Copy bar width
           var width = csBar.style.width;
           if (width) {
             if (progressFill) progressFill.style.width = width;
           }
-          // Copiar texto de estado
+          // Copy status text
           if (csStatus && csStatus.textContent) {
             progressText.textContent = csStatus.textContent;
           }
-          // Completo
+          // Complete
           if (width && width.indexOf('100%') !== -1) {
             if (progressText) progressText.textContent = 'Done';
             clearInterval(previewSyncTimer);
@@ -716,12 +716,12 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
-      // detener sincronización si está activa
+      // stop synchronization if active
       if (previewSyncTimer) {
         clearInterval(previewSyncTimer);
         previewSyncTimer = null;
       }
-      // Reiniciar progreso interno
+      // Reset internal progress
       var progressFill = filePreview.querySelector('.progress-fill');
       if (progressFill) {
         progressFill.style.width = '0%';
@@ -738,47 +738,47 @@
         clearCheckbox.checked = false;
       }
       
-      // Cancelar/ocultar CloudStorage si está activo y eliminar archivo del cloud storage
+      // Cancel/hide CloudStorage if active and delete file from cloud storage
       var cloudStorageContainers = document.querySelectorAll('.cloudstorage-progress-container');
       cloudStorageContainers.forEach(function(container) {
-        // Ocultar el contenedor de progreso de CloudStorage
+        // Hide CloudStorage progress container
         container.style.display = 'none';
         
-        // Obtener información de la subida para poder eliminar el archivo
+        // Get upload information to delete the file
         var uploadId = container.getAttribute('data-upload-id');
         var fileName = container.getAttribute('data-file-name');
         var resourceId = container.getAttribute('data-resource-id');
         
         if (uploadId && window.cloudStorageUploads && window.cloudStorageUploads[uploadId]) {
-          // Marcar como cancelada
+          // Mark as cancelled
           window.cloudStorageUploads[uploadId].cancelled = true;
           
-          // Si es una subida multipart, intentar abortarla
+          // If it's a multipart upload, try to abort it
           if (window.cloudStorageUploads[uploadId].isMultipart) {
             abortMultipartUpload(uploadId);
           }
         }
         
-        // Si tenemos información del archivo, intentar eliminarlo del cloud storage
+        // If we have file information, try to delete it from cloud storage
         if (resourceId && fileName) {
           deleteCloudStorageFile(resourceId, fileName);
         }
       });
       
-      // Limpiar también el indicador de CloudStorage si existe
+      // Also clear CloudStorage indicator if it exists
       var cloudStorageIndicator = wrapper.parentElement.querySelector('.cloudstorage-indicator');
       if (cloudStorageIndicator) {
         cloudStorageIndicator.style.display = 'none';
       }
       
-      // Disparar evento personalizado para que otros módulos sepan que se canceló
+      // Dispatch custom event so other modules know it was cancelled
       var cancelEvent = new CustomEvent('schemingdcat:upload-cancelled', {
         detail: { wrapper: wrapper },
         bubbles: true
       });
       wrapper.dispatchEvent(cancelEvent);
       
-      // Mostrar notificación temporal de cancelación
+      // Show temporary cancellation notification
       var notification = document.createElement('div');
       notification.className = 'upload-cancelled-notification';
       notification.innerHTML = '<i class="fa fa-check-circle"></i> ' + 'Upload cancelled';
@@ -791,7 +791,7 @@
       }, 2000);
     }
     
-    // Función para abortar subida multipart
+    // Function to abort multipart upload
     function abortMultipartUpload(uploadId) {
       try {
         var xhr = new XMLHttpRequest();
@@ -818,7 +818,7 @@
       }
     }
     
-    // Función para eliminar archivo del cloud storage
+    // Function to delete file from cloud storage
     function deleteCloudStorageFile(resourceId, fileName) {
       try {
         var xhr = new XMLHttpRequest();
@@ -836,7 +836,7 @@
               console.debug('Cloud storage file deleted successfully:', fileName);
             } else {
               console.warn('Failed to delete cloud storage file:', xhr.status, xhr.responseText);
-              // Intentar método alternativo usando resource_delete si el archivo ya se creó como recurso
+              // Try alternative method using resource_delete if file was already created as resource
               if (resourceId) {
                 deleteResourceAndFile(resourceId);
               }
@@ -850,7 +850,7 @@
       }
     }
     
-    // Función alternativa para eliminar recurso completo (incluye archivo)
+    // Alternative function to delete complete resource (includes file)
     function deleteResourceAndFile(resourceId) {
       try {
         var xhr = new XMLHttpRequest();
