@@ -109,8 +109,11 @@ def verify_captcha():
 def extract_spatial_extent():
     """Extract spatial extent from uploaded geospatial file."""
     try:
+        logger.debug("Spatial extent extraction request received")
+        
         # Check if file is in request
         if 'file' not in request.files:
+            logger.debug("No file provided in request")
             return jsonify({
                 'success': False,
                 'error': 'No file provided'
@@ -118,13 +121,17 @@ def extract_spatial_extent():
         
         file = request.files['file']
         if file.filename == '':
+            logger.debug("Empty filename provided")
             return jsonify({
                 'success': False,
                 'error': 'No file selected'
             }), 400
         
+        logger.debug(f"Processing file: {file.filename}")
+        
         # Check if it's a supported spatial file
         if not extent_extractor.can_extract_extent(file.filename):
+            logger.debug(f"Unsupported file type for spatial extent extraction: {file.filename}")
             return jsonify({
                 'success': False,
                 'error': 'Unsupported file type for spatial extent extraction'
@@ -137,17 +144,21 @@ def extract_spatial_extent():
                                            suffix=os.path.splitext(file.filename)[1]) as tmp_file:
                 # Save uploaded file to temporary location
                 file.save(tmp_file.name)
+                logger.debug(f"File saved to temporary location: {tmp_file.name}")
                 
                 # Extract spatial extent
                 extent = extent_extractor.extract_extent(tmp_file.name)
+                logger.debug(f"Extraction result: {extent}")
                 
                 if extent:
+                    logger.debug("Spatial extent extraction successful")
                     return jsonify({
                         'success': True,
                         'extent': extent,
                         'message': 'Spatial extent extracted successfully'
                     })
                 else:
+                    logger.debug("Failed to extract spatial extent from file")
                     return jsonify({
                         'success': False,
                         'error': 'Failed to extract spatial extent from file'

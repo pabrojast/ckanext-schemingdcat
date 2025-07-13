@@ -470,11 +470,13 @@
       }
       
       // Check if file is spatial and try to extract extent
+      console.debug('File extension:', ext, 'Is spatial:', isSpatialFile(ext));
       if (isSpatialFile(ext)) {
         try {
+          console.debug('Attempting to extract spatial extent from:', file.name);
           extractSpatialExtent(file);
         } catch (e) {
-          console.debug('Error in spatial extent extraction:', e);
+          console.error('Error in spatial extent extraction:', e);
           // Silent failure - don't interrupt the upload process
         }
       }
@@ -822,11 +824,13 @@
     
     // Spatial file handling functions
     function isSpatialFile(extension) {
-      var spatialExtensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson'];
+      var spatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson'];
       return spatialExtensions.indexOf(extension.toLowerCase()) !== -1;
     }
     
     function extractSpatialExtent(file) {
+      console.debug('Starting spatial extent extraction for:', file.name);
+      
       // Find spatial extent field
       var spatialExtentFields = document.querySelectorAll('textarea[name*="spatial_extent"]');
       var spatialExtentField = null;
@@ -836,14 +840,21 @@
         }
       });
       
+      console.debug('Found spatial extent fields:', spatialExtentFields.length);
+      console.debug('Selected spatial extent field:', spatialExtentField ? spatialExtentField.name : 'none');
+      
       if (!spatialExtentField) {
+        console.warn('No spatial extent field found - spatial extraction skipped');
         return; // No spatial extent field found - silent return
       }
       
       // Only proceed if field is empty to avoid overwriting existing data
       if (spatialExtentField.value && spatialExtentField.value.trim() !== '') {
+        console.debug('Spatial extent field already has content - skipping extraction');
         return; // Field already has content - don't overwrite
       }
+      
+      console.debug('Sending file to spatial extent extraction endpoint...');
       
       // Show processing indicator
       showSpatialProcessingIndicator(spatialExtentField);
@@ -861,15 +872,18 @@
       
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+          console.debug('Spatial extent extraction response:', xhr.status, xhr.responseText);
           hideSpatialProcessingIndicator(spatialExtentField);
           
           if (xhr.status === 200) {
             try {
               var response = JSON.parse(xhr.responseText);
+              console.debug('Parsed response:', response);
               if (response.success && response.extent) {
                 // Update the spatial extent field only if still empty
                 if (!spatialExtentField.value || spatialExtentField.value.trim() === '') {
                   spatialExtentField.value = JSON.stringify(response.extent, null, 2);
+                  console.debug('Spatial extent field updated with:', response.extent);
                   
                   // Trigger change event
                   var event = new Event('change', { bubbles: true });
@@ -877,10 +891,12 @@
                   
                   // Show success notification
                   showSpatialExtractionNotification('success', 'Spatial extent extracted successfully!');
+                } else {
+                  console.debug('Spatial extent field already has content, skipping update');
                 }
               } else {
                 // Silent failure for unsupported files - don't show error to user
-                console.debug('Could not extract spatial extent:', response.error);
+                console.debug('Could not extract spatial extent:', response.error || 'Unknown error');
               }
             } catch (e) {
               console.debug('Error parsing spatial extent response:', e);
