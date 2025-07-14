@@ -8,6 +8,7 @@ from ckan.plugins.toolkit import render, g, h, _
 import tempfile
 import os
 import time
+import re
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
@@ -53,7 +54,7 @@ def index(id):
         pkg = context[u'package']
         schema = get_action(u'package_show')(context, data_dict)
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(404, _(u'Dataset {dataset} not found').format({dataset:id}))
+        return base.abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
 
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
@@ -77,7 +78,7 @@ def geospatial_metadata(id):
         pkg_dict = get_action(u'package_show')(context, data_dict)
         pkg = context[u'package']
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(404, _(u'Dataset {dataset} not found').format({dataset:id}))
+        return base.abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
 
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
@@ -386,4 +387,29 @@ def extract_spatial_extent():
             'success': False,
             'error': 'Internal server error during spatial extent extraction'
         }), 500
+
+@schemingdcat.route('/api/1/util/snippet/<path:snippet_path>')
+def handle_malformed_snippet_url(snippet_path):
+    """Handle cases where the snippet URL might be malformed with an extra quote or other characters."""
+    # Remove any trailing quotes or problematic characters
+    clean_path = re.sub(r'["\'\s]+$', '', snippet_path)
+    
+    # Extract resource_id if present in query string
+    resource_id = request.args.get('resource_id')
+    
+    # Check if we're looking for our specific template
+    if clean_path == 'scd_api_info.html' or 'scd_api_info.html' in clean_path:
+        logger.info(f"Handling potentially malformed snippet URL: {snippet_path}")
+        
+        # Redirect to the proper URL format or render the template directly
+        extra_vars = {'resource_id': resource_id} if resource_id else {}
+        
+        try:
+            return render('ajax_snippets/scd_api_info.html', extra_vars=extra_vars)
+        except Exception as e:
+            logger.error(f"Error rendering scd_api_info template: {str(e)}")
+            return base.abort(404, _('Template not found'))
+    
+    # For other templates, just pass through to the standard CKAN handler
+    return base.abort(404, _('Template not found'))
 
