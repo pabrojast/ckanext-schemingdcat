@@ -284,6 +284,9 @@ def extract_spatial_extent():
                                     logger.info("Driver does not have get_url method")
                             except Exception as driver_error:
                                 logger.info(f"Could not use CloudStorage driver: {str(driver_error)}")
+                    except Exception as e:
+                        logger.error(f"Error in Azure URL generation: {str(e)}")
+                        azure_url = None
                 else:
                     logger.info("CloudStorage module is not available for Azure URL generation")
                     azure_url = None
