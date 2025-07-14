@@ -95,6 +95,53 @@
   var pendingSpatialExtraction = null; // Store info for post-upload spatial extraction
   var uploadCompletionListenerActive = false; // Track if we're monitoring for upload completion
   
+  // Functions for showing/hiding spatial extraction UI indicators
+  function showSpatialProcessingIndicator(field) {
+    if (!field) return;
+    
+    // Create indicator if it doesn't exist yet
+    var existingIndicator = field.parentElement.querySelector('.spatial-processing-indicator');
+    if (!existingIndicator) {
+      var indicator = document.createElement('div');
+      indicator.className = 'spatial-processing-indicator';
+      indicator.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Extracting spatial extent from file...';
+      field.parentElement.appendChild(indicator);
+    } else {
+      existingIndicator.style.display = 'block';
+    }
+  }
+  
+  function hideSpatialProcessingIndicator(field) {
+    if (!field) return;
+    
+    var indicator = field.parentElement.querySelector('.spatial-processing-indicator');
+    if (indicator) {
+      indicator.style.display = 'none';
+    }
+  }
+  
+  // Function to show notification messages
+  function showSpatialExtractionNotification(message, type) {
+    // Remove any existing notifications
+    var existingNotifications = document.querySelectorAll('.spatial-extraction-notification');
+    existingNotifications.forEach(function(notification) {
+      notification.remove();
+    });
+    
+    // Create new notification
+    var notification = document.createElement('div');
+    notification.className = 'spatial-extraction-notification ' + (type || 'info');
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(function() {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+  
   // Function to check if spatial extent service is available
   function checkSpatialExtentService() {
     if (spatialExtentServiceAvailable !== null) {
@@ -1307,6 +1354,7 @@
       checkSpatialExtentService().then(function(available) {
         if (!available) {
           console.debug('Spatial extent service not available - skipping extraction');
+          showSpatialExtractionNotification('Spatial extent service is not available. Please contact the administrator.', 'warning');
           return;
         }
         
@@ -1314,6 +1362,9 @@
         
         // Show processing indicator
         showSpatialProcessingIndicator(spatialExtentField);
+        
+        // Show notification
+        showSpatialExtractionNotification('Extracting spatial extent from file...', 'info');
         
         // Create a minimal File-like object for the uploaded file
         // We'll send just the filename and let the server find the uploaded file
@@ -1350,18 +1401,21 @@
                     spatialExtentField.dispatchEvent(event);
                     
                     // Show success notification
-                    showSpatialExtractionNotification('success', 'Spatial extent extracted successfully!');
+                    showSpatialExtractionNotification('Spatial extent extracted successfully!', 'success');
                   } else {
                     console.debug('Spatial extent field already has content, skipping update');
                   }
                 } else {
                   console.debug('Could not extract spatial extent:', response.error || 'Unknown error');
+                  showSpatialExtractionNotification('Could not extract spatial extent: ' + (response.error || 'Unknown error'), 'warning');
                 }
               } catch (e) {
                 console.debug('Error parsing post-upload spatial extent response:', e);
+                showSpatialExtractionNotification('Error processing server response', 'warning');
               }
             } else {
               console.debug('Post-upload spatial extent extraction failed with status:', xhr.status);
+              showSpatialExtractionNotification('Server error during spatial extraction (Status: ' + xhr.status + ')', 'warning');
             }
           }
         };
@@ -1369,11 +1423,13 @@
         xhr.ontimeout = function() {
           hideSpatialProcessingIndicator(spatialExtentField);
           console.debug('Post-upload spatial extent extraction timed out');
+          showSpatialExtractionNotification('Spatial extraction timed out. The server may be busy.', 'warning');
         };
         
         xhr.onerror = function() {
           hideSpatialProcessingIndicator(spatialExtentField);
           console.debug('Post-upload spatial extent extraction network error');
+          showSpatialExtractionNotification('Network error during spatial extraction', 'warning');
         };
         
         try {
@@ -1698,6 +1754,23 @@
   background-color: #ffc107;
   color: #212529;
   border-left: 4px solid #e0a800;
+}
+
+.spatial-extraction-notification.info {
+  background-color: #17a2b8;
+  color: #ffffff;
+  border-left: 4px solid #117a8b;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .spatial-extraction-notification.error {
