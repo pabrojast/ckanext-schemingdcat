@@ -5,15 +5,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def find_uploaded_file(filename):
+def find_uploaded_file(filename, return_search_paths=False):
     """
     Try to find a recently uploaded file in CKAN's storage directories.
     
     Args:
         filename: The name of the file to find
+        return_search_paths: If True, return the list of paths that were searched instead of the file path
         
     Returns:
-        Full path to the file if found, None otherwise
+        If return_search_paths is False (default): Full path to the file if found, None otherwise
+        If return_search_paths is True: List of paths that were searched
     """
     try:
         # Common upload paths in CKAN
@@ -185,10 +187,15 @@ def find_uploaded_file(filename):
                 continue
         
         logger.info(f"File {filename} not found in any upload paths")
+        # Return the search paths if requested, otherwise return None
+        if return_search_paths:
+            return upload_paths
         return None
         
     except Exception as e:
         logger.error(f"Error searching for uploaded file {filename}: {str(e)}")
+        if return_search_paths:
+            return []
         return None
 
 

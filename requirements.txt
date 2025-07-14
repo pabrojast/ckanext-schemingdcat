@@ -7,3 +7,5 @@ pandas
 fiona>=1.8.0
 rasterio>=1.3.0
 pyproj>=3.4.0
+# Azure Storage integration
+azure-storage-blob>=12.14.0

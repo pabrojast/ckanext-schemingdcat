@@ -4,11 +4,12 @@ import ckan.lib.base as base
 import ckan.logic as logic
 from flask import Blueprint, request, redirect, url_for, jsonify
 from ckan.logic import ValidationError
-from ckan.plugins.toolkit import render, g, h, _
+from ckan.plugins.toolkit import render, g, h, _, config as tk_config
 import tempfile
 import os
 import time
 import re
+import importlib
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
@@ -163,35 +164,112 @@ def extract_spatial_extent():
             logger.info("Attempting to find uploaded file in CKAN storage")
             
             # Try to get CloudStorage helper for Azure URLs
-            try:
-                from ckanext.cloudstorage import helpers as cloudstorage_helpers
-                azure_direct_upload = cloudstorage_helpers.use_azure_direct_upload()
-                logger.info(f"Azure direct upload enabled: {azure_direct_upload}")
-            except Exception as e:
-                logger.info(f"CloudStorage helpers not available: {str(e)}")
+            azure_direct_upload = False
+            
+            # First check if the CloudStorage module is available
+            if is_module_available('ckanext.cloudstorage'):
+                try:
+                    # Import the helpers module
+                    from ckanext.cloudstorage import helpers as cloudstorage_helpers
+                    
+                    # Check if the helper function exists
+                    if hasattr(cloudstorage_helpers, 'use_azure_direct_upload') and callable(cloudstorage_helpers.use_azure_direct_upload):
+                        azure_direct_upload = cloudstorage_helpers.use_azure_direct_upload()
+                        logger.info(f"Azure direct upload enabled: {azure_direct_upload}")
+                    else:
+                        # Alternative method to detect Azure storage if the helper isn't available
+                        if is_module_available('ckanext.cloudstorage.config'):
+                            from ckanext.cloudstorage.config import config as cloudstorage_config
+                            azure_direct_upload = cloudstorage_config.get('ckanext.cloudstorage.driver') == 'AZURE_BLOBS'
+                            logger.info(f"Azure direct upload inferred from CloudStorage config: {azure_direct_upload}")
+                        else:
+                            # Fall back to checking CKAN config directly
+                            azure_direct_upload = tk_config.get('ckanext.cloudstorage.driver', '').upper() == 'AZURE_BLOBS'
+                            logger.info(f"Azure direct upload inferred from CKAN config: {azure_direct_upload}")
+                except Exception as e:
+                    logger.info(f"CloudStorage helpers access error: {str(e)}")
+                    
+                    # One last attempt - directly check CKAN config
+                    try:
+                        azure_direct_upload = tk_config.get('ckanext.cloudstorage.driver', '').upper() == 'AZURE_BLOBS'
+                        logger.info(f"Azure direct upload determined from CKAN config: {azure_direct_upload}")
+                    except Exception:
+                        azure_direct_upload = False
+            else:
+                logger.info("CloudStorage module is not available")
                 azure_direct_upload = False
             
             # First try to find the local file
             file_path = find_uploaded_file(file.filename)
+            logger.info(f"Attempted to find file, result path: {file_path if file_path else 'Not found'}")
             
-            if azure_direct_upload:
+            # Only try Azure if we haven't found the file locally and Azure is enabled
+            if azure_direct_upload and (not file_path or not os.path.exists(file_path)):
                 logger.info("Azure direct upload is enabled - checking for Azure URL")
-                try:
-                    from ckanext.cloudstorage import storage
-                    # Generate Azure URL for direct access
-                    container_name = "resources"  # Usually the container name for resources
-                    azure_url = None
-                    
+                azure_url = None
+                
+                # Check if CloudStorage module is available
+                if is_module_available('ckanext.cloudstorage'):
                     try:
+                        from ckanext.cloudstorage import storage
+                        # Generate Azure URL for direct access
+                        container_name = tk_config.get('ckanext.cloudstorage.container_name', 'resources')  # Get from config or default to "resources"
+                        logger.info(f"Using container: {container_name}")
+                        
                         # Try to generate an Azure URL from the CloudStorage driver
-                        driver = storage.get_driver()
+                        # The get_driver() function requires a provider parameter in newer versions
+                        try:
+                            # First try with the provider parameter (newer versions)
+                            # The provider is typically 'AZURE_BLOBS' for Azure storage
+                            driver = storage.get_driver('AZURE_BLOBS')
+                        except TypeError:
+                            # Fall back to the old API without parameters
+                            driver = storage.get_driver()
+                            
+                        # If the driver still doesn't have the required get_url method,
+                        # try the direct Azure approach
+                        if not hasattr(driver, 'get_url') or not callable(driver.get_url):
+                            logger.info("Driver doesn't have get_url method, trying direct Azure access")
+                            try:
+                                from azure.storage.blob import BlobServiceClient
+                                
+                                # Get Azure connection string from config using toolkit we imported at the top
+                                azure_conn_string = tk_config.get('ckanext.cloudstorage.azure.connection_string', '')
+                                if not azure_conn_string:
+                                    # Try to build connection string from account name and key
+                                    account_name = tk_config.get('ckanext.cloudstorage.azure.account_name', '')
+                                    account_key = tk_config.get('ckanext.cloudstorage.azure.account_key', '')
+                                    if account_name and account_key:
+                                        azure_conn_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
+                                
+                                if azure_conn_string:
+                                    # Get container name, default to 'resources'
+                                    # Use the container name from earlier or get it from config
+                                    if not container_name:
+                                        container_name = tk_config.get('ckanext.cloudstorage.container_name', 'resources')
+                                    
+                                    # Create the blob client
+                                    blob_service_client = BlobServiceClient.from_connection_string(azure_conn_string)
+                                    container_client = blob_service_client.get_container_client(container_name)
+                                    
+                                    # Get the blob URL
+                                    blob_client = container_client.get_blob_client(file.filename)
+                                    azure_url = blob_client.url
+                                    logger.info(f"Generated Azure URL directly: {azure_url}")
+                            except Exception as azure_error:
+                                logger.info(f"Could not generate Azure URL directly: {str(azure_error)}")
+                        
                         if hasattr(driver, 'get_url') and callable(driver.get_url):
                             azure_url = driver.get_url(file.filename)
                             logger.info(f"Generated Azure URL: {azure_url}")
-                    except Exception as e:
-                        logger.info(f"Could not generate Azure URL: {str(e)}")
+                        else:
+                            logger.info("Driver does not have get_url method")
+                    except Exception as driver_error:
+                        logger.info(f"Could not generate Azure URL: {str(driver_error)}")
                 except Exception as e:
-                    logger.info(f"Error importing CloudStorage storage module: {str(e)}")
+                    # Different variable name to avoid confusion with the inner exception
+                    module_error = e
+                    logger.info(f"Error importing CloudStorage storage module: {str(module_error)}")
                     azure_url = None
                 
                 # If we have an Azure URL, use it
@@ -270,9 +348,15 @@ def extract_spatial_extent():
                 logger.info(f"Could not find uploaded file: {file.filename}")
                 # If use_uploaded_file is true but we can't find the file, 
                 # it probably means the upload is still in progress or hasn't been processed yet
+                # Provide more detailed error information
+                search_paths = find_uploaded_file(file.filename, return_search_paths=True)
+                logger.info(f"Searched paths: {search_paths}")
+                
                 return jsonify({
                     'success': False,
-                    'error': 'File not found in storage - upload may still be in progress'
+                    'error': 'File not found in storage - upload may still be in progress',
+                    'detail': f"File '{file.filename}' was not found in any of the expected upload locations. " +
+                              f"If using CloudStorage, the file may not be accessible yet."
                 }), 400
         
         # If we're using an uploaded file but couldn't find it, we should have already returned an error
@@ -412,4 +496,12 @@ def handle_malformed_snippet_url(snippet_path):
     
     # For other templates, just pass through to the standard CKAN handler
     return base.abort(404, _('Template not found'))
+
+def is_module_available(module_name):
+    """Check if a module is available for import without raising an exception."""
+    try:
+        importlib.import_module(module_name)
+        return True
+    except (ImportError, ModuleNotFoundError):
+        return False
 
