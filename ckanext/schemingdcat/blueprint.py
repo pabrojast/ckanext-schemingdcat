@@ -217,55 +217,73 @@ def extract_spatial_extent():
                         logger.info(f"Using container: {container_name}")
                         
                         # Try to generate an Azure URL from the CloudStorage driver
-                        # The get_driver() function requires a provider parameter in newer versions
+                        azure_url = None
+                        
+                        # First, try the direct Azure approach since it's more reliable
                         try:
-                            # First try with the provider parameter (newer versions)
-                            # The provider is typically 'AZURE_BLOBS' for Azure storage
-                            driver = storage.get_driver('AZURE_BLOBS')
-                        except TypeError:
-                            # Fall back to the old API without parameters
-                            driver = storage.get_driver()
+                            from azure.storage.blob import BlobServiceClient
                             
-                        # If the driver still doesn't have the required get_url method,
-                        # try the direct Azure approach
-                        if not hasattr(driver, 'get_url') or not callable(driver.get_url):
-                            logger.info("Driver doesn't have get_url method, trying direct Azure access")
-                            try:
-                                from azure.storage.blob import BlobServiceClient
+                            # Get Azure connection string from config using toolkit we imported at the top
+                            azure_conn_string = tk_config.get('ckanext.cloudstorage.azure.connection_string', '')
+                            if not azure_conn_string:
+                                # Try to build connection string from account name and key
+                                account_name = tk_config.get('ckanext.cloudstorage.azure.account_name', '')
+                                account_key = tk_config.get('ckanext.cloudstorage.azure.account_key', '')
+                                if account_name and account_key:
+                                    azure_conn_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
+                            
+                            if azure_conn_string:
+                                # Create the blob client
+                                blob_service_client = BlobServiceClient.from_connection_string(azure_conn_string)
+                                container_client = blob_service_client.get_container_client(container_name)
                                 
-                                # Get Azure connection string from config using toolkit we imported at the top
-                                azure_conn_string = tk_config.get('ckanext.cloudstorage.azure.connection_string', '')
-                                if not azure_conn_string:
-                                    # Try to build connection string from account name and key
-                                    account_name = tk_config.get('ckanext.cloudstorage.azure.account_name', '')
-                                    account_key = tk_config.get('ckanext.cloudstorage.azure.account_key', '')
-                                    if account_name and account_key:
-                                        azure_conn_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
-                                
-                                if azure_conn_string:
-                                    # Get container name, default to 'resources'
-                                    # Use the container name from earlier or get it from config
-                                    if not container_name:
-                                        container_name = tk_config.get('ckanext.cloudstorage.container_name', 'resources')
-                                    
-                                    # Create the blob client
-                                    blob_service_client = BlobServiceClient.from_connection_string(azure_conn_string)
-                                    container_client = blob_service_client.get_container_client(container_name)
-                                    
-                                    # Get the blob URL
-                                    blob_client = container_client.get_blob_client(file.filename)
+                                # Check if blob exists
+                                blob_client = container_client.get_blob_client(file.filename)
+                                try:
+                                    # Verify blob exists before generating URL
+                                    blob_properties = blob_client.get_blob_properties()
                                     azure_url = blob_client.url
                                     logger.info(f"Generated Azure URL directly: {azure_url}")
-                            except Exception as azure_error:
-                                logger.info(f"Could not generate Azure URL directly: {str(azure_error)}")
+                                    logger.info(f"Blob size: {blob_properties.size} bytes")
+                                except Exception as blob_error:
+                                    logger.info(f"Blob not found or not accessible yet: {str(blob_error)}")
+                                    # Try with a potential path prefix
+                                    resource_path = f"resources/{file.filename}"
+                                    blob_client = container_client.get_blob_client(resource_path)
+                                    try:
+                                        blob_properties = blob_client.get_blob_properties()
+                                        azure_url = blob_client.url
+                                        logger.info(f"Found blob with path prefix: {resource_path}")
+                                    except:
+                                        # Try with uploads prefix
+                                        upload_path = f"uploads/{file.filename}"
+                                        blob_client = container_client.get_blob_client(upload_path)
+                                        try:
+                                            blob_properties = blob_client.get_blob_properties()
+                                            azure_url = blob_client.url
+                                            logger.info(f"Found blob with uploads prefix: {upload_path}")
+                                        except:
+                                            logger.info(f"Blob not found with any known prefix")
+                        except Exception as azure_error:
+                            logger.info(f"Could not generate Azure URL directly: {str(azure_error)}")
                         
-                        if hasattr(driver, 'get_url') and callable(driver.get_url):
-                            azure_url = driver.get_url(file.filename)
-                            logger.info(f"Generated Azure URL: {azure_url}")
-                        else:
-                            logger.info("Driver does not have get_url method")
-                    except Exception as driver_error:
-                        logger.info(f"Could not generate Azure URL: {str(driver_error)}")
+                        # If direct Azure approach didn't work, try the CloudStorage driver
+                        if not azure_url:
+                            try:
+                                # The get_driver() function requires a provider parameter in newer versions
+                                try:
+                                    driver = storage.get_driver('AZURE_BLOBS')
+                                except TypeError:
+                                    # Fall back to the old API without parameters
+                                    driver = storage.get_driver()
+                                
+                                if hasattr(driver, 'get_url') and callable(driver.get_url):
+                                    azure_url = driver.get_url(file.filename)
+                                    logger.info(f"Generated Azure URL from driver: {azure_url}")
+                                else:
+                                    logger.info("Driver does not have get_url method")
+                            except Exception as driver_error:
+                                logger.info(f"Could not use CloudStorage driver: {str(driver_error)}")
                 else:
                     logger.info("CloudStorage module is not available for Azure URL generation")
                     azure_url = None
@@ -344,9 +362,46 @@ def extract_spatial_extent():
                     }), 400
             else:
                 logger.info(f"Could not find uploaded file: {file.filename}")
-                # If use_uploaded_file is true but we can't find the file, 
-                # it probably means the upload is still in progress or hasn't been processed yet
-                # Provide more detailed error information
+                
+                # If we couldn't find the file in storage, try to use the file object directly
+                # This happens when the file is being uploaded in parallel
+                logger.info("Attempting to process file directly from upload stream")
+                
+                # Save the uploaded file to a temporary location
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
+                try:
+                    file.save(temp_file.name)
+                    temp_file.close()
+                    
+                    # Check if file was saved correctly
+                    file_size = os.path.getsize(temp_file.name)
+                    logger.info(f"Saved uploaded file to temp location: {temp_file.name}, size: {file_size} bytes")
+                    
+                    if file_size > 0:
+                        # Extract spatial extent from the temporary file
+                        extent = extent_extractor.extract_extent(temp_file.name, trust_extension=True)
+                        logger.info(f"Extraction result from temp file: {extent}")
+                        
+                        if extent:
+                            logger.info("Spatial extent extraction successful from temporary file")
+                            return jsonify({
+                                'success': True,
+                                'extent': extent,
+                                'message': 'Spatial extent extracted successfully'
+                            })
+                    else:
+                        logger.info("Uploaded file is empty")
+                        
+                except Exception as e:
+                    logger.error(f"Error processing uploaded file: {str(e)}")
+                finally:
+                    # Clean up temporary file
+                    try:
+                        os.unlink(temp_file.name)
+                    except Exception:
+                        pass
+                
+                # If we still couldn't process it, show detailed error
                 search_paths = find_uploaded_file(file.filename, return_search_paths=True)
                 logger.info(f"Searched paths: {search_paths}")
                 
