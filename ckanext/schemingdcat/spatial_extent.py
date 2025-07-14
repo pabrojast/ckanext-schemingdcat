@@ -82,32 +82,68 @@ class SpatialExtentExtractor:
     def _is_shapefile_zip(self, file_path: str) -> bool:
         """Check if a ZIP file contains a shapefile."""
         try:
+            # First check if file exists and has size
+            if not os.path.exists(file_path):
+                log.debug(f"ZIP file does not exist: {file_path}")
+                return False
+            
+            file_size = os.path.getsize(file_path)
+            if file_size == 0:
+                log.debug(f"ZIP file has zero size: {file_path}")
+                return False
+                
+            log.info(f"Checking ZIP contents for shapefile components in: {file_path} (size: {file_size} bytes)")
+            
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
                 file_list = zip_ref.namelist()
+                log.info(f"ZIP contains {len(file_list)} files")
                 
                 # Check if we have the essential shapefile components
                 has_shp = any(f.lower().endswith('.shp') for f in file_list)
                 has_shx = any(f.lower().endswith('.shx') for f in file_list)
                 has_dbf = any(f.lower().endswith('.dbf') for f in file_list)
                 
+                # Log detailed information
+                log.info(f"Shapefile components check - .shp: {has_shp}, .shx: {has_shx}, .dbf: {has_dbf}")
+                
                 # A valid shapefile ZIP should have at least .shp, .shx, and .dbf
                 return has_shp and has_shx and has_dbf
                 
+        except zipfile.BadZipFile as e:
+            log.info(f"Bad ZIP file {file_path}: {str(e)}")
+            return False
         except Exception as e:
-            log.debug(f"Error checking ZIP contents {file_path}: {str(e)}")
+            log.info(f"Error checking ZIP contents {file_path}: {str(e)}")
             return False
     
-    def can_extract_extent(self, file_path: str) -> bool:
-        """Check if extent can be extracted from the given file."""
+    def can_extract_extent(self, file_path: str, trust_extension: bool = False) -> bool:
+        """
+        Check if extent can be extracted from the given file.
+        
+        Args:
+            file_path: Path to the file to check
+            trust_extension: If True, trust the file extension without further validation
+                            (useful for uploaded files that may not be accessible yet)
+        """
         ext = self._get_file_extension(file_path)
         if ext not in self.SUPPORTED_EXTENSIONS:
+            log.info(f"Unsupported extension: {ext}")
             return False
         
         format_type = self.SUPPORTED_EXTENSIONS[ext]
+        log.info(f"Format type for {ext}: {format_type}")
+        
+        # If we're trusting the extension (for uploaded files), skip validation
+        if trust_extension:
+            log.info(f"Trusting file extension without validation: {ext}")
+            return self.available_handlers.get(format_type, False)
         
         # Special handling for ZIP files - check if they contain shapefiles
         if format_type == 'zip_shapefile':
-            return self.available_handlers.get(format_type, False) and self._is_shapefile_zip(file_path)
+            handler_available = self.available_handlers.get(format_type, False)
+            is_shapefile_zip = self._is_shapefile_zip(file_path) if handler_available else False
+            log.info(f"ZIP file validation - handler available: {handler_available}, is shapefile ZIP: {is_shapefile_zip}")
+            return handler_available and is_shapefile_zip
         
         return self.available_handlers.get(format_type, False)
     
@@ -115,18 +151,20 @@ class SpatialExtentExtractor:
         """Get file extension in lowercase."""
         return os.path.splitext(file_path)[1].lower().lstrip('.')
     
-    def extract_extent(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def extract_extent(self, file_path: str, trust_extension: bool = False) -> Optional[Dict[str, Any]]:
         """
         Extract spatial extent from a geospatial file.
         
         Args:
             file_path: Path to the geospatial file
+            trust_extension: If True, trust the file extension without further validation
+                            (useful for uploaded files that may not be accessible yet)
             
         Returns:
             GeoJSON Polygon representing the extent in WGS84, or None if extraction fails
         """
         try:
-            log.info(f"Starting extent extraction for: {file_path}")
+            log.info(f"Starting extent extraction for: {file_path} (trust_extension: {trust_extension})")
             
             if not os.path.exists(file_path):
                 log.info(f"File not found: {file_path}")
@@ -135,7 +173,11 @@ class SpatialExtentExtractor:
             file_size = os.path.getsize(file_path)
             log.info(f"File size: {file_size} bytes")
             
-            can_extract = self.can_extract_extent(file_path)
+            if file_size == 0:
+                log.info(f"File has zero size: {file_path}")
+                return None
+            
+            can_extract = self.can_extract_extent(file_path, trust_extension)
             log.info(f"Can extract extent: {can_extract}")
             
             if not can_extract:
@@ -253,8 +295,33 @@ class SpatialExtentExtractor:
         if not FIONA_AVAILABLE:
             log.info("Fiona not available for ZIP shapefile extraction")
             return None
+            
+        # Verify the file exists and has content
+        if not os.path.exists(file_path):
+            log.info(f"ZIP file not found: {file_path}")
+            return None
+            
+        file_size = os.path.getsize(file_path)
+        if file_size == 0:
+            log.info(f"ZIP file is empty (0 bytes): {file_path}")
+            return None
+            
+        log.info(f"Processing ZIP file: {file_path}, size: {file_size} bytes")
         
         try:
+            # Validate ZIP file
+            try:
+                with zipfile.ZipFile(file_path, 'r') as zip_check:
+                    zip_check.testzip()  # Test the integrity of the zip file
+                    file_list = zip_check.namelist()
+                    log.info(f"ZIP validation passed. Contains {len(file_list)} files.")
+            except zipfile.BadZipFile as e:
+                log.info(f"Invalid ZIP file format: {str(e)}")
+                return None
+            except Exception as e:
+                log.info(f"Error testing ZIP file: {str(e)}")
+                return None
+                
             # Create temporary directory to extract ZIP contents
             with tempfile.TemporaryDirectory() as temp_dir:
                 log.info(f"Created temporary directory: {temp_dir}")
@@ -263,6 +330,15 @@ class SpatialExtentExtractor:
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
                     file_list = zip_ref.namelist()
                     log.info(f"ZIP contains {len(file_list)} files: {file_list}")
+                    
+                    # Check for common shapefile components
+                    shp_files = [f for f in file_list if f.lower().endswith('.shp')]
+                    shx_files = [f for f in file_list if f.lower().endswith('.shx')]
+                    dbf_files = [f for f in file_list if f.lower().endswith('.dbf')]
+                    
+                    log.info(f"Found shapefile components - SHP: {len(shp_files)}, SHX: {len(shx_files)}, DBF: {len(dbf_files)}")
+                    
+                    # Extract all files
                     zip_ref.extractall(temp_dir)
                     log.info(f"Extracted ZIP contents to: {temp_dir}")
                 
@@ -290,12 +366,28 @@ class SpatialExtentExtractor:
                 shp_size = os.path.getsize(shp_file)
                 log.info(f"Shapefile size: {shp_size} bytes")
                 
+                # Ensure the associated .shx and .dbf files exist
+                shp_base = os.path.splitext(shp_file)[0]
+                shx_file = shp_base + '.shx'
+                dbf_file = shp_base + '.dbf'
+                
+                if not os.path.exists(shx_file):
+                    log.info(f".shx file missing: {shx_file}")
+                    return None
+                    
+                if not os.path.exists(dbf_file):
+                    log.info(f".dbf file missing: {dbf_file}")
+                    return None
+                
                 # Extract extent from the shapefile
                 log.info(f"Extracting extent from shapefile: {shp_file}")
                 result = self._extract_shapefile_extent(shp_file)
                 log.info(f"Shapefile extent extraction result: {result}")
                 return result
                 
+        except zipfile.BadZipFile as e:
+            log.info(f"Bad ZIP file {file_path}: {str(e)}")
+            return None
         except Exception as e:
             log.error(f"Error reading ZIP shapefile {file_path}: {str(e)}", exc_info=True)
             return None
@@ -373,31 +465,33 @@ class SpatialExtentExtractor:
 extent_extractor = SpatialExtentExtractor()
 
 
-def extract_spatial_extent(file_path: str) -> Optional[str]:
+def extract_spatial_extent(file_path: str, trust_extension: bool = False) -> Optional[str]:
     """
     Convenience function to extract spatial extent from a file.
     
     Args:
         file_path: Path to the geospatial file
+        trust_extension: If True, trust the file extension without validating content
         
     Returns:
         JSON string of the extent geometry, or None if extraction fails
     """
-    extent = extent_extractor.extract_extent(file_path)
+    extent = extent_extractor.extract_extent(file_path, trust_extension=trust_extension)
     return json.dumps(extent) if extent else None
 
 
-def can_extract_spatial_extent(file_path: str) -> bool:
+def can_extract_spatial_extent(file_path: str, trust_extension: bool = False) -> bool:
     """
     Check if spatial extent can be extracted from the given file.
     
     Args:
         file_path: Path to the file
+        trust_extension: If True, trust the file extension without validating content
         
     Returns:
         True if extent extraction is supported for this file type
     """
-    return extent_extractor.can_extract_extent(file_path)
+    return extent_extractor.can_extract_extent(file_path, trust_extension=trust_extension)
 
 
 def get_spatial_system_status() -> Dict[str, Any]:

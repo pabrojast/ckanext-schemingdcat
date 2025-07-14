@@ -162,8 +162,8 @@ def extract_spatial_extent():
             file_path = find_uploaded_file(file.filename)
             if file_path and os.path.exists(file_path):
                 logger.info(f"Found uploaded file at: {file_path}")
-                # Process the uploaded file directly
-                extent = extent_extractor.extract_extent(file_path)
+                # Process the uploaded file directly - trust the extension since it's an uploaded file
+                extent = extent_extractor.extract_extent(file_path, trust_extension=True)
                 logger.info(f"Extraction result from uploaded file: {extent}")
                 
                 if extent:
@@ -182,22 +182,36 @@ def extract_spatial_extent():
             else:
                 logger.info(f"Could not find uploaded file: {file.filename}, falling back to temporary file processing")
         
-        # Check if it's a supported spatial file
-        can_extract = extent_extractor.can_extract_extent(file.filename)
-        logger.info(f"Can extract extent from {file.filename}: {can_extract}")
-        
-        if not can_extract:
-            logger.info(f"Unsupported file type for spatial extent extraction: {file.filename}")
-            # Get more details about why it's unsupported
+        # If we're using an uploaded file, only check the extension
+        if use_uploaded_file:
             ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
-            logger.info(f"File extension: {ext}")
-            logger.info(f"Supported extensions: {list(extent_extractor.SUPPORTED_EXTENSIONS.keys())}")
-            logger.info(f"Available handlers: {extent_extractor.available_handlers}")
             
-            return jsonify({
-                'success': False,
-                'error': 'Unsupported file type for spatial extent extraction'
-            }), 400
+            # Just check if the extension is in the supported list, don't validate content yet
+            if ext not in extent_extractor.SUPPORTED_EXTENSIONS:
+                logger.info(f"Unsupported file extension for spatial extraction: {ext}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Unsupported file extension for spatial extraction: {ext}'
+                }), 400
+                
+            logger.info(f"File extension {ext} is supported for spatial extraction")
+        else:
+            # For immediate extraction, do full validation
+            can_extract = extent_extractor.can_extract_extent(file.filename)
+            logger.info(f"Can extract extent from {file.filename}: {can_extract}")
+            
+            if not can_extract:
+                logger.info(f"Unsupported file type for spatial extent extraction: {file.filename}")
+                # Get more details about why it's unsupported
+                ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
+                logger.info(f"File extension: {ext}")
+                logger.info(f"Supported extensions: {list(extent_extractor.SUPPORTED_EXTENSIONS.keys())}")
+                logger.info(f"Available handlers: {extent_extractor.available_handlers}")
+                
+                return jsonify({
+                    'success': False,
+                    'error': 'Unsupported file type for spatial extent extraction'
+                }), 400
         
         # Create temporary file with proper cleanup
         tmp_file = None
@@ -293,13 +307,26 @@ def find_uploaded_file(filename):
                     os.path.join(storage_path, 'uploads'),
                     storage_path
                 ])
+                
+                # Also check cloud storage paths if present
+                try:
+                    # Check for common cloud storage paths
+                    cloud_storage_path = os.path.join(storage_path, 'storage', 'cloudstorage')
+                    if os.path.exists(cloud_storage_path):
+                        upload_paths.append(cloud_storage_path)
+                        logger.info(f"Found cloud storage path: {cloud_storage_path}")
+                except Exception as cloud_err:
+                    logger.info(f"Error checking cloud storage path: {str(cloud_err)}")
+                    
         except Exception as e:
             logger.info(f"Could not get CKAN storage path: {str(e)}")
         
         # Fallback paths
         upload_paths.extend([
             '/var/lib/ckan/default/storage/uploads',
+            '/var/lib/ckan/default/storage/cloudstorage',  # Common cloud storage path
             '/usr/lib/ckan/default/storage/uploads',
+            '/usr/lib/ckan/default/storage/cloudstorage',
             '/tmp/uploads',
             tempfile.gettempdir()
         ])
@@ -315,17 +342,53 @@ def find_uploaded_file(filename):
             file_path = os.path.join(base_path, filename)
             if os.path.exists(file_path):
                 logger.info(f"Found file at: {file_path}")
-                return file_path
+                # Check file size
+                file_size = os.path.getsize(file_path)
+                if file_size > 0:
+                    logger.info(f"File size: {file_size} bytes")
+                    return file_path
+                else:
+                    logger.info(f"Found file at {file_path} but size is 0 bytes - continuing search")
+            
+            # Special case for CloudStorage - check container structure
+            cloud_container_path = os.path.join(base_path, 'container')
+            if os.path.exists(cloud_container_path):
+                logger.info(f"Found cloud storage container path: {cloud_container_path}")
+                try:
+                    # CloudStorage often organizes files in random subdirectories
+                    for root, dirs, files in os.walk(cloud_container_path):
+                        for file in files:
+                            # CloudStorage sometimes adds random prefixes/suffixes, so check if filename is contained
+                            if filename in file:
+                                full_path = os.path.join(root, file)
+                                file_size = os.path.getsize(full_path)
+                                logger.info(f"Found potential match: {full_path}, size: {file_size} bytes")
+                                if file_size > 0:
+                                    logger.info(f"Found cloud storage file match at: {full_path}")
+                                    return full_path
+                except Exception as e:
+                    logger.info(f"Error checking cloud storage container: {str(e)}")
             
             # Search in subdirectories (recent uploads)
             try:
                 for root, dirs, files in os.walk(base_path):
+                    # Check for exact match first
                     if filename in files:
                         full_path = os.path.join(root, filename)
-                        # Check if file is recent (within last 10 minutes)
-                        if os.path.getmtime(full_path) > (time.time() - 600):
-                            logger.info(f"Found recent file at: {full_path}")
+                        # Check if file is recent (within last 30 minutes) and not empty
+                        if os.path.getmtime(full_path) > (time.time() - 1800) and os.path.getsize(full_path) > 0:
+                            logger.info(f"Found recent file at: {full_path}, size: {os.path.getsize(full_path)} bytes")
                             return full_path
+                    
+                    # Then check for partial matches (especially for CloudStorage which might add identifiers)
+                    for file in files:
+                        # Check if the file contains the uploaded filename (for CloudStorage)
+                        if filename in file:
+                            full_path = os.path.join(root, file)
+                            # Make sure it's recent and not empty
+                            if os.path.getmtime(full_path) > (time.time() - 1800) and os.path.getsize(full_path) > 0:
+                                logger.info(f"Found partial match at: {full_path}, size: {os.path.getsize(full_path)} bytes")
+                                return full_path
             except Exception as e:
                 logger.info(f"Error walking directory {base_path}: {str(e)}")
                 continue
