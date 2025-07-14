@@ -7,6 +7,7 @@ from ckan.logic import ValidationError
 from ckan.plugins.toolkit import render, g, h, _
 import tempfile
 import os
+import time
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
@@ -143,6 +144,8 @@ def extract_spatial_extent():
             }), 400
         
         file = request.files['file']
+        use_uploaded_file = request.form.get('use_uploaded_file', 'false').lower() == 'true'
+        
         if file.filename == '':
             logger.info("Empty filename provided")
             return jsonify({
@@ -151,6 +154,33 @@ def extract_spatial_extent():
             }), 400
         
         logger.info(f"Processing file: {file.filename}, size: {file.content_length if hasattr(file, 'content_length') else 'unknown'}")
+        logger.info(f"Use uploaded file flag: {use_uploaded_file}")
+        
+        # If use_uploaded_file is True, try to find the file in CKAN's upload directory
+        if use_uploaded_file:
+            logger.info("Attempting to find uploaded file in CKAN storage")
+            file_path = find_uploaded_file(file.filename)
+            if file_path and os.path.exists(file_path):
+                logger.info(f"Found uploaded file at: {file_path}")
+                # Process the uploaded file directly
+                extent = extent_extractor.extract_extent(file_path)
+                logger.info(f"Extraction result from uploaded file: {extent}")
+                
+                if extent:
+                    logger.info("Spatial extent extraction successful from uploaded file")
+                    return jsonify({
+                        'success': True,
+                        'extent': extent,
+                        'message': 'Spatial extent extracted successfully from uploaded file'
+                    })
+                else:
+                    logger.info("Failed to extract spatial extent from uploaded file")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to extract spatial extent from uploaded file'
+                    }), 400
+            else:
+                logger.info(f"Could not find uploaded file: {file.filename}, falling back to temporary file processing")
         
         # Check if it's a supported spatial file
         can_extract = extent_extractor.can_extract_extent(file.filename)
@@ -238,3 +268,71 @@ def extract_spatial_extent():
             'success': False,
             'error': 'Internal server error during spatial extent extraction'
         }), 500
+
+def find_uploaded_file(filename):
+    """
+    Try to find a recently uploaded file in CKAN's storage directories.
+    
+    Args:
+        filename: The name of the file to find
+        
+    Returns:
+        Full path to the file if found, None otherwise
+    """
+    try:
+        # Common upload paths in CKAN
+        upload_paths = []
+        
+        # Try to get the storage path from CKAN config
+        try:
+            import ckan.lib.uploader as uploader
+            storage_path = uploader.get_storage_path()
+            if storage_path:
+                upload_paths.extend([
+                    os.path.join(storage_path, 'storage', 'uploads'),
+                    os.path.join(storage_path, 'uploads'),
+                    storage_path
+                ])
+        except Exception as e:
+            logger.info(f"Could not get CKAN storage path: {str(e)}")
+        
+        # Fallback paths
+        upload_paths.extend([
+            '/var/lib/ckan/default/storage/uploads',
+            '/usr/lib/ckan/default/storage/uploads',
+            '/tmp/uploads',
+            tempfile.gettempdir()
+        ])
+        
+        logger.info(f"Searching for file {filename} in paths: {upload_paths}")
+        
+        # Search in each path
+        for base_path in upload_paths:
+            if not os.path.exists(base_path):
+                continue
+                
+            # Direct file in base path
+            file_path = os.path.join(base_path, filename)
+            if os.path.exists(file_path):
+                logger.info(f"Found file at: {file_path}")
+                return file_path
+            
+            # Search in subdirectories (recent uploads)
+            try:
+                for root, dirs, files in os.walk(base_path):
+                    if filename in files:
+                        full_path = os.path.join(root, filename)
+                        # Check if file is recent (within last 10 minutes)
+                        if os.path.getmtime(full_path) > (time.time() - 600):
+                            logger.info(f"Found recent file at: {full_path}")
+                            return full_path
+            except Exception as e:
+                logger.info(f"Error walking directory {base_path}: {str(e)}")
+                continue
+        
+        logger.info(f"File {filename} not found in any upload paths")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error searching for uploaded file {filename}: {str(e)}")
+        return None
