@@ -91,6 +91,103 @@
   var csvDataPromise = null;
   var charsetCache = null;
   var charsetDataPromise = null;
+  var spatialExtentServiceAvailable = null; // Cache service availability
+  
+  // Function to check if spatial extent service is available
+  function checkSpatialExtentService() {
+    if (spatialExtentServiceAvailable !== null) {
+      return Promise.resolve(spatialExtentServiceAvailable);
+    }
+    
+    return new Promise(function(resolve) {
+      console.debug('Checking spatial extent service availability...');
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/spatial-extent-status', true);
+      xhr.timeout = 5000; // 5 second timeout
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var response = JSON.parse(xhr.responseText);
+              console.debug('Spatial extent service status:', response);
+              spatialExtentServiceAvailable = response.available === true;
+              
+              if (!spatialExtentServiceAvailable) {
+                console.debug('Spatial extent service not available - missing dependencies:', response.dependencies || 'unknown');
+              }
+            } catch (e) {
+              console.debug('Error parsing spatial extent status response:', e);
+              spatialExtentServiceAvailable = false;
+            }
+          } else if (xhr.status === 404) {
+            // Fallback to old method if status endpoint doesn't exist
+            console.debug('Status endpoint not found, falling back to extract endpoint check');
+            checkSpatialExtentServiceFallback().then(resolve);
+            return;
+          } else {
+            console.debug('Spatial extent status check failed with status:', xhr.status);
+            spatialExtentServiceAvailable = false;
+          }
+          
+          resolve(spatialExtentServiceAvailable);
+        }
+      };
+      
+      xhr.ontimeout = function() {
+        console.debug('Spatial extent service status check timed out');
+        spatialExtentServiceAvailable = false;
+        resolve(false);
+      };
+      
+      xhr.onerror = function() {
+        console.debug('Spatial extent service status check network error');
+        spatialExtentServiceAvailable = false;
+        resolve(false);
+      };
+      
+      try {
+        xhr.send();
+      } catch (e) {
+        console.debug('Error sending spatial extent status request:', e);
+        spatialExtentServiceAvailable = false;
+        resolve(false);
+      }
+    });
+  }
+  
+  // Fallback method for checking service availability
+  function checkSpatialExtentServiceFallback() {
+    return new Promise(function(resolve) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/extract-spatial-extent', true);
+      xhr.timeout = 5000; // 5 second timeout for availability check
+      
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          // Even a 400/405 means the endpoint exists, just doesn't accept GET
+          spatialExtentServiceAvailable = (xhr.status !== 0 && xhr.status !== 404);
+          console.debug('Spatial extent service available (fallback):', spatialExtentServiceAvailable);
+          resolve(spatialExtentServiceAvailable);
+        }
+      };
+      
+      xhr.ontimeout = function() {
+        spatialExtentServiceAvailable = false;
+        console.debug('Spatial extent service check timed out (fallback)');
+        resolve(false);
+      };
+      
+      xhr.onerror = function() {
+        spatialExtentServiceAvailable = false;
+        console.debug('Spatial extent service check failed (fallback)');
+        resolve(false);
+      };
+      
+      xhr.send();
+    });
+  }
   
   // Function to load CSV data and create extension to MIME type mapping
   function loadMimeTypeData() {
@@ -932,6 +1029,8 @@
     
     function extractSpatialExtent(file) {
       console.debug('Starting spatial extent extraction for:', file.name);
+      console.debug('File size:', file.size, 'bytes');
+      console.debug('File type:', file.type);
       
       // Find spatial extent field
       var spatialExtentFields = document.querySelectorAll('textarea[name*="spatial_extent"]');
@@ -956,96 +1055,126 @@
         return; // Field already has content - don't overwrite
       }
       
-      console.debug('Sending file to spatial extent extraction endpoint...');
-      
-      // Show processing indicator
-      showSpatialProcessingIndicator(spatialExtentField);
-      
-      // Create FormData to send file to server
-      var formData = new FormData();
-      formData.append('file', file);
-      
-      // Send request to extract spatial extent
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/extract-spatial-extent', true);
-      
-      // Set timeout to avoid hanging
-      xhr.timeout = 30000; // 30 seconds
-      
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-          console.debug('Spatial extent extraction response:', xhr.status, xhr.responseText);
-          hideSpatialProcessingIndicator(spatialExtentField);
-          
-          if (xhr.status === 200) {
-            try {
-              var response = JSON.parse(xhr.responseText);
-              console.debug('Parsed response:', response);
-              if (response.success && response.extent) {
-                // Update the spatial extent field only if still empty
-                if (!spatialExtentField.value || spatialExtentField.value.trim() === '') {
-                  spatialExtentField.value = JSON.stringify(response.extent, null, 2);
-                  console.debug('Spatial extent field updated with:', response.extent);
-                  
-                  // Trigger change event
-                  var event = new Event('change', { bubbles: true });
-                  spatialExtentField.dispatchEvent(event);
-                  
-                  // Show success notification
-                  showSpatialExtractionNotification('success', 'Spatial extent extracted successfully!');
-                } else {
-                  console.debug('Spatial extent field already has content, skipping update');
-                }
-              } else {
-                // Silent failure for unsupported files - don't show error to user
-                console.debug('Could not extract spatial extent:', response.error || 'Unknown error');
-              }
-            } catch (e) {
-              console.debug('Error parsing spatial extent response:', e);
-            }
-          } else if (xhr.status === 400) {
-            // Handle bad request - likely unsupported file type or endpoint issue
-            try {
-              var errorResponse = JSON.parse(xhr.responseText);
-              console.debug('Spatial extent extraction bad request (400):', errorResponse.error || 'Unknown error');
-              if (errorResponse.error && errorResponse.error.includes('Unsupported file type')) {
-                console.debug('File type not supported for spatial extent extraction');
-              } else if (errorResponse.error && errorResponse.error.includes('No file')) {
-                console.debug('No file provided in request');
-              } else {
-                console.debug('Bad request error:', errorResponse.error);
-              }
-            } catch (e) {
-              console.debug('Spatial extent extraction bad request (400) - could not parse error response');
-            }
-          } else if (xhr.status === 404) {
-            // Handle endpoint not found
-            console.debug('Spatial extent extraction endpoint not found (404) - feature may not be enabled');
-          } else if (xhr.status === 500) {
-            // Handle server error
-            console.debug('Spatial extent extraction server error (500)');
-          } else if (xhr.status !== 0) { // Ignore aborted requests (status 0)
-            console.debug('Spatial extent extraction failed with status:', xhr.status);
-          }
-        }
-      };
-      
-      xhr.ontimeout = function() {
-        hideSpatialProcessingIndicator(spatialExtentField);
-        console.debug('Spatial extent extraction timed out');
-      };
-      
-      xhr.onerror = function() {
-        hideSpatialProcessingIndicator(spatialExtentField);
-        console.debug('Spatial extent extraction network error');
-      };
-      
-      try {
-        xhr.send(formData);
-      } catch (e) {
-        hideSpatialProcessingIndicator(spatialExtentField);
-        console.debug('Error sending spatial extent request:', e);
+      // Verify file is valid before sending
+      if (!file || !file.name || file.size === 0) {
+        console.debug('Invalid file - skipping spatial extent extraction');
+        return;
       }
+      
+      // Check file extension is supported
+      var ext = file.name.split('.').pop().toLowerCase();
+      var supportedSpatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
+      if (supportedSpatialExtensions.indexOf(ext) === -1) {
+        console.debug('File extension', ext, 'not supported for spatial extent extraction');
+        return;
+      }
+      
+      // Check if spatial extent service is available before proceeding
+      checkSpatialExtentService().then(function(available) {
+        if (!available) {
+          console.debug('Spatial extent service not available - skipping extraction');
+          return;
+        }
+        
+        console.debug('Sending file to spatial extent extraction endpoint...');
+        console.debug('File details - Name:', file.name, 'Size:', file.size, 'Type:', file.type);
+        
+        // Show processing indicator
+        showSpatialProcessingIndicator(spatialExtentField);
+        
+        // Create FormData to send file to server
+        var formData = new FormData();
+        formData.append('file', file);
+        
+        // Verify FormData was created correctly
+        console.debug('FormData created with file:', file.name, 'Size:', file.size);
+        
+        // Send request to extract spatial extent
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/extract-spatial-extent', true);
+        
+        // Set timeout to avoid hanging
+        xhr.timeout = 30000; // 30 seconds
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            console.debug('Spatial extent extraction response:', xhr.status, xhr.responseText);
+            hideSpatialProcessingIndicator(spatialExtentField);
+            
+            if (xhr.status === 200) {
+              try {
+                var response = JSON.parse(xhr.responseText);
+                console.debug('Parsed response:', response);
+                if (response.success && response.extent) {
+                  // Update the spatial extent field only if still empty
+                  if (!spatialExtentField.value || spatialExtentField.value.trim() === '') {
+                    spatialExtentField.value = JSON.stringify(response.extent, null, 2);
+                    console.debug('Spatial extent field updated with:', response.extent);
+                    
+                    // Trigger change event
+                    var event = new Event('change', { bubbles: true });
+                    spatialExtentField.dispatchEvent(event);
+                    
+                    // Show success notification
+                    showSpatialExtractionNotification('success', 'Spatial extent extracted successfully!');
+                  } else {
+                    console.debug('Spatial extent field already has content, skipping update');
+                  }
+                } else {
+                  // Silent failure for unsupported files - don't show error to user
+                  console.debug('Could not extract spatial extent:', response.error || 'Unknown error');
+                }
+              } catch (e) {
+                console.debug('Error parsing spatial extent response:', e);
+              }
+            } else if (xhr.status === 400) {
+              // Handle bad request - likely unsupported file type or endpoint issue
+              try {
+                var errorResponse = JSON.parse(xhr.responseText);
+                console.debug('Spatial extent extraction bad request (400):', errorResponse.error || 'Unknown error');
+                if (errorResponse.error && errorResponse.error.includes('Unsupported file type')) {
+                  console.debug('File type not supported for spatial extent extraction');
+                } else if (errorResponse.error && errorResponse.error.includes('No file')) {
+                  console.debug('No file provided in request');
+                } else {
+                  console.debug('Bad request error:', errorResponse.error);
+                }
+              } catch (e) {
+                console.debug('Spatial extent extraction bad request (400) - could not parse error response');
+                console.debug('Raw error response:', xhr.responseText);
+              }
+            } else if (xhr.status === 404) {
+              // Handle endpoint not found
+              console.debug('Spatial extent extraction endpoint not found (404) - feature may not be enabled');
+              // Mark service as unavailable to avoid future attempts
+              spatialExtentServiceAvailable = false;
+            } else if (xhr.status === 500) {
+              // Handle server error
+              console.debug('Spatial extent extraction server error (500)');
+            } else if (xhr.status !== 0) { // Ignore aborted requests (status 0)
+              console.debug('Spatial extent extraction failed with status:', xhr.status);
+            }
+          }
+        };
+        
+        xhr.ontimeout = function() {
+          hideSpatialProcessingIndicator(spatialExtentField);
+          console.debug('Spatial extent extraction timed out');
+        };
+        
+        xhr.onerror = function() {
+          hideSpatialProcessingIndicator(spatialExtentField);
+          console.debug('Spatial extent extraction network error');
+        };
+        
+        try {
+          console.debug('Sending XMLHttpRequest...');
+          xhr.send(formData);
+        } catch (e) {
+          hideSpatialProcessingIndicator(spatialExtentField);
+          console.debug('Error sending spatial extent request:', e);
+        }
+      });
     }
     
     function showSpatialProcessingIndicator(field) {

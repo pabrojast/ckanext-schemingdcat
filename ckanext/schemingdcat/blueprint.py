@@ -105,11 +105,34 @@ def verify_captcha():
             'captcha_after': rate_limiter.captcha_required_after
         })
 
+@schemingdcat.route('/api/spatial-extent-status', methods=['GET'])
+def spatial_extent_status():
+    """Get status of spatial extent extraction system."""
+    try:
+        from ckanext.schemingdcat.spatial_extent import get_spatial_system_status
+        status = get_spatial_system_status()
+        logger.debug(f"Spatial extent system status: {status}")
+        return jsonify(status)
+    except Exception as e:
+        logger.debug(f"Error getting spatial extent status: {str(e)}")
+        return jsonify({
+            'available': False,
+            'error': str(e)
+        }), 500
+
 @schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])
 def extract_spatial_extent():
     """Extract spatial extent from uploaded geospatial file."""
     try:
         logger.debug("Spatial extent extraction request received")
+        
+        # First check if any spatial handlers are available
+        if not any(extent_extractor.available_handlers.values()):
+            logger.debug("No spatial handlers available - dependencies missing")
+            return jsonify({
+                'success': False,
+                'error': 'Spatial extent extraction not available - missing required dependencies'
+            }), 400
         
         # Check if file is in request
         if 'file' not in request.files:
