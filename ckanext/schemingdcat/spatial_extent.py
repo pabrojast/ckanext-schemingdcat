@@ -126,16 +126,32 @@ class SpatialExtentExtractor:
             GeoJSON Polygon representing the extent in WGS84, or None if extraction fails
         """
         try:
+            log.info(f"Starting extent extraction for: {file_path}")
+            
             if not os.path.exists(file_path):
-                log.debug(f"File not found: {file_path}")
+                log.info(f"File not found: {file_path}")
                 return None
             
-            if not self.can_extract_extent(file_path):
-                log.debug(f"Cannot extract extent from file: {file_path}")
+            file_size = os.path.getsize(file_path)
+            log.info(f"File size: {file_size} bytes")
+            
+            can_extract = self.can_extract_extent(file_path)
+            log.info(f"Can extract extent: {can_extract}")
+            
+            if not can_extract:
+                log.info(f"Cannot extract extent from file: {file_path}")
+                ext = self._get_file_extension(file_path)
+                log.info(f"File extension: {ext}")
+                log.info(f"Supported extensions: {list(self.SUPPORTED_EXTENSIONS.keys())}")
+                if ext in self.SUPPORTED_EXTENSIONS:
+                    format_type = self.SUPPORTED_EXTENSIONS[ext]
+                    log.info(f"Format type: {format_type}")
+                    log.info(f"Handler available: {self.available_handlers.get(format_type, False)}")
                 return None
             
             ext = self._get_file_extension(file_path)
             format_type = self.SUPPORTED_EXTENSIONS[ext]
+            log.info(f"Processing as format type: {format_type}")
             
             if format_type == 'shapefile':
                 return self._extract_shapefile_extent(file_path)
@@ -146,32 +162,48 @@ class SpatialExtentExtractor:
             elif format_type in ['kml', 'geopackage', 'geojson']:
                 return self._extract_vector_extent(file_path)
             else:
-                log.debug(f"Unsupported format type: {format_type}")
+                log.info(f"Unsupported format type: {format_type}")
                 return None
                 
         except Exception as e:
-            # Silent fallback - log at debug level to avoid noise in production
-            log.debug(f"Error extracting extent from {file_path}: {str(e)}")
+            # Use info level for debugging the 400 error
+            log.error(f"Error extracting extent from {file_path}: {str(e)}", exc_info=True)
             return None
     
     def _extract_shapefile_extent(self, file_path: str) -> Optional[Dict[str, Any]]:
         """Extract extent from Shapefile."""
+        log.info(f"Extracting extent from shapefile: {file_path}")
+        
         if not FIONA_AVAILABLE:
+            log.info("Fiona not available for shapefile extraction")
             return None
         
         try:
+            log.info(f"Opening shapefile with fiona: {file_path}")
             with fiona.open(file_path) as src:
+                log.info(f"Shapefile opened successfully - driver: {src.driver}")
+                log.info(f"Shapefile CRS: {src.crs}")
+                log.info(f"Shapefile schema: {src.schema}")
+                log.info(f"Shapefile feature count: {len(src)}")
+                
                 bounds = src.bounds
+                log.info(f"Raw bounds: {bounds}")
                 crs = src.crs
                 
                 # Transform to WGS84 if needed
                 if crs and crs != from_epsg(4326):
+                    log.info(f"Transforming bounds from {crs} to WGS84")
                     bounds = self._transform_bounds(bounds, crs, from_epsg(4326))
+                    log.info(f"Transformed bounds: {bounds}")
+                else:
+                    log.info("Bounds already in WGS84 or no CRS info")
                 
-                return self._bounds_to_geojson(bounds)
+                result = self._bounds_to_geojson(bounds)
+                log.info(f"Final GeoJSON result: {result}")
+                return result
                 
         except Exception as e:
-            log.debug(f"Error reading shapefile {file_path}: {str(e)}")
+            log.error(f"Error reading shapefile {file_path}: {str(e)}", exc_info=True)
             return None
     
     def _extract_raster_extent(self, file_path: str) -> Optional[Dict[str, Any]]:
@@ -216,35 +248,56 @@ class SpatialExtentExtractor:
     
     def _extract_zip_shapefile_extent(self, file_path: str) -> Optional[Dict[str, Any]]:
         """Extract extent from ZIP file containing Shapefile."""
+        log.info(f"Extracting extent from ZIP shapefile: {file_path}")
+        
         if not FIONA_AVAILABLE:
+            log.info("Fiona not available for ZIP shapefile extraction")
             return None
         
         try:
             # Create temporary directory to extract ZIP contents
             with tempfile.TemporaryDirectory() as temp_dir:
+                log.info(f"Created temporary directory: {temp_dir}")
+                
                 # Extract ZIP file
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                    file_list = zip_ref.namelist()
+                    log.info(f"ZIP contains {len(file_list)} files: {file_list}")
                     zip_ref.extractall(temp_dir)
+                    log.info(f"Extracted ZIP contents to: {temp_dir}")
                 
                 # Look for .shp file in extracted contents
                 shp_file = None
                 for root, dirs, files in os.walk(temp_dir):
+                    log.info(f"Checking directory: {root}, files: {files}")
                     for file in files:
                         if file.lower().endswith('.shp'):
                             shp_file = os.path.join(root, file)
+                            log.info(f"Found shapefile: {shp_file}")
                             break
                     if shp_file:
                         break
                 
                 if not shp_file:
-                    log.debug(f"No .shp file found in ZIP: {file_path}")
+                    log.info(f"No .shp file found in ZIP: {file_path}")
                     return None
                 
+                # Check if shapefile exists and is readable
+                if not os.path.exists(shp_file):
+                    log.info(f"Shapefile path does not exist: {shp_file}")
+                    return None
+                
+                shp_size = os.path.getsize(shp_file)
+                log.info(f"Shapefile size: {shp_size} bytes")
+                
                 # Extract extent from the shapefile
-                return self._extract_shapefile_extent(shp_file)
+                log.info(f"Extracting extent from shapefile: {shp_file}")
+                result = self._extract_shapefile_extent(shp_file)
+                log.info(f"Shapefile extent extraction result: {result}")
+                return result
                 
         except Exception as e:
-            log.debug(f"Error reading ZIP shapefile {file_path}: {str(e)}")
+            log.error(f"Error reading ZIP shapefile {file_path}: {str(e)}", exc_info=True)
             return None
     
     def _transform_bounds(self, bounds: Tuple[float, float, float, float], 

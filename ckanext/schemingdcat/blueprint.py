@@ -124,11 +124,11 @@ def spatial_extent_status():
 def extract_spatial_extent():
     """Extract spatial extent from uploaded geospatial file."""
     try:
-        logger.debug("Spatial extent extraction request received")
+        logger.info("Spatial extent extraction request received")
         
         # First check if any spatial handlers are available
         if not any(extent_extractor.available_handlers.values()):
-            logger.debug("No spatial handlers available - dependencies missing")
+            logger.info("No spatial handlers available - dependencies missing")
             return jsonify({
                 'success': False,
                 'error': 'Spatial extent extraction not available - missing required dependencies'
@@ -136,7 +136,7 @@ def extract_spatial_extent():
         
         # Check if file is in request
         if 'file' not in request.files:
-            logger.debug("No file provided in request")
+            logger.info("No file provided in request")
             return jsonify({
                 'success': False,
                 'error': 'No file provided'
@@ -144,17 +144,26 @@ def extract_spatial_extent():
         
         file = request.files['file']
         if file.filename == '':
-            logger.debug("Empty filename provided")
+            logger.info("Empty filename provided")
             return jsonify({
                 'success': False,
                 'error': 'No file selected'
             }), 400
         
-        logger.debug(f"Processing file: {file.filename}")
+        logger.info(f"Processing file: {file.filename}, size: {file.content_length if hasattr(file, 'content_length') else 'unknown'}")
         
         # Check if it's a supported spatial file
-        if not extent_extractor.can_extract_extent(file.filename):
-            logger.debug(f"Unsupported file type for spatial extent extraction: {file.filename}")
+        can_extract = extent_extractor.can_extract_extent(file.filename)
+        logger.info(f"Can extract extent from {file.filename}: {can_extract}")
+        
+        if not can_extract:
+            logger.info(f"Unsupported file type for spatial extent extraction: {file.filename}")
+            # Get more details about why it's unsupported
+            ext = os.path.splitext(file.filename)[1].lower().lstrip('.')
+            logger.info(f"File extension: {ext}")
+            logger.info(f"Supported extensions: {list(extent_extractor.SUPPORTED_EXTENSIONS.keys())}")
+            logger.info(f"Available handlers: {extent_extractor.available_handlers}")
+            
             return jsonify({
                 'success': False,
                 'error': 'Unsupported file type for spatial extent extraction'
@@ -166,22 +175,50 @@ def extract_spatial_extent():
             with tempfile.NamedTemporaryFile(delete=False, 
                                            suffix=os.path.splitext(file.filename)[1]) as tmp_file:
                 # Save uploaded file to temporary location
+                logger.info(f"Saving file to temporary location: {tmp_file.name}")
                 file.save(tmp_file.name)
-                logger.debug(f"File saved to temporary location: {tmp_file.name}")
+                
+                # Verify file was saved correctly
+                file_size = os.path.getsize(tmp_file.name) if os.path.exists(tmp_file.name) else 0
+                logger.info(f"File saved to temporary location: {tmp_file.name}, size: {file_size} bytes")
+                
+                if file_size == 0:
+                    logger.info("Saved file is empty")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Uploaded file is empty'
+                    }), 400
+                
+                # For ZIP files, let's check the contents before extraction
+                if file.filename.lower().endswith('.zip'):
+                    try:
+                        import zipfile
+                        with zipfile.ZipFile(tmp_file.name, 'r') as zip_ref:
+                            file_list = zip_ref.namelist()
+                            logger.info(f"ZIP file contains: {file_list}")
+                            
+                            # Check for shapefile components
+                            has_shp = any(f.lower().endswith('.shp') for f in file_list)
+                            has_shx = any(f.lower().endswith('.shx') for f in file_list)
+                            has_dbf = any(f.lower().endswith('.dbf') for f in file_list)
+                            logger.info(f"Shapefile components - .shp: {has_shp}, .shx: {has_shx}, .dbf: {has_dbf}")
+                    except Exception as zip_error:
+                        logger.info(f"Error checking ZIP contents: {str(zip_error)}")
                 
                 # Extract spatial extent
+                logger.info("Starting spatial extent extraction...")
                 extent = extent_extractor.extract_extent(tmp_file.name)
-                logger.debug(f"Extraction result: {extent}")
+                logger.info(f"Extraction result: {extent}")
                 
                 if extent:
-                    logger.debug("Spatial extent extraction successful")
+                    logger.info("Spatial extent extraction successful")
                     return jsonify({
                         'success': True,
                         'extent': extent,
                         'message': 'Spatial extent extracted successfully'
                     })
                 else:
-                    logger.debug("Failed to extract spatial extent from file")
+                    logger.info("Failed to extract spatial extent from file - extent is None")
                     return jsonify({
                         'success': False,
                         'error': 'Failed to extract spatial extent from file'
@@ -191,11 +228,12 @@ def extract_spatial_extent():
             if tmp_file and os.path.exists(tmp_file.name):
                 try:
                     os.unlink(tmp_file.name)
-                except OSError:
-                    pass  # Silent cleanup failure
+                    logger.info(f"Cleaned up temporary file: {tmp_file.name}")
+                except OSError as cleanup_error:
+                    logger.info(f"Failed to cleanup temporary file: {cleanup_error}")
                 
     except Exception as e:
-        logger.debug(f"Error extracting spatial extent: {str(e)}")
+        logger.error(f"Error extracting spatial extent: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
             'error': 'Internal server error during spatial extent extraction'
