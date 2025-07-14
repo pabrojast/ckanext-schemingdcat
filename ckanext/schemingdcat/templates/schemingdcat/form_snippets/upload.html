@@ -476,9 +476,11 @@
           console.debug('Attempting to extract spatial extent from:', file.name);
           extractSpatialExtent(file);
         } catch (e) {
-          console.error('Error in spatial extent extraction:', e);
+          console.debug('Error in spatial extent extraction:', e);
           // Silent failure - don't interrupt the upload process
         }
+      } else {
+        console.debug('File is not a spatial format, skipping spatial extent extraction');
       }
     }
 
@@ -924,7 +926,7 @@
     
     // Spatial file handling functions
     function isSpatialFile(extension) {
-      var spatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson'];
+      var spatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
       return spatialExtensions.indexOf(extension.toLowerCase()) !== -1;
     }
     
@@ -944,7 +946,7 @@
       console.debug('Selected spatial extent field:', spatialExtentField ? spatialExtentField.name : 'none');
       
       if (!spatialExtentField) {
-        console.warn('No spatial extent field found - spatial extraction skipped');
+        console.debug('No spatial extent field found - spatial extraction skipped');
         return; // No spatial extent field found - silent return
       }
       
@@ -1001,8 +1003,29 @@
             } catch (e) {
               console.debug('Error parsing spatial extent response:', e);
             }
+          } else if (xhr.status === 400) {
+            // Handle bad request - likely unsupported file type or endpoint issue
+            try {
+              var errorResponse = JSON.parse(xhr.responseText);
+              console.debug('Spatial extent extraction bad request (400):', errorResponse.error || 'Unknown error');
+              if (errorResponse.error && errorResponse.error.includes('Unsupported file type')) {
+                console.debug('File type not supported for spatial extent extraction');
+              } else if (errorResponse.error && errorResponse.error.includes('No file')) {
+                console.debug('No file provided in request');
+              } else {
+                console.debug('Bad request error:', errorResponse.error);
+              }
+            } catch (e) {
+              console.debug('Spatial extent extraction bad request (400) - could not parse error response');
+            }
+          } else if (xhr.status === 404) {
+            // Handle endpoint not found
+            console.debug('Spatial extent extraction endpoint not found (404) - feature may not be enabled');
+          } else if (xhr.status === 500) {
+            // Handle server error
+            console.debug('Spatial extent extraction server error (500)');
           } else if (xhr.status !== 0) { // Ignore aborted requests (status 0)
-            console.debug('Spatial extent extraction failed:', xhr.status);
+            console.debug('Spatial extent extraction failed with status:', xhr.status);
           }
         }
       };
