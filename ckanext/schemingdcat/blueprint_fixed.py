@@ -1,4 +1,4 @@
-﻿# encoding: utf-8
+# encoding: utf-8
 import ckan.model as model
 import ckan.lib.base as base
 import ckan.logic as logic
@@ -160,83 +160,7 @@ def extract_spatial_extent():
         # If use_uploaded_file is True, try to find the file in CKAN's upload directory
         if use_uploaded_file:
             logger.info("Attempting to find uploaded file in CKAN storage")
-            
-            # Try to get CloudStorage helper for Azure URLs
-            try:
-                from ckanext.cloudstorage import helpers as cloudstorage_helpers
-                azure_direct_upload = cloudstorage_helpers.use_azure_direct_upload()
-                logger.info(f"Azure direct upload enabled: {azure_direct_upload}")
-            except Exception as e:
-                logger.info(f"CloudStorage helpers not available: {str(e)}")
-                azure_direct_upload = False
-            
-            # First try to find the local file
             file_path = find_uploaded_file(file.filename)
-            
-            if azure_direct_upload:
-                logger.info("Azure direct upload is enabled - checking for Azure URL")
-                try:
-                    from ckanext.cloudstorage import storage
-                    # Generate Azure URL for direct access
-                    container_name = "resources"  # Usually the container name for resources
-                    azure_url = None
-                    
-                    try:
-                        # Try to generate an Azure URL from the CloudStorage driver
-                        driver = storage.get_driver()
-                        if hasattr(driver, 'get_url') and callable(driver.get_url):
-                            azure_url = driver.get_url(file.filename)
-                            logger.info(f"Generated Azure URL: {azure_url}")
-                    except Exception as e:
-                        logger.info(f"Could not generate Azure URL: {str(e)}")
-                except Exception as e:
-                    logger.info(f"Error importing CloudStorage storage module: {str(e)}")
-                    azure_url = None
-                
-                # If we have an Azure URL, use it
-                if azure_url:
-                    # Process using the Azure URL directly
-                    logger.info(f"Using Azure URL for spatial extent extraction: {azure_url}")
-                    # We need to download the file from Azure first since the extraction functions expect a local file
-                    import requests
-                    import shutil
-                    
-                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
-                    try:
-                        logger.info(f"Downloading file from Azure URL to: {temp_file.name}")
-                        response = requests.get(azure_url, stream=True)
-                        response.raise_for_status()
-                        with open(temp_file.name, 'wb') as f:
-                            shutil.copyfileobj(response.raw, f)
-                            
-                        # Check if file was downloaded correctly
-                        file_size = os.path.getsize(temp_file.name)
-                        logger.info(f"Downloaded file size: {file_size} bytes")
-                        
-                        if file_size > 0:
-                            # Extract spatial extent from the downloaded file
-                            extent = extent_extractor.extract_extent(temp_file.name, trust_extension=True)
-                            logger.info(f"Extraction result from Azure URL: {extent}")
-                            
-                            if extent:
-                                logger.info("Spatial extent extraction successful from Azure URL")
-                                return jsonify({
-                                    'success': True,
-                                    'extent': extent,
-                                    'message': 'Spatial extent extracted successfully from Azure URL'
-                                })
-                        else:
-                            logger.info("Downloaded file from Azure URL is empty")
-                    except Exception as e:
-                        logger.error(f"Error downloading from Azure URL: {str(e)}")
-                    finally:
-                        # Clean up temporary file
-                        try:
-                            os.unlink(temp_file.name)
-                        except Exception:
-                            pass
-            
-            # Fall back to local file if Azure URL approach didn't work
             if file_path and os.path.exists(file_path):
                 logger.info(f"Found uploaded file at: {file_path}")
                 # Verify file has content
@@ -387,3 +311,13 @@ def extract_spatial_extent():
             'error': 'Internal server error during spatial extent extraction'
         }), 500
 
+
+    try:
+        # Common upload paths in CKAN
+        upload_paths = []
+        storage_path = None
+        
+        # Try to get the storage path from CKAN config
+        try:
+            try:
+                from ckan.common import config
