@@ -148,6 +148,7 @@ def extract_spatial_extent():
         
         file = request.files['file']
         use_uploaded_file = request.form.get('use_uploaded_file', 'false').lower() == 'true'
+        resource_id = request.form.get('resource_id', '')
         
         if file.filename == '':
             logger.info("Empty filename provided")
@@ -158,6 +159,7 @@ def extract_spatial_extent():
         
         logger.info(f"Processing file: {file.filename}, size: {file.content_length if hasattr(file, 'content_length') else 'unknown'}")
         logger.info(f"Use uploaded file flag: {use_uploaded_file}")
+        logger.info(f"Resource ID: {resource_id}")
         
         # If use_uploaded_file is True, try to find the file in CKAN's upload directory
         if use_uploaded_file:
@@ -200,7 +202,7 @@ def extract_spatial_extent():
                 azure_direct_upload = False
             
             # First try to find the local file
-            file_path = find_uploaded_file(file.filename)
+            file_path = find_uploaded_file(file.filename, resource_id=resource_id)
             logger.info(f"Attempted to find file, result path: {file_path if file_path else 'Not found'}")
             
             # Only try Azure if we haven't found the file locally and Azure is enabled
@@ -229,6 +231,17 @@ def extract_spatial_extent():
                                 # Try to build connection string from account name and key
                                 account_name = tk_config.get('ckanext.cloudstorage.azure.account_name', '')
                                 account_key = tk_config.get('ckanext.cloudstorage.azure.account_key', '')
+                                if not account_name or not account_key:
+                                    # Try alternative config keys
+                                    driver_options = tk_config.get('ckanext.cloudstorage.driver_options', '{}')
+                                    try:
+                                        import ast
+                                        opts = ast.literal_eval(driver_options)
+                                        account_name = opts.get('key', '')
+                                        account_key = opts.get('secret', '')
+                                    except:
+                                        pass
+                                
                                 if account_name and account_key:
                                     azure_conn_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
                             
@@ -238,32 +251,35 @@ def extract_spatial_extent():
                                 container_client = blob_service_client.get_container_client(container_name)
                                 
                                 # Check if blob exists
-                                blob_client = container_client.get_blob_client(file.filename)
-                                try:
-                                    # Verify blob exists before generating URL
-                                    blob_properties = blob_client.get_blob_properties()
-                                    azure_url = blob_client.url
-                                    logger.info(f"Generated Azure URL directly: {azure_url}")
-                                    logger.info(f"Blob size: {blob_properties.size} bytes")
-                                except Exception as blob_error:
-                                    logger.info(f"Blob not found or not accessible yet: {str(blob_error)}")
-                                    # Try with a potential path prefix
-                                    resource_path = f"resources/{file.filename}"
-                                    blob_client = container_client.get_blob_client(resource_path)
+                                # CloudStorage uses the pattern: resources/{resource_id}/{filename}
+                                blob_paths_to_try = []
+                                
+                                # If we have a resource_id, try the standard CloudStorage path first
+                                if resource_id:
+                                    blob_paths_to_try.append(f"resources/{resource_id}/{file.filename}")
+                                
+                                # Also try without resource_id
+                                blob_paths_to_try.extend([
+                                    file.filename,
+                                    f"resources/{file.filename}",
+                                    f"uploads/{file.filename}"
+                                ])
+                                
+                                for blob_path in blob_paths_to_try:
                                     try:
+                                        blob_client = container_client.get_blob_client(blob_path)
                                         blob_properties = blob_client.get_blob_properties()
                                         azure_url = blob_client.url
-                                        logger.info(f"Found blob with path prefix: {resource_path}")
-                                    except:
-                                        # Try with uploads prefix
-                                        upload_path = f"uploads/{file.filename}"
-                                        blob_client = container_client.get_blob_client(upload_path)
-                                        try:
-                                            blob_properties = blob_client.get_blob_properties()
-                                            azure_url = blob_client.url
-                                            logger.info(f"Found blob with uploads prefix: {upload_path}")
-                                        except:
-                                            logger.info(f"Blob not found with any known prefix")
+                                        logger.info(f"Found blob at path: {blob_path}")
+                                        logger.info(f"Generated Azure URL: {azure_url}")
+                                        logger.info(f"Blob size: {blob_properties.size} bytes")
+                                        break
+                                    except Exception as e:
+                                        logger.info(f"Blob not found at {blob_path}: {str(e)}")
+                                        continue
+                                
+                                if not azure_url:
+                                    logger.info(f"Blob not found with any known path pattern")
                         except Exception as azure_error:
                             logger.info(f"Could not generate Azure URL directly: {str(azure_error)}")
                         
@@ -405,7 +421,7 @@ def extract_spatial_extent():
                         pass
                 
                 # If we still couldn't process it, show detailed error
-                search_paths = find_uploaded_file(file.filename, return_search_paths=True)
+                search_paths = find_uploaded_file(file.filename, return_search_paths=True, resource_id=resource_id)
                 logger.info(f"Searched paths: {search_paths}")
                 
                 return jsonify({

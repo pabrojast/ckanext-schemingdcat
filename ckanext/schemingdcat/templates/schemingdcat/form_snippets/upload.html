@@ -6,6 +6,7 @@
 {%- set field_url = field.field_name -%}
 {%- set field_upload = field.upload_field or 'upload' -%}
 {%- set field_clear = field.upload_clear or 'clear_upload' -%}
+{%- set resource_id = data.get('id', '') -%}
 
 <div class="schemingdcat-upload-wrapper">
   {% if is_upload and data.get('url') %}
@@ -94,6 +95,7 @@
   var spatialExtentServiceAvailable = null; // Cache service availability
   var pendingSpatialExtraction = null; // Store info for post-upload spatial extraction
   var uploadCompletionListenerActive = false; // Track if we're monitoring for upload completion
+  var currentResourceId = '{{ resource_id }}'; // Store resource ID for spatial extraction
   
   // Functions for showing/hiding spatial extraction UI indicators
   function showSpatialProcessingIndicator(field) {
@@ -623,7 +625,8 @@
         pendingSpatialExtraction = {
           fileName: fileName,
           ext: ext,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          resourceId: currentResourceId
         };
         
         // Set up upload completion listener
@@ -1321,14 +1324,14 @@
       
       // Wait a bit to ensure the file is fully available on the server
       setTimeout(function() {
-        extractSpatialExtentFromUploadedFile(pendingSpatialExtraction.fileName);
+        extractSpatialExtentFromUploadedFile(pendingSpatialExtraction.fileName, pendingSpatialExtraction.resourceId);
         pendingSpatialExtraction = null; // Clear pending extraction
       }, 3000); // Wait 3 seconds after upload completion
     }
     
     // Function to extract spatial extent from uploaded file using server-side file path
-    function extractSpatialExtentFromUploadedFile(fileName) {
-      console.debug('Starting post-upload spatial extent extraction for:', fileName);
+    function extractSpatialExtentFromUploadedFile(fileName, resourceId) {
+      console.debug('Starting post-upload spatial extent extraction for:', fileName, 'with resource ID:', resourceId);
       
       // Find spatial extent field
       var spatialExtentFields = document.querySelectorAll('textarea[name*="spatial_extent"]');
@@ -1375,6 +1378,9 @@
         blob.name = fileName;
         formData.append('file', blob, fileName);
         formData.append('use_uploaded_file', 'true'); // Signal to use the uploaded file instead
+        if (resourceId) {
+          formData.append('resource_id', resourceId);
+        }
         
         // Send request to extract spatial extent
         var xhr = new XMLHttpRequest();
