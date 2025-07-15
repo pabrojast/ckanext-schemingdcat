@@ -5,13 +5,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def find_uploaded_file(filename, return_search_paths=False):
+def find_uploaded_file(filename, return_search_paths=False, resource_id=None):
     """
     Try to find a recently uploaded file in CKAN's storage directories.
     
     Args:
         filename: The name of the file to find
         return_search_paths: If True, return the list of paths that were searched instead of the file path
+        resource_id: Optional resource ID to help locate CloudStorage files
         
     Returns:
         If return_search_paths is False (default): Full path to the file if found, None otherwise
@@ -98,6 +99,18 @@ def find_uploaded_file(filename, return_search_paths=False):
                     return file_path
                 else:
                     logger.info(f"Found file at {file_path} but size is 0 bytes - continuing search")
+            
+            # If resource_id is provided, check CloudStorage path structure
+            if resource_id:
+                resource_file_path = os.path.join(base_path, 'resources', resource_id, filename)
+                if os.path.exists(resource_file_path):
+                    logger.info(f"Found file at CloudStorage path: {resource_file_path}")
+                    file_size = os.path.getsize(resource_file_path)
+                    if file_size > 0:
+                        logger.info(f"File size: {file_size} bytes")
+                        return resource_file_path
+                    else:
+                        logger.info(f"Found file at {resource_file_path} but size is 0 bytes - continuing search")
             
             # Check if this is a cloudstorage path based on name
             is_cloudstorage_path = ('cloudstorage' in base_path.lower())

@@ -148,6 +148,7 @@ def extract_spatial_extent():
         
         file = request.files['file']
         use_uploaded_file = request.form.get('use_uploaded_file', 'false').lower() == 'true'
+        resource_id = request.form.get('resource_id', '')
         
         if file.filename == '':
             logger.info("Empty filename provided")
@@ -158,6 +159,7 @@ def extract_spatial_extent():
         
         logger.info(f"Processing file: {file.filename}, size: {file.content_length if hasattr(file, 'content_length') else 'unknown'}")
         logger.info(f"Use uploaded file flag: {use_uploaded_file}")
+        logger.info(f"Resource ID: {resource_id}")
         
         # If use_uploaded_file is True, try to find the file in CKAN's upload directory
         if use_uploaded_file:
@@ -200,7 +202,7 @@ def extract_spatial_extent():
                 azure_direct_upload = False
             
             # First try to find the local file
-            file_path = find_uploaded_file(file.filename)
+            file_path = find_uploaded_file(file.filename, resource_id=resource_id)
             logger.info(f"Attempted to find file, result path: {file_path if file_path else 'Not found'}")
             
             # Only try Azure if we haven't found the file locally and Azure is enabled
@@ -229,6 +231,17 @@ def extract_spatial_extent():
                                 # Try to build connection string from account name and key
                                 account_name = tk_config.get('ckanext.cloudstorage.azure.account_name', '')
                                 account_key = tk_config.get('ckanext.cloudstorage.azure.account_key', '')
+                                if not account_name or not account_key:
+                                    # Try alternative config keys
+                                    driver_options = tk_config.get('ckanext.cloudstorage.driver_options', '{}')
+                                    try:
+                                        import ast
+                                        opts = ast.literal_eval(driver_options)
+                                        account_name = opts.get('key', '')
+                                        account_key = opts.get('secret', '')
+                                    except:
+                                        pass
+                                
                                 if account_name and account_key:
                                     azure_conn_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
                             
@@ -238,32 +251,48 @@ def extract_spatial_extent():
                                 container_client = blob_service_client.get_container_client(container_name)
                                 
                                 # Check if blob exists
-                                blob_client = container_client.get_blob_client(file.filename)
-                                try:
-                                    # Verify blob exists before generating URL
-                                    blob_properties = blob_client.get_blob_properties()
-                                    azure_url = blob_client.url
-                                    logger.info(f"Generated Azure URL directly: {azure_url}")
-                                    logger.info(f"Blob size: {blob_properties.size} bytes")
-                                except Exception as blob_error:
-                                    logger.info(f"Blob not found or not accessible yet: {str(blob_error)}")
-                                    # Try with a potential path prefix
-                                    resource_path = f"resources/{file.filename}"
-                                    blob_client = container_client.get_blob_client(resource_path)
+                                # CloudStorage uses the pattern: resources/{resource_id}/{filename}
+                                blob_paths_to_try = []
+                                
+                                # If we have a resource_id, try the standard CloudStorage path first
+                                if resource_id:
+                                    blob_paths_to_try.append(f"resources/{resource_id}/{file.filename}")
+                                
+                                # Try various path patterns that CloudStorage might use
+                                # Include munged filename versions
+                                import ckan.lib.munge as munge
+                                munged_filename = munge.munge_filename(file.filename)
+                                logger.info(f"Original filename: {file.filename}")
+                                logger.info(f"Munged filename: {munged_filename}")
+                                
+                                blob_paths_to_try.extend([
+                                    file.filename,
+                                    munged_filename,
+                                    f"resources/{file.filename}",
+                                    f"resources/{munged_filename}",
+                                    f"uploads/{file.filename}",
+                                    f"uploads/{munged_filename}",
+                                ])
+                                
+                                # If we have a resource_id, also try with munged filename
+                                if resource_id:
+                                    blob_paths_to_try.append(f"resources/{resource_id}/{munged_filename}")
+                                
+                                for blob_path in blob_paths_to_try:
                                     try:
+                                        blob_client = container_client.get_blob_client(blob_path)
                                         blob_properties = blob_client.get_blob_properties()
                                         azure_url = blob_client.url
-                                        logger.info(f"Found blob with path prefix: {resource_path}")
-                                    except:
-                                        # Try with uploads prefix
-                                        upload_path = f"uploads/{file.filename}"
-                                        blob_client = container_client.get_blob_client(upload_path)
-                                        try:
-                                            blob_properties = blob_client.get_blob_properties()
-                                            azure_url = blob_client.url
-                                            logger.info(f"Found blob with uploads prefix: {upload_path}")
-                                        except:
-                                            logger.info(f"Blob not found with any known prefix")
+                                        logger.info(f"Found blob at path: {blob_path}")
+                                        logger.info(f"Generated Azure URL: {azure_url}")
+                                        logger.info(f"Blob size: {blob_properties.size} bytes")
+                                        break
+                                    except Exception as e:
+                                        logger.info(f"Blob not found at {blob_path}: {str(e)}")
+                                        continue
+                                
+                                if not azure_url:
+                                    logger.info(f"Blob not found with any known path pattern")
                         except Exception as azure_error:
                             logger.info(f"Could not generate Azure URL directly: {str(azure_error)}")
                         
@@ -366,53 +395,75 @@ def extract_spatial_extent():
             else:
                 logger.info(f"Could not find uploaded file: {file.filename}")
                 
-                # If we couldn't find the file in storage, try to use the file object directly
-                # This happens when the file is being uploaded in parallel
-                logger.info("Attempting to process file directly from upload stream")
-                
-                # Save the uploaded file to a temporary location
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
-                try:
-                    file.save(temp_file.name)
-                    temp_file.close()
-                    
-                    # Check if file was saved correctly
-                    file_size = os.path.getsize(temp_file.name)
-                    logger.info(f"Saved uploaded file to temp location: {temp_file.name}, size: {file_size} bytes")
-                    
-                    if file_size > 0:
-                        # Extract spatial extent from the temporary file
-                        extent = extent_extractor.extract_extent(temp_file.name, trust_extension=True)
-                        logger.info(f"Extraction result from temp file: {extent}")
-                        
-                        if extent:
-                            logger.info("Spatial extent extraction successful from temporary file")
-                            return jsonify({
-                                'success': True,
-                                'extent': extent,
-                                'message': 'Spatial extent extracted successfully'
-                            })
-                    else:
-                        logger.info("Uploaded file is empty")
-                        
-                except Exception as e:
-                    logger.error(f"Error processing uploaded file: {str(e)}")
-                finally:
-                    # Clean up temporary file
-                    try:
-                        os.unlink(temp_file.name)
-                    except Exception:
-                        pass
-                
-                # If we still couldn't process it, show detailed error
-                search_paths = find_uploaded_file(file.filename, return_search_paths=True)
+                # If we still couldn't find it, show detailed error
+                search_paths = find_uploaded_file(file.filename, return_search_paths=True, resource_id=resource_id)
                 logger.info(f"Searched paths: {search_paths}")
+                
+                # Try listing files in Azure container to debug
+                if azure_direct_upload and azure_conn_string:
+                    try:
+                        logger.info("Listing blobs in Azure container to help debug...")
+                        # Get munged filename for comparison
+                        import ckan.lib.munge as munge
+                        munged_filename = munge.munge_filename(file.filename)
+                        
+                        blob_list = []
+                        # List all blobs that might match our filename
+                        matching_blobs = []
+                        recent_blobs = []  # Blobs uploaded in the last 5 minutes
+                        
+                        from datetime import timezone
+                        import re
+                        
+                        # Create search patterns
+                        filename_base = os.path.splitext(file.filename)[0]
+                        # Remove special characters for fuzzy matching
+                        clean_base = re.sub(r'[^\w\s-]', '', filename_base).lower()
+                        
+                        for blob in container_client.list_blobs():
+                            blob_list.append(blob.name)
+                            
+                            # Check if blob was uploaded recently (last 5 minutes)
+                            if blob.last_modified:
+                                time_diff = (datetime.now(timezone.utc) - blob.last_modified).total_seconds()
+                                if time_diff < 300:  # 5 minutes
+                                    recent_blobs.append({
+                                        'name': blob.name,
+                                        'size': blob.size,
+                                        'age_seconds': time_diff,
+                                        'last_modified': blob.last_modified.isoformat()
+                                    })
+                            
+                            # Check if this blob might be our file (fuzzy matching)
+                            blob_name_lower = blob.name.lower()
+                            if (file.filename.lower() in blob_name_lower or 
+                                munged_filename in blob_name_lower or
+                                clean_base in blob_name_lower or
+                                any(part in blob_name_lower for part in clean_base.split('-') if len(part) > 3)):
+                                matching_blobs.append({
+                                    'name': blob.name,
+                                    'size': blob.size,
+                                    'last_modified': blob.last_modified.isoformat() if blob.last_modified else 'unknown'
+                                })
+                            
+                            if len(blob_list) >= 100:  # Increase limit to 100
+                                break
+                        
+                        logger.info(f"First 100 blobs in container: {blob_list}")
+                        if matching_blobs:
+                            logger.info(f"Found potential matching blobs: {matching_blobs}")
+                        if recent_blobs:
+                            logger.info(f"Recent blobs (last 5 min): {recent_blobs[:10]}")  # Show first 10 recent
+                    except Exception as e:
+                        logger.info(f"Could not list blobs: {str(e)}")
                 
                 return jsonify({
                     'success': False,
                     'error': 'File not found in storage - upload may still be in progress',
                     'detail': f"File '{file.filename}' was not found in any of the expected upload locations. " +
-                              f"If using CloudStorage, the file may not be accessible yet."
+                              f"If using CloudStorage, the file may not be accessible yet. Resource ID: {resource_id or 'not provided'}",
+                    'retry_suggested': True,
+                    'missing_resource_id': not bool(resource_id)
                 }), 400
         
         # If we're using an uploaded file but couldn't find it, we should have already returned an error
