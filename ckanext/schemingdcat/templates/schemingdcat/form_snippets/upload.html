@@ -110,16 +110,45 @@
       return resourceIdInput.value;
     }
     
+    // Try hidden inputs with resource in the name
+    var hiddenInputs = document.querySelectorAll('input[type="hidden"]');
+    for (var i = 0; i < hiddenInputs.length; i++) {
+      var input = hiddenInputs[i];
+      if ((input.name.includes('resource') || input.name === 'id') && input.value) {
+        // Check if it looks like a UUID
+        if (/^[a-f0-9-]{36}$/i.test(input.value)) {
+          console.debug('Found potential resource ID in hidden input:', input.name, input.value);
+          return input.value;
+        }
+      }
+    }
+    
     // Try to find it in a data attribute
     var resourceIdElement = document.querySelector('[data-resource-id]');
     if (resourceIdElement) {
       return resourceIdElement.getAttribute('data-resource-id');
     }
     
+    // Try CloudStorage specific containers
+    var cloudStorageContainers = document.querySelectorAll('.cloudstorage-upload-container, .cloudstorage-progress-container');
+    for (var j = 0; j < cloudStorageContainers.length; j++) {
+      var container = cloudStorageContainers[j];
+      var dataResourceId = container.getAttribute('data-resource-id');
+      if (dataResourceId) {
+        console.debug('Found resource ID in CloudStorage container:', dataResourceId);
+        return dataResourceId;
+      }
+    }
+    
     // Try to get it from the URL if we're editing a resource
     var urlMatch = window.location.pathname.match(/resource\/([a-f0-9-]+)/);
     if (urlMatch && urlMatch[1]) {
       return urlMatch[1];
+    }
+    
+    // Check if we're in a new resource form (no resource_id yet)
+    if (window.location.pathname.includes('/new') || window.location.pathname.includes('/new_resource')) {
+      console.debug('This appears to be a new resource form - resource ID not available yet');
     }
     
     return null;
@@ -1459,14 +1488,24 @@
               if (xhr.status === 400 && currentRetry < maxRetries) {
                 try {
                   var errorResponse = JSON.parse(xhr.responseText);
-                  if (errorResponse.error && errorResponse.error.includes('not found in storage')) {
+                  if (errorResponse.retry_suggested || (errorResponse.error && errorResponse.error.includes('not found in storage'))) {
                     console.debug('File not found in storage, retrying in a few seconds...');
+                    
+                    // If resource_id is missing, try to get it again
+                    if (errorResponse.missing_resource_id) {
+                      console.debug('Resource ID is missing, attempting to retrieve it...');
+                      latestResourceId = getResourceId();
+                      if (latestResourceId) {
+                        console.debug('Found resource ID on retry:', latestResourceId);
+                      }
+                    }
+                    
                     showSpatialExtractionNotification('File upload in progress, retrying...', 'info');
                     
                     // Retry with exponential backoff
                     var retryDelay = Math.pow(2, currentRetry) * 2000; // 2s, 4s, 8s
                     setTimeout(function() {
-                      extractSpatialExtentFromUploadedFile(fileName, resourceId, currentRetry + 1);
+                      extractSpatialExtentFromUploadedFile(fileName, latestResourceId || resourceId, currentRetry + 1);
                     }, retryDelay);
                     return;
                   }
@@ -1475,7 +1514,12 @@
                 }
               }
               
-              showSpatialExtractionNotification('Server error during spatial extraction (Status: ' + xhr.status + ')', 'warning');
+              // If we've exhausted retries and still no resource_id, provide helpful message
+              if (xhr.status === 400 && currentRetry >= maxRetries && !latestResourceId) {
+                showSpatialExtractionNotification('Spatial extraction failed. Please save the resource first, then try editing it to extract spatial extent.', 'warning');
+              } else {
+                showSpatialExtractionNotification('Server error during spatial extraction (Status: ' + xhr.status + ')', 'warning');
+              }
             }
           }
         };

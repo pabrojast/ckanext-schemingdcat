@@ -410,20 +410,50 @@ def extract_spatial_extent():
                         blob_list = []
                         # List all blobs that might match our filename
                         matching_blobs = []
+                        recent_blobs = []  # Blobs uploaded in the last 5 minutes
+                        
+                        from datetime import timezone
+                        import re
+                        
+                        # Create search patterns
+                        filename_base = os.path.splitext(file.filename)[0]
+                        # Remove special characters for fuzzy matching
+                        clean_base = re.sub(r'[^\w\s-]', '', filename_base).lower()
+                        
                         for blob in container_client.list_blobs():
                             blob_list.append(blob.name)
-                            # Check if this blob might be our file
-                            if file.filename.lower() in blob.name.lower() or munged_filename in blob.name:
+                            
+                            # Check if blob was uploaded recently (last 5 minutes)
+                            if blob.last_modified:
+                                time_diff = (datetime.now(timezone.utc) - blob.last_modified).total_seconds()
+                                if time_diff < 300:  # 5 minutes
+                                    recent_blobs.append({
+                                        'name': blob.name,
+                                        'size': blob.size,
+                                        'age_seconds': time_diff,
+                                        'last_modified': blob.last_modified.isoformat()
+                                    })
+                            
+                            # Check if this blob might be our file (fuzzy matching)
+                            blob_name_lower = blob.name.lower()
+                            if (file.filename.lower() in blob_name_lower or 
+                                munged_filename in blob_name_lower or
+                                clean_base in blob_name_lower or
+                                any(part in blob_name_lower for part in clean_base.split('-') if len(part) > 3)):
                                 matching_blobs.append({
                                     'name': blob.name,
                                     'size': blob.size,
                                     'last_modified': blob.last_modified.isoformat() if blob.last_modified else 'unknown'
                                 })
-                            if len(blob_list) >= 50:  # Limit to first 50 for logging
+                            
+                            if len(blob_list) >= 100:  # Increase limit to 100
                                 break
-                        logger.info(f"First 50 blobs in container: {blob_list}")
+                        
+                        logger.info(f"First 100 blobs in container: {blob_list}")
                         if matching_blobs:
                             logger.info(f"Found potential matching blobs: {matching_blobs}")
+                        if recent_blobs:
+                            logger.info(f"Recent blobs (last 5 min): {recent_blobs[:10]}")  # Show first 10 recent
                     except Exception as e:
                         logger.info(f"Could not list blobs: {str(e)}")
                 
@@ -431,7 +461,9 @@ def extract_spatial_extent():
                     'success': False,
                     'error': 'File not found in storage - upload may still be in progress',
                     'detail': f"File '{file.filename}' was not found in any of the expected upload locations. " +
-                              f"If using CloudStorage, the file may not be accessible yet. Resource ID: {resource_id or 'not provided'}"
+                              f"If using CloudStorage, the file may not be accessible yet. Resource ID: {resource_id or 'not provided'}",
+                    'retry_suggested': True,
+                    'missing_resource_id': not bool(resource_id)
                 }), 400
         
         # If we're using an uploaded file but couldn't find it, we should have already returned an error
