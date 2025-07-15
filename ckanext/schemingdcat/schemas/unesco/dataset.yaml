@@ -5350,20 +5350,3 @@ resource_fields:
     fr: 'Le codage des caractères dans les métadonnées ISO-19115 est spécifié avec une liste de codes qui peuvent être mappés aux codes correspondants dans <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
   help_allow_html: True
   form_group_id: resource_type
-
-# Spatial extent extracted from file (O)
-- field_name: spatial_extent
-  label:
-    en: Spatial extent (auto-extracted)
-    es: Extensión espacial (auto-extraída)
-    fr: Étendue spatiale (auto-extraite)
-  display_property: dcat:spatialResolutionInMeters
-  form_snippet: schemingdcat/form_snippets/spatial_extent.html
-  display_snippet: schemingdcat/display_snippets/spatial_extent.html
-  form_placeholder: '{"type": "Polygon", "coordinates": [[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]}'
-  help_text:
-    en: 'Spatial extent automatically extracted from geospatial files (Shapefile, GeoTIFF, etc.). This field is populated automatically when uploading spatial data files.'
-    es: 'Extensión espacial extraída automáticamente de archivos geoespaciales (Shapefile, GeoTIFF, etc.). Este campo se rellena automáticamente al subir archivos de datos espaciales.'
-    fr: 'Étendue spatiale extraite automatiquement des fichiers géospatiaux (Shapefile, GeoTIFF, etc.). Ce champ est rempli automatiquement lors du téléchargement de fichiers de données spatiales.'
-  help_allow_html: True
-  form_group_id: spatial_info
