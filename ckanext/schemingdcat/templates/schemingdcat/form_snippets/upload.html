@@ -97,6 +97,34 @@
   var uploadCompletionListenerActive = false; // Track if we're monitoring for upload completion
   var currentResourceId = '{{ resource_id }}'; // Store resource ID for spatial extraction
   
+  // Try to get resource ID from various sources
+  function getResourceId() {
+    // First try the template variable
+    if (currentResourceId && currentResourceId !== '') {
+      return currentResourceId;
+    }
+    
+    // Try to find it in the form
+    var resourceIdInput = document.querySelector('input[name="id"]');
+    if (resourceIdInput && resourceIdInput.value) {
+      return resourceIdInput.value;
+    }
+    
+    // Try to find it in a data attribute
+    var resourceIdElement = document.querySelector('[data-resource-id]');
+    if (resourceIdElement) {
+      return resourceIdElement.getAttribute('data-resource-id');
+    }
+    
+    // Try to get it from the URL if we're editing a resource
+    var urlMatch = window.location.pathname.match(/resource\/([a-f0-9-]+)/);
+    if (urlMatch && urlMatch[1]) {
+      return urlMatch[1];
+    }
+    
+    return null;
+  }
+  
   // Functions for showing/hiding spatial extraction UI indicators
   function showSpatialProcessingIndicator(field) {
     if (!field) return;
@@ -626,7 +654,7 @@
           fileName: fileName,
           ext: ext,
           timestamp: Date.now(),
-          resourceId: currentResourceId
+          resourceId: getResourceId()
         };
         
         // Set up upload completion listener
@@ -1330,8 +1358,13 @@
     }
     
     // Function to extract spatial extent from uploaded file using server-side file path
-    function extractSpatialExtentFromUploadedFile(fileName, resourceId) {
-      console.debug('Starting post-upload spatial extent extraction for:', fileName, 'with resource ID:', resourceId);
+    function extractSpatialExtentFromUploadedFile(fileName, resourceId, retryCount) {
+      // Try to get the most recent resource ID
+      var latestResourceId = getResourceId() || resourceId;
+      var currentRetry = retryCount || 0;
+      var maxRetries = 3;
+      
+      console.debug('Starting post-upload spatial extent extraction for:', fileName, 'with resource ID:', latestResourceId, 'retry:', currentRetry);
       
       // Find spatial extent field
       var spatialExtentFields = document.querySelectorAll('textarea[name*="spatial_extent"]');
@@ -1378,8 +1411,8 @@
         blob.name = fileName;
         formData.append('file', blob, fileName);
         formData.append('use_uploaded_file', 'true'); // Signal to use the uploaded file instead
-        if (resourceId) {
-          formData.append('resource_id', resourceId);
+        if (latestResourceId) {
+          formData.append('resource_id', latestResourceId);
         }
         
         // Send request to extract spatial extent
@@ -1421,6 +1454,27 @@
               }
             } else {
               console.debug('Post-upload spatial extent extraction failed with status:', xhr.status);
+              
+              // If it's a 400 error and we haven't exceeded max retries, try again
+              if (xhr.status === 400 && currentRetry < maxRetries) {
+                try {
+                  var errorResponse = JSON.parse(xhr.responseText);
+                  if (errorResponse.error && errorResponse.error.includes('not found in storage')) {
+                    console.debug('File not found in storage, retrying in a few seconds...');
+                    showSpatialExtractionNotification('File upload in progress, retrying...', 'info');
+                    
+                    // Retry with exponential backoff
+                    var retryDelay = Math.pow(2, currentRetry) * 2000; // 2s, 4s, 8s
+                    setTimeout(function() {
+                      extractSpatialExtentFromUploadedFile(fileName, resourceId, currentRetry + 1);
+                    }, retryDelay);
+                    return;
+                  }
+                } catch (e) {
+                  // If we can't parse the error, continue with normal error handling
+                }
+              }
+              
               showSpatialExtractionNotification('Server error during spatial extraction (Status: ' + xhr.status + ')', 'warning');
             }
           }

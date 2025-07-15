@@ -258,12 +258,25 @@ def extract_spatial_extent():
                                 if resource_id:
                                     blob_paths_to_try.append(f"resources/{resource_id}/{file.filename}")
                                 
-                                # Also try without resource_id
+                                # Try various path patterns that CloudStorage might use
+                                # Include munged filename versions
+                                import ckan.lib.munge as munge
+                                munged_filename = munge.munge_filename(file.filename)
+                                logger.info(f"Original filename: {file.filename}")
+                                logger.info(f"Munged filename: {munged_filename}")
+                                
                                 blob_paths_to_try.extend([
                                     file.filename,
+                                    munged_filename,
                                     f"resources/{file.filename}",
-                                    f"uploads/{file.filename}"
+                                    f"resources/{munged_filename}",
+                                    f"uploads/{file.filename}",
+                                    f"uploads/{munged_filename}",
                                 ])
+                                
+                                # If we have a resource_id, also try with munged filename
+                                if resource_id:
+                                    blob_paths_to_try.append(f"resources/{resource_id}/{munged_filename}")
                                 
                                 for blob_path in blob_paths_to_try:
                                     try:
@@ -382,53 +395,43 @@ def extract_spatial_extent():
             else:
                 logger.info(f"Could not find uploaded file: {file.filename}")
                 
-                # If we couldn't find the file in storage, try to use the file object directly
-                # This happens when the file is being uploaded in parallel
-                logger.info("Attempting to process file directly from upload stream")
-                
-                # Save the uploaded file to a temporary location
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1])
-                try:
-                    file.save(temp_file.name)
-                    temp_file.close()
-                    
-                    # Check if file was saved correctly
-                    file_size = os.path.getsize(temp_file.name)
-                    logger.info(f"Saved uploaded file to temp location: {temp_file.name}, size: {file_size} bytes")
-                    
-                    if file_size > 0:
-                        # Extract spatial extent from the temporary file
-                        extent = extent_extractor.extract_extent(temp_file.name, trust_extension=True)
-                        logger.info(f"Extraction result from temp file: {extent}")
-                        
-                        if extent:
-                            logger.info("Spatial extent extraction successful from temporary file")
-                            return jsonify({
-                                'success': True,
-                                'extent': extent,
-                                'message': 'Spatial extent extracted successfully'
-                            })
-                    else:
-                        logger.info("Uploaded file is empty")
-                        
-                except Exception as e:
-                    logger.error(f"Error processing uploaded file: {str(e)}")
-                finally:
-                    # Clean up temporary file
-                    try:
-                        os.unlink(temp_file.name)
-                    except Exception:
-                        pass
-                
-                # If we still couldn't process it, show detailed error
+                # If we still couldn't find it, show detailed error
                 search_paths = find_uploaded_file(file.filename, return_search_paths=True, resource_id=resource_id)
                 logger.info(f"Searched paths: {search_paths}")
+                
+                # Try listing files in Azure container to debug
+                if azure_direct_upload and azure_conn_string:
+                    try:
+                        logger.info("Listing blobs in Azure container to help debug...")
+                        # Get munged filename for comparison
+                        import ckan.lib.munge as munge
+                        munged_filename = munge.munge_filename(file.filename)
+                        
+                        blob_list = []
+                        # List all blobs that might match our filename
+                        matching_blobs = []
+                        for blob in container_client.list_blobs():
+                            blob_list.append(blob.name)
+                            # Check if this blob might be our file
+                            if file.filename.lower() in blob.name.lower() or munged_filename in blob.name:
+                                matching_blobs.append({
+                                    'name': blob.name,
+                                    'size': blob.size,
+                                    'last_modified': blob.last_modified.isoformat() if blob.last_modified else 'unknown'
+                                })
+                            if len(blob_list) >= 50:  # Limit to first 50 for logging
+                                break
+                        logger.info(f"First 50 blobs in container: {blob_list}")
+                        if matching_blobs:
+                            logger.info(f"Found potential matching blobs: {matching_blobs}")
+                    except Exception as e:
+                        logger.info(f"Could not list blobs: {str(e)}")
                 
                 return jsonify({
                     'success': False,
                     'error': 'File not found in storage - upload may still be in progress',
                     'detail': f"File '{file.filename}' was not found in any of the expected upload locations. " +
-                              f"If using CloudStorage, the file may not be accessible yet."
+                              f"If using CloudStorage, the file may not be accessible yet. Resource ID: {resource_id or 'not provided'}"
                 }), 400
         
         # If we're using an uploaded file but couldn't find it, we should have already returned an error
