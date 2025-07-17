@@ -1,0 +1,133 @@
+{% set field_name = field.field_name %}
+{% set field_value = data.get(field_name, '') %}
+
+<div class="spatial-extent-field">
+  <textarea 
+    id="{{ field_name }}" 
+    name="{{ field_name }}" 
+    class="form-control spatial-extent-input"
+    placeholder="{{ field.form_placeholder or '' }}"
+    rows="3">{{ field_value }}</textarea>
+  
+  <div class="spatial-extent-info">
+    <small class="text-muted">
+      <i class="fa fa-info-circle"></i>
+      {{ _('This field will be automatically populated when uploading geospatial files (SHP, TIF, GeoJSON, etc.). You can also manually edit the spatial extent if needed.') }}
+    </small>
+  </div>
+  
+  {% if field_value %}
+  <div class="spatial-extent-preview">
+    <button type="button" class="btn btn-sm btn-info preview-extent" data-extent="{{ field_value }}">
+      <i class="fa fa-map"></i> {{ _('Preview Extent') }}
+    </button>
+    <button type="button" class="btn btn-sm btn-warning clear-extent" title="{{ _('Clear spatial extent') }}">
+      <i class="fa fa-trash"></i> {{ _('Clear') }}
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.spatial-extent-field {
+  margin-bottom: 15px;
+}
+
+.spatial-extent-input {
+  font-family: monospace;
+  font-size: 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  resize: vertical;
+}
+
+.spatial-extent-input:focus {
+  background-color: #ffffff;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.spatial-extent-info {
+  margin-top: 5px;
+}
+
+.spatial-extent-preview {
+  margin-top: 10px;
+}
+
+.preview-extent, .clear-extent {
+  transition: all 0.3s ease;
+  margin-right: 10px;
+}
+
+.preview-extent:hover, .clear-extent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.clear-extent {
+  margin-right: 0;
+}
+</style>
+
+<script>
+(function() {
+  // Add event listener for preview and clear buttons
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('preview-extent') || e.target.closest('.preview-extent')) {
+      var button = e.target.classList.contains('preview-extent') ? e.target : e.target.closest('.preview-extent');
+      var extent = button.getAttribute('data-extent');
+      
+      if (extent) {
+        try {
+          var geom = JSON.parse(extent);
+          // Simple preview - you could integrate with a map library here
+          alert('{{ _("Spatial extent preview:") }}\n' + JSON.stringify(geom, null, 2));
+        } catch (e) {
+          console.error('Invalid extent format:', e);
+          alert('{{ _("Invalid spatial extent format") }}');
+        }
+      }
+    }
+    
+    if (e.target.classList.contains('clear-extent') || e.target.closest('.clear-extent')) {
+      var button = e.target.classList.contains('clear-extent') ? e.target : e.target.closest('.clear-extent');
+      var field = button.closest('.spatial-extent-field').querySelector('.spatial-extent-input');
+      
+      if (field && confirm('{{ _("Are you sure you want to clear the spatial extent?") }}')) {
+        field.value = '';
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        field.dispatchEvent(event);
+        
+        // Hide the preview section
+        var previewSection = button.closest('.spatial-extent-preview');
+        if (previewSection) {
+          previewSection.style.display = 'none';
+        }
+      }
+    }
+  });
+  
+  // Show/hide preview buttons based on field content
+  document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('spatial-extent-input')) {
+      var field = e.target;
+      var previewSection = field.closest('.spatial-extent-field').querySelector('.spatial-extent-preview');
+      
+      if (previewSection) {
+        if (field.value.trim()) {
+          previewSection.style.display = 'block';
+          // Update the preview button's data attribute
+          var previewButton = previewSection.querySelector('.preview-extent');
+          if (previewButton) {
+            previewButton.setAttribute('data-extent', field.value);
+          }
+        } else {
+          previewSection.style.display = 'none';
+        }
+      }
+    }
+  });
+})();
+</script>

@@ -28,9 +28,21 @@ Enhancements:
 - Add Metadata downloads for Linked Open Data formats ([`mjanez/ckanext-dcat`](https://github.com/mjanez/ckanext-dcat)) and Geospatial Metadata (ISO 19139, Dublin Core, etc. with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw))
 - Add custom i18n translations to `datasets`, `groups`, `organizations` in schemas, e.g: [GeoDCAT-AP (ES)](#geodcat-ap-es).[^1]
 - Add a set of useful helpers and templates to be used with Metadata Schemas.
+- **Automatic spatial extent extraction** from geospatial files (Shapefile, GeoTIFF, GeoJSON, etc.) during resource upload
 - [Update the base theme](#new-theme) of CKAN to use with the enhancements of this extension.
 - Modern UI inspired on [`datopian/ckanext-datopian`](https://github.com/datopian/ckanext-datopian).
 - LOD/OGC Endpoints based on avalaible profiles (DCAT) and CSW capabilities with [`mjanez/ckan-pycsw`](https://github.com/mjanez/ckanext-pycsw).
+
+### Spatial Extent Extraction
+This extension includes automatic spatial extent extraction from geospatial files:
+
+- **Supported formats**: Shapefile (.shp, .zip), GeoTIFF (.tif, .tiff), GeoJSON (.geojson), KML (.kml), GeoPackage (.gpkg)
+- **Automatic detection**: When uploading geospatial files, the spatial extent is automatically extracted and populated in the `spatial_extent` field
+- **WGS84 conversion**: All extents are automatically converted to WGS84 coordinates
+- **Manual editing**: Users can manually edit the extracted extent if needed
+- **Graceful degradation**: Works without spatial libraries, with manual extent entry as fallback
+
+For more details, see [SPATIAL_EXTENT_EXTRACTION.md](SPATIAL_EXTENT_EXTRACTION.md).
 
 ## Requirements
 This plugin is compatible with CKAN 2.9 or later and needs the following plugins to work properly:
@@ -60,6 +72,22 @@ This plugin is compatible with CKAN 2.9 or later and needs the following plugins
   # Install the scheming_dataset plugin
   pip install -e "git+https://github.com/ckan/ckanext-schemingdcat.git#egg=ckanext-schemingdcat"
   ```
+
+### Optional: Spatial Extent Extraction Dependencies
+To enable automatic spatial extent extraction from geospatial files, install the optional spatial dependencies:
+
+  ```sh
+  # Install spatial dependencies for automatic extent extraction
+  pip install -r $CKAN_VENV/src/ckanext-schemingdcat/spatial-requirements.txt
+  ```
+
+This will install:
+- **Fiona**: For reading vector files (Shapefile, GeoJSON, KML, GeoPackage)
+- **Rasterio**: For reading raster files (GeoTIFF)
+- **PyProj**: For coordinate reference system transformations
+
+> [!NOTE]
+> The extension works without these dependencies, but spatial extent extraction will not be available. Users can still manually enter spatial extents.
 
 ## Configuration
 Set the plugin:

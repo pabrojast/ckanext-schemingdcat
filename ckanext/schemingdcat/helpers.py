@@ -1418,3 +1418,44 @@ def get_initiatives():
         
     except (p.toolkit.ObjectNotFound, KeyError):
         return ['Not available']
+
+@helper
+def schemingdcat_spatial_extent_available():
+    """
+    Check if spatial extent extraction is available.
+    
+    Returns:
+        bool: True if spatial extent extraction libraries are available
+    """
+    try:
+        from ckanext.schemingdcat.spatial_extent import get_spatial_system_status
+        status = get_spatial_system_status()
+        return status.get('available', False)
+    except ImportError:
+        return False
+
+@helper 
+def schemingdcat_spatial_extent_status():
+    """
+    Get the status of the spatial extent extraction system.
+    
+    Returns:
+        dict: System status information including available handlers and dependencies
+    """
+    try:
+        from ckanext.schemingdcat.spatial_extent import get_spatial_system_status
+        return get_spatial_system_status()
+    except ImportError:
+        return {
+            'available': False,
+            'handlers': {},
+            'supported_extensions': [],
+            'dependencies': {
+                'fiona': False,
+                'rasterio': False,
+                'pyproj': False
+            },
+            'api_safe': True,
+            'mode': 'frontend_only',
+            'error': 'Spatial extent module not available'
+        }
