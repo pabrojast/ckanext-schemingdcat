@@ -8,13 +8,13 @@
 <h1 class="heading">
   <div class="dataset-badges">
     {% if organization.state.startswith('draft') %}
-    <span class="dataset-draft badge pull-left">
+    <span class="dataset-draft badge float-start">
       <i class="fa fa-book"></i>
       {{ _('Draft') }}
     </span>
     {% endif %}
     {% if organization.state == 'deleted' %}
-    <span class="dataset-delete badge badge pull-left">
+    <span class="dataset-delete badge badge float-start">
       <i class="fa fa-trash"></i>
       {{ _('Deleted') }}
     </span>

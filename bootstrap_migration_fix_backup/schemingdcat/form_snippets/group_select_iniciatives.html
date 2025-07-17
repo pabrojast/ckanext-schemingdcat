@@ -1,0 +1,18 @@
+{% set iniciativas = h.get_initiatives() %}
+{% set existing_groups = data.groups if data.groups else [] %}
+{% set disponibles = h.groups_available() %}
+
+
+<label class="checkbox" for="field-group-1">Initiative:</label>
+<select id="field-group-1" name="groups__1__id" class="form-control form-select">
+    <option value=""></option>
+    {% for group in disponibles %}
+        {% if group.name in iniciativas %}
+            {% set selected_org = False %}
+            {% if existing_groups|length > 1 %}
+                {% set selected_org = existing_groups[1].id == group.id %}
+            {% endif %}
+            <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
+        {% endif %}
+    {% endfor %}
+</select>

@@ -1,9 +1,9 @@
 {% block package_download_datastore_formats %}
-    <div class="download-links pull-right">
+    <div class="download-links float-end">
         <div class="btn-group">
             <a class="btn btn-primary" href="{{ h.url_for('datastore.dump', resource_id=res.id, bom=True) }}" target="_blank"><i class="fa fa-download"></i> {{ _('Download') }}</a>
-            <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                <span class="caret"></span>
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-caret-down"></i>
             </button>
             <ul class="dropdown-menu" aria-labelledby="dropdownDownloadFormat">
                 <li>

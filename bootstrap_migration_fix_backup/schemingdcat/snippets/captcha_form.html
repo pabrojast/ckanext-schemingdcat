@@ -1,0 +1,49 @@
+{% import 'macros/form.html' as form %}
+
+<div class="captcha-container" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+  <div class="alert alert-warning">
+    <h4 class="alert-heading">
+      <i class="fa fa-shield"></i> {{ _('Security Check Required') }}
+    </h4>
+    <p>{{ _('You have performed many searches. Please solve this simple math problem to continue:') }}</p>
+  </div>
+  
+  <form method="post" action="{{ h.url_for('schemingdcat.verify_captcha') }}" class="form-horizontal">
+    {{ h.csrf_input() }}
+    <input type="hidden" name="redirect_url" value="{{ request.url }}" />
+    
+    <div class="form-group">
+      <label class="control-label col-sm-3" for="captcha_answer">
+        <strong>{{ captcha_question }} = ?</strong>
+      </label>
+      <div class="col-sm-9">
+        <input id="captcha_answer" name="captcha_answer" type="text" 
+               class="form-control" style="max-width: 150px;"
+               placeholder="{{ _('Enter your answer') }}" 
+               required autofocus />
+      </div>
+    </div>
+    
+    {% if captcha_error %}
+    <div class="alert alert-danger">
+      <i class="fa fa-exclamation-circle"></i> {{ _('Incorrect answer. Please try again.') }}
+    </div>
+    {% endif %}
+    
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">
+        <i class="fa fa-check"></i> {{ _('Verify') }}
+      </button>
+      <a href="{{ h.url_for('dataset.search') }}" class="btn btn-default">
+        <i class="fa fa-home"></i> {{ _('Go to Homepage') }}
+      </a>
+    </div>
+  </form>
+  
+  <div class="help-block" style="margin-top: 15px;">
+    <small class="text-muted">
+      <i class="fa fa-info-circle"></i> 
+      {{ _('This security measure helps protect our service from automated requests.') }}
+    </small>
+  </div>
+</div>

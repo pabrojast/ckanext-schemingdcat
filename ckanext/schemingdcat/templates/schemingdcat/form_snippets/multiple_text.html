@@ -10,7 +10,7 @@
       value="{{ element }}"
       class="form-control"
       {{ form.attributes(field.form_attrs if 'form_attrs' in field else {}) }} />
-    <a class="btn btn-default btn-multiple-remove" name="multiple-remove" href="javascript:;"
+    <a class="btn btn-secondary btn-multiple-remove" name="multiple-remove" href="javascript:;"
       >{% block delete_button_text %}{{ _('Remove') }}{% endblock %}</a>
       {% if error and error is iterable %}<span class="error-block">{{ error|join(', ') }}</span>{% endif %}
   </li>

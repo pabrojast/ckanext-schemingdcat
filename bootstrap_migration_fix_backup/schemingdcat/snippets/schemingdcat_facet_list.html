@@ -1,0 +1,127 @@
+{% extends "snippets/facet_list.html" %}
+{#
+Construct a facet module populated with links to filtered results.
+
+name
+The field name identifying the facet field, e.g. "tags"
+
+title
+The title of the facet, e.g. "Tags", or "Tag Cloud"
+
+label_function
+Renders the human-readable label for each facet value.
+If defined, this should be a callable that accepts a `facet_item`.
+e.g. lambda facet_item: facet_item.display_name.upper()
+By default it displays the facet item's display name, which should
+usually be good enough
+
+if_empty
+A string, which if defined, and the list of possible facet items is empty,
+is displayed in lieu of an empty list.
+
+count_label
+A callable which accepts an integer, and returns a string.  This controls
+how a facet-item's count is displayed.
+
+extras
+Extra info passed into the add/remove params to make the url
+
+alternative_url
+URL to use when building the necessary URLs, instead of the default
+ones returned by url_for. Useful eg for dataset types.
+
+hide_empty
+Do not show facet if there are none, Default: false.
+
+within_tertiary
+Boolean for when a facet list should appear in the the right column of the
+page and not the left column.
+
+search_facets
+Dictionary with search facets(or `c.search_facets` if not provided)
+
+scheming_choices
+If facet field has options, list in the form [dic{keys:'value', 'label'}], where label is a dict where the languages ids are the keys
+
+#}
+
+      {% block facet_list_heading %}
+      <div>
+          {% set order = h.get_request_param("_%s_sort" % name) or "" %}
+              {% set title = _(title) or _('unknown') %}
+              <h2 class="module-heading search_heading">
+                <span class="search_heading_span" ><i class="fa fa-filter"></i>  {{ title }}</span>
+          <div class="sorting_heading">
+          <div class="sorting{% if order.startswith('name') %} active{% endif %}">
+              <a href="{{ h.schemingdcat_new_order_url(name,'name',extras) }}" title="{% trans %}sort by name{% endtrans %}">
+                  <span class="up{% if order=='name' %} active{% endif %}">&#9650;</span>
+                  <span class="down{% if order=='name_r' %} active{% endif %}">&#9660;</span>
+                  <span class="label">A-Z</span>
+              </a>
+          </div>
+          <div class="sorting{% if order.startswith('count') %} active{% endif %}">
+              <a href="{{ h.schemingdcat_new_order_url(name,'count',extras) }}" title="{% trans %}sort by results{% endtrans %}">
+                  <span class="up{% if order=='count_r' %} active{% endif %}">&#9650;</span>
+                  <span class="down{% if order=='count' %} active{% endif %}">&#9660;</span>
+                  <span class="label">1-9</span>
+              </a>
+          </div>
+          </div>
+        </h2>
+        </div>
+      {% endblock %}
+
+      {%  block facet_list_items %}
+        {%  set field = h.scheming_field_by_name(h.schemingdcat_get_dataset_schema('dataset').dataset_fields,name) %}
+        {%  set icons_dir = h.schemingdcat_get_icons_dir(field_name=field.field_name) %}
+        {%  with items = items or h.schemingdcat_get_facet_items_dict(name, search_facets or c.search_facets,scheming_choices=scheming_choices) %}
+          {% if items %}
+            {% set nav_class = 'nav nav-simple nav-facet '+name %}
+        <nav aria-label="{{ title }}">
+            <ul class="{{ nav_class or 'list-unstyled nav nav-simple nav-facet' }}">
+          {% for item in items %}
+              {% set href = h.remove_url_param(name, item.name, extras=extras, alternative_url=alternative_url) if item.active else h.add_url_param(new_params={name: item.name}, extras=extras, alternative_url=alternative_url) %}
+              {% set label = h.scheming_choices_label(scheming_choices,item.name) if scheming_choices else item.display_name %}
+              {% set label = label_function(item) if label_function else label %}
+              {% set label_truncated = h.truncate(label, 22) if not label_function else label %}
+              {% set count = count_label(item['count']) if count_label else ('%d' % item['count']) %}
+              {% set nav_item_class = 'nav-item ' %}
+              {%  if icons_dir %}
+                {%  set icon = h.schemingdcat_get_icon(h.schemingdcat_get_choice_item(field, item.name),icons_dir) %}
+                {%  if icon %}
+                  {% set img_url= h.url_for_static(icon) %}
+                {%  endif %}
+              {%  endif %}
+              <li class="{{ 'nav-item' }}{% if item.active %} active{% endif %}">
+                <a href="{{ href }}" title="{{ label if label != label_truncated else '' }}">
+              {%  if img_url %}
+                  <img src="{{ img_url }}" title="{{ label }}" class="facet-icon" loading="lazy"></img>
+              {%  endif %}    
+              {% if h.is_url(label_truncated) %}
+                {% set label_truncated = h.schemingdcat_prettify_url_name(label).strip(']["') or label %}
+              {% else %}
+                {% set label_truncated = label %}
+              {% endif %} 
+                  <span class="item-label">{{ _(label_truncated) }}</span>
+                  <span class="hidden separator"> - </span>
+                  <span class="item-count badge">{{ count }}</span>
+                </a>
+              </li>
+          {% endfor %}
+            </ul>
+        </nav>
+
+        <p class="module-footer">
+          {% if h.get_param_int('_%s_limit' % name) %}
+          {% if h.has_more_facets(name, search_facets or c.search_facets) %}
+              <a href="{{ h.remove_url_param('_%s_limit' % name, replace=0, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Show more {facet_type}').format(facet_type=title) }}</a>
+          {% endif %}
+            {% else %}
+          <a href="{{ h.remove_url_param('_%s_limit' % name, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Display only the first {facet_type}').format(facet_type=title) }}</a>
+            {% endif %}
+        </p>
+          {% else %}
+        <p class="module-content empty">{{ _('No {facet_type} matching your search').format(facet_type=title) }}</p>
+          {% endif %}
+      {% endwith %}
+      {% endblock %}

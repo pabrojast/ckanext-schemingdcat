@@ -7,25 +7,25 @@
   {% block package_description %}
     <div class="dataset-badges">
       {% if pkg.private %}
-        <span class="dataset-private badge pull-left">
+        <span class="dataset-private badge float-start">
           <i class="fa fa-lock"></i>
           {{ _('Private') }}
         </span>
       {% endif %}
       {% if pkg.state.startswith('draft') %}
-      <span class="dataset-draft badge pull-left">
+      <span class="dataset-draft badge float-start">
         <i class="fa fa-book"></i>
         {{ _('Draft') }}
       </span>
       {% endif %}
       {% if pkg.state == 'deleted' %}
-      <span class="dataset-delete badge badge pull-left">
+      <span class="dataset-delete badge badge float-start">
         <i class="fa fa-trash"></i>
         {{ _('Deleted') }}
       </span>
       {% endif %}
       {% if pkg.schemingdcat_xls_metadata_template %}
-      <span class="dataset-draft badge pull-left">
+      <span class="dataset-draft badge float-start">
         <a href="{{ h.url_for('schemingdcat.metadata_templates') }}" title="{{ _('Metadata templates') }}">  
           <i class="fa fa-table"></i> {{ _('Metadata template') }}
         </a>

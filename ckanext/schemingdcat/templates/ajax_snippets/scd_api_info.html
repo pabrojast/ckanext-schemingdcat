@@ -28,14 +28,14 @@
               href="http://docs.ckan.org/en/latest/maintaining/datastore.html" target="_blank">main
               CKAN Data API and DataStore documentation</a>.</p>
             {% endtrans %}
-            <div class="panel-group" id="accordion2">
-            <div class="panel panel-default">
-              <div class="panel-heading">
+            <div class="card-group" id="accordion2">
+            <div class="card">
+              <div class="card-header">
   
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="accordion2" href="#collapse-endpoints">{{ _('Endpoints') }} &raquo;</a>
+                <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="accordion2" data-bs-target="#collapse-endpoints">{{ _('Endpoints') }} &raquo;</a>
               </div>
-              <div id="collapse-endpoints" class="in panel-collapse collapse">
-                <div class="panel-body">
+              <div id="collapse-endpoints" class="in card-collapse collapse">
+                <div class="card-body">
                   <p>{{ _('The Data API can be accessed via the following actions of the CKAN action API.') }}</p>
                   <table class="table-condensed table-striped table-bordered">
                     <thead></thead>
@@ -63,12 +63,12 @@
               </div>
             </div>
   
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <a class="accordion-toggle" data-toggle="collapse" data-parent="accordion2" href="#collapse-querying">{{ _('Query') }} &raquo;</a>
+            <div class="card">
+              <div class="card-header">
+                <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="accordion2" data-bs-target="#collapse-querying">{{ _('Query') }} &raquo;</a>
               </div>
-              <div id="collapse-querying" class="collapse panel-collapse in">
-                <div class="panel-body">
+              <div id="collapse-querying" class="collapse card-collapse in">
+                <div class="card-body">
                   <strong>{{ _('Query example (first 5 results)') }}</strong>
                   <p>
                   <code><a href="{{ h.url_for(controller='api', action='action', ver=3, logic_function='datastore_search', resource_id=resource_id, limit=5, qualified=True) }}" target="_blank" rel="nofollow">{{ h.url_for(controller='api', action='action', ver=3, logic_function='datastore_search', resource_id=resource_id, limit=5, qualified=True) }}</a></code>
