@@ -50,8 +50,8 @@
           <li class="nav-item container__filter__type__search">
             <div class="container__filter__type__search_and__or">
               <div class="btn-group"  role="group" >
-                <button type="button" class="btn btn-secondary {%if facet_operator == 'OR'%} active{% endif %}" title="{{ _('Criteria for selection') }}: OR"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{{ _('OR') }}</a></button>
-                <button type="button" class="btn btn-secondary {%if facet_operator == 'AND'%} active{% endif %}" title="{{ _('Criteria for selection') }}: AND"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{{ _('AND') }}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'OR'%} active{% endif %}" title="{{ _('Criteria for selection') }}: OR"><a href="{{ h.remove_url_param('_facet_operator', replace='OR', extras=extras, alternative_url=alternative_url) }}">{{ _('OR') }}</a></button>
+                <button type="button" class="btn btn-default {%if facet_operator == 'AND'%} active{% endif %}" title="{{ _('Criteria for selection') }}: AND"><a href="{{ h.remove_url_param('_facet_operator', replace='AND', extras=extras, alternative_url=alternative_url) }}">{{ _('AND') }}</a></button>
               </div>
             </div>
           </li>

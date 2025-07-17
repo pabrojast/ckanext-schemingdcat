@@ -1,16 +1,16 @@
-<div class="card">
-    <div class="card-header">
-      <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="accordion2" data-bs-target="#collapse-javascript">{{ _('Example: Javascript') }} &raquo;</a>
+<div class="panel panel-default">
+    <div class="panel-heading">
+      <a class="accordion-toggle" data-toggle="collapse" data-parent="accordion2" href="#collapse-javascript">{{ _('Example: Javascript') }} &raquo;</a>
     </div>
 
-    <div id="collapse-javascript" class="collapse">
-      <div class="card-body">
-        <div class="card">
-          <div class="card-header">
-            <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="#collapse-javascript" data-bs-target="#collapse-javascript-example1">{{ _('Query example (first 5 results)') }}</a>
+    <div id="collapse-javascript" class="panel-collapse collapse">
+      <div class="panel-body">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <a class="accordion-toggle" data-toggle="collapse" data-parent="#collapse-javascript" href="#collapse-javascript-example1">{{ _('Query example (first 5 results)') }}</a>
           </div>
-          <div id="collapse-javascript-example1" class="collapse">
-            <div class="card-body">
+          <div id="collapse-javascript-example1" class="panel-collapse collapse">
+            <div class="panel-body">
               <pre class="ft-syntax-highlight" data-syntax="js" data-syntax-theme="one-dark" style="font-size:12px"><code class="language-javascript">
 
 <span class="keyword">const</span> <span class="identifier">resp</span> = <span class="keyword">await</span> <span class="identifier">fetch</span>(`<span class="url">{{ h.url_for('api.action', ver=3, logic_function='datastore_search', qualified=True) }}</span>`, {
@@ -30,12 +30,12 @@
           </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-              <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="#collapse-javascript" data-bs-target="#collapse-javascript-example2">{{ _('Query example (results containing \'medio-ambiente\')') }}</a>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+              <a class="accordion-toggle" data-toggle="collapse" data-parent="#collapse-javascript" href="#collapse-javascript-example2">{{ _('Query example (results containing \'medio-ambiente\')') }}</a>
             </div>
-            <div id="collapse-javascript-example2" class="collapse">
-              <div class="card-body">
+            <div id="collapse-javascript-example2" class="panel-collapse collapse">
+              <div class="panel-body">
                 <pre class="ft-syntax-highlight" data-syntax="js" data-syntax-theme="one-dark" style="font-size:12px"><code class="language-javascript">
 
 <span class="keyword">const</span> <span class="identifier">resp</span> = <span class="keyword">await</span> <span class="identifier">fetch</span>(`<span class="url">{{ h.url_for('api.action', ver=3, logic_function='datastore_search', qualified=True) }}</span>`, {
@@ -58,12 +58,12 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <a class="accordion-button" data-bs-toggle="collapse" data-bs-parent="#collapse-javascript" data-bs-target="#collapse-javascript-example3">{{ _('Query example (via SQL statement)') }}</a>
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <a class="accordion-toggle" data-toggle="collapse" data-parent="#collapse-javascript" href="#collapse-javascript-example3">{{ _('Query example (via SQL statement)') }}</a>
             </div>
-            <div id="collapse-javascript-example3" class="collapse">
-              <div class="card-body">
+            <div id="collapse-javascript-example3" class="panel-collapse collapse">
+              <div class="panel-body">
                 <pre class="ft-syntax-highlight" data-syntax="js" data-syntax-theme="one-dark" style="font-size:12px"><code class="language-javascript">
 
 <span class="keyword">const</span> <span class="identifier">resp</span> = <span class="keyword">await</span> <span class="identifier">fetch</span>(`<span class="url">{{ h.url_for('api.action', ver=3, logic_function='datastore_search', qualified=True) }}</span>`, {

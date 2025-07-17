@@ -19,11 +19,11 @@
     {% set metadata_profile_lod_es = '<a href="https://joinup.ec.europa.eu/collection/semic-support-centre/solution/dcat-application-profile-data-portals-europe" target="_blank">DCAT-AP</a>/<a href="https://datos.gob.es/es/documentacion/guia-de-aplicacion-de-la-norma-tecnica-de-interoperabilidad-de-reutilizacion-de" target="_blank">NTI-RISP</a>' %}
     {% set metadata_profile_geo = '<a href="https://inspire.ec.europa.eu/metadata/6541" target="_blank">INSPIRE</a>' %}
 
-    <div class="download-links float-end">
+    <div class="download-links pull-right">
         <div class="btn-group">
             <a class="btn btn-primary" href="{{ h.url_for('api.action', ver=3, logic_function='package_show', _external=True, id=pkg.name) }}" target="_blank"><i class="fa fa-download"></i> {{ _('Download') }}</a>
-            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fas fa-caret-down"></i>
+            <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
                 {% set linked_data_links = h.schemingdcat_get_all_metadata(pkg.id) %}
@@ -63,7 +63,7 @@
         </div>
 
         {% if pkg.dcat_type in inspire_metadata_values %}
-            <div class="metadata-label float-start">
+            <div class="metadata-label pull-left">
                 <span>{{ metadata_profile_geo|safe }}</span> <i class="fa fa-check-circle"></i>
             </div>
         {% endif %}
@@ -72,7 +72,7 @@
         {% else %}
            {% set metadata_profile_lod = metadata_profile_lod_eu %}
         {% endif %}
-        <div class="metadata-label float-start">
+        <div class="metadata-label pull-left">
             <span>{{ metadata_profile_lod|safe }}</span> <i class="fa fa-check-circle"></i>
         </div>
     </div>

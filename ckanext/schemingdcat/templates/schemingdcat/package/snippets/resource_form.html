@@ -109,7 +109,7 @@
                     {% do data.__setitem__(field.field_name, field.default) %}
                   {% endif %}
                 {% endif -%}
-                <div class="mb-3">
+                <div class="form-group">
                   {%- snippet 'scheming/snippets/form_field.html',
                     field=field,
                     data=data,

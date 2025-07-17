@@ -13,7 +13,7 @@
       <i class="fa fa-info-circle"></i>
       <strong>{{ _('Current file:') }}</strong> 
       <span class="current-filename">{{ data.get('name', data.get('url', '')) }}</span>
-      <label class="checkbox float-end">
+      <label class="checkbox pull-right">
         <input type="checkbox" id="{{ field_clear }}" name="{{ field_clear }}" value="true">
         {{ _('Replace existing file') }}
       </label>
@@ -22,7 +22,7 @@
 
   {% if upload_enabled %}
     <div class="upload-section">
-      <label class="form-label">{{ _('Upload file') }}</label>
+      <label class="control-label">{{ _('Upload file') }}</label>
       <div class="upload-dropzone" id="dropzone-{{ field_url }}">
         <div class="dropzone-content">
           <div class="dropzone-icon">
@@ -70,7 +70,7 @@
   {% endif %}
 
   <div class="url-section">
-    <label class="form-label" for="{{ field_url }}">
+    <label class="control-label" for="{{ field_url }}">
       {{ _('Link to a file') }}
     </label>
     <input type="text" 

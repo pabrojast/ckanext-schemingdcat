@@ -4,7 +4,6 @@ schemingdcat-css:
   contents:
     - css/schemingdcat.css
     - css/ft-syntax-highlight.min.css
-    - css/bootstrap5-compatibility.css
 
 schemingdcat-table-collapsible-rows:
   filter: rjsmin

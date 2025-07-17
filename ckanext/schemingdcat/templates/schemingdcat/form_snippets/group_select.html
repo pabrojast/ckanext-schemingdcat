@@ -8,7 +8,7 @@
     label=h.scheming_language_text(field.label),
     error=errors[field.field_name],
     is_required=field.required,
-    classes=field.classes if 'classes' in field else ['mb-3', 'control-medium'],
+    classes=field.classes if 'classes' in field else ['form-group', 'control-medium'],
     extra_html=caller() if caller,
     ) %}
     <div {{

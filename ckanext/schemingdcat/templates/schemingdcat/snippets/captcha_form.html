@@ -12,8 +12,8 @@
     {{ h.csrf_input() }}
     <input type="hidden" name="redirect_url" value="{{ request.url }}" />
     
-    <div class="mb-3">
-      <label class="form-label col-sm-3" for="captcha_answer">
+    <div class="form-group">
+      <label class="control-label col-sm-3" for="captcha_answer">
         <strong>{{ captcha_question }} = ?</strong>
       </label>
       <div class="col-sm-9">
@@ -34,13 +34,13 @@
       <button class="btn btn-primary" type="submit">
         <i class="fa fa-check"></i> {{ _('Verify') }}
       </button>
-      <a href="{{ h.url_for('dataset.search') }}" class="btn btn-secondary">
+      <a href="{{ h.url_for('dataset.search') }}" class="btn btn-default">
         <i class="fa fa-home"></i> {{ _('Go to Homepage') }}
       </a>
     </div>
   </form>
   
-  <div class="form-text" style="margin-top: 15px;">
+  <div class="help-block" style="margin-top: 15px;">
     <small class="text-muted">
       <i class="fa fa-info-circle"></i> 
       {{ _('This security measure helps protect our service from automated requests.') }}
