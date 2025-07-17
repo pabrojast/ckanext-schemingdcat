@@ -97,6 +97,9 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       // Update file name
       fileName.text(file.name);
       
+      // Auto-fill name field if exists and is empty
+      this.autoFillNameField(file.name);
+      
       // Update file size
       var size = this.formatFileSize(file.size);
       fileSize.text(size);
@@ -123,6 +126,9 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       
       // Clear file input
       fileInput.val('');
+      
+      // Clear auto-filled form fields
+      this.clearAutoFilledFields();
       
       // Show dropzone content, hide preview
       dropzoneContent.show();
@@ -193,6 +199,67 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       };
       
       return iconMap[ext] || 'fa-file-o';
+    },
+    
+    autoFillNameField: function(fileName) {
+      // Extract name without extension
+      var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+      
+      // Clean name: replace underscores and hyphens with spaces, normalize whitespace
+      var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      // Find form fields to populate
+      var form = this.el.closest('form');
+      if (form.length) {
+        // Priority order for name field detection
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.find(nameSelectors[i]);
+          if (nameField.length) {
+            nameField = nameField.first();
+            break;
+          }
+          nameField = null;
+        }
+        
+        if (nameField && nameField.length) {
+          nameField.val(cleanName);
+          nameField.attr('data-auto-filled', 'true'); // Mark as auto-filled
+          nameField.trigger('change');
+          nameField.trigger('input');
+          
+          // Add visual feedback
+          nameField.css('background-color', '#d4edda');
+          setTimeout(function() {
+            nameField.css('background-color', '');
+          }, 2000);
+          
+          console.log('[schemingdcat-modern-upload] Auto-populated name field:', cleanName);
+        }
+      }
+    },
+    
+    clearAutoFilledFields: function() {
+      var form = this.el.closest('form');
+      if (form.length) {
+        // Clear all fields marked as auto-filled
+        form.find('input[data-auto-filled]').each(function() {
+          $(this).val('').removeAttr('data-auto-filled').trigger('change');
+        });
+        
+        console.log('[schemingdcat-modern-upload] Cleared auto-filled fields');
+      }
     }
   };
 });

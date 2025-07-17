@@ -1,0 +1,113 @@
+{% set field_value = data.get(field.field_name, '') %}
+
+{% if field_value %}
+<div class="spatial-extent-display">
+  <div class="extent-coordinates">
+    <strong>{{ _('Spatial Extent:') }}</strong>
+    <pre class="extent-json">{{ field_value }}</pre>
+  </div>
+  
+  <div class="extent-actions">
+    <button type="button" class="btn btn-sm btn-primary view-on-map" data-extent="{{ field_value }}">
+      <i class="fa fa-map-marker"></i> {{ _('View on Map') }}
+    </button>
+    <button type="button" class="btn btn-sm btn-secondary copy-extent" data-extent="{{ field_value }}">
+      <i class="fa fa-copy"></i> {{ _('Copy Coordinates') }}
+    </button>
+  </div>
+</div>
+
+<style>
+.spatial-extent-display {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  margin: 10px 0;
+}
+
+.extent-json {
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 12px;
+  max-height: 150px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+
+.extent-actions {
+  margin-top: 10px;
+}
+
+.extent-actions .btn {
+  margin-right: 10px;
+  transition: all 0.3s ease;
+}
+
+.extent-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+</style>
+
+<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('view-on-map') || e.target.closest('.view-on-map')) {
+      var button = e.target.classList.contains('view-on-map') ? e.target : e.target.closest('.view-on-map');
+      var extent = button.getAttribute('data-extent');
+      
+      if (extent) {
+        try {
+          var geom = JSON.parse(extent);
+          // Open a simple map view - you could integrate with OpenLayers, Leaflet, etc.
+          // For now, we'll create a simple bounds URL for OpenStreetMap
+          if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
+            var coords = geom.coordinates[0];
+            var lats = coords.map(function(c) { return c[1]; });
+            var lngs = coords.map(function(c) { return c[0]; });
+            
+            var minLat = Math.min.apply(Math, lats);
+            var maxLat = Math.max.apply(Math, lats);
+            var minLng = Math.min.apply(Math, lngs);
+            var maxLng = Math.max.apply(Math, lngs);
+            
+            var centerLat = (minLat + maxLat) / 2;
+            var centerLng = (minLng + maxLng) / 2;
+            
+            // Open OpenStreetMap with approximate location
+            var mapUrl = 'https://www.openstreetmap.org/#map=10/' + centerLat + '/' + centerLng;
+            window.open(mapUrl, '_blank');
+          }
+        } catch (e) {
+          console.error('Invalid extent format:', e);
+        }
+      }
+    }
+    
+    if (e.target.classList.contains('copy-extent') || e.target.closest('.copy-extent')) {
+      var button = e.target.classList.contains('copy-extent') ? e.target : e.target.closest('.copy-extent');
+      var extent = button.getAttribute('data-extent');
+      
+      if (extent && navigator.clipboard) {
+        navigator.clipboard.writeText(extent).then(function() {
+          // Show temporary feedback
+          var originalText = button.innerHTML;
+          button.innerHTML = '<i class="fa fa-check"></i> ' + '{{ _("Copied!") }}';
+          button.classList.add('btn-success');
+          button.classList.remove('btn-secondary');
+          
+          setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-secondary');
+          }, 2000);
+        });
+      }
+    }
+  });
+})();
+</script>
+{% endif %}

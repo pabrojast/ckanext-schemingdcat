@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Auto-rellenado de nombre de archivo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .demo-section { border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .highlight { background-color: #d4edda; transition: background-color 2s; }
+        input[type="text"], input[type="file"] { margin: 5px 0; padding: 8px; width: 300px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Demo: Auto-rellenado del campo nombre</h1>
+    
+    <div class="demo-section">
+        <h2>ANTES (CloudStorage desactivado)</h2>
+        <p style="color: red;">❌ El campo nombre NO se rellenaba automáticamente</p>
+        <p>Cuando un usuario subía un archivo sin CloudStorage habilitado, tenía que introducir manualmente el nombre.</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>DESPUÉS (Funcionalidad implementada)</h2>
+        <p style="color: green;">✅ El campo nombre SÍ se rellena automáticamente</p>
+        
+        <form>
+            <div class="form-group">
+                <label for="name">Nombre del recurso:</label>
+                <input type="text" id="name" name="name" placeholder="Se rellenará automáticamente">
+            </div>
+            
+            <div class="form-group">
+                <label for="file-upload">Subir archivo:</label>
+                <input type="file" id="file-upload" onchange="simulateAutoFill(this)">
+                <small>Selecciona un archivo para ver el auto-rellenado</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">O introduce una URL:</label>
+                <input type="text" id="url" placeholder="https://ejemplo.com/datos.csv" onblur="simulateAutoFillFromURL(this)">
+                <small>Introduce una URL con un nombre de archivo</small>
+            </div>
+        </form>
+    </div>
+
+    <div class="demo-section">
+        <h2>Casos de ejemplo</h2>
+        <ul>
+            <li><strong>mi_archivo_datos.xlsx</strong> → <em>mi archivo datos</em></li>
+            <li><strong>ventas-2024.csv</strong> → <em>ventas 2024</em></li>
+            <li><strong>reporte_mensual_enero.pdf</strong> → <em>reporte mensual enero</em></li>
+            <li><strong>https://datos.gov.es/dataset/poblacion.json</strong> → <em>poblacion</em></li>
+        </ul>
+    </div>
+
+    <script>
+        function simulateAutoFill(fileInput) {
+            if (fileInput.files && fileInput.files.length > 0) {
+                const fileName = fileInput.files[0].name;
+                const nameField = document.getElementById('name');
+                
+                // Simular la funcionalidad implementada
+                const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+                const cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+                
+                if (!nameField.value.trim()) {
+                    nameField.value = cleanName;
+                    
+                    // Feedback visual
+                    nameField.classList.add('highlight');
+                    setTimeout(() => {
+                        nameField.classList.remove('highlight');
+                    }, 2000);
+                    
+                    console.log('Auto-populated name field:', cleanName);
+                }
+            }
+        }
+        
+        function simulateAutoFillFromURL(urlInput) {
+            const url = urlInput.value;
+            if (url) {
+                const urlPath = url.split('?')[0].split('#')[0];
+                const fileName = urlPath.split('/').pop();
+                
+                if (fileName) {
+                    const nameField = document.getElementById('name');
+                    const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+                    const cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+                    
+                    if (!nameField.value.trim()) {
+                        nameField.value = cleanName;
+                        
+                        // Feedback visual
+                        nameField.classList.add('highlight');
+                        setTimeout(() => {
+                            nameField.classList.remove('highlight');
+                        }, 2000);
+                        
+                        console.log('Auto-populated name field from URL:', cleanName);
+                    }
+                }
+            }
+        }
+    </script>
+
+    <div class="demo-section">
+        <h2>Implementación técnica</h2>
+        <h3>Función JavaScript agregada:</h3>
+        <pre><code>function autoFillNameField(fileName) {
+  // Extraer nombre sin extensión
+  var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+  
+  // Limpiar nombre: reemplazar _ y - con espacios
+  var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  // Buscar campos de nombre en el formulario
+  var nameSelectors = [
+    'input[name="name"]', 'input[name="title"]', 
+    '#field-name', '#field-title',
+    'input[id*="name"]', 'input[id*="title"]',
+    'input[name*="name"]', 'input[name*="title"]'
+  ];
+  
+  // Rellenar campo si está vacío
+  // ...
+}</code></pre>
+    </div>
+</body>
+</html>

@@ -358,6 +358,119 @@
       }
     });
 
+    // Function to auto-fill name field with filename (similar to CloudStorage functionality)
+    function autoFillNameField(fileName, forceUpdate) {
+      // Extract name without extension
+      var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+      
+      // Clean name: replace underscores and hyphens with spaces, normalize whitespace
+      var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      // Find form fields to populate
+      var form = wrapper.closest('form');
+      if (form) {
+        // Priority order for name field detection
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.querySelector(nameSelectors[i]);
+          if (nameField) break;
+        }
+        
+        // Update field if it's empty OR if we're forcing an update (new file upload)
+        if (nameField && (!nameField.value.trim() || forceUpdate)) {
+          nameField.value = cleanName;
+          nameField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
+          nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          nameField.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Add visual feedback
+          nameField.style.backgroundColor = '#d4edda';
+          setTimeout(function() {
+            nameField.style.backgroundColor = '';
+          }, 2000);
+          
+          console.log('[schemingdcat-upload] Auto-populated name field:', cleanName);
+        }
+      }
+    }
+
+    // Function to clear auto-filled fields when removing a file
+    function clearAutoFilledFields() {
+      var form = wrapper.closest('form');
+      if (form) {
+        // Clear name field if it was auto-filled
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.querySelector(nameSelectors[i]);
+          if (nameField) break;
+        }
+        
+        if (nameField && nameField.hasAttribute('data-auto-filled')) {
+          nameField.value = '';
+          nameField.removeAttribute('data-auto-filled');
+          nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        // Clear format field if it was auto-filled
+        var formatFields = document.querySelectorAll('input[name*="format"]');
+        formatFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear mimetype field if it was auto-filled
+        var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+        mimetypeFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'mimetype') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear encoding field if it was auto-filled
+        var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+        encodingFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'encoding') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        console.log('[schemingdcat-upload] Cleared auto-filled fields');
+      }
+    }
+
     // File input change
     fileInput.addEventListener('change', function(e) {
       var files = e.target.files;
@@ -381,6 +494,9 @@
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
       
+      // Auto-fill name field (force update to overwrite previous values)
+      autoFillNameField(fileName, true);
+      
       // Auto-fill format field if exists
       var formatFields = document.querySelectorAll('input[name*="format"]');
       var formatField = null;
@@ -390,7 +506,7 @@
         }
       });
       
-      if (formatField && !formatField.value) {
+      if (formatField) {
         var extUpper = ext.toUpperCase();
         
         // Format mapping
@@ -423,6 +539,7 @@
         };
         
         formatField.value = formatMap[extUpper] || extUpper;
+        formatField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
         // Trigger change event
         var event = new Event('change', { bubbles: true });
         formatField.dispatchEvent(event);
@@ -437,10 +554,11 @@
         }
       });
       
-      if (mimetypeField && !mimetypeField.value) {
+      if (mimetypeField) {
         getMimeTypeForExtension(ext, function(mimeType) {
           if (mimeType) {
             mimetypeField.value = mimeType;
+            mimetypeField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
             // Trigger change event
             var event = new Event('change', { bubbles: true });
             mimetypeField.dispatchEvent(event);
@@ -457,17 +575,21 @@
         }
       });
       
-      if (encodingField && !encodingField.value) {
+      if (encodingField) {
         var currentFormat = formatField ? formatField.value : '';
         getCharsetForFormat(ext, currentFormat, function(charset) {
           if (charset) {
             encodingField.value = charset;
+            encodingField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
             // Trigger change event
             var event = new Event('change', { bubbles: true });
             encodingField.dispatchEvent(event);
           }
         });
       }
+
+      // Extract spatial extent from geospatial files
+      extractSpatialExtentFromFile(file, ext);
     }
 
     // Remove file button
@@ -536,6 +658,13 @@
       urlInput.addEventListener('blur', function(e) {
         var url = e.target.value;
         if (url) {
+          // Extract filename from URL for auto-fill name field
+          var urlPath = url.split('?')[0].split('#')[0]; // Remove query params and fragments
+          var fileName = urlPath.split('/').pop(); // Get last part of path
+          if (fileName) {
+            autoFillNameField(fileName);
+          }
+          
           // Extract extension from URL
           var urlParts = url.split('?')[0].split('.');
           if (urlParts.length > 1) {
@@ -704,6 +833,9 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
+      
+      // Clear auto-filled form fields
+      clearAutoFilledFields();
       
       // stop synchronization if active
       if (previewSyncTimer) {
@@ -909,6 +1041,102 @@
         'gif': 'fa-file-image-o'
       };
       return iconMap[ext] || 'fa-file-o';
+    }
+  }
+
+  // Function to extract spatial extent from geospatial files
+  function extractSpatialExtentFromFile(file, ext) {
+    // Check if this is a geospatial file type
+    var spatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
+    
+    if (!spatialExtensions.includes(ext.toLowerCase())) {
+      return; // Not a spatial file, skip extraction
+    }
+
+    // Find the spatial_extent field in the form
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) {
+      console.debug('No spatial_extent field found in form');
+      return;
+    }
+
+    // Show a loading indicator in the spatial extent field
+    var originalPlaceholder = spatialExtentField.placeholder;
+    spatialExtentField.placeholder = '{{ _("Extracting spatial extent from file...") }}';
+    spatialExtentField.classList.add('loading');
+
+    // Create FormData to send the file
+    var formData = new FormData();
+    formData.append('file', file);
+
+    // Make request to extract spatial extent
+    fetch('/api/extract-spatial-extent', {
+      method: 'POST',
+      body: formData
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      if (data.success && data.extent) {
+        // Set the extracted extent in the field
+        spatialExtentField.value = JSON.stringify(data.extent, null, 2);
+        
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        spatialExtentField.dispatchEvent(event);
+        
+        // Show success message
+        showSpatialExtentMessage('{{ _("Spatial extent extracted successfully from file.") }}', 'success');
+        
+        console.log('Spatial extent extracted:', data.extent);
+      } else {
+        console.debug('Could not extract spatial extent:', data.error || 'Unknown error');
+        showSpatialExtentMessage('{{ _("Could not extract spatial extent from this file. You can manually enter the spatial extent if needed.") }}', 'info');
+      }
+    })
+    .catch(function(error) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      console.debug('Error in spatial extent extraction:', error);
+      showSpatialExtentMessage('{{ _("Error extracting spatial extent. You can manually enter the spatial extent if needed.") }}', 'warning');
+    });
+  }
+
+  // Function to show spatial extent extraction messages
+  function showSpatialExtentMessage(message, type) {
+    // Find or create a message container near the spatial extent field
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) return;
+
+    var messageContainer = spatialExtentField.parentNode.querySelector('.spatial-extent-message');
+    if (!messageContainer) {
+      messageContainer = document.createElement('div');
+      messageContainer.className = 'spatial-extent-message';
+      spatialExtentField.parentNode.appendChild(messageContainer);
+    }
+
+    // Set message content and style
+    messageContainer.innerHTML = '<i class="fa fa-info-circle"></i> ' + message;
+    messageContainer.className = 'spatial-extent-message alert alert-' + 
+      (type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info');
+
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'warning') {
+      setTimeout(function() {
+        if (messageContainer && messageContainer.parentNode) {
+          messageContainer.style.opacity = '0';
+          setTimeout(function() {
+            if (messageContainer && messageContainer.parentNode) {
+              messageContainer.parentNode.removeChild(messageContainer);
+            }
+          }, 300);
+        }
+      }, 5000);
     }
   }
 })();
@@ -1173,6 +1401,30 @@
   20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+/* Spatial extent loading and message styles */
+.spatial-extent-message {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: opacity 0.3s ease;
+}
+
+.spatial-extent-message .fa {
+  margin-right: 6px;
+}
+
+textarea.loading, input.loading {
+  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  background-size: 200% 100%;
+  animation: shimmerSpatial 1.5s infinite;
+}
+
+@keyframes shimmerSpatial {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
 @media (max-width: 768px) {

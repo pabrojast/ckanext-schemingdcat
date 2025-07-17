@@ -140,3 +140,62 @@ def is_module_available(module_name):
     except (ImportError, ModuleNotFoundError):
         return False
 
+@schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])
+def extract_spatial_extent():
+    """
+    API endpoint to extract spatial extent from uploaded geospatial files.
+    
+    This endpoint is designed for frontend use only and does not interfere 
+    with CKAN's core API operations.
+    """
+    try:
+        # Check if spatial extent extraction is available
+        if not is_module_available('ckanext.schemingdcat.spatial_extent'):
+            return jsonify({
+                'success': False,
+                'error': 'Spatial extent extraction not available',
+                'extent': None
+            }), 400
+
+        from ckanext.schemingdcat.spatial_extent import extent_extractor
+        
+        # Get uploaded file from request
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file provided',
+                'extent': None
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected',
+                'extent': None
+            }), 400
+        
+        # Extract extent from uploaded file
+        extent = extent_extractor.extract_extent_from_upload(file)
+        
+        if extent:
+            return jsonify({
+                'success': True,
+                'error': None,
+                'extent': extent
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Could not extract spatial extent from file',
+                'extent': None
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error in spatial extent extraction API: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}',
+            'extent': None
+        }), 500
+
