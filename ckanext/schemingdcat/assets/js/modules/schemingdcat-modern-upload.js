@@ -127,6 +127,9 @@ ckan.module('schemingdcat-modern-upload', function ($) {
       // Clear file input
       fileInput.val('');
       
+      // Clear auto-filled form fields
+      this.clearAutoFilledFields();
+      
       // Show dropzone content, hide preview
       dropzoneContent.show();
       filePreview.hide();
@@ -223,7 +226,7 @@ ckan.module('schemingdcat-modern-upload', function ($) {
         var nameField = null;
         for (var i = 0; i < nameSelectors.length; i++) {
           nameField = form.find(nameSelectors[i]);
-          if (nameField.length && nameField.first().val().trim() === '') {
+          if (nameField.length) {
             nameField = nameField.first();
             break;
           }
@@ -232,6 +235,7 @@ ckan.module('schemingdcat-modern-upload', function ($) {
         
         if (nameField && nameField.length) {
           nameField.val(cleanName);
+          nameField.attr('data-auto-filled', 'true'); // Mark as auto-filled
           nameField.trigger('change');
           nameField.trigger('input');
           
@@ -243,6 +247,18 @@ ckan.module('schemingdcat-modern-upload', function ($) {
           
           console.log('[schemingdcat-modern-upload] Auto-populated name field:', cleanName);
         }
+      }
+    },
+    
+    clearAutoFilledFields: function() {
+      var form = this.el.closest('form');
+      if (form.length) {
+        // Clear all fields marked as auto-filled
+        form.find('input[data-auto-filled]').each(function() {
+          $(this).val('').removeAttr('data-auto-filled').trigger('change');
+        });
+        
+        console.log('[schemingdcat-modern-upload] Cleared auto-filled fields');
       }
     }
   };

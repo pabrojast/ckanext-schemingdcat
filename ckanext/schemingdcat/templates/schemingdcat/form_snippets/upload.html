@@ -359,7 +359,7 @@
     });
 
     // Function to auto-fill name field with filename (similar to CloudStorage functionality)
-    function autoFillNameField(fileName) {
+    function autoFillNameField(fileName, forceUpdate) {
       // Extract name without extension
       var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
       
@@ -387,8 +387,10 @@
           if (nameField) break;
         }
         
-        if (nameField && !nameField.value.trim()) {
+        // Update field if it's empty OR if we're forcing an update (new file upload)
+        if (nameField && (!nameField.value.trim() || forceUpdate)) {
           nameField.value = cleanName;
+          nameField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
           nameField.dispatchEvent(new Event('change', { bubbles: true }));
           nameField.dispatchEvent(new Event('input', { bubbles: true }));
           
@@ -400,6 +402,72 @@
           
           console.log('[schemingdcat-upload] Auto-populated name field:', cleanName);
         }
+      }
+    }
+
+    // Function to clear auto-filled fields when removing a file
+    function clearAutoFilledFields() {
+      var form = wrapper.closest('form');
+      if (form) {
+        // Clear name field if it was auto-filled
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.querySelector(nameSelectors[i]);
+          if (nameField) break;
+        }
+        
+        if (nameField && nameField.hasAttribute('data-auto-filled')) {
+          nameField.value = '';
+          nameField.removeAttribute('data-auto-filled');
+          nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        // Clear format field if it was auto-filled
+        var formatFields = document.querySelectorAll('input[name*="format"]');
+        formatFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear mimetype field if it was auto-filled
+        var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+        mimetypeFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'mimetype') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear encoding field if it was auto-filled
+        var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+        encodingFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'encoding') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        console.log('[schemingdcat-upload] Cleared auto-filled fields');
       }
     }
 
@@ -426,8 +494,8 @@
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
       
-      // Auto-fill name field if exists and is empty
-      autoFillNameField(fileName);
+      // Auto-fill name field (force update to overwrite previous values)
+      autoFillNameField(fileName, true);
       
       // Auto-fill format field if exists
       var formatFields = document.querySelectorAll('input[name*="format"]');
@@ -438,7 +506,7 @@
         }
       });
       
-      if (formatField && !formatField.value) {
+      if (formatField) {
         var extUpper = ext.toUpperCase();
         
         // Format mapping
@@ -471,6 +539,7 @@
         };
         
         formatField.value = formatMap[extUpper] || extUpper;
+        formatField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
         // Trigger change event
         var event = new Event('change', { bubbles: true });
         formatField.dispatchEvent(event);
@@ -485,10 +554,11 @@
         }
       });
       
-      if (mimetypeField && !mimetypeField.value) {
+      if (mimetypeField) {
         getMimeTypeForExtension(ext, function(mimeType) {
           if (mimeType) {
             mimetypeField.value = mimeType;
+            mimetypeField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
             // Trigger change event
             var event = new Event('change', { bubbles: true });
             mimetypeField.dispatchEvent(event);
@@ -505,11 +575,12 @@
         }
       });
       
-      if (encodingField && !encodingField.value) {
+      if (encodingField) {
         var currentFormat = formatField ? formatField.value : '';
         getCharsetForFormat(ext, currentFormat, function(charset) {
           if (charset) {
             encodingField.value = charset;
+            encodingField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
             // Trigger change event
             var event = new Event('change', { bubbles: true });
             encodingField.dispatchEvent(event);
@@ -762,6 +833,9 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
+      
+      // Clear auto-filled form fields
+      clearAutoFilledFields();
       
       // stop synchronization if active
       if (previewSyncTimer) {
