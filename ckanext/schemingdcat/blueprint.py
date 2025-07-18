@@ -145,6 +145,10 @@ def extract_spatial_extent():
     """
     API endpoint to extract spatial extent from uploaded geospatial files.
     
+    This endpoint can work with:
+    1. Direct file uploads (multipart/form-data with 'file')
+    2. Resource URLs (JSON with 'resource_url' and 'resource_format')
+    
     This endpoint is designed for frontend use only and does not interfere 
     with CKAN's core API operations.
     """
@@ -159,24 +163,41 @@ def extract_spatial_extent():
 
         from ckanext.schemingdcat.spatial_extent import extent_extractor
         
-        # Get uploaded file from request
-        if 'file' not in request.files:
+        # Check if it's a direct file upload
+        if 'file' in request.files:
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({
+                    'success': False,
+                    'error': 'No file selected',
+                    'extent': None
+                }), 400
+            
+            # Extract extent from uploaded file
+            extent = extent_extractor.extract_extent_from_upload(file)
+            
+        # Check if it's a resource URL processing request
+        elif request.is_json:
+            data = request.get_json()
+            resource_url = data.get('resource_url')
+            resource_format = data.get('resource_format', '').lower()
+            
+            if not resource_url:
+                return jsonify({
+                    'success': False,
+                    'error': 'No resource_url provided',
+                    'extent': None
+                }), 400
+            
+            # Extract extent from resource URL
+            extent = extent_extractor.extract_extent_from_url(resource_url, resource_format)
+            
+        else:
             return jsonify({
                 'success': False,
-                'error': 'No file provided',
+                'error': 'No file or resource_url provided',
                 'extent': None
             }), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({
-                'success': False,
-                'error': 'No file selected',
-                'extent': None
-            }), 400
-        
-        # Extract extent from uploaded file
-        extent = extent_extractor.extract_extent_from_upload(file)
         
         if extent:
             return jsonify({

@@ -116,6 +116,36 @@ class SpatialExtentExtractor:
             log.info(f"Error checking ZIP contents {file_path}: {str(e)}")
             return False
     
+    def _is_potential_spatial_file(self, file_path: str, file_format: str = None) -> bool:
+        """
+        Check if a file could potentially contain spatial data.
+        This is more permissive than can_extract_extent.
+        
+        Args:
+            file_path: Path to the file
+            file_format: Optional format hint from user
+            
+        Returns:
+            True if the file might contain spatial data
+        """
+        ext = self._get_file_extension(file_path)
+        
+        # If user explicitly set format to SHP, always try to process
+        if file_format and file_format.lower() == 'shp':
+            log.info("User set format to SHP, attempting to process")
+            return True
+        
+        # Check if it's a known spatial extension
+        spatial_extensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json']
+        if ext.lower() in spatial_extensions:
+            return True
+        
+        # For ZIP files, check if they contain shapefiles
+        if ext.lower() == 'zip':
+            return self._is_shapefile_zip(file_path)
+        
+        return False
+    
     def can_extract_extent(self, file_path: str, trust_extension: bool = False) -> bool:
         """
         Check if extent can be extracted from the given file.
@@ -485,6 +515,103 @@ class SpatialExtentExtractor:
                 
         except Exception as e:
             log.error(f"Error processing upload {upload_file.filename}: {str(e)}", exc_info=True)
+            return None
+
+    def extract_extent_from_url(self, url: str, file_format: str = None) -> Optional[Dict[str, Any]]:
+        """
+        Extract extent from a file accessible via URL.
+        
+        Args:
+            url: URL to the file
+            file_format: Optional format hint (e.g., 'shp', 'zip', 'tif')
+            
+        Returns:
+            GeoJSON Polygon representing the extent, or None if extraction fails
+        """
+        if not url:
+            log.info("No URL provided")
+            return None
+
+        log.info(f"Processing file from URL: {url}")
+        log.info(f"Format hint: {file_format}")
+        
+        try:
+            import urllib.request
+            import urllib.error
+            
+            # Get file extension from URL or use format hint
+            url_path = url.split('?')[0].split('#')[0]  # Remove query params
+            ext = self._get_file_extension(url_path)
+            
+            # If we have a format hint and no extension, use the hint
+            if not ext and file_format:
+                ext = file_format.lower()
+            
+            log.info(f"Detected extension: {ext}")
+            
+            # For ZIP files or SHP format, always try to process
+            # as they might contain shapefiles
+            should_process = False
+            if ext == 'zip' or file_format == 'shp':
+                should_process = True
+                log.info("Processing as potential shapefile (ZIP or SHP format)")
+            elif self.can_extract_extent(f"dummy.{ext}", trust_extension=True):
+                should_process = True
+                log.info(f"Processing as supported format: {ext}")
+            
+            if not should_process:
+                log.info(f"Cannot extract extent from format: {ext}")
+                return None
+
+            # Download file to temporary location
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp_file:
+                log.info(f"Downloading file to: {tmp_file.name}")
+                
+                try:
+                    # Add headers to avoid blocking
+                    req = urllib.request.Request(url)
+                    req.add_header('User-Agent', 'CKAN-SchemingDCAT-SpatialExtractor/1.0')
+                    
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        # Read file in chunks
+                        chunk_size = 8192
+                        total_size = 0
+                        while True:
+                            chunk = response.read(chunk_size)
+                            if not chunk:
+                                break
+                            tmp_file.write(chunk)
+                            total_size += len(chunk)
+                            # Limit file size to 100MB
+                            if total_size > 100 * 1024 * 1024:
+                                log.warning("File too large, aborting download")
+                                return None
+                    
+                    tmp_file.flush()
+                    log.info(f"Downloaded {total_size} bytes")
+                    
+                    if total_size == 0:
+                        log.info("Downloaded file is empty")
+                        return None
+                    
+                    # Extract extent from downloaded file
+                    extent = self.extract_extent(tmp_file.name, trust_extension=True)
+                    
+                    return extent
+                    
+                except urllib.error.URLError as e:
+                    log.error(f"Error downloading file from {url}: {str(e)}")
+                    return None
+                finally:
+                    # Clean up
+                    try:
+                        os.unlink(tmp_file.name)
+                        log.info(f"Cleaned up temporary file: {tmp_file.name}")
+                    except OSError as e:
+                        log.warning(f"Could not delete temporary file {tmp_file.name}: {e}")
+                        
+        except Exception as e:
+            log.error(f"Error processing URL {url}: {str(e)}", exc_info=True)
             return None
 
 
