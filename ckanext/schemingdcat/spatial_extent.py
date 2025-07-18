@@ -68,6 +68,31 @@ class SpatialExtentExtractor:
     def __init__(self):
         self.available_handlers = self._check_available_handlers()
     
+    def _is_potential_spatial_file(self, file_path_or_url):
+        """
+        Check if a file (by path or URL) could potentially be a spatial file.
+        This includes ZIP files that might contain shapefiles.
+        """
+        # Extract filename from URL or path
+        if file_path_or_url.startswith(('http://', 'https://')):
+            filename = file_path_or_url.split('/')[-1].split('?')[0]
+        else:
+            filename = os.path.basename(file_path_or_url)
+        
+        ext = self._get_file_extension(filename)
+        
+        # Direct spatial file extensions
+        spatial_extensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json']
+        if ext in spatial_extensions:
+            return True
+        
+        # ZIP files are potential spatial files if they might contain shapefiles
+        # We consider ALL ZIP files as potential spatial files for this check
+        if ext == 'zip':
+            return True
+        
+        return False
+    
     def _check_available_handlers(self) -> Dict[str, bool]:
         """Check which file format handlers are available."""
         return {
@@ -115,36 +140,6 @@ class SpatialExtentExtractor:
         except Exception as e:
             log.info(f"Error checking ZIP contents {file_path}: {str(e)}")
             return False
-    
-    def _is_potential_spatial_file(self, file_path: str, file_format: str = None) -> bool:
-        """
-        Check if a file could potentially contain spatial data.
-        This is more permissive than can_extract_extent.
-        
-        Args:
-            file_path: Path to the file
-            file_format: Optional format hint from user
-            
-        Returns:
-            True if the file might contain spatial data
-        """
-        ext = self._get_file_extension(file_path)
-        
-        # If user explicitly set format to SHP, always try to process
-        if file_format and file_format.lower() == 'shp':
-            log.info("User set format to SHP, attempting to process")
-            return True
-        
-        # Check if it's a known spatial extension
-        spatial_extensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json']
-        if ext.lower() in spatial_extensions:
-            return True
-        
-        # For ZIP files, check if they contain shapefiles
-        if ext.lower() == 'zip':
-            return self._is_shapefile_zip(file_path)
-        
-        return False
     
     def can_extract_extent(self, file_path: str, trust_extension: bool = False) -> bool:
         """
@@ -613,6 +608,39 @@ class SpatialExtentExtractor:
         except Exception as e:
             log.error(f"Error processing URL {url}: {str(e)}", exc_info=True)
             return None
+
+    def extract_extent_from_resource(self, resource_url, resource_format=None) -> Optional[Dict[str, Any]]:
+        """
+        Extract spatial extent from a resource based on its URL and format.
+        This method is designed for post-upload processing of files already stored in cloud storage.
+        
+        Args:
+            resource_url: URL of the resource (e.g., Azure blob storage URL)
+            resource_format: Format of the resource (e.g., 'SHP', 'ZIP', 'TIF')
+            
+        Returns:
+            GeoJSON Polygon representing the extent, or None if extraction fails
+        """
+        log.info(f"Processing resource: {resource_url} (format: {resource_format})")
+        
+        # If format indicates shapefile, try to extract regardless of file extension
+        if resource_format and resource_format.upper() in ['SHP', 'SHAPEFILE']:
+            log.info("Resource format indicates shapefile - attempting extraction")
+            return self.extract_extent_from_url(resource_url)
+        
+        # Check if it's a potential spatial file
+        if self._is_potential_spatial_file(resource_url):
+            log.info("Resource appears to be spatial file - attempting extraction")
+            return self.extract_extent_from_url(resource_url)
+        
+        # If it's a ZIP file and format is not specified, check contents
+        ext = self._get_file_extension(resource_url)
+        if ext == 'zip':
+            log.info("Resource is ZIP file - checking for spatial content")
+            return self.extract_extent_from_url(resource_url)
+        
+        log.info(f"Resource does not appear to be spatial: {resource_url} (format: {resource_format})")
+        return None
 
 
 # Global instance

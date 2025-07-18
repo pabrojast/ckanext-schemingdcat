@@ -78,13 +78,12 @@ def test_create_test_shapefile():
             'properties': {'id': 'int'}
         }
         
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(suffix='.shp', delete=False) as tmp:
-            tmp_path = tmp.name
-        
-        try:
+        # Create temporary directory instead of file
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shp_path = os.path.join(temp_dir, 'test.shp')
+            
             # Write the shapefile
-            with fiona.open(tmp_path, 'w', driver='ESRI Shapefile', schema=schema, crs='EPSG:4326') as output:
+            with fiona.open(shp_path, 'w', driver='ESRI Shapefile', schema=schema, crs='EPSG:4326') as output:
                 output.write({
                     'geometry': point.__geo_interface__,
                     'properties': {'id': 1}
@@ -92,20 +91,12 @@ def test_create_test_shapefile():
             
             # Test extraction
             extractor = SpatialExtentExtractor()
-            extent = extractor.extract_spatial_extent(tmp_path)
+            extent = extractor.extract_extent(shp_path)  # Use correct method name
             
-            print(f"  Created test shapefile: {tmp_path}")
+            print(f"  Created test shapefile: {shp_path}")
             print(f"  Extracted extent: {extent}")
             
             return extent is not None
-            
-        finally:
-            # Clean up
-            for ext in ['.shp', '.shx', '.dbf', '.prj']:
-                try:
-                    os.unlink(tmp_path.replace('.shp', ext))
-                except:
-                    pass
     
     except ImportError as e:
         print(f"  Skipping shapefile test: {e}")
@@ -153,7 +144,7 @@ def test_zip_with_shapefile():
             
             # Test extraction from ZIP
             extractor = SpatialExtentExtractor()
-            extent = extractor.extract_spatial_extent(zip_path)
+            extent = extractor.extract_extent(zip_path)  # Use correct method name
             
             print(f"  Created ZIP with shapefile: {zip_path}")
             print(f"  Extracted extent: {extent}")
@@ -195,6 +186,27 @@ def test_library_availability():
     print()
     return available
 
+def test_resource_processing():
+    """Test resource-based processing functionality"""
+    print("Testing resource processing...")
+    
+    extractor = SpatialExtentExtractor()
+    
+    # Test resource URLs with different formats
+    test_resources = [
+        ("https://example.com/boundaries.zip", "SHP"),
+        ("https://storage.azure.com/data.shp", "SHAPEFILE"),
+        ("https://example.com/elevation.tif", "GEOTIFF"),
+        ("https://example.com/document.pdf", "PDF"),
+    ]
+    
+    for resource_url, resource_format in test_resources:
+        # Test if it would be processed (without actually downloading)
+        would_process = extractor._is_potential_spatial_file(resource_url) or resource_format.upper() in ['SHP', 'SHAPEFILE']
+        print(f"  {resource_url} (format: {resource_format}): {'✓' if would_process else '✗'} {'(would process)' if would_process else '(would skip)'}")
+    
+    print()
+
 def main():
     """Run all tests"""
     print("=" * 60)
@@ -208,6 +220,7 @@ def main():
     # Test basic functionality
     test_zip_shapefile_detection()
     test_url_extraction()
+    test_resource_processing()
     
     # Test advanced functionality if libraries are available
     if libraries.get('fiona') and libraries.get('shapely'):

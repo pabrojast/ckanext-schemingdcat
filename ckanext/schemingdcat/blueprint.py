@@ -220,3 +220,70 @@ def extract_spatial_extent():
             'extent': None
         }), 500
 
+@schemingdcat.route('/api/extract-spatial-extent-from-resource', methods=['POST'])
+def extract_spatial_extent_from_resource():
+    """
+    API endpoint to extract spatial extent from uploaded resources (post-upload processing).
+    
+    This endpoint is designed for processing resources that have already been uploaded
+    to cloud storage (like Azure) and processes them based on their format.
+    """
+    try:
+        # Check if spatial extent extraction is available
+        if not is_module_available('ckanext.schemingdcat.spatial_extent'):
+            return jsonify({
+                'success': False,
+                'error': 'Spatial extent extraction not available',
+                'extent': None
+            }), 400
+
+        from ckanext.schemingdcat.spatial_extent import extent_extractor
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON data provided',
+                'extent': None
+            }), 400
+        
+        resource_url = data.get('resource_url')
+        resource_format = data.get('resource_format', '').upper()
+        
+        if not resource_url:
+            return jsonify({
+                'success': False,
+                'error': 'No resource_url provided',
+                'extent': None
+            }), 400
+        
+        logger.info(f"Processing resource for spatial extent: {resource_url} (format: {resource_format})")
+        
+        # Extract extent from resource
+        extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
+        
+        if extent:
+            return jsonify({
+                'success': True,
+                'error': None,
+                'extent': extent,
+                'processed_url': resource_url,
+                'format': resource_format
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Could not extract spatial extent from resource',
+                'extent': None,
+                'processed_url': resource_url,
+                'format': resource_format
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error in resource spatial extent extraction API: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}',
+            'extent': None
+        }), 500
+

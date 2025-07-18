@@ -341,6 +341,9 @@
     
     if (!fileInput || !dropzone) return;
     
+    // Setup format field listener for spatial processing
+    setupFormatFieldListener();
+    
     // Auto-fill date field if exists and is empty
     // Look for resource date fields specifically
     var dateFields = document.querySelectorAll('input[type="date"]');
@@ -1047,6 +1050,100 @@
       };
       return iconMap[ext] || 'fa-file-o';
     }
+  }
+
+  // Function to extract spatial extent from resource URL (post-upload processing)
+  function extractSpatialExtentFromResource(resourceUrl, resourceFormat) {
+    console.log('Processing resource for spatial extent:', resourceUrl, 'format:', resourceFormat);
+    
+    // Find the spatial_extent field in the form
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) {
+      console.debug('No spatial_extent field found in form');
+      return;
+    }
+
+    // Show a loading indicator in the spatial extent field
+    var originalPlaceholder = spatialExtentField.placeholder;
+    spatialExtentField.placeholder = '{{ _("Processing uploaded file for spatial extent...") }}';
+    spatialExtentField.classList.add('loading');
+
+    // Prepare request data
+    var requestData = {
+      resource_url: resourceUrl,
+      resource_format: resourceFormat
+    };
+
+    // Make request to extract spatial extent from resource
+    fetch('/api/extract-spatial-extent-from-resource', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestData)
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      if (data.success && data.extent) {
+        // Set the extracted extent in the field
+        spatialExtentField.value = JSON.stringify(data.extent, null, 2);
+        
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        spatialExtentField.dispatchEvent(event);
+        
+        // Show success message
+        showSpatialExtentMessage('{{ _("Spatial extent extracted successfully from uploaded file.") }}', 'success');
+        
+        console.log('Spatial extent extracted from resource:', data.extent);
+      } else {
+        console.debug('Could not extract spatial extent from resource:', data.error || 'Unknown error');
+        showSpatialExtentMessage('{{ _("Could not extract spatial extent from this resource. You can manually enter the spatial extent if needed.") }}', 'info');
+      }
+    })
+    .catch(function(error) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      console.debug('Error in resource spatial extent extraction:', error);
+      showSpatialExtentMessage('{{ _("Error processing uploaded file. You can manually enter the spatial extent if needed.") }}', 'warning');
+    });
+  }
+
+  // Function to setup format field listener for spatial processing
+  function setupFormatFieldListener() {
+    // Find format fields
+    var formatFields = document.querySelectorAll('input[name*="format"]');
+    formatFields.forEach(function(formatField) {
+      if (formatField.name.indexOf('resources') !== -1 || formatField.name === 'format') {
+        formatField.addEventListener('change', function(e) {
+          var format = e.target.value.toUpperCase();
+          
+          // If format is changed to SHP, try to process any existing URL for spatial extent
+          if (format === 'SHP' || format === 'SHAPEFILE') {
+            // Look for URL field
+            var urlFields = document.querySelectorAll('input[name*="url"]');
+            var resourceUrl = null;
+            
+            urlFields.forEach(function(urlField) {
+              if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
+                resourceUrl = urlField.value;
+              }
+            });
+            
+            if (resourceUrl && resourceUrl.trim()) {
+              console.log('Format changed to SHP, processing resource:', resourceUrl);
+              extractSpatialExtentFromResource(resourceUrl, format);
+            }
+          }
+        });
+      }
+    });
   }
 
   // Function to extract spatial extent from geospatial files
