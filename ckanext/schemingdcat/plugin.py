@@ -269,6 +269,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def _process_spatial_extent_extraction_for_resource(self, context, resource):
         """
         Procesa la extracción de extensión espacial para un recurso específico que pueda ser geoespacial.
+        Ahora ejecuta en segundo plano para no bloquear al usuario.
         
         Args:
             context: El contexto de CKAN
@@ -293,15 +294,41 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if should_skip:
                 log.debug(f"Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
                 return
-                
-            # Intentar extraer la extensión espacial del recurso
-            extent = self._extract_spatial_extent_from_resource(resource)
-            if extent:
-                log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')}")
-                # Actualizar el dataset con la extensión espacial extraída
-                self._update_dataset_spatial_extent(context, package_id, extent)
-            else:
-                log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')}")
+            
+            # **PROCESAMIENTO ASÍNCRONO**: Lanzar en un thread separado para no bloquear al usuario
+            import threading
+            
+            def extract_spatial_extent_async():
+                """Función que ejecuta la extracción en segundo plano."""
+                try:
+                    log.info(f"Starting background spatial extent extraction for resource {resource.get('id', 'unknown')}")
+                    
+                    # Intentar extraer la extensión espacial del recurso
+                    extent = self._extract_spatial_extent_from_resource(resource)
+                    
+                    if extent:
+                        log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')} in background")
+                        # Actualizar el dataset con la extensión espacial extraída
+                        success = self._update_dataset_spatial_extent(context, package_id, extent)
+                        if success:
+                            log.info(f"Background update completed successfully for dataset {package_id}")
+                        else:
+                            log.warning(f"Background update failed for dataset {package_id}")
+                    else:
+                        log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')} in background")
+                        
+                except Exception as e:
+                    log.error(f"Error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
+            
+            # Lanzar el thread de extracción en segundo plano
+            extraction_thread = threading.Thread(
+                target=extract_spatial_extent_async,
+                name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
+                daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
+            )
+            extraction_thread.start()
+            
+            log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')}")
                 
         except Exception as e:
             log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
@@ -464,21 +491,43 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # Preparar los datos para la actualización
             extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
             
-            # Crear un contexto que omita validación para evitar problemas circulares
-            update_context = context.copy()
-            update_context['ignore_auth'] = True
-            update_context['skip_validation'] = True
+            # Crear un contexto de sistema limpio con permisos de administrador
+            import ckan.model as model
+            system_context = {
+                'model': model,
+                'session': model.Session,
+                'ignore_auth': True,  # Usar permisos de sistema
+                'user': '',  # Usuario del sistema
+                'api_version': 3,
+                'for_update': True,  # Evitar conflictos de concurrencia
+                'return_type': 'dict'
+            }
+            
+            # Obtener el dataset actual para verificar que existe
+            try:
+                current_dataset = toolkit.get_action('package_show')(system_context, {'id': dataset_id})
+                log.debug(f"Found dataset {dataset_id} for spatial extent update")
+            except Exception as e:
+                log.error(f"Could not retrieve dataset {dataset_id} for spatial extent update: {str(e)}")
+                return False
             
             # Actualizar solo el campo spatial_extent del dataset
-            toolkit.get_action('package_patch')(update_context, {
+            update_data = {
                 'id': dataset_id,
                 'spatial_extent': extent_json
-            })
+            }
             
-            log.info(f"Updated spatial_extent for dataset {dataset_id}")
+            # Usar package_patch para actualizar solo el campo específico
+            result = toolkit.get_action('package_patch')(system_context, update_data)
+            
+            log.info(f"Successfully updated spatial_extent for dataset {dataset_id}")
+            log.debug(f"Updated dataset: {result.get('name', 'unknown')}")
+            
+            return True
             
         except Exception as e:
-            log.error(f"Error updating spatial extent for dataset {dataset_id}: {str(e)}")
+            log.error(f"Error updating spatial extent for dataset {dataset_id}: {str(e)}", exc_info=True)
+            return False
 
 
 class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):

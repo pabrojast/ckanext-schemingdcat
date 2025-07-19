@@ -16,6 +16,7 @@ import ckanext.schemingdcat.helpers as sdct_helpers
 from ckanext.schemingdcat.rate_limiter import rate_limiter
 
 from logging import getLogger
+import ckan.plugins.toolkit as toolkit
 
 logger = getLogger(__name__)
 get_action = logic.get_action
@@ -139,6 +140,80 @@ def is_module_available(module_name):
         return True
     except (ImportError, ModuleNotFoundError):
         return False
+
+@schemingdcat.route('/api/spatial-extent-status/<resource_id>', methods=['GET'])
+def get_spatial_extent_status(resource_id):
+    """
+    API endpoint para consultar el estado del procesamiento de spatial extent de un recurso.
+    
+    Permite verificar si el procesamiento asíncrono ha terminado y si se actualizó el dataset.
+    """
+    try:
+        # Verificar que el recurso existe
+        context = {'ignore_auth': True}
+        try:
+            resource = toolkit.get_action('resource_show')(context, {'id': resource_id})
+        except toolkit.ObjectNotFound:
+            return jsonify({
+                'success': False,
+                'error': 'Resource not found',
+                'status': 'not_found'
+            }), 404
+        
+        # Obtener el dataset padre
+        package_id = resource.get('package_id')
+        if not package_id:
+            return jsonify({
+                'success': False,
+                'error': 'No package_id found for resource',
+                'status': 'error'
+            }), 400
+        
+        # Verificar si el dataset tiene spatial extent
+        try:
+            dataset = toolkit.get_action('package_show')(context, {'id': package_id})
+            spatial_extent = dataset.get('spatial_extent')
+            
+            if spatial_extent and spatial_extent.strip():
+                # Verificar si es un extent válido
+                try:
+                    import json
+                    extent_data = json.loads(spatial_extent)
+                    if extent_data.get('type') == 'Polygon' and extent_data.get('coordinates'):
+                        return jsonify({
+                            'success': True,
+                            'status': 'completed',
+                            'message': 'Spatial extent extraction completed',
+                            'has_spatial_extent': True,
+                            'spatial_extent': extent_data
+                        })
+                except:
+                    pass
+            
+            # No hay spatial extent o no es válido
+            return jsonify({
+                'success': True,
+                'status': 'pending',
+                'message': 'Spatial extent extraction may still be processing',
+                'has_spatial_extent': False,
+                'spatial_extent': None
+            })
+                    
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error checking dataset: {str(e)}',
+                'status': 'error'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error checking spatial extent status for resource {resource_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Internal server error: {str(e)}',
+            'status': 'error'
+        }), 500
+
 
 @schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])
 def extract_spatial_extent():
