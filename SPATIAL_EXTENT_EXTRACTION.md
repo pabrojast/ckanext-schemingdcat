@@ -36,9 +36,9 @@ En el archivo `dataset.yaml`, el campo debe configurarse así:
   display_snippet: schemingdcat/display_snippets/spatial_extent.html
   form_placeholder: '{"type": "Polygon", "coordinates": [[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]}'
   help_text:
-    en: 'This field will be automatically populated after creating the resource when uploading geospatial files (Shapefile, GeoTIFF, etc.). Once generated, you can modify the spatial extent from this field if needed.'
-    es: 'Este campo se rellenará automáticamente después de crear el recurso al subir archivos geoespaciales (Shapefile, GeoTIFF, etc.). Una vez generado, puede modificar la extensión espacial desde este campo si es necesario.'
-    fr: 'Ce champ sera automatiquement rempli après la création de la ressource lors du téléchargement de fichiers géospatiaux (Shapefile, GeoTIFF, etc.). Une fois généré, vous pouvez modifier l''étendue spatiale depuis ce champ si nécessaire.'
+    en: 'This field will be automatically populated when uploading geospatial files. For direct files (SHP, TIF, GeoJSON, etc.) it fills immediately. For ZIP files (that may contain shapefiles), it fills after creating the dataset. Once generated, you can modify the spatial extent if needed.'
+    es: 'Este campo se rellenará automáticamente al subir archivos geoespaciales. Para archivos directos (SHP, TIF, GeoJSON, etc.) se rellena inmediatamente. Para archivos ZIP (que pueden contener shapefiles), se rellena después de crear el dataset. Una vez generado, puede modificar la extensión espacial si es necesario.'
+    fr: 'Ce champ sera automatiquement rempli lors du téléchargement de fichiers géospatiaux. Pour les fichiers directs (SHP, TIF, GeoJSON, etc.) il se remplit immédiatement. Pour les fichiers ZIP (qui peuvent contenir des shapefiles), il se remplit après la création du jeu de données. Une fois généré, vous pouvez modifier l''étendue spatiale si nécessaire.'
   help_allow_html: True
   form_group_id: spatial_info
 ```
@@ -91,12 +91,22 @@ POST /api/extract-spatial-extent
 
 ### Flujo de Trabajo
 
+#### Para archivos directos (SHP, TIF, GeoJSON, etc.)
 1. **Upload de Archivo**: El usuario selecciona un archivo geoespacial
 2. **Detección**: JavaScript detecta que es un archivo espacial
 3. **Extracción**: Se envía el archivo al endpoint `/api/extract-spatial-extent`
 4. **Procesamiento**: El servidor extrae el extent usando las librerías apropiadas
 5. **Auto-llenado**: El campo `spatial_extent` se llena automáticamente
 6. **Feedback**: Se muestra un mensaje de éxito o error al usuario
+
+#### Para archivos ZIP (que pueden contener shapefiles)
+1. **Upload de Archivo**: El usuario selecciona un archivo ZIP
+2. **Creación del Dataset**: El dataset y recursos se crean normalmente
+3. **Procesamiento Post-Creación**: Automáticamente después de crear el dataset:
+   - Se detecta que hay recursos ZIP con formato spatial
+   - Se extrae la extensión espacial del archivo ya subido
+   - Se actualiza el campo `spatial_extent` del dataset
+4. **Resultado**: El dataset queda con la extensión espacial extraída
 
 ### Características de Seguridad
 

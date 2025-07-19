@@ -104,14 +104,21 @@ class PackageController():
         return pkg_dict
 
     def after_create(self, context, data_dict):
+        """
+        Hook que se ejecuta después de crear un dataset.
+        """
         # Limpiar el modo del formulario si es necesario
         if 'form_mode' in data_dict:
             del data_dict['form_mode']
+        
         return data_dict
 
     def after_update(self, context, data_dict):
+        """
+        Hook que se ejecuta después de actualizar un dataset.
+        """
         return data_dict
-
+        
     def after_delete(self, context, data_dict):
         return data_dict
 

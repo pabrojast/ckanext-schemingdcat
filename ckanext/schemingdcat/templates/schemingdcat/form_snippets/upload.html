@@ -592,7 +592,13 @@
       }
 
       // Extract spatial extent from geospatial files
-      extractSpatialExtentFromFile(file, ext);
+      // Note: Para archivos ZIP que pueden contener shapefiles, la extracción se realizará
+      // después de crear el dataset, no durante la selección del archivo
+      if (ext.toLowerCase() !== 'zip') {
+        extractSpatialExtentFromFile(file, ext);
+      } else {
+        console.log('[schemingdcat-upload] ZIP file detected - spatial extent extraction will be performed after dataset creation');
+      }
       
       // Set up format field change listener for spatial processing
       if (formatField) {
@@ -1149,7 +1155,8 @@
   // Function to extract spatial extent from geospatial files
   function extractSpatialExtentFromFile(file, ext) {
     // Check if this is a geospatial file type
-    var spatialExtensions = ['shp', 'zip', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
+    // Note: ZIP files are excluded here because they are processed after dataset creation
+    var spatialExtensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
     
     if (!spatialExtensions.includes(ext.toLowerCase())) {
       return; // Not a spatial file, skip extraction

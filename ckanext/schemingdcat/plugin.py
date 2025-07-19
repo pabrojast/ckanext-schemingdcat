@@ -21,6 +21,7 @@ from ckanext.schemingdcat.package_controller import PackageController
 from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
 
 import logging
+import json
 
 log = logging.getLogger(__name__)
 
@@ -239,6 +240,182 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             for old_file in uploader.container.iterate_objects():
                 if old_file.name.startswith(upload_path):
                     old_file.delete()
+
+    # IResourceController - handle spatial extent extraction for spatial resources
+    def after_create(self, context, resource):
+        """
+        Hook que se ejecuta después de crear un recurso.
+        Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
+        """
+        try:
+            self._process_spatial_extent_extraction_for_resource(context, resource)
+        except Exception as e:
+            log.warning(f"Error in spatial extent extraction after resource creation: {str(e)}")
+        
+        return resource
+
+    def after_update(self, context, resource):
+        """
+        Hook que se ejecuta después de actualizar un recurso.
+        También procesamos la extracción de extensión espacial aquí.
+        """
+        try:
+            self._process_spatial_extent_extraction_for_resource(context, resource)
+        except Exception as e:
+            log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
+        
+        return resource
+        
+    def _process_spatial_extent_extraction_for_resource(self, context, resource):
+        """
+        Procesa la extracción de extensión espacial para un recurso específico que pueda ser geoespacial.
+        
+        Args:
+            context: El contexto de CKAN
+            resource: El diccionario del recurso
+        """
+        try:
+            # Verificar si es un recurso potencialmente espacial
+            if not self._is_potential_spatial_resource(resource):
+                log.debug(f"Resource {resource.get('id', 'unknown')} is not a potential spatial resource")
+                return
+                
+            log.info(f"Processing spatial resource {resource.get('id', 'unknown')} with format {resource.get('format', 'unknown')}")
+            
+            # Obtener el dataset padre
+            package_id = resource.get('package_id')
+            if not package_id:
+                log.warning("No package_id found for resource")
+                return
+                
+            # Obtener el dataset actual para verificar si ya tiene spatial_extent
+            try:
+                dataset = toolkit.get_action('package_show')(context, {'id': package_id})
+            except Exception as e:
+                log.warning(f"Could not retrieve dataset {package_id}: {str(e)}")
+                return
+                
+            # Solo procesar si el dataset no tiene extensión espacial o está vacía
+            spatial_extent = dataset.get('spatial_extent')
+            if spatial_extent and spatial_extent.strip():
+                log.debug(f"Dataset {package_id} already has spatial extent, skipping extraction")
+                return
+                
+            # Intentar extraer la extensión espacial del recurso
+            extent = self._extract_spatial_extent_from_resource(resource)
+            if extent:
+                log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')}")
+                # Actualizar el dataset con la extensión espacial extraída
+                self._update_dataset_spatial_extent(context, package_id, extent)
+            else:
+                log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')}")
+                
+        except Exception as e:
+            log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
+            # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
+    
+    def _is_potential_spatial_resource(self, resource):
+        """
+        Determina si un recurso puede contener datos geoespaciales.
+        IMPORTANTE: Los ZIP con shapefiles se suben con formato "SHP", no "ZIP"
+        
+        Args:
+            resource: El diccionario del recurso
+            
+        Returns:
+            bool: True si el recurso puede contener datos espaciales
+        """
+        # Verificar formato del recurso - CLAVE: Los ZIP se marcan como "SHP"
+        resource_format = resource.get('format', '').lower()
+        spatial_formats = ['shp', 'shapefile', 'zip', 'tif', 'tiff', 'geotiff', 
+                          'kml', 'gpkg', 'geopackage', 'geojson', 'json']
+        
+        if resource_format in spatial_formats:
+            log.debug(f"Resource has spatial format: {resource_format}")
+            return True
+            
+        # Verificar extensión del archivo en la URL como respaldo
+        url = resource.get('url', '')
+        if url:
+            url_lower = url.lower()
+            spatial_extensions = ['.shp', '.zip', '.tif', '.tiff', '.kml', '.gpkg', '.geojson']
+            for ext in spatial_extensions:
+                if url_lower.endswith(ext):
+                    log.debug(f"Resource has spatial extension in URL: {ext}")
+                    return True
+        
+        log.debug(f"Resource is not spatial - format: {resource_format}, url: {url}")
+        return False
+    
+    def _extract_spatial_extent_from_resource(self, resource):
+        """
+        Extrae la extensión espacial de un recurso.
+        
+        Args:
+            resource: El diccionario del recurso
+            
+        Returns:
+            dict: La extensión espacial en formato GeoJSON o None
+        """
+        try:
+            # Verificar si el módulo de extensión espacial está disponible
+            try:
+                from ckanext.schemingdcat.spatial_extent import extent_extractor
+            except ImportError:
+                log.debug("Spatial extent extraction module not available")
+                return None
+            
+            resource_url = resource.get('url')
+            resource_format = resource.get('format', '').upper()
+            
+            if not resource_url:
+                log.debug("No URL found for resource")
+                return None
+                
+            log.info(f"Attempting to extract spatial extent from resource: {resource_url} (format: {resource_format})")
+            
+            # Usar el método para extraer desde URL de recurso
+            extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
+            
+            if extent:
+                log.info(f"Successfully extracted extent: {extent}")
+                return extent
+            else:
+                log.debug(f"Could not extract extent from resource: {resource_url}")
+                return None
+                
+        except Exception as e:
+            log.warning(f"Error extracting spatial extent from resource: {str(e)}")
+            return None
+    
+    def _update_dataset_spatial_extent(self, context, dataset_id, extent):
+        """
+        Actualiza el campo spatial_extent de un dataset.
+        
+        Args:
+            context: El contexto de CKAN
+            dataset_id: El ID del dataset
+            extent: La extensión espacial en formato GeoJSON
+        """
+        try:
+            # Preparar los datos para la actualización
+            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
+            
+            # Crear un contexto que omita validación para evitar problemas circulares
+            update_context = context.copy()
+            update_context['ignore_auth'] = True
+            update_context['skip_validation'] = True
+            
+            # Actualizar solo el campo spatial_extent del dataset
+            toolkit.get_action('package_patch')(update_context, {
+                'id': dataset_id,
+                'spatial_extent': extent_json
+            })
+            
+            log.info(f"Updated spatial_extent for dataset {dataset_id}")
+            
+        except Exception as e:
+            log.error(f"Error updating spatial extent for dataset {dataset_id}: {str(e)}")
 
 
 class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
