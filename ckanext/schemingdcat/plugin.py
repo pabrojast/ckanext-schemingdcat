@@ -478,8 +478,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 job = jobs.enqueue(
                     extract_spatial_extent_job,
                     [job_data],
-                    title=f"Spatial extent extraction for resource {resource.get('id', 'unknown')[:8]}",
-                    timeout=300  # 5 minutos timeout
+                    title=f"Spatial extent extraction for resource {resource.get('id', 'unknown')[:8]}"
                 )
                 
                 log.info(f"Enqueued spatial extent extraction job {job.id} for resource {resource.get('id', 'unknown')}")
@@ -488,8 +487,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 # Fallback: Usar threading si jobs no está disponible
                 log.warning("CKAN Jobs not available, falling back to threading")
                 self._process_spatial_extent_with_threading(resource, package_id)
-            except Exception as e:
-                log.warning(f"Error enqueuing spatial extent job: {str(e)}, falling back to threading")
+            except TypeError as e:
+                # Error de parámetros en jobs.enqueue (versión antigua)
+                log.warning(f"Jobs.enqueue parameter error: {str(e)}, falling back to threading")
                 self._process_spatial_extent_with_threading(resource, package_id)
                 
         except Exception as e:
@@ -497,33 +497,48 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
 
     def _process_spatial_extent_with_threading(self, resource, package_id):
-        """Fallback method using threading for spatial extent extraction."""
+        """Fallback method using threading for spatial extent extraction WITHOUT Flask context."""
         import threading
-        from flask import current_app
         
         def extract_spatial_extent_async():
-            """Función que ejecuta la extracción en segundo plano con contexto Flask."""
+            """Función que ejecuta la extracción en segundo plano SIN contexto Flask."""
             try:
-                # Crear un contexto de aplicación Flask para el thread
-                with current_app.app_context():
-                    log.info(f"Starting background spatial extent extraction for resource {resource.get('id', 'unknown')}")
+                log.info(f"Starting background spatial extent extraction for resource {resource.get('id', 'unknown')} (threading mode)")
+                
+                # Intentar extraer la extensión espacial del recurso DIRECTAMENTE
+                try:
+                    from ckanext.schemingdcat.spatial_extent import extent_extractor
                     
-                    # Intentar extraer la extensión espacial del recurso
-                    extent = self._extract_spatial_extent_from_resource(resource)
+                    resource_url = resource.get('url')
+                    resource_format = resource.get('format', '').upper()
+                    
+                    if not resource_url:
+                        log.debug("No URL found for resource in threading mode")
+                        return
+                    
+                    # Extraer extensión espacial directamente
+                    extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
                     
                     if extent:
-                        log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')} in background")
-                        # Actualizar el dataset con la extensión espacial extraída
-                        success = self._update_dataset_spatial_extent_with_app_context(package_id, extent)
+                        log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')} in threading mode")
+                        
+                        # Usar actualización directa en BD (NO requiere contexto Flask)
+                        success = self._update_dataset_spatial_extent_direct_db(package_id, extent)
+                        
                         if success:
-                            log.info(f"Background update completed successfully for dataset {package_id}")
+                            log.info(f"Threading mode update completed successfully for dataset {package_id}")
                         else:
-                            log.warning(f"Background update failed for dataset {package_id}")
+                            log.warning(f"Threading mode update failed for dataset {package_id}")
                     else:
-                        log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')} in background")
+                        log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')} in threading mode")
+                        
+                except ImportError:
+                    log.warning("Spatial extent extraction module not available in threading mode")
+                except Exception as e:
+                    log.error(f"Error in spatial extent extraction in threading mode: {str(e)}", exc_info=True)
                         
             except Exception as e:
-                log.error(f"Error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
+                log.error(f"General error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
         
         # Lanzar el thread de extracción en segundo plano
         extraction_thread = threading.Thread(
@@ -533,7 +548,69 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         )
         extraction_thread.start()
         
-        log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')}")
+        log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')} (threading mode)")
+
+    def _update_dataset_spatial_extent_direct_db(self, package_id, extent):
+        """
+        Actualización directa en BD sin contexto Flask - para uso en threads.
+        
+        Args:
+            package_id: ID del dataset
+            extent: La extensión espacial en formato GeoJSON
+            
+        Returns:
+            bool: True si la actualización fue exitosa
+        """
+        try:
+            import ckan.model as model
+            import json
+            
+            # Preparar los datos
+            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
+            
+            log.info(f"Attempting direct DB update for dataset {package_id}")
+            
+            # Actualizar directamente en la base de datos sin contexto Flask
+            package = model.Package.get(package_id)
+            if not package:
+                log.error(f"Package {package_id} not found in database for direct update")
+                return False
+            
+            # Buscar si ya existe un extra con spatial_extent
+            spatial_extra = None
+            for extra in package.extras_list:
+                if extra.key == 'spatial_extent':
+                    spatial_extra = extra
+                    break
+            
+            if spatial_extra:
+                # Actualizar extra existente
+                spatial_extra.value = extent_json
+                log.debug(f"Updated existing spatial_extent extra for dataset {package_id}")
+            else:
+                # Crear nuevo extra
+                from ckan.model.package_extra import PackageExtra
+                new_extra = PackageExtra(
+                    package_id=package_id,
+                    key='spatial_extent',
+                    value=extent_json
+                )
+                model.Session.add(new_extra)
+                log.debug(f"Created new spatial_extent extra for dataset {package_id}")
+            
+            # Commit los cambios
+            model.Session.commit()
+            
+            log.info(f"Successfully updated spatial_extent for dataset {package_id} via direct DB access")
+            return True
+            
+        except Exception as e:
+            try:
+                model.Session.rollback()
+            except:
+                pass
+            log.error(f"Error in direct DB update for dataset {package_id}: {str(e)}", exc_info=True)
+            return False
 
 
 def extract_spatial_extent_job(job_data):
