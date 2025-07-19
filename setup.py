@@ -26,6 +26,27 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     namespace_packages=['ckanext'],
     include_package_data=True,
+    install_requires=[
+        # Core dependencies
+        'gspread>=6.1.2',
+        'msal>=1.29.0',
+        'Office365-REST-Python-Client>=2.5.5',
+        'openpyxl>=3.1.2',
+        'pandas',
+        'azure-storage-blob>=12.14.0',
+    ],
+    extras_require={
+        'spatial': [
+            # Spatial dependencies for extent extraction
+            'fiona>=1.8.0',
+            'rasterio>=1.3.0',
+            'pyproj>=3.2.0',
+            'GDAL>=3.0.0',
+        ],
+        'dev': [
+            'pytest-ckan',
+        ],
+    },
     entry_points='''
         [ckan.plugins]
         schemingdcat=ckanext.schemingdcat.plugin:SchemingDCATPlugin

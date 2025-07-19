@@ -5,3 +5,9 @@ openpyxl==3.1.2
 pandas
 # Azure Storage integration
 azure-storage-blob>=12.14.0
+
+# Spatial dependencies for extent extraction
+# Note: These require system-level GDAL installation first
+fiona>=1.8.0
+rasterio>=1.3.0
+pyproj>=3.2.0

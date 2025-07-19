@@ -66,28 +66,53 @@ This plugin is compatible with CKAN 2.9 or later and needs the following plugins
   ```
 
 ## Installation
+
+### Basic Installation
   ```sh
   cd $CKAN_VENV/src/
 
-  # Install the scheming_dataset plugin
+  # Install the basic extension
   pip install -e "git+https://github.com/ckan/ckanext-schemingdcat.git#egg=ckanext-schemingdcat"
   ```
 
-### Optional: Spatial Extent Extraction Dependencies
-To enable automatic spatial extent extraction from geospatial files, install the optional spatial dependencies:
+### Full Installation with Spatial Features
+To enable automatic spatial extent extraction from geospatial files, install with spatial extras:
 
   ```sh
-  # Install spatial dependencies for automatic extent extraction
+  # Install with spatial dependencies included
+  pip install -e "git+https://github.com/ckan/ckanext-schemingdcat.git#egg=ckanext-schemingdcat[spatial]"
+  ```
+
+### Alternative: Manual Spatial Dependencies Installation
+If you prefer to install spatial dependencies separately:
+
+  ```sh
+  # Install basic extension
+  pip install -e "git+https://github.com/ckan/ckanext-schemingdcat.git#egg=ckanext-schemingdcat"
+  
+  # Then install spatial dependencies
   pip install -r $CKAN_VENV/src/ckanext-schemingdcat/spatial-requirements.txt
   ```
 
-This will install:
+### What Spatial Dependencies Provide
+The spatial dependencies enable automatic spatial extent extraction from:
+- **Shapefile** (.shp, .zip): Using Fiona
+- **GeoTIFF** (.tif, .tiff): Using Rasterio  
+- **GeoJSON** (.geojson): Using Fiona
+- **KML** (.kml): Using Fiona
+- **GeoPackage** (.gpkg): Using Fiona
+
+Dependencies installed:
 - **Fiona**: For reading vector files (Shapefile, GeoJSON, KML, GeoPackage)
 - **Rasterio**: For reading raster files (GeoTIFF)
 - **PyProj**: For coordinate reference system transformations
+- **GDAL**: Geospatial Data Abstraction Library (system dependency)
 
 > [!NOTE]
-> The extension works without these dependencies, but spatial extent extraction will not be available. Users can still manually enter spatial extents.
+> The extension works without spatial dependencies, but spatial extent extraction will not be available. Users can still manually enter spatial extents.
+
+> [!IMPORTANT] 
+> **For production servers**: Make sure to install with spatial dependencies to enable automatic spatial extent extraction from ZIP files containing shapefiles.
 
 ## Configuration
 Set the plugin:
