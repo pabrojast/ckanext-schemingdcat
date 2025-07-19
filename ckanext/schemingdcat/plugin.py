@@ -283,6 +283,88 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         return updated
         
+    def _is_potential_spatial_resource(self, resource):
+        """
+        Determina si un recurso puede contener datos geoespaciales.
+        
+        IMPORTANTE: Los archivos ZIP con shapefiles se suben con formato "SHP", no "ZIP"
+        porque CKAN detecta el contenido y asigna el formato basado en los archivos principales.
+        
+        Args:
+            resource: El diccionario del recurso
+            
+        Returns:
+            bool: True si el recurso puede contener datos espaciales
+        """
+        try:
+            # Verificar formato del recurso - CLAVE: Los ZIP se marcan como "SHP"
+            resource_format = resource.get('format', '').lower()
+            spatial_formats = ['shp', 'shapefile', 'zip', 'tif', 'tiff', 'geotiff', 
+                              'kml', 'gpkg', 'geopackage', 'geojson', 'json']
+            
+            if resource_format in spatial_formats:
+                log.debug(f"Resource {resource.get('id', 'unknown')} has spatial format: {resource_format}")
+                return True
+                
+            # Verificar extensión del archivo en la URL como respaldo
+            url = resource.get('url', '')
+            if url:
+                url_lower = url.lower()
+                spatial_extensions = ['.shp', '.zip', '.tif', '.tiff', '.kml', '.gpkg', '.geojson']
+                for ext in spatial_extensions:
+                    if url_lower.endswith(ext):
+                        log.debug(f"Resource {resource.get('id', 'unknown')} has spatial extension in URL: {ext}")
+                        return True
+            
+            log.debug(f"Resource {resource.get('id', 'unknown')} is not spatial - format: {resource_format}, url: {url}")
+            return False
+            
+        except Exception as e:
+            log.warning(f"Error checking if resource is spatial: {str(e)}")
+            # En caso de error, ser conservador y asumir que no es espacial
+            return False
+        
+    def _extract_spatial_extent_from_resource(self, resource):
+        """
+        Extrae la extensión espacial de un recurso.
+        
+        Args:
+            resource: El diccionario del recurso
+            
+        Returns:
+            dict: La extensión espacial en formato GeoJSON o None
+        """
+        try:
+            # Verificar si el módulo de extensión espacial está disponible
+            try:
+                from ckanext.schemingdcat.spatial_extent import extent_extractor
+            except ImportError:
+                log.debug("Spatial extent extraction module not available")
+                return None
+            
+            resource_url = resource.get('url')
+            resource_format = resource.get('format', '').upper()
+            
+            if not resource_url:
+                log.debug("No URL found for resource")
+                return None
+                
+            log.info(f"Attempting to extract spatial extent from resource: {resource_url} (format: {resource_format})")
+            
+            # Usar el método para extraer desde URL de recurso
+            extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
+            
+            if extent:
+                log.info(f"Successfully extracted extent: {extent}")
+                return extent
+            else:
+                log.debug(f"Could not extract extent from resource: {resource_url}")
+                return None
+                
+        except Exception as e:
+            log.warning(f"Error extracting spatial extent from resource: {str(e)}")
+            return None
+        
     def _process_spatial_extent_extraction_for_resource(self, context, resource):
         """
         Procesa la extracción de extensión espacial para un recurso específico que pueda ser geoespacial.
@@ -544,81 +626,7 @@ def extract_spatial_extent_job(job_data):
             log.warning(f"Error checking if spatial extraction should be skipped: {str(e)}")
             # En caso de error, ser conservador y omitir la extracción automática
             return True
-    
-    def _is_potential_spatial_resource(self, resource):
-        """
-        Determina si un recurso puede contener datos geoespaciales.
-        IMPORTANTE: Los ZIP con shapefiles se suben con formato "SHP", no "ZIP"
-        
-        Args:
-            resource: El diccionario del recurso
-            
-        Returns:
-            bool: True si el recurso puede contener datos espaciales
-        """
-        # Verificar formato del recurso - CLAVE: Los ZIP se marcan como "SHP"
-        resource_format = resource.get('format', '').lower()
-        spatial_formats = ['shp', 'shapefile', 'zip', 'tif', 'tiff', 'geotiff', 
-                          'kml', 'gpkg', 'geopackage', 'geojson', 'json']
-        
-        if resource_format in spatial_formats:
-            log.debug(f"Resource has spatial format: {resource_format}")
-            return True
-            
-        # Verificar extensión del archivo en la URL como respaldo
-        url = resource.get('url', '')
-        if url:
-            url_lower = url.lower()
-            spatial_extensions = ['.shp', '.zip', '.tif', '.tiff', '.kml', '.gpkg', '.geojson']
-            for ext in spatial_extensions:
-                if url_lower.endswith(ext):
-                    log.debug(f"Resource has spatial extension in URL: {ext}")
-                    return True
-        
-        log.debug(f"Resource is not spatial - format: {resource_format}, url: {url}")
-        return False
-    
-    def _extract_spatial_extent_from_resource(self, resource):
-        """
-        Extrae la extensión espacial de un recurso.
-        
-        Args:
-            resource: El diccionario del recurso
-            
-        Returns:
-            dict: La extensión espacial en formato GeoJSON o None
-        """
-        try:
-            # Verificar si el módulo de extensión espacial está disponible
-            try:
-                from ckanext.schemingdcat.spatial_extent import extent_extractor
-            except ImportError:
-                log.debug("Spatial extent extraction module not available")
-                return None
-            
-            resource_url = resource.get('url')
-            resource_format = resource.get('format', '').upper()
-            
-            if not resource_url:
-                log.debug("No URL found for resource")
-                return None
-                
-            log.info(f"Attempting to extract spatial extent from resource: {resource_url} (format: {resource_format})")
-            
-            # Usar el método para extraer desde URL de recurso
-            extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
-            
-            if extent:
-                log.info(f"Successfully extracted extent: {extent}")
-                return extent
-            else:
-                log.debug(f"Could not extract extent from resource: {resource_url}")
-                return None
-                
-        except Exception as e:
-            log.warning(f"Error extracting spatial extent from resource: {str(e)}")
-            return None
-    
+
     def _update_dataset_spatial_extent_with_app_context(self, dataset_id, extent):
         """
         Actualiza el campo spatial_extent de un dataset en contexto de thread asíncrono.
