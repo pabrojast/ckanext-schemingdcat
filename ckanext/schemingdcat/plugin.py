@@ -265,6 +265,23 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
         
         return resource
+
+    # Hook para evitar problemas con otros plugins durante actualizaciones espaciales automáticas
+    def before_dataset_update(self, context, current, updated):
+        """
+        Hook que se ejecuta antes de actualizar un dataset.
+        Detecta si es una actualización automática de spatial extent para evitar hooks problemáticos.
+        """
+        # Detectar si esta es una actualización automática de spatial extent
+        if (context.get('spatial_extent_update') or 
+            context.get('skip_spatial_hooks') or
+            (len(updated.keys()) == 2 and 'id' in updated and 'spatial_extent' in updated)):
+            
+            # Marcar el contexto para que otros plugins sepan que es una actualización espacial
+            context['__spatial_extent_auto_update__'] = True
+            log.debug(f"Detected automatic spatial extent update for dataset {updated.get('id', 'unknown')}")
+        
+        return updated
         
     def _process_spatial_extent_extraction_for_resource(self, context, resource):
         """
@@ -295,12 +312,51 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 log.debug(f"Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
                 return
             
-            # **PROCESAMIENTO ASÍNCRONO**: Lanzar en un thread separado para no bloquear al usuario
-            import threading
-            
-            def extract_spatial_extent_async():
-                """Función que ejecuta la extracción en segundo plano."""
-                try:
+            # **PROCESAMIENTO ASÍNCRONO**: Usar CKAN Jobs Queue (preferido) o threading como fallback
+            try:
+                # Método 1: Usar CKAN Jobs Queue (recomendado)
+                from ckan.lib import jobs
+                
+                # Preparar datos para el job
+                job_data = {
+                    'resource_id': resource.get('id'),
+                    'resource_url': resource.get('url'),
+                    'resource_format': resource.get('format'),
+                    'package_id': package_id
+                }
+                
+                # Encolar el job de extracción espacial
+                job = jobs.enqueue(
+                    extract_spatial_extent_job,
+                    [job_data],
+                    title=f"Spatial extent extraction for resource {resource.get('id', 'unknown')[:8]}",
+                    timeout=300  # 5 minutos timeout
+                )
+                
+                log.info(f"Enqueued spatial extent extraction job {job.id} for resource {resource.get('id', 'unknown')}")
+                
+            except ImportError:
+                # Fallback: Usar threading si jobs no está disponible
+                log.warning("CKAN Jobs not available, falling back to threading")
+                self._process_spatial_extent_with_threading(resource, package_id)
+            except Exception as e:
+                log.warning(f"Error enqueuing spatial extent job: {str(e)}, falling back to threading")
+                self._process_spatial_extent_with_threading(resource, package_id)
+                
+        except Exception as e:
+            log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
+            # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
+
+    def _process_spatial_extent_with_threading(self, resource, package_id):
+        """Fallback method using threading for spatial extent extraction."""
+        import threading
+        from flask import current_app
+        
+        def extract_spatial_extent_async():
+            """Función que ejecuta la extracción en segundo plano con contexto Flask."""
+            try:
+                # Crear un contexto de aplicación Flask para el thread
+                with current_app.app_context():
                     log.info(f"Starting background spatial extent extraction for resource {resource.get('id', 'unknown')}")
                     
                     # Intentar extraer la extensión espacial del recurso
@@ -309,7 +365,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     if extent:
                         log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')} in background")
                         # Actualizar el dataset con la extensión espacial extraída
-                        success = self._update_dataset_spatial_extent(context, package_id, extent)
+                        success = self._update_dataset_spatial_extent_with_app_context(package_id, extent)
                         if success:
                             log.info(f"Background update completed successfully for dataset {package_id}")
                         else:
@@ -317,22 +373,107 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     else:
                         log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')} in background")
                         
-                except Exception as e:
-                    log.error(f"Error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
+            except Exception as e:
+                log.error(f"Error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
+        
+        # Lanzar el thread de extracción en segundo plano
+        extraction_thread = threading.Thread(
+            target=extract_spatial_extent_async,
+            name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
+            daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
+        )
+        extraction_thread.start()
+        
+        log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')}")
+
+
+def extract_spatial_extent_job(job_data):
+    """
+    Job function para extraer spatial extent en segundo plano usando CKAN Jobs Queue.
+    
+    Esta función se ejecuta en un proceso worker separado, evitando completamente
+    los problemas de contexto Flask y hooks de otros plugins.
+    
+    Args:
+        job_data: Diccionario con resource_id, resource_url, resource_format, package_id
+    """
+    try:
+        import ckan.model as model
+        from ckan.lib.cli import load_config
+        import os
+        
+        # Configurar CKAN para el worker
+        config_path = os.environ.get('CKAN_INI', '/srv/app/production.ini')
+        load_config(config_path)
+        
+        # Obtener datos del job
+        resource_id = job_data.get('resource_id')
+        resource_url = job_data.get('resource_url')
+        resource_format = job_data.get('resource_format')
+        package_id = job_data.get('package_id')
+        
+        log.info(f"Processing spatial extent job for resource {resource_id}")
+        
+        # Crear contexto de sistema
+        system_context = {
+            'model': model,
+            'session': model.Session,
+            'ignore_auth': True,
+            'user': '',
+            'api_version': 3
+        }
+        
+        # Preparar datos del recurso para extracción
+        resource_data = {
+            'id': resource_id,
+            'url': resource_url,
+            'format': resource_format,
+            'package_id': package_id
+        }
+        
+        # Importar extractor
+        from ckanext.schemingdcat.spatial_extent import extent_extractor
+        
+        # Extraer extensión espacial
+        extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
+        
+        if extent:
+            log.info(f"Successfully extracted spatial extent from resource {resource_id} in job")
             
-            # Lanzar el thread de extracción en segundo plano
-            extraction_thread = threading.Thread(
-                target=extract_spatial_extent_async,
-                name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
-                daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
-            )
-            extraction_thread.start()
-            
-            log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')}")
+            # Actualizar directamente en la base de datos
+            package = model.Package.get(package_id)
+            if package:
+                extent_json = json.dumps(extent)
                 
-        except Exception as e:
-            log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
-            # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
+                # Buscar extra existente
+                spatial_extra = None
+                for extra in package.extras_list:
+                    if extra.key == 'spatial_extent':
+                        spatial_extra = extra
+                        break
+                
+                if spatial_extra:
+                    spatial_extra.value = extent_json
+                else:
+                    from ckan.model.package_extra import PackageExtra
+                    new_extra = PackageExtra(
+                        package_id=package_id,
+                        key='spatial_extent',
+                        value=extent_json
+                    )
+                    model.Session.add(new_extra)
+                
+                model.Session.commit()
+                log.info(f"Successfully updated spatial_extent for dataset {package_id} via job queue")
+                
+            else:
+                log.error(f"Package {package_id} not found for spatial extent update")
+        else:
+            log.debug(f"Could not extract spatial extent from resource {resource_id} in job")
+            
+    except Exception as e:
+        log.error(f"Error in spatial extent extraction job: {str(e)}", exc_info=True)
+        raise  # Re-raise para que el job se marque como fallido
     
     def _should_skip_spatial_extraction(self, context, package_id):
         """
@@ -478,9 +619,111 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning(f"Error extracting spatial extent from resource: {str(e)}")
             return None
     
+    def _update_dataset_spatial_extent_with_app_context(self, dataset_id, extent):
+        """
+        Actualiza el campo spatial_extent de un dataset en contexto de thread asíncrono.
+        
+        Este método evita problemas de contexto Flask y hooks de otros plugins
+        que pueden fallar cuando se ejecutan fuera del contexto de request HTTP.
+        
+        Args:
+            dataset_id: El ID del dataset
+            extent: La extensión espacial en formato GeoJSON
+        """
+        try:
+            # Preparar los datos para la actualización
+            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
+            
+            # Crear un contexto de sistema limpio con permisos de administrador
+            import ckan.model as model
+            system_context = {
+                'model': model,
+                'session': model.Session,
+                'ignore_auth': True,  # Usar permisos de sistema
+                'user': '',  # Usuario del sistema
+                'api_version': 3,
+                'for_update': True,  # Evitar conflictos de concurrencia
+                'return_type': 'dict',
+                'defer_commit': False,  # Commit inmediato
+                'skip_spatial_hooks': True  # Flag para evitar re-procesamiento
+            }
+            
+            # Obtener el dataset actual para verificar que existe
+            try:
+                current_dataset = toolkit.get_action('package_show')(system_context, {'id': dataset_id})
+                log.debug(f"Found dataset {dataset_id} for spatial extent update")
+            except Exception as e:
+                log.error(f"Could not retrieve dataset {dataset_id} for spatial extent update: {str(e)}")
+                return False
+            
+            # **MÉTODO DIRECTO**: Actualizar directamente en la base de datos para evitar hooks
+            try:
+                # Obtener el objeto del modelo
+                package = model.Package.get(dataset_id)
+                if not package:
+                    log.error(f"Package {dataset_id} not found in database")
+                    return False
+                
+                # Buscar si ya existe un extra con spatial_extent
+                spatial_extra = None
+                for extra in package.extras_list:
+                    if extra.key == 'spatial_extent':
+                        spatial_extra = extra
+                        break
+                
+                if spatial_extra:
+                    # Actualizar extra existente
+                    spatial_extra.value = extent_json
+                    log.debug(f"Updated existing spatial_extent extra for dataset {dataset_id}")
+                else:
+                    # Crear nuevo extra
+                    from ckan.model.package_extra import PackageExtra
+                    new_extra = PackageExtra(
+                        package_id=dataset_id,
+                        key='spatial_extent',
+                        value=extent_json
+                    )
+                    model.Session.add(new_extra)
+                    log.debug(f"Created new spatial_extent extra for dataset {dataset_id}")
+                
+                # Commit los cambios
+                model.Session.commit()
+                
+                log.info(f"Successfully updated spatial_extent for dataset {dataset_id} via direct database update")
+                return True
+                
+            except Exception as e:
+                model.Session.rollback()
+                log.error(f"Error in direct database update for dataset {dataset_id}: {str(e)}", exc_info=True)
+                
+                # Fallback: Usar package_patch con contexto especial
+                try:
+                    # Agregar flag para identificar que es una actualización espacial automática
+                    system_context['skip_hooks'] = True
+                    system_context['spatial_extent_update'] = True
+                    
+                    update_data = {
+                        'id': dataset_id,
+                        'spatial_extent': extent_json
+                    }
+                    
+                    # Usar package_patch como fallback
+                    result = toolkit.get_action('package_patch')(system_context, update_data)
+                    
+                    log.info(f"Successfully updated spatial_extent for dataset {dataset_id} via package_patch fallback")
+                    return True
+                    
+                except Exception as e2:
+                    log.error(f"Fallback package_patch also failed for dataset {dataset_id}: {str(e2)}", exc_info=True)
+                    return False
+            
+        except Exception as e:
+            log.error(f"General error updating spatial extent for dataset {dataset_id}: {str(e)}", exc_info=True)
+            return False
+
     def _update_dataset_spatial_extent(self, context, dataset_id, extent):
         """
-        Actualiza el campo spatial_extent de un dataset.
+        Actualiza el campo spatial_extent de un dataset (método original para uso síncrono).
         
         Args:
             context: El contexto de CKAN
