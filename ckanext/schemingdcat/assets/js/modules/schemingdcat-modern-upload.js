@@ -253,8 +253,8 @@ ckan.module('schemingdcat-modern-upload', function ($) {
     clearAutoFilledFields: function() {
       var form = this.el.closest('form');
       if (form.length) {
-        // Clear all fields marked as auto-filled
-        form.find('input[data-auto-filled]').each(function() {
+        // Clear all fields marked as auto-filled (inputs and textareas)
+        form.find('input[data-auto-filled], textarea[data-auto-filled]').each(function() {
           $(this).val('').removeAttr('data-auto-filled').trigger('change');
         });
         

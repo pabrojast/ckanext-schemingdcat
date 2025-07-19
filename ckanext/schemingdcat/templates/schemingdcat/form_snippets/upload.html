@@ -470,6 +470,27 @@
           }
         });
         
+        // Clear description field if it was auto-filled
+        var descriptionSelectors = [
+          'textarea[name="description"]',
+          'textarea[name*="description"]',
+          '#field-description',
+          'textarea[id*="description"]'
+        ];
+        
+        var descriptionField = null;
+        for (var i = 0; i < descriptionSelectors.length; i++) {
+          descriptionField = form.querySelector(descriptionSelectors[i]);
+          if (descriptionField) break;
+        }
+        
+        if (descriptionField && descriptionField.hasAttribute('data-auto-filled')) {
+          descriptionField.value = '';
+          descriptionField.removeAttribute('data-auto-filled');
+          descriptionField.dispatchEvent(new Event('change', { bubbles: true }));
+          descriptionField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
         console.log('[schemingdcat-upload] Cleared auto-filled fields');
       }
     }
