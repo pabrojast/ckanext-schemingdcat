@@ -120,9 +120,25 @@ POST /api/extract-spatial-extent
 1. **Crear/Editar Dataset**: Ve al formulario de creación o edición de dataset
 2. **Agregar Recurso**: Agrega un nuevo recurso
 3. **Subir Archivo Geoespacial**: Selecciona un archivo SHP, TIF, GeoJSON, etc.
-4. **Extracción Automática**: El campo `spatial_extent` se llenará automáticamente
+4. **Extracción Automática**: El campo `spatial_extent` se llenará automáticamente (si no hay datos manuales)
 5. **Verificar/Editar**: Revisa el extent extraído y modifica si es necesario
 6. **Guardar**: Guarda el dataset con el extent extraído
+
+### Protección de Datos Manuales
+
+**🛡️ El sistema respeta los datos manuales**: Si un usuario ya ha ingresado información en el campo `spatial_extent`, la extracción automática **NO se ejecutará** para evitar sobrescribir el trabajo manual.
+
+**Casos protegidos:**
+- ✅ Dataset existente con `spatial_extent` ya definido
+- ✅ Usuario editando el campo `spatial_extent` en el formulario
+- ✅ Datos manuales guardados en la sesión del usuario
+- ✅ Llamadas API que incluyen `spatial_extent` predefinido
+- ✅ Scripts que pasan datos manuales al crear/actualizar datasets
+
+**Casos donde se permite extracción automática:**
+- ⚪ Datasets nuevos sin `spatial_extent`
+- ⚪ Campo `spatial_extent` vacío o con solo espacios en blanco
+- ⚪ Usuario no ha modificado manualmente el campo
 
 ## Mensajes del Sistema
 

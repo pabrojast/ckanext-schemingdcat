@@ -288,17 +288,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 log.warning("No package_id found for resource")
                 return
                 
-            # Obtener el dataset actual para verificar si ya tiene spatial_extent
-            try:
-                dataset = toolkit.get_action('package_show')(context, {'id': package_id})
-            except Exception as e:
-                log.warning(f"Could not retrieve dataset {package_id}: {str(e)}")
-                return
-                
-            # Solo procesar si el dataset no tiene extensión espacial o está vacía
-            spatial_extent = dataset.get('spatial_extent')
-            if spatial_extent and spatial_extent.strip():
-                log.debug(f"Dataset {package_id} already has spatial extent, skipping extraction")
+            # Verificar si ya existe spatial_extent (manual o previo)
+            should_skip = self._should_skip_spatial_extraction(context, package_id)
+            if should_skip:
+                log.debug(f"Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
                 return
                 
             # Intentar extraer la extensión espacial del recurso
@@ -313,6 +306,76 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         except Exception as e:
             log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
             # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
+    
+    def _should_skip_spatial_extraction(self, context, package_id):
+        """
+        Determina si se debe omitir la extracción automática de extensión espacial.
+        
+        Retorna True si:
+        - El dataset ya tiene spatial_extent (respeta datos existentes)
+        - Hay datos manuales en el contexto del formulario (respeta entrada manual)
+        - Se detecta que el usuario ha ingresado datos manualmente
+        
+        Args:
+            context: El contexto de CKAN
+            package_id: ID del dataset
+            
+        Returns:
+            bool: True si se debe omitir la extracción automática
+        """
+        try:
+            # 1. Verificar si el dataset actual ya tiene spatial_extent
+            try:
+                dataset = toolkit.get_action('package_show')(context, {'id': package_id})
+                existing_extent = dataset.get('spatial_extent')
+                if existing_extent and existing_extent.strip():
+                    log.debug(f"Dataset {package_id} already has spatial extent: {existing_extent[:100]}...")
+                    return True
+            except Exception as e:
+                log.debug(f"Could not retrieve dataset {package_id} for extent check: {str(e)}")
+                # Si no podemos obtener el dataset, continuamos con otras verificaciones
+            
+            # 2. Verificar si hay datos manuales en el contexto/request actual
+            # Esto captura casos donde el usuario está editando el formulario
+            request_data = getattr(context.get('request'), 'form', None) if context.get('request') else None
+            if request_data:
+                manual_extent = request_data.get('spatial_extent')
+                if manual_extent and manual_extent.strip():
+                    log.debug(f"Manual spatial extent detected in form data: {manual_extent[:100]}...")
+                    return True
+            
+            # 3. Verificar el contexto de sessión si existe (para edición de formularios)
+            session = context.get('session')
+            if session and hasattr(session, 'get'):
+                session_extent = session.get('spatial_extent')
+                if session_extent and session_extent.strip():
+                    log.debug(f"Manual spatial extent detected in session: {session_extent[:100]}...")
+                    return True
+            
+            # 4. Verificar si hay parámetros en el contexto que indiquen entrada manual
+            # Esto puede capturar casos de API calls con datos manuales
+            if context.get('spatial_extent'):
+                manual_extent = context.get('spatial_extent')
+                if manual_extent and str(manual_extent).strip():
+                    log.debug(f"Manual spatial extent detected in context: {str(manual_extent)[:100]}...")
+                    return True
+            
+            # 5. Verificar en los datos del paquete si están siendo pasados directamente
+            # Esto es útil para casos de API donde se pasan datos directamente
+            package_dict = context.get('package')
+            if package_dict and isinstance(package_dict, dict):
+                manual_extent = package_dict.get('spatial_extent')
+                if manual_extent and str(manual_extent).strip():
+                    log.debug(f"Manual spatial extent detected in package dict: {str(manual_extent)[:100]}...")
+                    return True
+            
+            log.debug(f"No existing or manual spatial extent detected for dataset {package_id} - auto-extraction allowed")
+            return False
+            
+        except Exception as e:
+            log.warning(f"Error checking if spatial extraction should be skipped: {str(e)}")
+            # En caso de error, ser conservador y omitir la extracción automática
+            return True
     
     def _is_potential_spatial_resource(self, resource):
         """
