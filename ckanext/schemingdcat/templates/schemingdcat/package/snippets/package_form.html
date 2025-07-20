@@ -118,10 +118,19 @@
   {%- for field in fields -%}
     {%- if field.form_group_id -%}
       {%- if form_groups | length > 0 -%}
-        {%- set form_group = form_groups | selectattr("form_group_id", "equalto", field.form_group_id) | first -%}
-        {%- if form_group not in elements -%}
-          {%- do elements.append(form_group) -%}
+        {%- set matching_groups = form_groups | selectattr("form_group_id", "equalto", field.form_group_id) | list -%}
+        {%- if matching_groups | length > 0 -%}
+          {%- set form_group = matching_groups | first -%}
+          {%- if form_group not in elements -%}
+            {%- do elements.append(form_group) -%}
+          {%- endif -%}
+        {%- else -%}
+          {# If form group is not defined, treat field as standalone #}
+          {%- do elements.append(field) -%}
         {%- endif -%}
+      {%- else -%}
+        {# If no form groups defined, treat field as standalone #}
+        {%- do elements.append(field) -%}
       {%- endif -%}
     {%- else -%}
       {%- do elements.append(field) -%}
