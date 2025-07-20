@@ -5510,7 +5510,7 @@ resource_fields:
     es: Fecha de Creación del Archivo
     fr: Date de Création du Fichier
   form_snippet: date.html
-  display_snippet: date_localised.html
+  display_snippet: schemingdcat/display_snippets/date_localised.html
   help_text:
     en: 'Date when the file was originally created.'
     es: 'Fecha en que se creó originalmente el archivo.'
@@ -5524,7 +5524,7 @@ resource_fields:
     es: Última Modificación del Archivo
     fr: Dernière Modification du Fichier
   form_snippet: date.html
-  display_snippet: date_localised.html
+  display_snippet: schemingdcat/display_snippets/date_localised.html
   help_text:
     en: 'Date when the file was last modified.'
     es: 'Fecha en que se modificó por última vez el archivo.'
@@ -5554,7 +5554,7 @@ resource_fields:
     es: Tamaño del Archivo (bytes)
     fr: Taille du Fichier (octets)
   form_snippet: text.html
-  display_snippet: file_size.html
+  display_snippet: schemingdcat/display_snippets/file_size.html
   help_text:
     en: 'File size in bytes, automatically detected.'
     es: 'Tamaño del archivo en bytes, detectado automáticamente.'
