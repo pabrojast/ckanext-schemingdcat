@@ -169,10 +169,10 @@ def get_spatial_extent_status(resource_id):
                 'status': 'error'
             }), 400
         
-        # Verificar si el dataset tiene spatial extent
+        # Verificar si el RESOURCE tiene spatial extent
         try:
-            dataset = toolkit.get_action('package_show')(context, {'id': package_id})
-            spatial_extent = dataset.get('spatial_extent')
+            # El resource ya lo tenemos, verificar spatial_extent directamente
+            spatial_extent = resource.get('spatial_extent')
             
             if spatial_extent and spatial_extent.strip():
                 # Verificar si es un extent válido

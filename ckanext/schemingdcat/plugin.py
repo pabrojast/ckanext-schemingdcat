@@ -562,13 +562,13 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     if extent:
                         log.info(f"Successfully extracted spatial extent from resource {resource.get('id', 'unknown')} in threading mode")
                         
-                        # Usar actualización directa en BD (NO requiere contexto Flask)
-                        success = self._update_dataset_spatial_extent_direct_db(package_id, extent)
+                        # Usar actualización directa del RESOURCE (NO requiere contexto Flask)
+                        success = self._update_resource_spatial_extent_direct_db(resource.get('id'), extent)
                         
                         if success:
-                            log.info(f"Threading mode update completed successfully for dataset {package_id}")
+                            log.info(f"Threading mode update completed successfully for resource {resource.get('id', 'unknown')}")
                         else:
-                            log.warning(f"Threading mode update failed for dataset {package_id}")
+                            log.warning(f"Threading mode update failed for resource {resource.get('id', 'unknown')}")
                     else:
                         log.debug(f"Could not extract spatial extent from resource {resource.get('id', 'unknown')} in threading mode")
                         
@@ -652,6 +652,105 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.error(f"Error in direct DB update for dataset {package_id}: {str(e)}", exc_info=True)
             return False
 
+    def _update_resource_spatial_extent_direct_db(self, resource_id, extent):
+        """
+        Actualización directa del campo spatial_extent en un RESOURCE sin contexto Flask.
+        
+        Args:
+            resource_id: ID del resource
+            extent: La extensión espacial en formato GeoJSON
+            
+        Returns:
+            bool: True si la actualización fue exitosa
+        """
+        try:
+            import ckan.model as model
+            import json
+            
+            # Preparar los datos
+            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
+            
+            log.info(f"Attempting direct DB update for resource {resource_id}")
+            
+            # Actualizar directamente en la base de datos sin contexto Flask
+            resource = model.Resource.get(resource_id)
+            if not resource:
+                log.error(f"Resource {resource_id} not found in database for direct update")
+                return False
+            
+            # Los resources en CKAN pueden tener campos adicionales directamente en el modelo
+            # Actualizar el campo spatial_extent directamente
+            
+            # Método 1: Intentar actualizar como campo directo del resource
+            try:
+                # Verificar si spatial_extent ya existe en el resource
+                setattr(resource, 'spatial_extent', extent_json)
+                model.Session.commit()
+                log.info(f"Successfully updated spatial_extent for resource {resource_id} via direct field access")
+                return True
+            except Exception as field_error:
+                log.debug(f"Direct field access failed: {field_error}")
+                model.Session.rollback()
+            
+            # Método 2: Usar resource extras (si existe)
+            try:
+                # Algunos recursos pueden usar extras como los datasets
+                if hasattr(resource, 'extras'):
+                    spatial_extra = None
+                    for extra in resource.extras:
+                        if extra.key == 'spatial_extent':
+                            spatial_extra = extra
+                            break
+                    
+                    if spatial_extra:
+                        spatial_extra.value = extent_json
+                        log.debug(f"Updated existing spatial_extent extra for resource {resource_id}")
+                    else:
+                        # Crear nuevo extra para resource (si el modelo lo soporta)
+                        from ckan.model.resource import ResourceExtra
+                        new_extra = ResourceExtra(
+                            resource_id=resource_id,
+                            key='spatial_extent',
+                            value=extent_json
+                        )
+                        model.Session.add(new_extra)
+                        log.debug(f"Created new spatial_extent extra for resource {resource_id}")
+                    
+                    model.Session.commit()
+                    log.info(f"Successfully updated spatial_extent for resource {resource_id} via resource extras")
+                    return True
+            except Exception as extra_error:
+                log.debug(f"Resource extras method failed: {extra_error}")
+                model.Session.rollback()
+            
+            # Método 3: Actualizar usando SQL directo (fallback)
+            try:
+                # Actualización SQL directa como último recurso
+                sql = """
+                UPDATE resource 
+                SET spatial_extent = :extent_json 
+                WHERE id = :resource_id
+                """
+                model.Session.execute(sql, {
+                    'extent_json': extent_json,
+                    'resource_id': resource_id
+                })
+                model.Session.commit()
+                log.info(f"Successfully updated spatial_extent for resource {resource_id} via SQL update")
+                return True
+            except Exception as sql_error:
+                log.error(f"SQL update method failed: {sql_error}")
+                model.Session.rollback()
+                return False
+            
+        except Exception as e:
+            try:
+                model.Session.rollback()
+            except:
+                pass
+            log.error(f"Error in direct DB update for resource {resource_id}: {str(e)}", exc_info=True)
+            return False
+
 
 def extract_spatial_extent_job(job_data):
     """
@@ -696,39 +795,31 @@ def extract_spatial_extent_job(job_data):
             log.info(f"Successfully extracted spatial extent from resource {resource_id} in job")
             
             try:
-                # Actualizar directamente en la base de datos (método simple)
-                package = model.Package.get(package_id)
-                if not package:
-                    log.error(f"Package {package_id} not found for spatial extent update")
-                    return
+                # Actualizar el RESOURCE directamente usando resource_patch
+                import ckan.logic as logic
                 
                 extent_json = json.dumps(extent)
                 
-                # Buscar extra existente
-                spatial_extra = None
-                for extra in package.extras_list:
-                    if extra.key == 'spatial_extent':
-                        spatial_extra = extra
-                        break
+                # Crear contexto de sistema para actualizar el resource
+                context = {
+                    'model': model,
+                    'session': model.Session,
+                    'ignore_auth': True,
+                    'user': '',  # Sistema
+                    'api_version': 3,
+                    'defer_commit': False
+                }
                 
-                if spatial_extra:
-                    # Actualizar extra existente
-                    spatial_extra.value = extent_json
-                    log.debug(f"Updated existing spatial_extent extra for dataset {package_id}")
-                else:
-                    # Crear nuevo extra
-                    from ckan.model.package_extra import PackageExtra
-                    new_extra = PackageExtra(
-                        package_id=package_id,
-                        key='spatial_extent',
-                        value=extent_json
-                    )
-                    model.Session.add(new_extra)
-                    log.debug(f"Created new spatial_extent extra for dataset {package_id}")
+                # Datos para actualizar solo el campo spatial_extent del resource
+                resource_patch_data = {
+                    'id': resource_id,
+                    'spatial_extent': extent_json
+                }
                 
-                # Commit los cambios
-                model.Session.commit()
-                log.info(f"Successfully updated spatial_extent for dataset {package_id} via job queue")
+                # Usar resource_patch para actualizar solo el campo spatial_extent
+                logic.get_action('resource_patch')(context, resource_patch_data)
+                
+                log.info(f"Successfully updated spatial_extent for resource {resource_id} via job queue")
                 
             except Exception as e:
                 log.error(f"Error updating database: {e}")
