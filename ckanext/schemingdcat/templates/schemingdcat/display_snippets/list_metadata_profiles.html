@@ -1,5 +1,5 @@
 {#
-  Render a list of links
+  Render a list of links - only shows if there are actual values
 
   values - list of cleaned values
 #}
@@ -7,21 +7,22 @@
 {% set _class = _class or 'metadata-profile-list' %}
 {% set choices = data[field.field_name] %}
 
-{% if choices is iterable and (choices is not string) %}
-  {%  set values = choices or ([''] * field.get('form_blanks', 1)) %}
-{% elif choices is string %}
-  {%  set values = h.scheming_display_json_list(choices).strip('][').split('",') or ([''] * field.get('form_blanks', 1)) %}
-{% else %}
-  {%  set values = [''] %}
-{% endif %}
+{# Only process if we have meaningful data (not None, not empty list, not list of empty strings) #}
+{% if choices and choices != [] and choices != [''] and choices != ['', '', ''] and choices != ['', '', '', ''] %}
+  {% if choices is iterable and (choices is not string) %}
+    {%  set values = choices %}
+  {% elif choices is string and choices.strip() %}
+    {%  set values = h.scheming_display_json_list(choices).strip('][').split('",') %}
+  {% else %}
+    {%  set values = [] %}
+  {% endif %}
 
-{% block values %}
   <ul class="{{ _class }}">
-    {% for value in values if value|length %}
-    {% set value = h.scheming_clean_json_value(value.replace(' ', '')) %}
+    {% for value in values if value and value|length and value.strip() and value.strip() != '""' and value.strip() != "''" %}
+      {% set value = h.scheming_clean_json_value(value.replace(' ', '')) %}
       <li>
         <a href="{{ value }}">{{ value }}</a>
       </li>
     {% endfor %}
   </ul>
-{% endblock %}
+{% endif %}

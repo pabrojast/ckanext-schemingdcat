@@ -886,10 +886,19 @@ def extract_comprehensive_metadata_job(job_data):
                     'text_content_info': metadata.get('text_content_info')
                 }
                 
-                # Solo agregar campos que tienen valores no nulos
+                # Solo agregar campos que tienen valores no nulos y significativos
                 for field_name, field_value in metadata_fields.items():
                     if field_value is not None and field_value != '':
-                        resource_patch_data[field_name] = field_value
+                        # Filtrar listas vacías o con solo strings vacíos
+                        if isinstance(field_value, list):
+                            # Filtrar strings vacíos de la lista
+                            filtered_list = [item for item in field_value if item and str(item).strip()]
+                            if filtered_list:  # Solo agregar si queda algo después del filtro
+                                resource_patch_data[field_name] = filtered_list
+                        else:
+                            # Para valores no-lista, verificar que no sea solo espacios
+                            if str(field_value).strip():
+                                resource_patch_data[field_name] = field_value
                 
                 # Usar resource_patch para actualizar los campos
                 logic.get_action('resource_patch')(context, resource_patch_data)
