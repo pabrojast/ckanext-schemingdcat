@@ -128,6 +128,18 @@ schema_form_groups:
       es: Información INSPIRE
       fr: Informations INSPIRE
     fa_icon: fa-globe
+
+  # Metadatos automáticos (se oculta por defecto)
+  - form_group_id: automatic_metadata
+    label:
+      en: Automatic Metadata (Advanced)
+      es: Metadatos Automáticos (Avanzado)
+      fr: Métadonnées Automatiques (Avancé)
+    fa_icon: fa-cogs
+    help_text:
+      en: 'These fields are automatically extracted when uploading files. You can manually edit them if needed, but manual values will prevent automatic extraction for that specific field.'
+      es: 'Estos campos se extraen automáticamente al subir archivos. Puedes editarlos manualmente si es necesario, pero los valores manuales evitarán la extracción automática para ese campo específico.'
+      fr: 'Ces champs sont extraits automatiquement lors du téléchargement de fichiers. Vous pouvez les modifier manuellement si nécessaire, mais les valeurs manuelles empêcheront l''extraction automatique pour ce champ spécifique.'
  
   # Resources form_page
   - form_group_id: resource_title
@@ -5367,7 +5379,7 @@ resource_fields:
     es: 'Este campo se rellenará automáticamente después de crear el recurso al subir archivos geoespaciales (Shapefile, GeoTIFF, etc.). Una vez generado, puede modificar la extensión espacial desde este campo si es necesario.'
     fr: 'Ce champ sera automatiquement rempli après la création de la ressource lors du téléchargement de fichiers géospatiaux (Shapefile, GeoTIFF, etc.). Une fois généré, vous pouvez modifier l''étendue spatiale depuis ce champ si nécessaire.'
   help_allow_html: True
-  form_group_id: spatial_info
+  form_group_id: automatic_metadata
 
 # === INFORMACIÓN ESPACIAL BÁSICA ===
 
@@ -5383,7 +5395,7 @@ resource_fields:
     en: 'EPSG code and projection information automatically extracted from geospatial files.'
     es: 'Código EPSG e información de proyección extraída automáticamente de archivos geoespaciales.'
     fr: 'Code EPSG et informations de projection extraites automatiquement des fichiers géospatiaux.'
-  form_group_id: spatial_info
+  form_group_id: automatic_metadata
 
 # Resolución espacial para rasters
 - field_name: spatial_resolution
@@ -5397,7 +5409,7 @@ resource_fields:
     en: 'Pixel size for raster files (e.g., "30m x 30m").'
     es: 'Tamaño de píxel para archivos raster (ej., "30m x 30m").'
     fr: 'Taille de pixel pour les fichiers raster (ex., "30m x 30m").'
-  form_group_id: spatial_info
+  form_group_id: automatic_metadata
 
 # Número de features para vectores
 - field_name: feature_count
@@ -5411,7 +5423,7 @@ resource_fields:
     en: 'Number of features in vector files (shapefiles, GeoJSON, etc.).'
     es: 'Número de características en archivos vectoriales (shapefiles, GeoJSON, etc.).'
     fr: 'Nombre de caractéristiques dans les fichiers vectoriels (shapefiles, GeoJSON, etc.).'
-  form_group_id: spatial_info
+  form_group_id: automatic_metadata
 
 # Tipo de geometría
 - field_name: geometry_type
@@ -5425,7 +5437,7 @@ resource_fields:
     en: 'Type of geometry (Point, LineString, Polygon, MultiPolygon, etc.).'
     es: 'Tipo de geometría (Point, LineString, Polygon, MultiPolygon, etc.).'
     fr: 'Type de géométrie (Point, LineString, Polygon, MultiPolygon, etc.).'
-  form_group_id: spatial_info
+  form_group_id: automatic_metadata
 
 # === INFORMACIÓN DE DATOS ===
 
@@ -5441,7 +5453,7 @@ resource_fields:
     en: 'Column names and data types found in the file (JSON format).'
     es: 'Nombres de columnas y tipos de datos encontrados en el archivo (formato JSON).'
     fr: 'Noms de colonnes et types de données trouvés dans le fichier (format JSON).'
-  form_group_id: data_info
+  form_group_id: automatic_metadata
 
 # Estadísticas básicas
 - field_name: data_statistics
@@ -5455,7 +5467,7 @@ resource_fields:
     en: 'Basic statistics like min/max values, counts, etc. (JSON format).'
     es: 'Estadísticas básicas como valores mín/máx, conteos, etc. (formato JSON).'
     fr: 'Statistiques de base comme les valeurs min/max, les comptages, etc. (format JSON).'
-  form_group_id: data_info
+  form_group_id: automatic_metadata
 
 # Dominios/Valores únicos
 - field_name: data_domains
@@ -5469,7 +5481,7 @@ resource_fields:
     en: 'Unique values in categorical fields (JSON format).'
     es: 'Valores únicos en campos categóricos (formato JSON).'
     fr: 'Valeurs uniques dans les champs catégoriels (format JSON).'
-  form_group_id: data_info
+  form_group_id: automatic_metadata
 
 # === INFORMACIÓN GEOGRÁFICA ===
 
@@ -5485,7 +5497,7 @@ resource_fields:
     en: 'Countries and regions covered by the spatial extent (JSON format).'
     es: 'Países y regiones cubiertas por la extensión espacial (formato JSON).'
     fr: 'Pays et régions couverts par l''étendue spatiale (format JSON).'
-  form_group_id: geographic_info
+  form_group_id: automatic_metadata
 
 # Límites administrativos
 - field_name: administrative_boundaries
@@ -5499,7 +5511,7 @@ resource_fields:
     en: 'Administrative boundaries like provinces, municipalities (JSON format).'
     es: 'Límites administrativos como provincias, municipios (formato JSON).'
     fr: 'Limites administratives comme les provinces, municipalités (format JSON).'
-  form_group_id: geographic_info
+  form_group_id: automatic_metadata
 
 # === INFORMACIÓN TEMPORAL ===
 
@@ -5559,7 +5571,7 @@ resource_fields:
     en: 'File size in bytes, automatically detected.'
     es: 'Tamaño del archivo en bytes, detectado automáticamente.'
     fr: 'Taille du fichier en octets, détectée automatiquement.'
-  form_group_id: technical_info
+  form_group_id: automatic_metadata
 
 # Información de compresión
 - field_name: compression_info
@@ -5573,7 +5585,7 @@ resource_fields:
     en: 'Compression type and ratio if the file is compressed.'
     es: 'Tipo de compresión y ratio si el archivo está comprimido.'
     fr: 'Type de compression et ratio si le fichier est compressé.'
-  form_group_id: technical_info
+  form_group_id: automatic_metadata
 
 # Versión del formato
 - field_name: format_version
@@ -5587,7 +5599,7 @@ resource_fields:
     en: 'Version of the file format (e.g., Shapefile version, GeoTIFF version).'
     es: 'Versión del formato de archivo (ej., versión Shapefile, versión GeoTIFF).'
     fr: 'Version du format de fichier (ex., version Shapefile, version GeoTIFF).'
-  form_group_id: technical_info
+  form_group_id: automatic_metadata
 
 # Integridad del archivo
 - field_name: file_integrity
@@ -5601,7 +5613,7 @@ resource_fields:
     en: 'File integrity information including checksums and validation results (JSON format).'
     es: 'Información de integridad del archivo incluyendo checksums y resultados de validación (formato JSON).'
     fr: 'Informations d''intégrité du fichier incluant les checksums et les résultats de validation (format JSON).'
-  form_group_id: technical_info
+  form_group_id: automatic_metadata
 
 # === INFORMACIÓN PARA ARCHIVOS NO ESPACIALES ===
 
@@ -5617,7 +5629,7 @@ resource_fields:
     en: 'Automatically detected content type (PDF, CSV, Excel, etc.).'
     es: 'Tipo de contenido detectado automáticamente (PDF, CSV, Excel, etc.).'
     fr: 'Type de contenu détecté automatiquement (PDF, CSV, Excel, etc.).'
-  form_group_id: content_info
+  form_group_id: automatic_metadata
 
 # Número de páginas (para PDFs)
 - field_name: document_pages
@@ -5631,7 +5643,7 @@ resource_fields:
     en: 'Number of pages in document files (PDF, etc.).'
     es: 'Número de páginas en archivos de documento (PDF, etc.).'
     fr: 'Nombre de pages dans les fichiers de document (PDF, etc.).'
-  form_group_id: content_info
+  form_group_id: automatic_metadata
 
 # Número de hojas (para Excel)
 - field_name: spreadsheet_sheets
@@ -5645,7 +5657,7 @@ resource_fields:
     en: 'Number of sheets in spreadsheet files (Excel, etc.).'
     es: 'Número de hojas en archivos de hoja de cálculo (Excel, etc.).'
     fr: 'Nombre de feuilles dans les fichiers de feuille de calcul (Excel, etc.).'
-  form_group_id: content_info
+  form_group_id: automatic_metadata
 
 # Información del texto extraído
 - field_name: text_content_info
@@ -5659,4 +5671,4 @@ resource_fields:
     en: 'Information about extracted text content (character count, language detection, etc.) in JSON format.'
     es: 'Información sobre el contenido de texto extraído (conteo de caracteres, detección de idioma, etc.) en formato JSON.'
     fr: 'Informations sur le contenu textuel extrait (nombre de caractères, détection de langue, etc.) au format JSON.'
-  form_group_id: content_info
+  form_group_id: automatic_metadata

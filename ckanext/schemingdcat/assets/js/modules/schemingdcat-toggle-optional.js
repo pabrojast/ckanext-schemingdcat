@@ -22,8 +22,26 @@ ckan.module('toggle-optional', function ($) {
         html: '<i class="fa fa-cog"></i> Show Advanced & Metadata fields'
       });
       
-      // Insertar el botón en el contenedor
+      // Crear botón separado para metadatos automáticos
+      var $automaticBtn = $('<button>', {
+        class: 'btn btn-info',
+        style: 'margin-bottom: 20px; margin-left: 10px;',
+        html: '<i class="fa fa-magic"></i> Show Automatic Metadata'
+      });
+      
+      // Crear mensaje explicativo para metadatos automáticos
+      var $automaticMessage = $('<div>', {
+        class: 'alert alert-info',
+        style: 'margin-bottom: 15px; display: none;',
+        html: '<strong><i class="fa fa-info-circle"></i> Metadatos Automáticos:</strong><br>' +
+              'Estos campos se rellenan automáticamente al subir archivos. ' +
+              'Si editas manualmente algún campo, se guardará tu valor y no se procesará automáticamente ese campo específico.'
+      });
+      
+      // Insertar los botones y mensaje en el contenedor
       $(this.el).append($toggleBtn);
+      $(this.el).append($automaticBtn);
+      $(this.el).append($automaticMessage);
       
       // Lista de campos que siempre deben mostrarse (obligatorios)
       var requiredFields = [
@@ -128,13 +146,12 @@ ckan.module('toggle-optional', function ($) {
         '.purpose-group.card2.mb-3',
         '.unesdoc-group.card2.mb-3',
         '.license_info-group.card2.mb-3',
-        '.version_notes-group.card2.mb-3',
-        // Nuevos grupos de metadatos comprensivos (se ocultan por defecto)
-        '.spatial_info-group.card2.mb-3',
-        '.data_info-group.card2.mb-3',
-        '.geographic_info-group.card2.mb-3',
-        '.technical_info-group.card2.mb-3',
-        '.content_info-group.card2.mb-3'
+        '.version_notes-group.card2.mb-3'
+      ];
+      
+      // Grupo especial de metadatos automáticos (siempre oculto por defecto)
+      var automaticMetadataGroup = [
+        '.automatic_metadata-group.card2.mb-3'
       ];
       
       // Identificar campos opcionales específicos y sus contenedores
@@ -146,10 +163,16 @@ ckan.module('toggle-optional', function ($) {
       
       // Añadir los grupos opcionales al conjunto de elementos a ocultar
       var $optionalGroupElements = $(optionalGroups.join(','));
+      var $automaticMetadataElements = $(automaticMetadataGroup.join(','));
       var $allOptionalElements = $optionalFields.add($optionalGroupElements);
+      
+      // Los metadatos automáticos se manejan por separado
       
       // Ocultar campos opcionales por defecto
       $allOptionalElements.hide();
+      
+      // Siempre ocultar metadatos automáticos por defecto
+      $automaticMetadataElements.hide();
       
       // Manejar el click del botón
       $toggleBtn.on('click', function(e) {
@@ -210,6 +233,22 @@ ckan.module('toggle-optional', function ($) {
           }
         });
       }
+      
+      // Manejar el click del botón de metadatos automáticos
+      $automaticBtn.on('click', function(e) {
+        e.preventDefault();
+        $(this).toggleClass('active');
+        
+        if ($(this).hasClass('active')) {
+          $automaticMetadataElements.show();
+          $automaticMessage.show();
+          $(this).html('<i class="fa fa-magic"></i> Hide Automatic Metadata');
+        } else {
+          $automaticMetadataElements.hide();
+          $automaticMessage.hide();
+          $(this).html('<i class="fa fa-magic"></i> Show Automatic Metadata');
+        }
+      });
     }
   };
 });

@@ -886,9 +886,23 @@ def extract_comprehensive_metadata_job(job_data):
                     'text_content_info': metadata.get('text_content_info')
                 }
                 
+                # Obtener el resource actual para verificar valores existentes
+                try:
+                    current_resource = logic.get_action('resource_show')(context, {'id': resource_id})
+                except Exception as e:
+                    log.warning(f"Could not get current resource {resource_id}: {e}")
+                    current_resource = {}
+                
                 # Solo agregar campos que tienen valores no nulos y significativos
+                # Y que no hayan sido editados manualmente (respetamos valores manuales)
                 for field_name, field_value in metadata_fields.items():
                     if field_value is not None and field_value != '':
+                        # Verificar si el campo ya tiene un valor manual
+                        existing_value = current_resource.get(field_name)
+                        if existing_value and str(existing_value).strip():
+                            log.debug(f"Skipping automatic extraction for {field_name} - manual value exists: {existing_value}")
+                            continue
+                        
                         # Filtrar listas vacías o con solo strings vacíos
                         if isinstance(field_value, list):
                             # Filtrar strings vacíos de la lista
