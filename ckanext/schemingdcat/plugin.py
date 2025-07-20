@@ -752,11 +752,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return False
 
 
-def extract_spatial_extent_job(job_data):
+def extract_comprehensive_metadata_job(job_data):
     """
-    Job function para extraer spatial extent en segundo plano usando CKAN Jobs Queue.
+    Job function para extraer metadata comprensiva en segundo plano usando CKAN Jobs Queue.
     
-    Función simplificada que NO requiere load_config para funcionar en workers.
+    Función que extrae toda la información disponible de archivos (espacial y no espacial).
     
     Args:
         job_data: Diccionario con resource_id, resource_url, resource_format, package_id
@@ -765,6 +765,9 @@ def extract_spatial_extent_job(job_data):
         import ckan.model as model
         import json
         import logging
+        import tempfile
+        import urllib.request
+        import os
         
         # Configurar logging para el worker
         log = logging.getLogger(__name__)
@@ -775,30 +778,75 @@ def extract_spatial_extent_job(job_data):
         resource_format = job_data.get('resource_format')
         package_id = job_data.get('package_id')
         
-        log.info(f"Processing spatial extent job for resource {resource_id}")
+        log.info(f"Processing comprehensive metadata job for resource {resource_id}")
         
-        # Importar extractor (sin configuración adicional necesaria)
+        # Importar analyzer (sin configuración adicional necesaria)
         try:
-            from ckanext.schemingdcat.spatial_extent import extent_extractor
+            from ckanext.schemingdcat.spatial_extent import FileAnalyzer
         except ImportError as e:
-            log.error(f"Could not import spatial extent extractor: {e}")
+            log.error(f"Could not import file analyzer: {e}")
             return
         
-        # Extraer extensión espacial directamente
+        # Analizar archivo comprensivamente
         try:
-            extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
+            analyzer = FileAnalyzer()
+            
+            # Si es un archivo local, usar análisis directo
+            if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
+                # Archivo local
+                metadata = analyzer.analyze_file(resource_url, trust_extension=True)
+            else:
+                # Archivo remoto - descargar temporalmente
+                metadata = {}
+                
+                if resource_url:
+                    ext = resource_format.lower() if resource_format else 'unknown'
+                    suffix = f".{ext}" if ext and ext != 'unknown' else ""
+                    
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                        try:
+                            # Descargar archivo
+                            req = urllib.request.Request(resource_url)
+                            req.add_header('User-Agent', 'CKAN-SchemingDCAT-FileAnalyzer/1.0')
+                            
+                            with urllib.request.urlopen(req, timeout=30) as response:
+                                chunk_size = 8192
+                                total_size = 0
+                                while True:
+                                    chunk = response.read(chunk_size)
+                                    if not chunk:
+                                        break
+                                    tmp_file.write(chunk)
+                                    total_size += len(chunk)
+                                    # Limit file size to 100MB
+                                    if total_size > 100 * 1024 * 1024:
+                                        raise Exception("File too large")
+                            
+                            tmp_file.flush()
+                            
+                            if total_size > 0:
+                                # Analizar archivo descargado
+                                metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
+                            
+                        except Exception as e:
+                            log.warning(f"Error downloading file for analysis: {e}")
+                        finally:
+                            # Limpiar archivo temporal
+                            try:
+                                os.unlink(tmp_file.name)
+                            except Exception:
+                                pass
+                
         except Exception as e:
-            log.error(f"Error extracting spatial extent: {e}")
+            log.error(f"Error extracting comprehensive metadata: {e}")
             return
         
-        if extent:
-            log.info(f"Successfully extracted spatial extent from resource {resource_id} in job")
+        if metadata:
+            log.info(f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
             
             try:
                 # Actualizar el RESOURCE directamente usando resource_patch
                 import ckan.logic as logic
-                
-                extent_json = json.dumps(extent)
                 
                 # Crear contexto de sistema para actualizar el resource
                 context = {
@@ -810,16 +858,43 @@ def extract_spatial_extent_job(job_data):
                     'defer_commit': False
                 }
                 
-                # Datos para actualizar solo el campo spatial_extent del resource
-                resource_patch_data = {
-                    'id': resource_id,
-                    'spatial_extent': extent_json
+                # Preparar datos para actualizar con toda la metadata extraída
+                resource_patch_data = {'id': resource_id}
+                
+                # Agregar todos los campos que tienen valores
+                metadata_fields = {
+                    'spatial_extent': metadata.get('spatial_extent'),
+                    'spatial_crs': metadata.get('spatial_crs'),
+                    'spatial_resolution': metadata.get('spatial_resolution'),
+                    'feature_count': metadata.get('feature_count'),
+                    'geometry_type': metadata.get('geometry_type'),
+                    'data_fields': metadata.get('data_fields'),
+                    'data_statistics': metadata.get('data_statistics'),
+                    'data_domains': metadata.get('data_domains'),
+                    'geographic_coverage': metadata.get('geographic_coverage'),
+                    'administrative_boundaries': metadata.get('administrative_boundaries'),
+                    'file_created_date': metadata.get('file_created_date'),
+                    'file_modified_date': metadata.get('file_modified_date'),
+                    'data_temporal_coverage': metadata.get('data_temporal_coverage'),
+                    'file_size_bytes': metadata.get('file_size_bytes'),
+                    'compression_info': metadata.get('compression_info'),
+                    'format_version': metadata.get('format_version'),
+                    'file_integrity': json.dumps(metadata.get('file_integrity')) if metadata.get('file_integrity') else None,
+                    'content_type_detected': metadata.get('content_type_detected'),
+                    'document_pages': metadata.get('document_pages'),
+                    'spreadsheet_sheets': metadata.get('spreadsheet_sheets'),
+                    'text_content_info': metadata.get('text_content_info')
                 }
                 
-                # Usar resource_patch para actualizar solo el campo spatial_extent
+                # Solo agregar campos que tienen valores no nulos
+                for field_name, field_value in metadata_fields.items():
+                    if field_value is not None and field_value != '':
+                        resource_patch_data[field_name] = field_value
+                
+                # Usar resource_patch para actualizar los campos
                 logic.get_action('resource_patch')(context, resource_patch_data)
                 
-                log.info(f"Successfully updated spatial_extent for resource {resource_id} via job queue")
+                log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated fields: {list(resource_patch_data.keys())}")
                 
             except Exception as e:
                 log.error(f"Error updating database: {e}")
@@ -830,11 +905,20 @@ def extract_spatial_extent_job(job_data):
                 return
                 
         else:
-            log.info(f"No spatial extent could be extracted from resource {resource_id}")
+            log.info(f"No comprehensive metadata could be extracted from resource {resource_id}")
             
     except Exception as e:
-        log.error(f"General error in spatial extent extraction job: {str(e)}")
+        log.error(f"General error in comprehensive metadata extraction job: {str(e)}")
         # No re-raise para evitar que el worker se cierre abruptamente
+
+
+# Función legacy para compatibilidad hacia atrás
+def extract_spatial_extent_job(job_data):
+    """
+    Función legacy que redirige al nuevo sistema comprensivo.
+    Mantenida para compatibilidad hacia atrás.
+    """
+    return extract_comprehensive_metadata_job(job_data)
     
     def _update_dataset_spatial_extent_with_app_context(self, dataset_id, extent):
         """

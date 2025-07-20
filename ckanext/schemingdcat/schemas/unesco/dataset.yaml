@@ -5368,3 +5368,295 @@ resource_fields:
     fr: 'Ce champ sera automatiquement rempli après la création de la ressource lors du téléchargement de fichiers géospatiaux (Shapefile, GeoTIFF, etc.). Une fois généré, vous pouvez modifier l''étendue spatiale depuis ce champ si nécessaire.'
   help_allow_html: True
   form_group_id: spatial_info
+
+# === INFORMACIÓN ESPACIAL BÁSICA ===
+
+# Sistema de coordenadas (CRS/EPSG)
+- field_name: spatial_crs
+  label:
+    en: Coordinate Reference System
+    es: Sistema de Referencia de Coordenadas
+    fr: Système de Référence de Coordonnées
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'EPSG code and projection information automatically extracted from geospatial files.'
+    es: 'Código EPSG e información de proyección extraída automáticamente de archivos geoespaciales.'
+    fr: 'Code EPSG et informations de projection extraites automatiquement des fichiers géospatiaux.'
+  form_group_id: spatial_info
+
+# Resolución espacial para rasters
+- field_name: spatial_resolution
+  label:
+    en: Spatial Resolution
+    es: Resolución Espacial
+    fr: Résolution Spatiale
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Pixel size for raster files (e.g., "30m x 30m").'
+    es: 'Tamaño de píxel para archivos raster (ej., "30m x 30m").'
+    fr: 'Taille de pixel pour les fichiers raster (ex., "30m x 30m").'
+  form_group_id: spatial_info
+
+# Número de features para vectores
+- field_name: feature_count
+  label:
+    en: Number of Features
+    es: Número de Características
+    fr: Nombre de Caractéristiques
+  form_snippet: number.html
+  display_snippet: text.html
+  help_text:
+    en: 'Number of features in vector files (shapefiles, GeoJSON, etc.).'
+    es: 'Número de características en archivos vectoriales (shapefiles, GeoJSON, etc.).'
+    fr: 'Nombre de caractéristiques dans les fichiers vectoriels (shapefiles, GeoJSON, etc.).'
+  form_group_id: spatial_info
+
+# Tipo de geometría
+- field_name: geometry_type
+  label:
+    en: Geometry Type
+    es: Tipo de Geometría
+    fr: Type de Géométrie
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Type of geometry (Point, LineString, Polygon, MultiPolygon, etc.).'
+    es: 'Tipo de geometría (Point, LineString, Polygon, MultiPolygon, etc.).'
+    fr: 'Type de géométrie (Point, LineString, Polygon, MultiPolygon, etc.).'
+  form_group_id: spatial_info
+
+# === INFORMACIÓN DE DATOS ===
+
+# Campos/Atributos del archivo
+- field_name: data_fields
+  label:
+    en: Data Fields/Attributes
+    es: Campos/Atributos de Datos
+    fr: Champs/Attributs de Données
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Column names and data types found in the file (JSON format).'
+    es: 'Nombres de columnas y tipos de datos encontrados en el archivo (formato JSON).'
+    fr: 'Noms de colonnes et types de données trouvés dans le fichier (format JSON).'
+  form_group_id: data_info
+
+# Estadísticas básicas
+- field_name: data_statistics
+  label:
+    en: Data Statistics
+    es: Estadísticas de Datos
+    fr: Statistiques de Données
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Basic statistics like min/max values, counts, etc. (JSON format).'
+    es: 'Estadísticas básicas como valores mín/máx, conteos, etc. (formato JSON).'
+    fr: 'Statistiques de base comme les valeurs min/max, les comptages, etc. (format JSON).'
+  form_group_id: data_info
+
+# Dominios/Valores únicos
+- field_name: data_domains
+  label:
+    en: Data Domains
+    es: Dominios de Datos
+    fr: Domaines de Données
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Unique values in categorical fields (JSON format).'
+    es: 'Valores únicos en campos categóricos (formato JSON).'
+    fr: 'Valeurs uniques dans les champs catégoriels (format JSON).'
+  form_group_id: data_info
+
+# === INFORMACIÓN GEOGRÁFICA ===
+
+# Países/Regiones basado en extent
+- field_name: geographic_coverage
+  label:
+    en: Geographic Coverage
+    es: Cobertura Geográfica
+    fr: Couverture Géographique
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Countries and regions covered by the spatial extent (JSON format).'
+    es: 'Países y regiones cubiertas por la extensión espacial (formato JSON).'
+    fr: 'Pays et régions couverts par l''étendue spatiale (format JSON).'
+  form_group_id: geographic_info
+
+# Límites administrativos
+- field_name: administrative_boundaries
+  label:
+    en: Administrative Boundaries
+    es: Límites Administrativos
+    fr: Limites Administratives
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Administrative boundaries like provinces, municipalities (JSON format).'
+    es: 'Límites administrativos como provincias, municipios (formato JSON).'
+    fr: 'Limites administratives comme les provinces, municipalités (format JSON).'
+  form_group_id: geographic_info
+
+# === INFORMACIÓN TEMPORAL ===
+
+# Fecha de creación del archivo
+- field_name: file_created_date
+  label:
+    en: File Creation Date
+    es: Fecha de Creación del Archivo
+    fr: Date de Création du Fichier
+  form_snippet: date.html
+  display_snippet: date_localised.html
+  help_text:
+    en: 'Date when the file was originally created.'
+    es: 'Fecha en que se creó originalmente el archivo.'
+    fr: 'Date à laquelle le fichier a été créé à l''origine.'
+  form_group_id: temporal_info
+
+# Última modificación
+- field_name: file_modified_date
+  label:
+    en: File Last Modified
+    es: Última Modificación del Archivo
+    fr: Dernière Modification du Fichier
+  form_snippet: date.html
+  display_snippet: date_localised.html
+  help_text:
+    en: 'Date when the file was last modified.'
+    es: 'Fecha en que se modificó por última vez el archivo.'
+    fr: 'Date à laquelle le fichier a été modifié pour la dernière fois.'
+  form_group_id: temporal_info
+
+# Período de datos
+- field_name: data_temporal_coverage
+  label:
+    en: Data Temporal Coverage
+    es: Cobertura Temporal de Datos
+    fr: Couverture Temporelle des Données
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Time period covered by the data (if available in metadata).'
+    es: 'Período de tiempo cubierto por los datos (si está disponible en metadatos).'
+    fr: 'Période de temps couverte par les données (si disponible dans les métadonnées).'
+  form_group_id: temporal_info
+
+# === INFORMACIÓN TÉCNICA ===
+
+# Tamaño del archivo
+- field_name: file_size_bytes
+  label:
+    en: File Size (bytes)
+    es: Tamaño del Archivo (bytes)
+    fr: Taille du Fichier (octets)
+  form_snippet: number.html
+  display_snippet: file_size.html
+  help_text:
+    en: 'File size in bytes, automatically detected.'
+    es: 'Tamaño del archivo en bytes, detectado automáticamente.'
+    fr: 'Taille du fichier en octets, détectée automatiquement.'
+  form_group_id: technical_info
+
+# Información de compresión
+- field_name: compression_info
+  label:
+    en: Compression Information
+    es: Información de Compresión
+    fr: Informations de Compression
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Compression type and ratio if the file is compressed.'
+    es: 'Tipo de compresión y ratio si el archivo está comprimido.'
+    fr: 'Type de compression et ratio si le fichier est compressé.'
+  form_group_id: technical_info
+
+# Versión del formato
+- field_name: format_version
+  label:
+    en: Format Version
+    es: Versión del Formato
+    fr: Version du Format
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Version of the file format (e.g., Shapefile version, GeoTIFF version).'
+    es: 'Versión del formato de archivo (ej., versión Shapefile, versión GeoTIFF).'
+    fr: 'Version du format de fichier (ex., version Shapefile, version GeoTIFF).'
+  form_group_id: technical_info
+
+# Integridad del archivo
+- field_name: file_integrity
+  label:
+    en: File Integrity
+    es: Integridad del Archivo
+    fr: Intégrité du Fichier
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'File integrity information including checksums and validation results (JSON format).'
+    es: 'Información de integridad del archivo incluyendo checksums y resultados de validación (formato JSON).'
+    fr: 'Informations d''intégrité du fichier incluant les checksums et les résultats de validation (format JSON).'
+  form_group_id: technical_info
+
+# === INFORMACIÓN PARA ARCHIVOS NO ESPACIALES ===
+
+# Tipo de contenido detectado
+- field_name: content_type_detected
+  label:
+    en: Detected Content Type
+    es: Tipo de Contenido Detectado
+    fr: Type de Contenu Détecté
+  form_snippet: text.html
+  display_snippet: text.html
+  help_text:
+    en: 'Automatically detected content type (PDF, CSV, Excel, etc.).'
+    es: 'Tipo de contenido detectado automáticamente (PDF, CSV, Excel, etc.).'
+    fr: 'Type de contenu détecté automatiquement (PDF, CSV, Excel, etc.).'
+  form_group_id: content_info
+
+# Número de páginas (para PDFs)
+- field_name: document_pages
+  label:
+    en: Number of Pages
+    es: Número de Páginas
+    fr: Nombre de Pages
+  form_snippet: number.html
+  display_snippet: text.html
+  help_text:
+    en: 'Number of pages in document files (PDF, etc.).'
+    es: 'Número de páginas en archivos de documento (PDF, etc.).'
+    fr: 'Nombre de pages dans les fichiers de document (PDF, etc.).'
+  form_group_id: content_info
+
+# Número de hojas (para Excel)
+- field_name: spreadsheet_sheets
+  label:
+    en: Number of Sheets
+    es: Número de Hojas
+    fr: Nombre de Feuilles
+  form_snippet: number.html
+  display_snippet: text.html
+  help_text:
+    en: 'Number of sheets in spreadsheet files (Excel, etc.).'
+    es: 'Número de hojas en archivos de hoja de cálculo (Excel, etc.).'
+    fr: 'Nombre de feuilles dans les fichiers de feuille de calcul (Excel, etc.).'
+  form_group_id: content_info
+
+# Información del texto extraído
+- field_name: text_content_info
+  label:
+    en: Text Content Information
+    es: Información del Contenido de Texto
+    fr: Informations sur le Contenu Textuel
+  form_snippet: textarea.html
+  display_snippet: text.html
+  help_text:
+    en: 'Information about extracted text content (character count, language detection, etc.) in JSON format.'
+    es: 'Información sobre el contenido de texto extraído (conteo de caracteres, detección de idioma, etc.) en formato JSON.'
+    fr: 'Informations sur le contenu textuel extrait (nombre de caractères, détection de langue, etc.) au format JSON.'
+  form_group_id: content_info

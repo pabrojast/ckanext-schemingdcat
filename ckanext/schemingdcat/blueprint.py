@@ -291,8 +291,140 @@ def extract_spatial_extent():
         logger.error(f"Error in spatial extent extraction API: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': f'Internal error: {str(e)}',
+            'error': f'Error processing file: {str(e)}',
             'extent': None
+        }), 500
+
+
+@schemingdcat.route('/api/analyze-file-comprehensive', methods=['POST'])
+def analyze_file_comprehensive():
+    """
+    API endpoint to extract comprehensive metadata from uploaded files.
+    
+    This endpoint extracts all available metadata including:
+    - Spatial information (extent, CRS, resolution, etc.)
+    - Data information (fields, statistics, domains)
+    - Technical information (file size, compression, integrity)
+    - Content-specific information (pages, sheets, text content)
+    
+    This endpoint can work with:
+    1. Direct file uploads (multipart/form-data with 'file')
+    2. Resource URLs (JSON with 'resource_url' and 'resource_format')
+    """
+    try:
+        # Check if comprehensive analysis is available
+        if not is_module_available('ckanext.schemingdcat.spatial_extent'):
+            return jsonify({
+                'success': False,
+                'error': 'File analysis not available',
+                'metadata': {}
+            }), 400
+
+        from ckanext.schemingdcat.spatial_extent import analyze_upload_file, analyze_file_comprehensive
+        
+        # Check if it's a direct file upload
+        if 'file' in request.files:
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({
+                    'success': False,
+                    'error': 'No file selected',
+                    'metadata': {}
+                }), 400
+            
+            # Analyze uploaded file comprehensively
+            metadata = analyze_upload_file(file)
+            
+        # Check if it's a resource URL processing request
+        elif request.is_json:
+            data = request.get_json()
+            resource_url = data.get('resource_url')
+            resource_format = data.get('resource_format', '').lower()
+            
+            if not resource_url:
+                return jsonify({
+                    'success': False,
+                    'error': 'No resource_url provided',
+                    'metadata': {}
+                }), 400
+            
+            # For URL analysis, we need to download and analyze
+            import tempfile
+            import urllib.request
+            from ckanext.schemingdcat.spatial_extent import FileAnalyzer
+            
+            try:
+                analyzer = FileAnalyzer()
+                ext = resource_format.lower() if resource_format else 'unknown'
+                
+                # Create temporary file with proper extension
+                suffix = f".{ext}" if ext and ext != 'unknown' else ""
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                    # Download file
+                    req = urllib.request.Request(resource_url)
+                    req.add_header('User-Agent', 'CKAN-SchemingDCAT-FileAnalyzer/1.0')
+                    
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        chunk_size = 8192
+                        total_size = 0
+                        while True:
+                            chunk = response.read(chunk_size)
+                            if not chunk:
+                                break
+                            tmp_file.write(chunk)
+                            total_size += len(chunk)
+                            # Limit file size to 100MB
+                            if total_size > 100 * 1024 * 1024:
+                                raise Exception("File too large")
+                    
+                    tmp_file.flush()
+                    
+                    if total_size == 0:
+                        raise Exception("Downloaded file is empty")
+                    
+                    # Analyze downloaded file
+                    metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
+                    
+                    # Clean up
+                    import os
+                    try:
+                        os.unlink(tmp_file.name)
+                    except Exception:
+                        pass
+                        
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Error processing file from URL: {str(e)}',
+                    'metadata': {}
+                }), 400
+            
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No file or resource_url provided',
+                'metadata': {}
+            }), 400
+        
+        if metadata:
+            return jsonify({
+                'success': True,
+                'error': None,
+                'metadata': metadata
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Could not extract metadata from file',
+                'metadata': {}
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error in comprehensive file analysis API: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}',
+            'metadata': {}
         }), 500
 
 @schemingdcat.route('/api/extract-spatial-extent-from-resource', methods=['POST'])

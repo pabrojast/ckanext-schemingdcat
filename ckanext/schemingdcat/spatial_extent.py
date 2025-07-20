@@ -22,7 +22,11 @@ import logging
 import tempfile
 import os
 import zipfile
+import hashlib
+import mimetypes
+from datetime import datetime
 from typing import Optional, Dict, Any, Tuple
+from collections import Counter
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +52,35 @@ try:
 except ImportError:
     PYPROJ_AVAILABLE = False
     log.warning("PyProj not available - CRS transformation limited")
+
+try:
+    import geopandas as gpd
+    GEOPANDAS_AVAILABLE = True
+except ImportError:
+    GEOPANDAS_AVAILABLE = False
+
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+
+try:
+    import PyPDF2
+    PDF_AVAILABLE = True
+except ImportError:
+    try:
+        import pypdf
+        PDF_AVAILABLE = True
+        PyPDF2 = pypdf  # Use pypdf as PyPDF2 replacement
+    except ImportError:
+        PDF_AVAILABLE = False
+
+try:
+    import openpyxl
+    EXCEL_AVAILABLE = True
+except ImportError:
+    EXCEL_AVAILABLE = False
 
 
 class SpatialExtentExtractor:
@@ -690,8 +723,556 @@ def get_spatial_system_status() -> Dict[str, Any]:
         'dependencies': {
             'fiona': FIONA_AVAILABLE,
             'rasterio': RASTERIO_AVAILABLE,
-            'pyproj': PYPROJ_AVAILABLE
+            'pyproj': PYPROJ_AVAILABLE,
+            'pandas': PANDAS_AVAILABLE,
+            'pdf': PDF_AVAILABLE,
+            'excel': EXCEL_AVAILABLE
         },
         'api_safe': True,  # This system doesn't interfere with CKAN API
         'mode': 'frontend_only'  # Only works through web interface
     }
+
+
+def analyze_file_comprehensive(file_path: str, trust_extension: bool = False) -> Dict[str, Any]:
+    """
+    Comprehensive analysis of a file to extract all available metadata.
+    
+    Args:
+        file_path: Path to the file to analyze
+        trust_extension: Whether to trust file extension without validation
+        
+    Returns:
+        Dictionary with all extracted metadata including spatial, technical,
+        and content-specific information
+    """
+    try:
+        analyzer = FileAnalyzer()
+        return analyzer.analyze_file(file_path, trust_extension)
+    except Exception as e:
+        log.error(f"Error in comprehensive file analysis: {str(e)}", exc_info=True)
+        return {}
+
+
+def analyze_upload_file(upload_file) -> Dict[str, Any]:
+    """
+    Analyze an uploaded file and extract comprehensive metadata.
+    
+    Args:
+        upload_file: File upload object (from request)
+        
+    Returns:
+        Dictionary with all extracted metadata
+    """
+    if not hasattr(upload_file, 'filename') or not upload_file.filename:
+        log.info("No filename in upload file")
+        return {}
+
+    log.info(f"Processing upload file: {upload_file.filename}")
+    
+    try:
+        # Get file content
+        upload_file.seek(0)
+        file_content = upload_file.read()
+        
+        if not file_content:
+            log.info("Upload file is empty")
+            return {}
+        
+        log.info(f"File content size: {len(file_content)} bytes")
+        
+        # Get file extension
+        analyzer = FileAnalyzer()
+        ext = analyzer.spatial_extractor._get_file_extension(upload_file.filename)
+        
+        # Create temporary file with proper extension
+        suffix = f".{ext}" if ext else ""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+            tmp_file.write(file_content)
+            tmp_file.flush()
+            
+            log.info(f"Created temporary file: {tmp_file.name}")
+            
+            # Analyze file
+            result = analyzer.analyze_file(tmp_file.name, trust_extension=True)
+            
+            # Clean up
+            try:
+                os.unlink(tmp_file.name)
+            except Exception:
+                pass  # Ignore cleanup errors
+            
+            return result
+            
+    except Exception as e:
+        log.error(f"Error analyzing upload file: {str(e)}", exc_info=True)
+        return {}
+
+
+def get_file_analysis_capabilities() -> Dict[str, Any]:
+    """
+    Get information about file analysis capabilities.
+    
+    Returns:
+        Dictionary with available analysis features
+    """
+    return {
+        'spatial_analysis': {
+            'available': FIONA_AVAILABLE or RASTERIO_AVAILABLE,
+            'supported_formats': ['shp', 'zip', 'tif', 'tiff', 'kml', 'gpkg', 'geojson', 'json']
+        },
+        'document_analysis': {
+            'pdf': PDF_AVAILABLE,
+            'excel': EXCEL_AVAILABLE,
+            'csv': PANDAS_AVAILABLE,
+            'text': True,
+            'json': True
+        },
+        'data_analysis': {
+            'statistics': PANDAS_AVAILABLE,
+            'data_profiling': PANDAS_AVAILABLE
+        },
+        'technical_analysis': {
+            'file_info': True,
+            'checksums': True,
+            'content_type_detection': True
+        }
+    }
+
+
+class FileAnalyzer:
+    """Comprehensive file analyzer for extracting metadata from various file types."""
+    
+    def __init__(self):
+        self.spatial_extractor = SpatialExtentExtractor()
+        
+    def analyze_file(self, file_path: str, trust_extension: bool = False) -> Dict[str, Any]:
+        """
+        Analyze a file and extract comprehensive metadata.
+        
+        Args:
+            file_path: Path to the file to analyze
+            trust_extension: Whether to trust file extension without validation
+            
+        Returns:
+            Dictionary containing all extracted metadata
+        """
+        try:
+            result = {
+                # Basic file information
+                'file_size_bytes': None,
+                'file_created_date': None,
+                'file_modified_date': None,
+                'content_type_detected': None,
+                'file_integrity': {},
+                
+                # Spatial information (if applicable)
+                'spatial_extent': None,
+                'spatial_crs': None,
+                'spatial_resolution': None,
+                'feature_count': None,
+                'geometry_type': None,
+                
+                # Data information
+                'data_fields': None,
+                'data_statistics': None,
+                'data_domains': None,
+                
+                # Geographic information
+                'geographic_coverage': None,
+                'administrative_boundaries': None,
+                
+                # Temporal information
+                'data_temporal_coverage': None,
+                
+                # Technical information
+                'compression_info': None,
+                'format_version': None,
+                
+                # Non-spatial file information
+                'document_pages': None,
+                'spreadsheet_sheets': None,
+                'text_content_info': None
+            }
+            
+            if not os.path.exists(file_path):
+                return result
+            
+            # Extract basic file information
+            self._extract_basic_file_info(file_path, result)
+            
+            # Detect content type
+            self._detect_content_type(file_path, result)
+            
+            # Try spatial analysis first
+            if self.spatial_extractor._is_potential_spatial_file(file_path):
+                self._extract_spatial_info(file_path, result, trust_extension)
+            
+            # Extract content-specific information
+            self._extract_content_specific_info(file_path, result)
+            
+            return result
+            
+        except Exception as e:
+            log.error(f"Error analyzing file {file_path}: {str(e)}", exc_info=True)
+            return result
+    
+    def _extract_basic_file_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract basic file system information."""
+        try:
+            stat = os.stat(file_path)
+            result['file_size_bytes'] = stat.st_size
+            result['file_created_date'] = datetime.fromtimestamp(stat.st_ctime).isoformat()
+            result['file_modified_date'] = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            
+            # Calculate checksums for integrity
+            with open(file_path, 'rb') as f:
+                content = f.read()
+                result['file_integrity'] = {
+                    'md5': hashlib.md5(content).hexdigest(),
+                    'sha256': hashlib.sha256(content).hexdigest()
+                }
+        except Exception as e:
+            log.debug(f"Error extracting basic file info: {str(e)}")
+    
+    def _detect_content_type(self, file_path: str, result: Dict[str, Any]):
+        """Detect the content type of the file."""
+        try:
+            # Use mimetypes to guess
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if mime_type:
+                result['content_type_detected'] = mime_type
+            else:
+                # Fallback to extension-based detection
+                ext = self.spatial_extractor._get_file_extension(file_path).lower()
+                ext_to_mime = {
+                    'pdf': 'application/pdf',
+                    'csv': 'text/csv',
+                    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'xls': 'application/vnd.ms-excel',
+                    'txt': 'text/plain',
+                    'json': 'application/json',
+                    'xml': 'application/xml',
+                    'zip': 'application/zip'
+                }
+                result['content_type_detected'] = ext_to_mime.get(ext, 'application/octet-stream')
+        except Exception as e:
+            log.debug(f"Error detecting content type: {str(e)}")
+    
+    def _extract_spatial_info(self, file_path: str, result: Dict[str, Any], trust_extension: bool = False):
+        """Extract spatial information from geospatial files."""
+        try:
+            # Get spatial extent
+            extent = self.spatial_extractor.extract_extent(file_path, trust_extension)
+            if extent:
+                result['spatial_extent'] = json.dumps(extent)
+            
+            # Extract additional spatial metadata
+            ext = self.spatial_extractor._get_file_extension(file_path)
+            format_type = self.spatial_extractor.SUPPORTED_EXTENSIONS.get(ext)
+            
+            if format_type == 'shapefile' and FIONA_AVAILABLE:
+                self._extract_shapefile_metadata(file_path, result)
+            elif format_type == 'geotiff' and RASTERIO_AVAILABLE:
+                self._extract_raster_metadata(file_path, result)
+            elif format_type in ['kml', 'geopackage', 'geojson'] and FIONA_AVAILABLE:
+                self._extract_vector_metadata(file_path, result)
+            elif format_type == 'zip_shapefile':
+                self._extract_zip_shapefile_metadata(file_path, result)
+                
+        except Exception as e:
+            log.debug(f"Error extracting spatial info: {str(e)}")
+    
+    def _extract_shapefile_metadata(self, file_path: str, result: Dict[str, Any]):
+        """Extract metadata from shapefiles."""
+        try:
+            with fiona.open(file_path) as src:
+                # CRS information
+                if src.crs:
+                    crs_info = str(src.crs)
+                    if 'epsg' in src.crs:
+                        crs_info = f"EPSG:{src.crs['init'].split(':')[1]}"
+                    result['spatial_crs'] = crs_info
+                
+                # Feature count and geometry type
+                result['feature_count'] = len(src)
+                if len(src) > 0:
+                    first_feature = next(iter(src))
+                    result['geometry_type'] = first_feature['geometry']['type']
+                
+                # Schema information
+                schema = src.schema
+                fields_info = {}
+                for field_name, field_type in schema['properties'].items():
+                    fields_info[field_name] = field_type
+                result['data_fields'] = json.dumps(fields_info)
+                
+                # Sample data for statistics (first 100 features)
+                if PANDAS_AVAILABLE and len(src) > 0:
+                    self._extract_vector_statistics(src, result)
+                    
+        except Exception as e:
+            log.debug(f"Error extracting shapefile metadata: {str(e)}")
+    
+    def _extract_raster_metadata(self, file_path: str, result: Dict[str, Any]):
+        """Extract metadata from raster files."""
+        try:
+            with rasterio.open(file_path) as src:
+                # CRS information
+                if src.crs:
+                    result['spatial_crs'] = f"EPSG:{src.crs.to_epsg()}" if src.crs.to_epsg() else str(src.crs)
+                
+                # Resolution information
+                transform = src.transform
+                pixel_size_x = abs(transform[0])
+                pixel_size_y = abs(transform[4])
+                result['spatial_resolution'] = f"{pixel_size_x:.2f}m x {pixel_size_y:.2f}m"
+                
+                # Raster information
+                result['data_fields'] = json.dumps({
+                    'bands': src.count,
+                    'width': src.width,
+                    'height': src.height,
+                    'dtype': str(src.dtypes[0]) if src.dtypes else None
+                })
+                
+                # Basic statistics
+                stats = {}
+                for i in range(1, min(src.count + 1, 4)):  # Max 3 bands for performance
+                    try:
+                        band_data = src.read(i, masked=True)
+                        stats[f'band_{i}'] = {
+                            'min': float(band_data.min()),
+                            'max': float(band_data.max()),
+                            'mean': float(band_data.mean()),
+                            'nodata_count': int(band_data.mask.sum())
+                        }
+                    except Exception:
+                        continue
+                
+                if stats:
+                    result['data_statistics'] = json.dumps(stats)
+                    
+        except Exception as e:
+            log.debug(f"Error extracting raster metadata: {str(e)}")
+    
+    def _extract_vector_metadata(self, file_path: str, result: Dict[str, Any]):
+        """Extract metadata from vector files (KML, GeoPackage, GeoJSON)."""
+        try:
+            with fiona.open(file_path) as src:
+                # Similar to shapefile but for other vector formats
+                if src.crs:
+                    result['spatial_crs'] = str(src.crs)
+                
+                result['feature_count'] = len(src)
+                if len(src) > 0:
+                    first_feature = next(iter(src))
+                    result['geometry_type'] = first_feature['geometry']['type']
+                
+                # Schema information
+                schema = src.schema
+                fields_info = {}
+                for field_name, field_type in schema['properties'].items():
+                    fields_info[field_name] = field_type
+                result['data_fields'] = json.dumps(fields_info)
+                
+                if PANDAS_AVAILABLE and len(src) > 0:
+                    self._extract_vector_statistics(src, result)
+                    
+        except Exception as e:
+            log.debug(f"Error extracting vector metadata: {str(e)}")
+    
+    def _extract_zip_shapefile_metadata(self, file_path: str, result: Dict[str, Any]):
+        """Extract metadata from ZIP files containing shapefiles."""
+        try:
+            import zipfile
+            import tempfile
+            
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                # Find .shp file in the ZIP
+                shp_files = [f for f in zip_ref.namelist() if f.endswith('.shp')]
+                if not shp_files:
+                    return
+                
+                # Extract to temporary directory
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    zip_ref.extractall(temp_dir)
+                    shp_path = os.path.join(temp_dir, shp_files[0])
+                    self._extract_shapefile_metadata(shp_path, result)
+                    
+        except Exception as e:
+            log.debug(f"Error extracting ZIP shapefile metadata: {str(e)}")
+    
+    def _extract_vector_statistics(self, src, result: Dict[str, Any]):
+        """Extract statistics from vector data."""
+        try:
+            # Sample data for analysis (first 100 features)
+            features = []
+            for i, feature in enumerate(src):
+                if i >= 100:  # Limit for performance
+                    break
+                features.append(feature['properties'])
+            
+            if not features:
+                return
+            
+            # Convert to DataFrame for analysis
+            df = pd.DataFrame(features)
+            
+            # Basic statistics
+            stats = {}
+            domains = {}
+            
+            for column in df.columns:
+                if df[column].dtype in ['object', 'string']:
+                    # Categorical data
+                    unique_values = df[column].value_counts().head(10).to_dict()
+                    domains[column] = unique_values
+                    stats[column] = {
+                        'type': 'categorical',
+                        'unique_count': df[column].nunique(),
+                        'null_count': df[column].isnull().sum()
+                    }
+                else:
+                    # Numerical data
+                    stats[column] = {
+                        'type': 'numerical',
+                        'min': df[column].min(),
+                        'max': df[column].max(),
+                        'mean': df[column].mean(),
+                        'null_count': df[column].isnull().sum()
+                    }
+            
+            result['data_statistics'] = json.dumps(stats)
+            if domains:
+                result['data_domains'] = json.dumps(domains)
+                
+        except Exception as e:
+            log.debug(f"Error extracting vector statistics: {str(e)}")
+    
+    def _extract_content_specific_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information specific to non-spatial file types."""
+        try:
+            ext = self.spatial_extractor._get_file_extension(file_path).lower()
+            
+            if ext == 'pdf' and PDF_AVAILABLE:
+                self._extract_pdf_info(file_path, result)
+            elif ext in ['xlsx', 'xls'] and EXCEL_AVAILABLE:
+                self._extract_excel_info(file_path, result)
+            elif ext == 'csv' and PANDAS_AVAILABLE:
+                self._extract_csv_info(file_path, result)
+            elif ext in ['txt', 'md']:
+                self._extract_text_info(file_path, result)
+            elif ext == 'json':
+                self._extract_json_info(file_path, result)
+                
+        except Exception as e:
+            log.debug(f"Error extracting content-specific info: {str(e)}")
+    
+    def _extract_pdf_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information from PDF files."""
+        try:
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                result['document_pages'] = len(pdf_reader.pages)
+                
+                # Extract text content info
+                text_length = 0
+                for page in pdf_reader.pages[:5]:  # First 5 pages for performance
+                    text_length += len(page.extract_text())
+                
+                result['text_content_info'] = json.dumps({
+                    'estimated_characters': text_length * (len(pdf_reader.pages) / min(5, len(pdf_reader.pages))),
+                    'pages_analyzed': min(5, len(pdf_reader.pages))
+                })
+                
+        except Exception as e:
+            log.debug(f"Error extracting PDF info: {str(e)}")
+    
+    def _extract_excel_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information from Excel files."""
+        try:
+            workbook = openpyxl.load_workbook(file_path, read_only=True)
+            result['spreadsheet_sheets'] = len(workbook.sheetnames)
+            
+            # Analyze first sheet structure
+            if workbook.sheetnames:
+                sheet = workbook[workbook.sheetnames[0]]
+                max_row = sheet.max_row
+                max_col = sheet.max_column
+                
+                result['data_fields'] = json.dumps({
+                    'sheets': workbook.sheetnames,
+                    'first_sheet_dimensions': f"{max_row} rows x {max_col} columns"
+                })
+                
+        except Exception as e:
+            log.debug(f"Error extracting Excel info: {str(e)}")
+    
+    def _extract_csv_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information from CSV files."""
+        try:
+            # Read first few rows to analyze structure
+            df = pd.read_csv(file_path, nrows=100)
+            
+            fields_info = {}
+            stats = {}
+            domains = {}
+            
+            for column in df.columns:
+                fields_info[column] = str(df[column].dtype)
+                
+                if df[column].dtype in ['object', 'string']:
+                    unique_values = df[column].value_counts().head(10).to_dict()
+                    domains[column] = unique_values
+                    stats[column] = {
+                        'type': 'categorical',
+                        'unique_count': df[column].nunique(),
+                        'null_count': df[column].isnull().sum()
+                    }
+                else:
+                    stats[column] = {
+                        'type': 'numerical',
+                        'min': df[column].min(),
+                        'max': df[column].max(),
+                        'mean': df[column].mean(),
+                        'null_count': df[column].isnull().sum()
+                    }
+            
+            result['data_fields'] = json.dumps(fields_info)
+            result['data_statistics'] = json.dumps(stats)
+            if domains:
+                result['data_domains'] = json.dumps(domains)
+                
+        except Exception as e:
+            log.debug(f"Error extracting CSV info: {str(e)}")
+    
+    def _extract_text_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information from text files."""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read(10000)  # First 10KB for analysis
+                
+            result['text_content_info'] = json.dumps({
+                'character_count': len(content),
+                'line_count': content.count('\n'),
+                'word_count': len(content.split()),
+                'encoding': 'utf-8'
+            })
+            
+        except Exception as e:
+            log.debug(f"Error extracting text info: {str(e)}")
+    
+    def _extract_json_info(self, file_path: str, result: Dict[str, Any]):
+        """Extract information from JSON files."""
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            
+            result['text_content_info'] = json.dumps({
+                'json_structure': type(data).__name__,
+                'keys_count': len(data) if isinstance(data, dict) else None,
+                'array_length': len(data) if isinstance(data, list) else None
+            })
+            
+        except Exception as e:
+            log.debug(f"Error extracting JSON info: {str(e)}")

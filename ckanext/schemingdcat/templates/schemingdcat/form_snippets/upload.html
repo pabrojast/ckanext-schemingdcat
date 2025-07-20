@@ -1444,8 +1444,170 @@
     }
   }
 
-  // Function to extract spatial extent from uploaded file (direct upload)
+  // Function to extract comprehensive metadata from uploaded file - DISABLED
+  // All metadata extraction is now handled by the backend job system
+  function extractComprehensiveMetadataFromFile(file, ext) {
+    console.log('Frontend comprehensive metadata extraction disabled - processing will happen in backend');
+    
+    // Show a message that processing will happen in the background
+    showSpatialExtentMessage('{{ _("File uploaded successfully. Comprehensive metadata will be extracted automatically in the background.") }}', 'info');
+    
+    return; // Skip frontend extraction - all processing happens in backend
+    
+    // LEGACY CODE BELOW - KEPT FOR REFERENCE BUT DISABLED
+    /*
+    console.log('Starting comprehensive metadata extraction for file:', file.name, 'extension:', ext);
+    
+    // Create FormData to send the file
+    var formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading indicators on various fields
+    showMetadataExtractionLoading(true);
+    
+    // Make request to extract comprehensive metadata
+    fetch('/api/analyze-file-comprehensive', {
+      method: 'POST',
+      body: formData
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      showMetadataExtractionLoading(false);
+      
+      if (data.success && data.metadata) {
+        // Populate all the fields with extracted metadata
+        populateMetadataFields(data.metadata);
+        
+        // Show success message
+        showSpatialExtentMessage('{{ _("Metadata extracted successfully from file.") }}', 'success');
+        
+        console.log('Comprehensive metadata extracted:', data.metadata);
+      } else {
+        console.debug('Could not extract comprehensive metadata:', data.error || 'Unknown error');
+        showSpatialExtentMessage('{{ _("Could not extract complete metadata from this file. Some fields may need manual input.") }}', 'info');
+      }
+    })
+    .catch(function(error) {
+      showMetadataExtractionLoading(false);
+      
+      console.debug('Error in comprehensive metadata extraction:', error);
+      showSpatialExtentMessage('{{ _("Error extracting metadata. You can manually enter the information if needed.") }}', 'warning');
+    });
+    */
+  }
+
+  // Function to show/hide loading indicators on metadata fields
+  function showMetadataExtractionLoading(isLoading) {
+    var fields = [
+      'spatial_extent', 'spatial_crs', 'spatial_resolution', 'feature_count', 'geometry_type',
+      'data_fields', 'data_statistics', 'data_domains', 'file_size_bytes', 'content_type_detected',
+      'document_pages', 'spreadsheet_sheets', 'text_content_info', 'file_integrity'
+    ];
+    
+    fields.forEach(function(fieldName) {
+      var field = document.querySelector('textarea[name="' + fieldName + '"], input[name="' + fieldName + '"], select[name="' + fieldName + '"]');
+      if (field) {
+        if (isLoading) {
+          field.classList.add('loading');
+          field.setAttribute('data-original-placeholder', field.placeholder || '');
+          field.placeholder = '{{ _("Extracting metadata...") }}';
+        } else {
+          field.classList.remove('loading');
+          var originalPlaceholder = field.getAttribute('data-original-placeholder');
+          if (originalPlaceholder !== null) {
+            field.placeholder = originalPlaceholder;
+            field.removeAttribute('data-original-placeholder');
+          }
+        }
+      }
+    });
+  }
+
+  // Function to populate all metadata fields with extracted data
+  function populateMetadataFields(metadata) {
+    console.log('Populating metadata fields:', metadata);
+    
+    // Helper function to set field value if field exists and doesn't have a value
+    function setFieldValue(fieldName, value) {
+      if (value === null || value === undefined) return;
+      
+      var field = document.querySelector('textarea[name="' + fieldName + '"], input[name="' + fieldName + '"], select[name="' + fieldName + '"]');
+      if (field && (!field.value || field.value.trim() === '')) {
+        if (typeof value === 'object') {
+          field.value = JSON.stringify(value, null, 2);
+        } else {
+          field.value = value;
+        }
+        
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        field.dispatchEvent(event);
+        
+        console.log('Set field', fieldName, 'to:', field.value);
+      }
+    }
+    
+    // Spatial Information
+    if (metadata.spatial_extent) {
+      var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+      if (spatialExtentField && (!spatialExtentField.value || spatialExtentField.value.trim() === '')) {
+        spatialExtentField.value = metadata.spatial_extent;
+        var event = new Event('change', { bubbles: true });
+        spatialExtentField.dispatchEvent(event);
+      }
+    }
+    
+    setFieldValue('spatial_crs', metadata.spatial_crs);
+    setFieldValue('spatial_resolution', metadata.spatial_resolution);
+    setFieldValue('feature_count', metadata.feature_count);
+    setFieldValue('geometry_type', metadata.geometry_type);
+    
+    // Data Information
+    setFieldValue('data_fields', metadata.data_fields);
+    setFieldValue('data_statistics', metadata.data_statistics);
+    setFieldValue('data_domains', metadata.data_domains);
+    
+    // Geographic Information (placeholder for future reverse geocoding)
+    setFieldValue('geographic_coverage', metadata.geographic_coverage);
+    setFieldValue('administrative_boundaries', metadata.administrative_boundaries);
+    
+    // Temporal Information
+    setFieldValue('file_created_date', metadata.file_created_date ? metadata.file_created_date.split('T')[0] : null);
+    setFieldValue('file_modified_date', metadata.file_modified_date ? metadata.file_modified_date.split('T')[0] : null);
+    setFieldValue('data_temporal_coverage', metadata.data_temporal_coverage);
+    
+    // Technical Information
+    setFieldValue('file_size_bytes', metadata.file_size_bytes);
+    setFieldValue('compression_info', metadata.compression_info);
+    setFieldValue('format_version', metadata.format_version);
+    setFieldValue('file_integrity', metadata.file_integrity);
+    
+    // Content Information
+    setFieldValue('content_type_detected', metadata.content_type_detected);
+    setFieldValue('document_pages', metadata.document_pages);
+    setFieldValue('spreadsheet_sheets', metadata.spreadsheet_sheets);
+    setFieldValue('text_content_info', metadata.text_content_info);
+  }
+
+  // Function to extract spatial extent from uploaded file (direct upload) - LEGACY FUNCTION
   function extractSpatialExtentFromFile(file, ext) {
+    // DISABLED: Frontend metadata extraction disabled to prevent conflicts with backend processing
+    // All metadata extraction is now handled by the backend job system after file upload
+    console.log('Frontend metadata extraction disabled - metadata will be processed by backend after upload');
+    
+    // Show a message that processing will happen in the background
+    showSpatialExtentMessage('{{ _("File uploaded successfully. Metadata will be extracted automatically in the background.") }}', 'info');
+    
+    return; // Skip frontend extraction - all processing happens in backend
+    
+    // LEGACY CODE BELOW - KEPT FOR REFERENCE BUT DISABLED
+    /*
+    // First try comprehensive metadata extraction
+    extractComprehensiveMetadataFromFile(file, ext);
+    
+    // Also keep the legacy spatial-only extraction as fallback
     // Check if this is a geospatial file type
     // Note: ZIP files are excluded here because they are processed after dataset creation
     var spatialExtensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
@@ -1453,6 +1615,7 @@
     if (!spatialExtensions.includes(ext.toLowerCase())) {
       return; // Not a spatial file, skip extraction
     }
+    */
 
     // Find the spatial_extent field in the form
     var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
