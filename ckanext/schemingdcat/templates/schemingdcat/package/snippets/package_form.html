@@ -21,12 +21,9 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-autofill-today' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-autofill-responsible-party' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-auto-contact' %}
-{% asset 'ckanext-schemingdcat/schemingdcat-toggle-optional' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
-{# Añadir este div para el botón toggle #}
-<div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
 <div data-module="schemingdcat-simple-navigation"></div>
 <div data-module="schemingdcat-multi-resource-upload"></div><!-- NUEVO: inicializa multiupload -->
@@ -81,8 +78,7 @@
   {%- endif -%}
 {% endblock %}
 
-{# Añadir el div para el botón toggle aquí, fuera del ol #}
-<div class="form-actions" data-module="toggle-optional"></div>
+
 
 {% block errors %}
   {%- if errors -%}

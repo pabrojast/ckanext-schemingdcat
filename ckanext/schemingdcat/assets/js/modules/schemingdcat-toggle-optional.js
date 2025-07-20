@@ -19,29 +19,11 @@ ckan.module('toggle-optional', function ($) {
       var $toggleBtn = $('<button>', {
         class: 'btn btn-default',
         style: 'margin-bottom: 20px;',
-        html: '<i class="fa fa-cog"></i> Show Advanced & Metadata fields'
+        html: '<i class="fa fa-cog"></i> Show Advanced fields'
       });
       
-      // Crear botón separado para metadatos automáticos
-      var $automaticBtn = $('<button>', {
-        class: 'btn btn-info',
-        style: 'margin-bottom: 20px; margin-left: 10px;',
-        html: '<i class="fa fa-magic"></i> Show Automatic Metadata'
-      });
-      
-      // Crear mensaje explicativo para metadatos automáticos
-      var $automaticMessage = $('<div>', {
-        class: 'alert alert-info',
-        style: 'margin-bottom: 15px; display: none;',
-        html: '<strong><i class="fa fa-info-circle"></i> Metadatos Automáticos:</strong><br>' +
-              'Estos campos se rellenan automáticamente al subir archivos. ' +
-              'Si editas manualmente algún campo, se guardará tu valor y no se procesará automáticamente ese campo específico.'
-      });
-      
-      // Insertar los botones y mensaje en el contenedor
+      // Insertar el botón en el contenedor
       $(this.el).append($toggleBtn);
-      $(this.el).append($automaticBtn);
-      $(this.el).append($automaticMessage);
       
       // Lista de campos que siempre deben mostrarse (obligatorios)
       var requiredFields = [
@@ -110,29 +92,7 @@ ckan.module('toggle-optional', function ($) {
         '[name="theme"]',
         '[name="inspire_id"]',
         '[name="representation_type"]',
-        '[name="spatial"]',
-        // Nuevos campos de metadatos comprensivos (se ocultan por defecto)
-        '[name="spatial_crs"]',
-        '[name="spatial_resolution"]',
-        '[name="feature_count"]',
-        '[name="geometry_type"]',
-        '[name="data_fields"]',
-        '[name="data_statistics"]',
-        '[name="data_domains"]',
-        '[name="geographic_coverage"]',
-        '[name="administrative_boundaries"]',
-        '[name="file_created_date"]',
-        '[name="file_modified_date"]',
-        '[name="data_temporal_coverage"]',
-        '[name="file_size_bytes"]',
-        '[name="compression_info"]',
-        '[name="format_version"]',
-        '[name="file_integrity"]',
-        '[name="content_type_detected"]',
-        '[name="document_pages"]',
-        '[name="spreadsheet_sheets"]',
-        '[name="text_content_info"]',
-        '[name="spatial_extent"]'
+        '[name="spatial"]'
       ];
       
       // Añadir los grupos completos a ocultar
@@ -149,10 +109,7 @@ ckan.module('toggle-optional', function ($) {
         '.version_notes-group.card2.mb-3'
       ];
       
-      // Grupo especial de metadatos automáticos (siempre oculto por defecto)
-      var automaticMetadataGroup = [
-        '.automatic_metadata-group.card2.mb-3'
-      ];
+
       
       // Identificar campos opcionales específicos y sus contenedores
       var $optionalFields = $('.form-group').filter(function() {
@@ -163,16 +120,10 @@ ckan.module('toggle-optional', function ($) {
       
       // Añadir los grupos opcionales al conjunto de elementos a ocultar
       var $optionalGroupElements = $(optionalGroups.join(','));
-      var $automaticMetadataElements = $(automaticMetadataGroup.join(','));
       var $allOptionalElements = $optionalFields.add($optionalGroupElements);
-      
-      // Los metadatos automáticos se manejan por separado
       
       // Ocultar campos opcionales por defecto
       $allOptionalElements.hide();
-      
-      // Siempre ocultar metadatos automáticos por defecto
-      $automaticMetadataElements.hide();
       
       // Manejar el click del botón
       $toggleBtn.on('click', function(e) {
@@ -184,7 +135,7 @@ ckan.module('toggle-optional', function ($) {
         
         if ($(this).hasClass('active')) {
           $allOptionalElements.hide();
-          $(this).html('<i class="fa fa-cog"></i> Show Advanced & Metadata fields');
+          $(this).html('<i class="fa fa-cog"></i> Show Advanced fields');
           $hiddenInput.val('basic');
           
           // Ocultar los elementos de navegación correspondientes
@@ -199,7 +150,7 @@ ckan.module('toggle-optional', function ($) {
           
         } else {
           $allOptionalElements.show();
-          $(this).html('<i class="fa fa-cog"></i> Hide Advanced & Metadata fields');
+          $(this).html('<i class="fa fa-cog"></i> Hide Advanced fields');
           $hiddenInput.val('advanced');
           
           // Mostrar todos los elementos de navegación
@@ -213,14 +164,14 @@ ckan.module('toggle-optional', function ($) {
         // Para páginas 2-4, iniciar en modo avanzado
         $toggleBtn.removeClass('active');
         $allOptionalElements.show();
-        $toggleBtn.html('<i class="fa fa-cog"></i> Hide Advanced & Metadata fields');
+        $toggleBtn.html('<i class="fa fa-cog"></i> Hide Advanced fields');
         $hiddenInput.val('basic');
         $('.stages li').show();
       } else {
         // Para otras páginas, iniciar en modo básico
         $toggleBtn.addClass('active');
         $allOptionalElements.hide();
-        $toggleBtn.html('<i class="fa fa-cog"></i> Show Advanced & Metadata fields');
+        $toggleBtn.html('<i class="fa fa-cog"></i> Show Advanced fields');
         $hiddenInput.val('basic');
         
         // Ocultar los elementos de navegación correspondientes
@@ -233,22 +184,6 @@ ckan.module('toggle-optional', function ($) {
           }
         });
       }
-      
-      // Manejar el click del botón de metadatos automáticos
-      $automaticBtn.on('click', function(e) {
-        e.preventDefault();
-        $(this).toggleClass('active');
-        
-        if ($(this).hasClass('active')) {
-          $automaticMetadataElements.show();
-          $automaticMessage.show();
-          $(this).html('<i class="fa fa-magic"></i> Hide Automatic Metadata');
-        } else {
-          $automaticMetadataElements.hide();
-          $automaticMessage.hide();
-          $(this).html('<i class="fa fa-magic"></i> Show Automatic Metadata');
-        }
-      });
     }
   };
 });
