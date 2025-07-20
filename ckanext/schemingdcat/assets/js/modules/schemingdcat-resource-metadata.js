@@ -3,15 +3,23 @@ ckan.module('resource-metadata', function ($) {
     initialize: function () {
       var self = this;
       
-      // Verificar si hay campos de metadatos automáticos presentes
-      var $automaticMetadataElements = $('.automatic_metadata-group.card2.mb-3');
-      
-      if ($automaticMetadataElements.length === 0) {
-        console.log('No automatic metadata fields found, skipping resource metadata module');
-        return;
-      }
-      
-      console.log('Found', $automaticMetadataElements.length, 'automatic metadata groups');
+      // Esperar a que el DOM esté completamente cargado
+      setTimeout(function() {
+        // Verificar si hay campos de metadatos automáticos presentes
+        var $automaticMetadataElements = $('.automatic_metadata-group.card2.mb-3');
+        
+        if ($automaticMetadataElements.length === 0) {
+          console.log('No automatic metadata fields found, skipping resource metadata module');
+          return;
+        }
+        
+        console.log('Found', $automaticMetadataElements.length, 'automatic metadata groups');
+        
+        self._setupResourceMetadataControls($automaticMetadataElements);
+      }, 500);
+    },
+    
+    _setupResourceMetadataControls: function($automaticMetadataElements) {
       
       // Crear botón para metadatos automáticos
       var $automaticBtn = $('<button>', {
@@ -29,9 +37,15 @@ ckan.module('resource-metadata', function ($) {
               'If you manually edit any field, your value will be saved and that specific field will not be automatically processed.'
       });
       
+      // Encontrar el lugar correcto para insertar los controles
+      var $container = $('form').first();
+      if ($container.length === 0) {
+        $container = $('body');
+      }
+      
       // Insertar botón y mensaje en el formulario
-      $(this.el).prepend($automaticMessage);
-      $(this.el).prepend($automaticBtn);
+      $container.prepend($automaticMessage);
+      $container.prepend($automaticBtn);
       
       // Siempre ocultar metadatos automáticos por defecto
       $automaticMetadataElements.hide();

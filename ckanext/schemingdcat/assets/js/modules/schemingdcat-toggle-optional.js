@@ -106,7 +106,8 @@ ckan.module('toggle-optional', function ($) {
         '.purpose-group.card2.mb-3',
         '.unesdoc-group.card2.mb-3',
         '.license_info-group.card2.mb-3',
-        '.version_notes-group.card2.mb-3'
+        '.version_notes-group.card2.mb-3',
+        // IMPORTANTE: No incluir automatic_metadata aquí porque se maneja por separado
       ];
       
 
