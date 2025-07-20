@@ -3,10 +3,15 @@ ckan.module('resource-metadata', function ($) {
     initialize: function () {
       var self = this;
       
-      // Solo trabajar en formularios de recursos
-      if (!this._isResourceForm()) {
+      // Verificar si hay campos de metadatos automáticos presentes
+      var $automaticMetadataElements = $('.automatic_metadata-group.card2.mb-3');
+      
+      if ($automaticMetadataElements.length === 0) {
+        console.log('No automatic metadata fields found, skipping resource metadata module');
         return;
       }
+      
+      console.log('Found', $automaticMetadataElements.length, 'automatic metadata groups');
       
       // Crear botón para metadatos automáticos
       var $automaticBtn = $('<button>', {
@@ -28,9 +33,6 @@ ckan.module('resource-metadata', function ($) {
       $(this.el).prepend($automaticMessage);
       $(this.el).prepend($automaticBtn);
       
-      // Grupo de metadatos automáticos
-      var $automaticMetadataElements = $('.automatic_metadata-group.card2.mb-3');
-      
       // Siempre ocultar metadatos automáticos por defecto
       $automaticMetadataElements.hide();
       
@@ -49,14 +51,6 @@ ckan.module('resource-metadata', function ($) {
           $(this).html('<i class="fa fa-magic"></i> Show Automatic Metadata');
         }
       });
-    },
-    
-    _isResourceForm: function() {
-      // Verificar si estamos en un formulario de recursos
-      return window.location.pathname.includes('/resource/') || 
-             window.location.pathname.includes('/new_resource') ||
-             $('.resource-form').length > 0 ||
-             $('[name*="resources"]').length > 0;
     }
   };
 }); 
