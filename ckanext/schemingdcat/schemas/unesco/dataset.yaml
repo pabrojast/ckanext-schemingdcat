@@ -5405,7 +5405,7 @@ resource_fields:
     en: Number of Features
     es: Número de Características
     fr: Nombre de Caractéristiques
-  form_snippet: number.html
+  form_snippet: text.html
   display_snippet: text.html
   help_text:
     en: 'Number of features in vector files (shapefiles, GeoJSON, etc.).'
@@ -5553,7 +5553,7 @@ resource_fields:
     en: File Size (bytes)
     es: Tamaño del Archivo (bytes)
     fr: Taille du Fichier (octets)
-  form_snippet: number.html
+  form_snippet: text.html
   display_snippet: file_size.html
   help_text:
     en: 'File size in bytes, automatically detected.'
@@ -5625,7 +5625,7 @@ resource_fields:
     en: Number of Pages
     es: Número de Páginas
     fr: Nombre de Pages
-  form_snippet: number.html
+  form_snippet: text.html
   display_snippet: text.html
   help_text:
     en: 'Number of pages in document files (PDF, etc.).'
@@ -5639,7 +5639,7 @@ resource_fields:
     en: Number of Sheets
     es: Número de Hojas
     fr: Nombre de Feuilles
-  form_snippet: number.html
+  form_snippet: text.html
   display_snippet: text.html
   help_text:
     en: 'Number of sheets in spreadsheet files (Excel, etc.).'
