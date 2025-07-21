@@ -912,6 +912,54 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return False
 
 
+def _update_resource_metadata_direct_db(resource_id, metadata_fields, model):
+    """
+    Fallback function to update resource metadata directly in the database
+    when the CKAN action fails in a worker context.
+    """
+    try:
+        import json
+        
+        # Get the resource from the database
+        resource = model.Resource.get(resource_id)
+        if not resource:
+            return False
+        
+        # Update resource fields directly
+        updates_made = 0
+        for field_name, field_value in metadata_fields.items():
+            if field_value is not None and field_value != '':
+                try:
+                    # Convert to JSON string if it's a dict or list
+                    if isinstance(field_value, (dict, list)):
+                        field_value = json.dumps(field_value)
+                    
+                    # Set the attribute on the resource object
+                    setattr(resource, field_name, field_value)
+                    updates_made += 1
+                except Exception as field_error:
+                    print(f"Error setting field {field_name}: {field_error}")
+                    continue
+        
+        if updates_made > 0:
+            # Commit the changes
+            model.Session.add(resource)
+            model.Session.commit()
+            print(f"Direct DB update: Successfully updated {updates_made} fields for resource {resource_id}")
+            return True
+        else:
+            print(f"Direct DB update: No fields to update for resource {resource_id}")
+            return True
+            
+    except Exception as e:
+        print(f"Direct DB update failed for resource {resource_id}: {e}")
+        try:
+            model.Session.rollback()
+        except:
+            pass
+        return False
+
+
 def extract_comprehensive_metadata_job(job_data):
     """
     Job function para extraer metadata comprensiva en segundo plano usando CKAN Jobs Queue.
@@ -959,6 +1007,7 @@ def extract_comprehensive_metadata_job(job_data):
         try:
             import ckan.model as model
             import ckan.plugins.toolkit as toolkit
+            from ckan.logic import get_action
             import traceback
             log.info("CKAN modules imported successfully")
         except ImportError as e:
@@ -1066,17 +1115,23 @@ def extract_comprehensive_metadata_job(job_data):
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
             
             try:
-                # Ensure we have a valid database session
-                model.Session.close()  # Close any existing session
+                # Ensure we have a valid database session and close any existing one
+                try:
+                    model.Session.close()
+                except:
+                    pass
                 
-                # Create fresh system context for updating the resource
+                # Create fresh system context for updating the resource with proper setup
                 context = {
                     'model': model,
                     'session': model.Session,
                     'ignore_auth': True,
                     'user': '',  # System user
+                    'auth_user_obj': None,  # Explicit None for system operations
                     'api_version': 3,
-                    'defer_commit': False
+                    'defer_commit': False,
+                    'for_view': False,  # This is not for rendering
+                    'return_id_only': False  # We want the full object back
                 }
                 
                 log.info(f"Created system context for resource update")
@@ -1150,18 +1205,39 @@ def extract_comprehensive_metadata_job(job_data):
                 # Use resource_patch to update the fields
                 if len(fields_to_update) > 0:
                     log.info(f"Updating resource {resource_id} with {len(fields_to_update)} metadata fields: {fields_to_update}")
+                    log.debug(f"Resource patch data: {resource_patch_data}")
                     
                     try:
-                        result = toolkit.get_action('resource_patch')(context, resource_patch_data)
+                        # Use direct action import for better worker compatibility
+                        log.info(f"Getting resource_patch action...")
+                        resource_patch_action = get_action('resource_patch')
+                        log.info(f"Calling resource_patch action with context and data...")
+                        result = resource_patch_action(context, resource_patch_data)
+                        log.info(f"Resource_patch call completed successfully!")
                         log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
                         return True
                     except Exception as patch_error:
                         log.error(f"Error in resource_patch for resource {resource_id}: {patch_error}", exc_info=True)
+                        log.error(f"Context was: {context}")
+                        log.error(f"Resource patch data was: {resource_patch_data}")
                         try:
                             model.Session.rollback()
-                        except:
-                            pass
+                        except Exception as rollback_error:
+                            log.error(f"Error during rollback: {rollback_error}")
+                        
+                        # FALLBACK: Try direct database update if action fails
+                        log.warning(f"Attempting fallback direct database update for resource {resource_id}")
+                        try:
+                            fallback_success = _update_resource_metadata_direct_db(resource_id, metadata_fields, model)
+                            if fallback_success:
+                                log.info(f"Successfully updated resource {resource_id} via fallback direct database access")
+                                return True
+                            else:
+                                log.error(f"Fallback database update also failed for resource {resource_id}")
+                        except Exception as fallback_error:
+                            log.error(f"Fallback database update failed: {fallback_error}", exc_info=True)
+                        
                         return False
                 else:
                     log.info(f"No meaningful metadata fields to update for resource {resource_id}")
