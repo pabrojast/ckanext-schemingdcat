@@ -89,23 +89,25 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         // Create master section wrapper
         var $masterSection = self.createMasterSection();
         
-        // Find the insertion point - look for various possible upload field containers
-        var $insertionPoint = self.form.find('.image-upload').closest('.form-group, .control-group, .card2');
+        // Find the insertion point - specifically look for the resource_url-group
+        var $insertionPoint = self.form.find('.resource_url-group');
+        
         if (!$insertionPoint.length) {
-          $insertionPoint = self.form.find('input[name="upload"]').closest('.form-group, .control-group, .card2');
+          // Look for upload wrapper as alternative
+          $insertionPoint = self.form.find('.schemingdcat-upload-wrapper').closest('.card2');
         }
+        
         if (!$insertionPoint.length) {
-          $insertionPoint = self.form.find('input[name="url"]').closest('.form-group, .control-group, .card2');
-        }
-        if (!$insertionPoint.length) {
-          // Look for the resource upload field group
-          $insertionPoint = self.form.find('.resource_upload-group');
+          // Look for any upload field
+          $insertionPoint = self.form.find('input[name="upload"], input[name="url"]').closest('.card2');
         }
         
         if ($insertionPoint.length) {
-          // Insert after the upload field
+          console.log('[schemingdcat-resource-auto-fields] Inserting master section after:', $insertionPoint.attr('class'));
+          // Insert after the upload field group
           $insertionPoint.after($masterSection);
         } else {
+          console.log('[schemingdcat-resource-auto-fields] No suitable insertion point found, inserting before first non-auto group');
           // If no suitable insertion point, insert before the first non-auto field group
           var inserted = false;
           formGroups.each(function() {
@@ -163,21 +165,26 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var self = this;
       var hasAuto = false;
       
-      // Check if group contains any auto-filled fields
-      self.options.autoFields.forEach(function(fieldName) {
-        if ($group.find('[name="' + fieldName + '"], [name*="__' + fieldName + '"]').length > 0) {
+      // Get group class
+      var groupClass = $group.attr('class') || '';
+      console.log('[schemingdcat-resource-auto-fields] Checking group class:', groupClass);
+      
+      // Check if group class contains any of the auto field group IDs
+      self.options.autoFieldGroups.forEach(function(groupId) {
+        if (groupClass.indexOf(groupId + '-group') !== -1) {
           hasAuto = true;
+          console.log('[schemingdcat-resource-auto-fields] Found auto field group:', groupId);
         }
       });
       
-      // Check if group ID matches auto field groups
-      // Extract group ID from class name (e.g., "resource_type-group card2 mb-3")
-      var groupClass = $group.attr('class') || '';
-      var groupMatch = groupClass.match(/(\w+)-group/);
-      var groupId = groupMatch ? groupMatch[1] : '';
-      
-      if (groupId && self.options.autoFieldGroups.includes(groupId)) {
-        hasAuto = true;
+      // Also check if group contains any auto-filled fields
+      if (!hasAuto) {
+        self.options.autoFields.forEach(function(fieldName) {
+          if ($group.find('[name="' + fieldName + '"], [name*="__' + fieldName + '"]').length > 0) {
+            hasAuto = true;
+            console.log('[schemingdcat-resource-auto-fields] Found auto field:', fieldName);
+          }
+        });
       }
       
       return hasAuto;

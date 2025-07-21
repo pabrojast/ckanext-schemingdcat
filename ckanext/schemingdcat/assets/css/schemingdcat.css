@@ -1512,62 +1512,95 @@ input#lang-r:checked ~ div .example-r {
 
 /* Master section styles */
 .schemingdcat-master-section {
-  border: 2px solid #e0e0e0;
+  border: 2px solid #2572B4;
   background-color: #f8f9fa;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(37, 114, 180, 0.1);
+  transition: all 0.3s ease;
+}
+
+.schemingdcat-master-section:hover {
+  box-shadow: 0 4px 15px rgba(37, 114, 180, 0.15);
 }
 
 .schemingdcat-master-section.collapsed {
   opacity: 0.95;
+  box-shadow: 0 2px 5px rgba(37, 114, 180, 0.08);
 }
 
 .schemingdcat-master-header {
-  background-color: #f0f0f0;
-  padding: 15px 20px;
+  background: linear-gradient(135deg, #2572B4 0%, #3b87c8 100%);
+  color: white;
+  padding: 20px 25px;
   position: relative;
-  padding-left: 45px;
-  border-bottom: 1px solid #ddd;
+  padding-left: 55px;
+  border-bottom: 2px solid #1e5a92;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.schemingdcat-master-header:hover {
+  background: linear-gradient(135deg, #1e5a92 0%, #2572B4 100%);
 }
 
 .schemingdcat-master-header h3 {
-  color: #2572B4;
-  font-size: 18px;
-  margin-bottom: 5px;
+  color: white;
+  font-size: 20px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.schemingdcat-master-header h3 i {
+  margin-right: 10px;
+  font-size: 22px;
 }
 
 .schemingdcat-master-description {
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
+  font-weight: 300;
 }
 
 .schemingdcat-master-toggle {
   position: absolute;
-  left: 15px;
+  left: 20px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 4px 8px;
-  background-color: #2572B4;
+  padding: 6px 10px;
+  background-color: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
-  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
   transition: all 0.3s ease;
+  font-size: 16px;
 }
 
 .schemingdcat-master-toggle:hover {
-  background-color: #1e5a92;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.schemingdcat-master-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
 }
 
 .schemingdcat-master-toggle i {
-  font-size: 14px;
+  font-size: 16px;
+  transition: transform 0.3s ease;
 }
 
 .schemingdcat-master-content {
-  padding: 15px;
-  background-color: #fff;
+  padding: 20px;
+  background-color: #ffffff;
   border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 6px 6px;
 }
 
 .schemingdcat-master-section.collapsed .schemingdcat-master-content {
@@ -1576,20 +1609,56 @@ input#lang-r:checked ~ div .example-r {
 
 /* Nested group styles within master section */
 .schemingdcat-master-content .card2 {
-  margin-bottom: 10px;
-  border: 1px solid #e0e0e0;
-  box-shadow: none;
+  margin-bottom: 15px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.schemingdcat-master-content .card2:last-child {
+  margin-bottom: 0;
 }
 
 .schemingdcat-master-content .card2-header {
-  background-color: #fafafa;
-  padding: 10px 15px;
-  padding-left: 40px;
+  background-color: #f8f9fa;
+  padding: 12px 18px;
+  padding-left: 45px;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.3s ease;
+}
+
+.schemingdcat-master-content .card2-header:hover {
+  background-color: #e9ecef;
 }
 
 .schemingdcat-master-content .card2-header h3 {
   font-size: 16px;
   margin: 0;
+  color: #495057;
+  font-weight: 500;
+}
+
+.schemingdcat-master-content .card2-header h3 i {
+  color: #6c757d;
+  margin-right: 8px;
+}
+
+/* Ensure collapsed nested groups still show toggle button */
+.schemingdcat-master-content .schemingdcat-collapsible.collapsed .card2-header {
+  border-bottom: none;
+  background-color: #f0f0f0;
+}
+
+/* Animation for master section */
+@keyframes pulseHighlight {
+  0% { box-shadow: 0 2px 10px rgba(37, 114, 180, 0.1); }
+  50% { box-shadow: 0 4px 20px rgba(37, 114, 180, 0.25); }
+  100% { box-shadow: 0 2px 10px rgba(37, 114, 180, 0.1); }
+}
+
+.schemingdcat-master-section.highlight {
+  animation: pulseHighlight 2s ease-in-out;
 }
 
 /* Ensure spatial extent field is properly styled when loading */
