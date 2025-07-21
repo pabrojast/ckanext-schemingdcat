@@ -584,7 +584,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 # Encolar el job de extracción espacial
                 job = jobs.enqueue(
                     extract_comprehensive_metadata_job,
-                    [job_data],
+                    job_data,
                     title=f"Comprehensive metadata extraction for resource {resource.get('id', 'unknown')[:8]}"
                 )
                 
@@ -827,42 +827,73 @@ def extract_comprehensive_metadata_job(job_data):
     import tempfile
     import urllib.request
     import os
+    import sys
     
-    # Configure logging for the worker
+    # Configure logging for the worker with more detail
     log = logging.getLogger(__name__)
+    log.info(f"========= STARTING COMPREHENSIVE METADATA JOB =========")
+    log.info(f"Job data received: {job_data}")
+    log.info(f"Python version: {sys.version}")
+    log.info(f"Working directory: {os.getcwd()}")
     
     try:
-        # CKAN imports inside try block to handle import errors
-        import ckan.model as model
-        import ckan.logic as logic
-        
-        # Get job data
+        # Get job data with validation
+        if not isinstance(job_data, dict):
+            log.error(f"Invalid job_data type: {type(job_data)}, expected dict")
+            return False
+            
         resource_id = job_data.get('resource_id')
         resource_url = job_data.get('resource_url')
         resource_format = job_data.get('resource_format')
         package_id = job_data.get('package_id')
         
+        if not resource_id:
+            log.error("No resource_id in job_data")
+            return False
+            
         log.info(f"Processing comprehensive metadata job for resource {resource_id}")
+        log.info(f"Resource URL: {resource_url}")
+        log.info(f"Resource format: {resource_format}")
+        log.info(f"Package ID: {package_id}")
+        
+        # CKAN imports inside try block to handle import errors
+        try:
+            import ckan.model as model
+            import ckan.logic as logic
+            log.info("CKAN modules imported successfully")
+        except ImportError as e:
+            log.error(f"Could not import CKAN modules: {e}")
+            return False
         
         # Import analyzer
         try:
             from ckanext.schemingdcat.spatial_extent import FileAnalyzer
+            log.info("FileAnalyzer imported successfully")
         except ImportError as e:
-            log.error(f"Could not import file analyzer: {e}")
-            return
+            log.error(f"Could not import FileAnalyzer: {e}")
+            return False
         
         # Analyze file comprehensively
         metadata = {}
         
         try:
             analyzer = FileAnalyzer()
-            log.debug(f"FileAnalyzer created successfully for resource {resource_id}")
+            log.info(f"FileAnalyzer created successfully for resource {resource_id}")
             
             # Check if file is local or remote
             if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
                 # Local file
                 log.info(f"Analyzing local file: {resource_url}")
-                metadata = analyzer.analyze_file(resource_url, trust_extension=True)
+                
+                # Check if file exists
+                if os.path.exists(resource_url):
+                    log.info(f"Local file exists, analyzing: {resource_url}")
+                    metadata = analyzer.analyze_file(resource_url, trust_extension=True)
+                    log.info(f"Local file analysis completed, extracted {len(metadata)} metadata fields")
+                else:
+                    log.warning(f"Local file does not exist: {resource_url}")
+                    metadata = {}
+                    
             else:
                 # Remote file - download temporarily for analysis
                 log.info(f"Analyzing remote file: {resource_url}")
@@ -872,15 +903,19 @@ def extract_comprehensive_metadata_job(job_data):
                     ext = resource_format.lower() if resource_format else 'unknown'
                     suffix = f".{ext}" if ext and ext != 'unknown' else ""
                     
+                    log.info(f"Creating temporary file with suffix: {suffix}")
+                    
                     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
                         try:
                             # Download file with proper headers
                             req = urllib.request.Request(resource_url)
                             req.add_header('User-Agent', 'CKAN-SchemingDCAT-FileAnalyzer/1.0')
                             
-                            log.debug(f"Downloading file from {resource_url}")
+                            log.info(f"Starting download from: {resource_url}")
                             
                             with urllib.request.urlopen(req, timeout=30) as response:
+                                log.info(f"Download response received, content-type: {response.headers.get('Content-Type', 'unknown')}")
+                                
                                 chunk_size = 8192
                                 total_size = 0
                                 while True:
@@ -891,41 +926,50 @@ def extract_comprehensive_metadata_job(job_data):
                                     total_size += len(chunk)
                                     # Limit file size to 100MB
                                     if total_size > 100 * 1024 * 1024:
+                                        log.warning("File too large (>100MB), aborting download")
                                         raise Exception("File too large (>100MB)")
                             
                             tmp_file.flush()
                             
                             if total_size > 0:
-                                log.debug(f"Downloaded {total_size} bytes, analyzing...")
+                                log.info(f"Downloaded {total_size} bytes to {tmp_file.name}, starting analysis...")
                                 # Analyze downloaded file
                                 metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
+                                log.info(f"Remote file analysis completed, extracted {len(metadata)} metadata fields")
                             else:
                                 log.warning(f"Downloaded file is empty")
                             
+                        except urllib.error.URLError as e:
+                            log.error(f"URL error downloading file: {e}")
                         except Exception as e:
-                            log.warning(f"Error downloading file for analysis: {e}")
+                            log.error(f"Error downloading file for analysis: {e}")
                         finally:
                             # Clean up temporary file
                             try:
-                                os.unlink(tmp_file.name)
-                            except Exception:
-                                pass
+                                if os.path.exists(tmp_file.name):
+                                    os.unlink(tmp_file.name)
+                                    log.debug(f"Cleaned up temporary file: {tmp_file.name}")
+                            except Exception as cleanup_error:
+                                log.warning(f"Could not clean up temporary file {tmp_file.name}: {cleanup_error}")
+                else:
+                    log.warning("No resource URL provided for analysis")
                 
         except Exception as e:
-            log.error(f"Error extracting comprehensive metadata: {e}")
-            return
+            log.error(f"Error extracting comprehensive metadata: {e}", exc_info=True)
+            return False
         
         if metadata:
             log.info(f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
+            log.info(f"Metadata fields extracted: {list(metadata.keys())}")
             
             # Debug: Log raw metadata to understand what's being extracted
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
             
             try:
-                # Update the RESOURCE directly using resource_patch
-                import ckan.logic as logic
+                # Ensure we have a valid database session
+                model.Session.close()  # Close any existing session
                 
-                # Create system context for updating the resource
+                # Create fresh system context for updating the resource
                 context = {
                     'model': model,
                     'session': model.Session,
@@ -934,6 +978,8 @@ def extract_comprehensive_metadata_job(job_data):
                     'api_version': 3,
                     'defer_commit': False
                 }
+                
+                log.info(f"Created system context for resource update")
                 
                 # Prepare data for updating with all extracted metadata
                 resource_patch_data = {'id': resource_id}
@@ -1003,27 +1049,54 @@ def extract_comprehensive_metadata_job(job_data):
                 
                 # Use resource_patch to update the fields
                 if len(fields_to_update) > 0:
-                    result = logic.get_action('resource_patch')(context, resource_patch_data)
-                    log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
+                    log.info(f"Updating resource {resource_id} with {len(fields_to_update)} metadata fields: {fields_to_update}")
+                    
+                    try:
+                        result = logic.get_action('resource_patch')(context, resource_patch_data)
+                        log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
+                        log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
+                        return True
+                    except Exception as patch_error:
+                        log.error(f"Error in resource_patch for resource {resource_id}: {patch_error}", exc_info=True)
+                        try:
+                            model.Session.rollback()
+                        except:
+                            pass
+                        return False
                 else:
                     log.info(f"No meaningful metadata fields to update for resource {resource_id}")
+                    return True
                 
             except Exception as e:
-                log.error(f"Error updating database for resource {resource_id}: {e}")
+                log.error(f"Error preparing update for resource {resource_id}: {e}", exc_info=True)
                 try:
                     model.Session.rollback()
                 except:
                     pass
-                return
+                return False
                 
         else:
             log.info(f"No comprehensive metadata could be extracted from resource {resource_id}")
+            return True  # Not an error, just no metadata found
             
     except Exception as e:
-        log.error(f"General error in comprehensive metadata extraction job for resource {job_data.get('resource_id', 'unknown')}: {str(e)}")
+        log.error(f"General error in comprehensive metadata extraction job for resource {job_data.get('resource_id', 'unknown')}: {str(e)}", exc_info=True)
         # Don't re-raise to avoid crashing the worker
         import traceback
         log.debug(f"Full traceback: {traceback.format_exc()}")
+        return False
+    
+    finally:
+        # Always close the session to prevent connection leaks
+        try:
+            model.Session.close()
+            log.debug("Database session closed")
+        except:
+            pass
+        
+        log.info(f"========= COMPLETED COMPREHENSIVE METADATA JOB =========")
+    
+    return True
 
 
 # Función legacy para compatibilidad hacia atrás
