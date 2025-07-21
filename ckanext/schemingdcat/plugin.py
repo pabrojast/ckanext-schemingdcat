@@ -828,7 +828,7 @@ def extract_comprehensive_metadata_job(job_data):
                                 # Analizar archivo descargado
                                 metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
                             
-        except Exception as e:
+                        except Exception as e:
                             log.warning(f"Error downloading file for analysis: {e}")
                         finally:
                             # Limpiar archivo temporal
