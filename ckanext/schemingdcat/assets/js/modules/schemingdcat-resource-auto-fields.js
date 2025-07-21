@@ -3,8 +3,24 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
 
   return {
     options: {
-      autoFields: ['name', 'format', 'mimetype', 'encoding', 'created'],
-      autoFieldGroups: ['resource_title', 'resource_type', 'resource_identification'],
+      autoFields: [
+        // Spatial info fields
+        'spatial_crs', 'spatial_resolution', 'feature_count', 'geometry_type',
+        // Data info fields  
+        'data_fields', 'data_statistics', 'data_domains',
+        // Geographic info fields
+        'geographic_coverage', 'administrative_boundaries',
+        // Temporal info fields
+        'file_created_date', 'file_modified_date', 'data_temporal_coverage',
+        // Technical info fields
+        'file_size_bytes', 'compression_info', 'format_version', 'file_integrity',
+        // Content info fields (non-spatial files)
+        'content_type_detected', 'document_pages', 'spreadsheet_sheets', 'text_content_info'
+      ],
+      autoFieldGroups: [
+        'spatial_info', 'data_info', 'geographic_info', 
+        'temporal_info', 'technical_info', 'content_info'
+      ],
       collapsedByDefault: true,
       showIndicator: true,
       indicatorText: 'Auto-filled fields'
