@@ -581,14 +581,25 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'package_id': package_id
                 }
                 
-                # Encolar el job de extracción espacial
-                job = jobs.enqueue(
-                    extract_comprehensive_metadata_job,
-                    job_data,
-                    title=f"Comprehensive metadata extraction for resource {resource.get('id', 'unknown')[:8]}"
-                )
+                log.info(f"Preparing to enqueue job with data: {job_data}")
                 
-                log.info(f"Enqueued spatial extent extraction job {job.id} for resource {resource.get('id', 'unknown')}")
+                # Encolar el job de extracción espacial
+                try:
+                    job = jobs.enqueue(
+                        extract_comprehensive_metadata_job,
+                        job_data,
+                        title=f"Comprehensive metadata extraction for resource {resource.get('id', 'unknown')[:8]}"
+                    )
+                    
+                    log.info(f"Successfully enqueued spatial extent extraction job {job.id} for resource {resource.get('id', 'unknown')}")
+                    log.info(f"Job status: {getattr(job, 'get_status', lambda: 'unknown')()}")
+                    
+                except Exception as enqueue_error:
+                    log.error(f"Failed to enqueue job: {enqueue_error}", exc_info=True)
+                    # Fall back to threading
+                    log.warning("Falling back to threading due to enqueue failure")
+                    self._process_spatial_extent_with_threading(resource, package_id)
+                    return
                 
                 # Programar fallback a threading si el job no se procesa en un tiempo razonable
                 
@@ -636,20 +647,27 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'package_id': package_id
                 }
                 
-                extract_comprehensive_metadata_job(job_data)
+                log.info(f"Calling extract_comprehensive_metadata_job with data: {job_data}")
+                result = extract_comprehensive_metadata_job(job_data)
+                log.info(f"extract_comprehensive_metadata_job returned: {result}")
                         
             except Exception as e:
                 log.error(f"General error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
         
-        # Lanzar el thread de extracción en segundo plano
-        extraction_thread = threading.Thread(
-            target=extract_spatial_extent_async,
-            name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
-            daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
-        )
-        extraction_thread.start()
-        
-        log.info(f"Started background spatial extent extraction for resource {resource.get('id', 'unknown')} (threading mode)")
+        try:
+            # Lanzar el thread de extracción en segundo plano
+            extraction_thread = threading.Thread(
+                target=extract_spatial_extent_async,
+                name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
+                daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
+            )
+            extraction_thread.start()
+            
+            log.info(f"Successfully started background thread for spatial extent extraction - resource {resource.get('id', 'unknown')} (threading mode)")
+            log.info(f"Thread name: {extraction_thread.name}, alive: {extraction_thread.is_alive()}")
+            
+        except Exception as thread_error:
+            log.error(f"Failed to start threading fallback for resource {resource.get('id', 'unknown')}: {thread_error}", exc_info=True)
 
     def _update_dataset_spatial_extent_direct_db(self, package_id, extent):
         """
