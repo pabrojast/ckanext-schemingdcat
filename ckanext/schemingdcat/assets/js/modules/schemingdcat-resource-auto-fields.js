@@ -27,17 +27,31 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     },
 
     initialize: function () {
+      var self = this;
       console.log('[schemingdcat-resource-auto-fields] Initializing module...');
-      this.form = this.el.closest('form');
       
-      // Only run on resource forms
-      if (!this.isResourceForm()) {
-        console.log('[schemingdcat-resource-auto-fields] Not a resource form, skipping');
-        return;
-      }
+      // Use a small delay to ensure DOM is ready
+      setTimeout(function() {
+        // Find the resource form
+        self.form = $('form[action*="/resource/"], form#resource-edit, form#resource-new');
+        if (!self.form.length) {
+          self.form = self.el.closest('form');
+        }
+        
+        // Only run on resource forms
+        if (!self.isResourceForm()) {
+          console.log('[schemingdcat-resource-auto-fields] Not a resource form, skipping');
+          return;
+        }
+        
+        // Add debug logging
+        console.log('[schemingdcat-resource-auto-fields] Form found:', self.form);
+        console.log('[schemingdcat-resource-auto-fields] Auto fields configured:', self.options.autoFields);
+        console.log('[schemingdcat-resource-auto-fields] Auto field groups configured:', self.options.autoFieldGroups);
 
-      this.setupAutoFieldCollapsing();
-      this.monitorAutoFilledFields();
+        self.setupAutoFieldCollapsing();
+        self.monitorAutoFilledFields();
+      }, 100);
     },
 
     isResourceForm: function() {
@@ -54,14 +68,20 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       
       // Find all form groups (card2 elements)
       var formGroups = this.form.find('.card2');
+      console.log('[schemingdcat-resource-auto-fields] Found form groups:', formGroups.length);
       
       formGroups.each(function() {
         var $group = $(this);
         var $header = $group.find('.card2-header').first();
         var $body = $group.find('.card2-body').first();
         
+        // Get group class to identify which group this is
+        var groupClass = $group.attr('class') || '';
+        console.log('[schemingdcat-resource-auto-fields] Processing group:', groupClass);
+        
         // Check if this group contains auto-filled fields
         var hasAutoFields = self.groupHasAutoFields($group);
+        console.log('[schemingdcat-resource-auto-fields] Group has auto fields:', hasAutoFields);
         
         if (hasAutoFields) {
           // Add collapsible functionality
@@ -105,6 +125,11 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     makeGroupCollapsible: function($group, $header, $body) {
       var self = this;
       
+      // Check if already processed to avoid duplicates
+      if ($group.hasClass('schemingdcat-collapsible')) {
+        return;
+      }
+      
       // Add collapsible class
       $group.addClass('schemingdcat-collapsible');
       
@@ -116,8 +141,8 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         html: '<i class="fa fa-chevron-down"></i>'
       });
       
-      // Add auto-field indicator
-      if (self.options.showIndicator) {
+      // Add auto-field indicator only if not already present
+      if (self.options.showIndicator && $header.find('.schemingdcat-auto-field-indicator').length === 0) {
         var $indicator = $('<span>', {
           class: 'schemingdcat-auto-field-indicator',
           html: '<i class="fa fa-magic"></i> ' + self.options.indicatorText
@@ -125,11 +150,13 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         $header.append($indicator);
       }
       
-      // Add toggle button to header
-      $header.css('cursor', 'pointer').prepend($toggleBtn);
+      // Add toggle button to header only if not already present
+      if ($header.find('.schemingdcat-collapse-toggle').length === 0) {
+        $header.css('cursor', 'pointer').prepend($toggleBtn);
+      }
       
       // Handle click events
-      $header.on('click', function(e) {
+      $header.off('click.autofields').on('click.autofields', function(e) {
         // Don't toggle if clicking on form elements
         if ($(e.target).is('input, select, textarea, label, a')) {
           return;
@@ -194,16 +221,21 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     },
 
     collapseGroup: function($group, $header, $body) {
+      console.log('[schemingdcat-resource-auto-fields] Collapsing group');
       $group.addClass('collapsed');
-      $body.slideUp(200);
+      $body.slideUp(200, function() {
+        // Ensure it's hidden after animation
+        $body.css('display', 'none');
+      });
       $header.find('.schemingdcat-collapse-toggle i')
         .removeClass('fa-chevron-down')
         .addClass('fa-chevron-right');
     },
 
     expandGroup: function($group, $header, $body) {
+      console.log('[schemingdcat-resource-auto-fields] Expanding group');
       $group.removeClass('collapsed');
-      $body.slideDown(200);
+      $body.css('display', 'block').hide().slideDown(200);
       $header.find('.schemingdcat-collapse-toggle i')
         .removeClass('fa-chevron-right')
         .addClass('fa-chevron-down');
