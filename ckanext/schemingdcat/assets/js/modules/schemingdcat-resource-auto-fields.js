@@ -24,7 +24,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       collapsedByDefault: true,
       showIndicator: true,
       masterSectionTitle: 'Automatically Generated Metadata',
-      masterSectionDescription: 'This section contains metadata automatically extracted from your uploaded resource. Click to expand and review or modify the generated information.',
+      masterSectionDescription: 'This section will be populated with metadata automatically extracted after you upload your file. Once generated, you can expand this section to review and modify the information as needed.',
       masterSectionIcon: 'fa-magic'
     },
 
@@ -89,41 +89,31 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         // Create master section wrapper
         var $masterSection = self.createMasterSection();
         
-        // Find the insertion point - specifically look for the resource_url-group
-        var $insertionPoint = self.form.find('.resource_url-group');
+        // Find the insertion point - look for form actions (submit buttons)
+        var $formActions = self.form.find('.form-actions');
         
-        if (!$insertionPoint.length) {
-          // Look for upload wrapper as alternative
-          $insertionPoint = self.form.find('.schemingdcat-upload-wrapper').closest('.card2');
-        }
-        
-        if (!$insertionPoint.length) {
-          // Look for any upload field
-          $insertionPoint = self.form.find('input[name="upload"], input[name="url"]').closest('.card2');
-        }
-        
-        if ($insertionPoint.length) {
-          console.log('[schemingdcat-resource-auto-fields] Inserting master section after:', $insertionPoint.attr('class'));
-          // Insert after the upload field group
-          $insertionPoint.after($masterSection);
+        if ($formActions.length) {
+          console.log('[schemingdcat-resource-auto-fields] Inserting master section before form actions');
+          // Insert before the form action buttons
+          $formActions.before($masterSection);
         } else {
-          console.log('[schemingdcat-resource-auto-fields] No suitable insertion point found, inserting before first non-auto group');
-          // If no suitable insertion point, insert before the first non-auto field group
-          var inserted = false;
+          console.log('[schemingdcat-resource-auto-fields] No form actions found, looking for last card2 group');
+          // If no form actions, insert after the last non-auto field group
+          var $lastNonAutoGroup = null;
           formGroups.each(function() {
             var $group = $(this);
-            if (!self.groupHasAutoFields($group) && !inserted) {
-              $group.before($masterSection);
-              inserted = true;
+            if (!self.groupHasAutoFields($group)) {
+              $lastNonAutoGroup = $group;
             }
           });
           
-          if (!inserted) {
-            // As last resort, prepend to form
-            var firstGroup = formGroups.first();
-            if (firstGroup.length) {
-              firstGroup.before($masterSection);
-            }
+          if ($lastNonAutoGroup) {
+            console.log('[schemingdcat-resource-auto-fields] Inserting after last non-auto group');
+            $lastNonAutoGroup.after($masterSection);
+          } else {
+            // As last resort, append to form
+            console.log('[schemingdcat-resource-auto-fields] Appending to form');
+            self.form.append($masterSection);
           }
         }
         
@@ -200,7 +190,12 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
               '<i class="fa fa-chevron-down"></i></button>' +
               '<h3 class="mb-0"><i class="fa ' + self.options.masterSectionIcon + '" style="padding-right:5px;"></i>' +
               self.options.masterSectionTitle + '</h3>' +
-              '<p class="schemingdcat-master-description">' + self.options.masterSectionDescription + '</p>' +
+              '<p class="schemingdcat-master-description">' +
+              '<i class="fa fa-info-circle" style="margin-right:5px;"></i>' +
+              self.options.masterSectionDescription + '</p>' +
+              '<div class="schemingdcat-master-note">' +
+              '<i class="fa fa-clock-o"></i> Metadata extraction occurs automatically after file upload' +
+              '</div>' +
               '</div>' +
               '<div class="schemingdcat-master-content"></div>'
       });

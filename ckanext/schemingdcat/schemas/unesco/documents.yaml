@@ -65,7 +65,13 @@ dataset_fields:
     en: Upload Document File
     es: Subir archivo del documento
     fr: Télécharger le fichier du document
-  preset: resource_upload
+  form_snippet: upload.html
+  upload_field: upload
+  upload_clear: clear_upload
+  upload_label: 
+    en: Document File
+    es: Archivo del documento
+    fr: Fichier du document
   form_placeholder:
     en: Select a file to upload...
     es: Seleccionar un archivo para subir...

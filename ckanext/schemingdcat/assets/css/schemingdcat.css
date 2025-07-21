@@ -1561,9 +1561,25 @@ input#lang-r:checked ~ div .example-r {
 .schemingdcat-master-description {
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  margin: 0;
+  margin: 0 0 10px 0;
   line-height: 1.5;
   font-weight: 300;
+}
+
+.schemingdcat-master-note {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.95);
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.schemingdcat-master-note i {
+  margin-right: 6px;
+  opacity: 0.8;
 }
 
 .schemingdcat-master-toggle {
