@@ -327,21 +327,34 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Hook que se ejecuta después de crear un recurso.
         Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
         """
-        log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource.get('id', 'unknown')}")
+        resource_id = resource.get('id', 'unknown')
+        log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource_id}")
         log.info(f"🔥 Resource details: name={resource.get('name', 'N/A')}, format={resource.get('format', 'N/A')}, url={resource.get('url', 'N/A')}")
+        
+        # Check if this resource is already being processed
+        processing_key = f"_processing_spatial_{resource_id}"
+        if context.get(processing_key):
+            log.info(f"⏭️ Resource {resource_id} is already being processed, skipping duplicate processing")
+            return resource
+        
+        # Mark as being processed
+        context[processing_key] = True
         
         try:
             # FIRST: Clean up any empty list fields that might have been created
-            log.info(f"🧹 Cleaning up empty metadata fields for resource {resource.get('id', 'unknown')}")
+            log.info(f"🧹 Cleaning up empty metadata fields for resource {resource_id}")
             self._cleanup_empty_metadata_fields(context, resource)
             
             # THEN: Process spatial extent extraction  
-            log.info(f"🌍 Starting spatial extent extraction for resource {resource.get('id', 'unknown')}")
+            log.info(f"🌍 Starting spatial extent extraction for resource {resource_id}")
             self._process_spatial_extent_extraction_for_resource(context, resource)
-            log.info(f"✅ Completed spatial processing for resource {resource.get('id', 'unknown')}")
+            log.info(f"✅ Completed spatial processing for resource {resource_id}")
             
         except Exception as e:
             log.error(f"❌ Error in spatial extent extraction after resource creation: {str(e)}", exc_info=True)
+        finally:
+            # Clean up the processing flag
+            context.pop(processing_key, None)
         
         return resource
 
@@ -350,6 +363,17 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Hook que se ejecuta después de actualizar un recurso.
         También procesamos la extracción de extensión espacial aquí.
         """
+        resource_id = resource.get('id', 'unknown')
+        
+        # Check if this resource is already being processed
+        processing_key = f"_processing_spatial_{resource_id}"
+        if context.get(processing_key):
+            log.info(f"⏭️ Resource {resource_id} is already being processed, skipping duplicate processing")
+            return resource
+        
+        # Mark as being processed
+        context[processing_key] = True
+        
         try:
             # FIRST: Clean up any empty list fields that might have been created
             self._cleanup_empty_metadata_fields(context, resource)
@@ -358,6 +382,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             self._process_spatial_extent_extraction_for_resource(context, resource)
         except Exception as e:
             log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
+        finally:
+            # Clean up the processing flag
+            context.pop(processing_key, None)
         
         return resource
 
@@ -641,7 +668,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 try:
                     job = jobs.enqueue(
                         extract_comprehensive_metadata_job,
-                        job_data,
+                        [job_data],  # Pasar job_data como primer argumento en la lista
                         title=f"Comprehensive metadata extraction for resource {resource.get('id', 'unknown')[:8]}"
                     )
                     
@@ -931,7 +958,8 @@ def extract_comprehensive_metadata_job(job_data):
         # CKAN imports inside try block to handle import errors
         try:
             import ckan.model as model
-            import ckan.logic as logic
+            import ckan.plugins.toolkit as toolkit
+            import traceback
             log.info("CKAN modules imported successfully")
         except ImportError as e:
             log.error(f"Could not import CKAN modules: {e}")
@@ -1124,7 +1152,7 @@ def extract_comprehensive_metadata_job(job_data):
                     log.info(f"Updating resource {resource_id} with {len(fields_to_update)} metadata fields: {fields_to_update}")
                     
                     try:
-                        result = logic.get_action('resource_patch')(context, resource_patch_data)
+                        result = toolkit.get_action('resource_patch')(context, resource_patch_data)
                         log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
                         return True
