@@ -1,3 +1,12 @@
-{% if data[field.field_name] %}
-  {{ h.schemingdcat_parse_localised_date(data[field.field_name].split()[0]) }}
+{% set date_value = data.get(field.field_name) %}
+{% if date_value %}
+  {% if date_value is iterable and date_value is not string %}
+    {# If it's a list, take the first value #}
+    {% if date_value[0] %}
+      {{ h.schemingdcat_parse_localised_date(date_value[0].split()[0] if date_value[0] else '') }}
+    {% endif %}
+  {% else %}
+    {# If it's a single value #}
+    {{ h.schemingdcat_parse_localised_date(date_value.split()[0] if date_value else '') }}
+  {% endif %}
 {% endif %}
