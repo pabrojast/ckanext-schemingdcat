@@ -1510,6 +1510,88 @@ input#lang-r:checked ~ div .example-r {
   display: none;
 }
 
+/* Master section styles */
+.schemingdcat-master-section {
+  border: 2px solid #e0e0e0;
+  background-color: #f8f9fa;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.schemingdcat-master-section.collapsed {
+  opacity: 0.95;
+}
+
+.schemingdcat-master-header {
+  background-color: #f0f0f0;
+  padding: 15px 20px;
+  position: relative;
+  padding-left: 45px;
+  border-bottom: 1px solid #ddd;
+}
+
+.schemingdcat-master-header h3 {
+  color: #2572B4;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.schemingdcat-master-description {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.schemingdcat-master-toggle {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  background-color: #2572B4;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.schemingdcat-master-toggle:hover {
+  background-color: #1e5a92;
+}
+
+.schemingdcat-master-toggle i {
+  font-size: 14px;
+}
+
+.schemingdcat-master-content {
+  padding: 15px;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.schemingdcat-master-section.collapsed .schemingdcat-master-content {
+  display: none;
+}
+
+/* Nested group styles within master section */
+.schemingdcat-master-content .card2 {
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: none;
+}
+
+.schemingdcat-master-content .card2-header {
+  background-color: #fafafa;
+  padding: 10px 15px;
+  padding-left: 40px;
+}
+
+.schemingdcat-master-content .card2-header h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
 /* Ensure spatial extent field is properly styled when loading */
 textarea.loading[name="spatial_extent"],
 input.loading[name="spatial_extent"] {

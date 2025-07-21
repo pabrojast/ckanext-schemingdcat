@@ -23,7 +23,9 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       ],
       collapsedByDefault: true,
       showIndicator: true,
-      indicatorText: 'Auto-filled fields'
+      masterSectionTitle: 'Automatically Generated Metadata',
+      masterSectionDescription: 'This section contains metadata automatically extracted from your uploaded resource. Click to expand and review or modify the generated information.',
+      masterSectionIcon: 'fa-magic'
     },
 
     initialize: function () {
@@ -68,33 +70,92 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       
       // Find all form groups (card2 elements)
       var formGroups = this.form.find('.card2');
+      var autoFieldGroups = [];
+      
       console.log('[schemingdcat-resource-auto-fields] Found form groups:', formGroups.length);
       
+      // First pass: identify all groups with auto-filled fields
       formGroups.each(function() {
         var $group = $(this);
-        var $header = $group.find('.card2-header').first();
-        var $body = $group.find('.card2-body').first();
-        
-        // Get group class to identify which group this is
-        var groupClass = $group.attr('class') || '';
-        console.log('[schemingdcat-resource-auto-fields] Processing group:', groupClass);
-        
-        // Check if this group contains auto-filled fields
         var hasAutoFields = self.groupHasAutoFields($group);
-        console.log('[schemingdcat-resource-auto-fields] Group has auto fields:', hasAutoFields);
         
         if (hasAutoFields) {
-          // Add collapsible functionality
-          self.makeGroupCollapsible($group, $header, $body);
-          
-          // Collapse by default if option is set
-          if (self.options.collapsedByDefault) {
-            self.collapseGroup($group, $header, $body);
-          }
+          autoFieldGroups.push($group);
         }
       });
       
-      // Also handle individual fields that might not be in groups
+      // If we have auto-field groups, create a master section
+      if (autoFieldGroups.length > 0) {
+        // Create master section wrapper
+        var $masterSection = self.createMasterSection();
+        
+        // Find the insertion point - look for various possible upload field containers
+        var $insertionPoint = self.form.find('.image-upload').closest('.form-group, .control-group, .card2');
+        if (!$insertionPoint.length) {
+          $insertionPoint = self.form.find('input[name="upload"]').closest('.form-group, .control-group, .card2');
+        }
+        if (!$insertionPoint.length) {
+          $insertionPoint = self.form.find('input[name="url"]').closest('.form-group, .control-group, .card2');
+        }
+        if (!$insertionPoint.length) {
+          // Look for the resource upload field group
+          $insertionPoint = self.form.find('.resource_upload-group');
+        }
+        
+        if ($insertionPoint.length) {
+          // Insert after the upload field
+          $insertionPoint.after($masterSection);
+        } else {
+          // If no suitable insertion point, insert before the first non-auto field group
+          var inserted = false;
+          formGroups.each(function() {
+            var $group = $(this);
+            if (!self.groupHasAutoFields($group) && !inserted) {
+              $group.before($masterSection);
+              inserted = true;
+            }
+          });
+          
+          if (!inserted) {
+            // As last resort, prepend to form
+            var firstGroup = formGroups.first();
+            if (firstGroup.length) {
+              firstGroup.before($masterSection);
+            }
+          }
+        }
+        
+        // Move all auto-field groups into the master section
+        var $masterContent = $masterSection.find('.schemingdcat-master-content');
+        autoFieldGroups.forEach(function($group) {
+          $group.appendTo($masterContent);
+          
+          // Process each group
+          var $header = $group.find('.card2-header').first();
+          var $body = $group.find('.card2-body').first();
+          
+          // Remove individual indicators from each group
+          $header.find('.schemingdcat-auto-field-indicator').remove();
+          
+          // Make group collapsible
+          self.makeGroupCollapsible($group, $header, $body);
+          
+          // Collapse individual groups by default
+          if (self.options.collapsedByDefault) {
+            self.collapseGroup($group, $header, $body);
+          }
+        });
+        
+        // Set up master section behavior
+        self.setupMasterSectionBehavior($masterSection);
+        
+        // Collapse master section by default
+        if (self.options.collapsedByDefault) {
+          self.collapseMasterSection($masterSection);
+        }
+      }
+      
+      // Handle individual fields that might not be in groups
       this.handleIndividualAutoFields();
     },
 
@@ -122,6 +183,70 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       return hasAuto;
     },
 
+    createMasterSection: function() {
+      var self = this;
+      
+      var $masterSection = $('<div>', {
+        class: 'schemingdcat-master-section card2 mb-3',
+        html: '<div class="card2-header schemingdcat-master-header">' +
+              '<button type="button" class="btn btn-xs schemingdcat-master-toggle" title="Toggle all auto-generated fields">' +
+              '<i class="fa fa-chevron-down"></i></button>' +
+              '<h3 class="mb-0"><i class="fa ' + self.options.masterSectionIcon + '" style="padding-right:5px;"></i>' +
+              self.options.masterSectionTitle + '</h3>' +
+              '<p class="schemingdcat-master-description">' + self.options.masterSectionDescription + '</p>' +
+              '</div>' +
+              '<div class="schemingdcat-master-content"></div>'
+      });
+      
+      return $masterSection;
+    },
+    
+    setupMasterSectionBehavior: function($masterSection) {
+      var self = this;
+      var $header = $masterSection.find('.schemingdcat-master-header');
+      var $content = $masterSection.find('.schemingdcat-master-content');
+      var $toggleBtn = $masterSection.find('.schemingdcat-master-toggle');
+      
+      // Make header clickable
+      $header.css('cursor', 'pointer');
+      
+      // Handle clicks on the master section header
+      $header.on('click.master', function(e) {
+        // Don't toggle if clicking on form elements
+        if ($(e.target).is('input, select, textarea, label, a')) {
+          return;
+        }
+        e.preventDefault();
+        self.toggleMasterSection($masterSection);
+      });
+    },
+    
+    toggleMasterSection: function($masterSection) {
+      if ($masterSection.hasClass('collapsed')) {
+        this.expandMasterSection($masterSection);
+      } else {
+        this.collapseMasterSection($masterSection);
+      }
+    },
+    
+    collapseMasterSection: function($masterSection) {
+      var $content = $masterSection.find('.schemingdcat-master-content');
+      var $toggleIcon = $masterSection.find('.schemingdcat-master-toggle i');
+      
+      $masterSection.addClass('collapsed');
+      $content.slideUp(200);
+      $toggleIcon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+    },
+    
+    expandMasterSection: function($masterSection) {
+      var $content = $masterSection.find('.schemingdcat-master-content');
+      var $toggleIcon = $masterSection.find('.schemingdcat-master-toggle i');
+      
+      $masterSection.removeClass('collapsed');
+      $content.slideDown(200);
+      $toggleIcon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+    },
+
     makeGroupCollapsible: function($group, $header, $body) {
       var self = this;
       
@@ -137,18 +262,9 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var $toggleBtn = $('<button>', {
         type: 'button',
         class: 'btn btn-xs schemingdcat-collapse-toggle',
-        title: 'Toggle auto-filled fields',
+        title: 'Toggle fields',
         html: '<i class="fa fa-chevron-down"></i>'
       });
-      
-      // Add auto-field indicator only if not already present
-      if (self.options.showIndicator && $header.find('.schemingdcat-auto-field-indicator').length === 0) {
-        var $indicator = $('<span>', {
-          class: 'schemingdcat-auto-field-indicator',
-          html: '<i class="fa fa-magic"></i> ' + self.options.indicatorText
-        });
-        $header.append($indicator);
-      }
       
       // Add toggle button to header only if not already present
       if ($header.find('.schemingdcat-collapse-toggle').length === 0) {
