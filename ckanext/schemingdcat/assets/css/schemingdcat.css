@@ -1535,11 +1535,13 @@ input#lang-r:checked ~ div .example-r {
   color: white;
   padding: 20px 25px;
   position: relative;
-  padding-left: 55px;
+  padding-left: 65px;
+  padding-right: 25px;
   border-bottom: 2px solid #1e5a92;
   border-radius: 6px 6px 0 0;
   cursor: pointer;
   transition: background 0.3s ease;
+  min-height: 90px;
 }
 
 .schemingdcat-master-header:hover {
@@ -1547,23 +1549,28 @@ input#lang-r:checked ~ div .example-r {
 }
 
 .schemingdcat-master-header h3 {
-  color: white;
+  color: white !important;
   font-size: 20px;
   margin-bottom: 8px;
   font-weight: 600;
 }
 
 .schemingdcat-master-header h3 i {
+  color: white !important;
   margin-right: 10px;
   font-size: 22px;
 }
 
 .schemingdcat-master-description {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.9) !important;
   font-size: 14px;
   margin: 0 0 10px 0;
   line-height: 1.5;
   font-weight: 300;
+}
+
+.schemingdcat-master-description i {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .schemingdcat-master-note {
@@ -1572,12 +1579,13 @@ input#lang-r:checked ~ div .example-r {
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.95) !important;
   display: inline-block;
   margin-top: 5px;
 }
 
 .schemingdcat-master-note i {
+  color: rgba(255, 255, 255, 0.95) !important;
   margin-right: 6px;
   opacity: 0.8;
 }

@@ -32,6 +32,13 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var self = this;
       console.log('[schemingdcat-resource-auto-fields] Initializing module...');
       
+      // Check if already initialized to prevent duplicates
+      if (this.el.data('auto-fields-initialized')) {
+        console.log('[schemingdcat-resource-auto-fields] Already initialized, skipping');
+        return;
+      }
+      this.el.data('auto-fields-initialized', true);
+      
       // Use a small delay to ensure DOM is ready
       setTimeout(function() {
         // Find the resource form
@@ -43,6 +50,12 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         // Only run on resource forms
         if (!self.isResourceForm()) {
           console.log('[schemingdcat-resource-auto-fields] Not a resource form, skipping');
+          return;
+        }
+        
+        // Check if master section already exists
+        if (self.form.find('.schemingdcat-master-section').length > 0) {
+          console.log('[schemingdcat-resource-auto-fields] Master section already exists, skipping');
           return;
         }
         
