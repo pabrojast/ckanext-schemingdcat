@@ -110,6 +110,81 @@ class SchemingDCATPlugin(
         # configure Faceted class (parent of this)
         self.facet_load_config(config_.get("schemingdcat.facet_list", "").split())
 
+    def _cleanup_empty_metadata_fields(self, context, resource):
+        """
+        Clean up any metadata fields that contain empty lists or meaningless values.
+        This prevents showing ['', '', ''] in the UI for fields that haven't been populated.
+        
+        Args:
+            context: The CKAN context
+            resource: The resource dictionary
+        """
+        try:
+            resource_id = resource.get('id')
+            if not resource_id:
+                return
+                
+            # List of metadata fields that can get empty lists
+            metadata_fields_to_check = [
+                'data_fields', 'data_statistics', 'data_domains',
+                'geographic_coverage', 'administrative_boundaries',
+                'compression_info', 'format_version', 'file_integrity',
+                'content_type_detected', 'document_pages', 'spreadsheet_sheets', 'text_content_info'
+            ]
+            
+            # Check if any of these fields have meaningless values
+            fields_to_clear = {}
+            for field_name in metadata_fields_to_check:
+                field_value = resource.get(field_name)
+                
+                if field_value is not None:
+                    # Check for empty lists or lists with only empty strings
+                    if isinstance(field_value, list):
+                        # Filter out empty/meaningless values
+                        filtered_list = []
+                        for item in field_value:
+                            if item is not None:
+                                item_str = str(item).strip()
+                                if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                                    filtered_list.append(item_str)
+                        
+                        # If list is empty after filtering, mark for clearing
+                        if not filtered_list:
+                            fields_to_clear[field_name] = None
+                    
+                    # Check for empty strings or meaningless string values
+                    elif isinstance(field_value, str):
+                        field_str = field_value.strip()
+                        if not field_str or field_str in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                            fields_to_clear[field_name] = None
+            
+            # If we found fields to clear, update the resource
+            if fields_to_clear:
+                log.debug(f"Cleaning up empty metadata fields for resource {resource_id}: {list(fields_to_clear.keys())}")
+                
+                # Create system context for the update
+                system_context = {
+                    'model': context['model'],
+                    'session': context['session'],
+                    'ignore_auth': True,
+                    'user': '',  # System user
+                    'api_version': 3,
+                    'defer_commit': False
+                }
+                
+                # Prepare patch data
+                patch_data = {'id': resource_id}
+                patch_data.update(fields_to_clear)
+                
+                # Update the resource to clear empty fields
+                toolkit.get_action('resource_patch')(system_context, patch_data)
+                
+                log.debug(f"Successfully cleaned up {len(fields_to_clear)} empty metadata fields for resource {resource_id}")
+            
+        except Exception as e:
+            log.warning(f"Error cleaning up empty metadata fields for resource {resource.get('id', 'unknown')}: {str(e)}")
+            # Don't raise exception - this is cleanup, not critical
+
     def get_helpers(self):
         respuesta = dict(helpers.all_helpers)
         return respuesta
@@ -248,6 +323,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
         """
         try:
+            # FIRST: Clean up any empty list fields that might have been created
+            self._cleanup_empty_metadata_fields(context, resource)
+            
+            # THEN: Process spatial extent extraction  
             self._process_spatial_extent_extraction_for_resource(context, resource)
         except Exception as e:
             log.warning(f"Error in spatial extent extraction after resource creation: {str(e)}")
@@ -260,6 +339,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         También procesamos la extracción de extensión espacial aquí.
         """
         try:
+            # FIRST: Clean up any empty list fields that might have been created
+            self._cleanup_empty_metadata_fields(context, resource)
+            
+            # THEN: Process spatial extent extraction
             self._process_spatial_extent_extraction_for_resource(context, resource)
         except Exception as e:
             log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
@@ -844,6 +927,9 @@ def extract_comprehensive_metadata_job(job_data):
         if metadata:
             log.info(f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
             
+            # DEBUG: Log raw metadata to understand what's being extracted
+            log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2)}")
+            
             try:
                 # Actualizar el RESOURCE directamente usando resource_patch
                 import ckan.logic as logic
@@ -888,17 +974,36 @@ def extract_comprehensive_metadata_job(job_data):
                 
                 # Solo agregar campos que tienen valores no nulos y significativos
                 for field_name, field_value in metadata_fields.items():
-                    if field_value is not None and field_value != '':
-                        # Filtrar listas vacías o con solo strings vacíos
-                        if isinstance(field_value, list):
-                            # Filtrar strings vacíos de la lista
-                            filtered_list = [item for item in field_value if item and str(item).strip()]
-                            if filtered_list:  # Solo agregar si queda algo después del filtro
-                                resource_patch_data[field_name] = filtered_list
-                        else:
-                            # Para valores no-lista, verificar que no sea solo espacios
-                            if str(field_value).strip():
-                                resource_patch_data[field_name] = field_value
+                    # Skip None values completely
+                    if field_value is None:
+                        continue
+                        
+                    # Skip empty strings
+                    if field_value == '':
+                        continue
+                        
+                    # Handle lists more rigorously
+                    if isinstance(field_value, list):
+                        # Filtrar strings vacíos de la lista más rigurosamente
+                        filtered_list = []
+                        for item in field_value:
+                            if item is not None:
+                                # Convertir a string y limpiar espacios
+                                item_str = str(item).strip()
+                                # Solo agregar si no está vacío y no es solo espacios/caracteres especiales
+                                if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                                    filtered_list.append(item_str)
+                        
+                        # Solo agregar la lista si tiene elementos válidos (at least 1 meaningful item)
+                        if filtered_list:
+                            resource_patch_data[field_name] = filtered_list
+                        # If empty list after filtering, skip this field completely
+                        continue
+                    
+                    # Para valores no-lista, verificar que no sea solo espacios o valores vacíos
+                    field_str = str(field_value).strip()
+                    if field_str and field_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                        resource_patch_data[field_name] = field_value
                 
                 # Usar resource_patch para actualizar los campos
                 logic.get_action('resource_patch')(context, resource_patch_data)
