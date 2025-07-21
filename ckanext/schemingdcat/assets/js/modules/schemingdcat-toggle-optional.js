@@ -19,7 +19,7 @@ ckan.module('toggle-optional', function ($) {
       var $toggleBtn = $('<button>', {
         class: 'btn btn-default',
         style: 'margin-bottom: 20px;',
-        html: '<i class="fa fa-cog"></i> Show Advanced fields'
+        html: '<i class="fa fa-cog"></i> Show Advanced & Metadata fields'
       });
       
       // Insertar el botón en el contenedor
@@ -92,7 +92,29 @@ ckan.module('toggle-optional', function ($) {
         '[name="theme"]',
         '[name="inspire_id"]',
         '[name="representation_type"]',
-        '[name="spatial"]'
+        '[name="spatial"]',
+        // Nuevos campos de metadatos comprensivos (se ocultan por defecto)
+        '[name="spatial_crs"]',
+        '[name="spatial_resolution"]',
+        '[name="feature_count"]',
+        '[name="geometry_type"]',
+        '[name="data_fields"]',
+        '[name="data_statistics"]',
+        '[name="data_domains"]',
+        '[name="geographic_coverage"]',
+        '[name="administrative_boundaries"]',
+        '[name="file_created_date"]',
+        '[name="file_modified_date"]',
+        '[name="data_temporal_coverage"]',
+        '[name="file_size_bytes"]',
+        '[name="compression_info"]',
+        '[name="format_version"]',
+        '[name="file_integrity"]',
+        '[name="content_type_detected"]',
+        '[name="document_pages"]',
+        '[name="spreadsheet_sheets"]',
+        '[name="text_content_info"]',
+        '[name="spatial_extent"]'
       ];
       
       // Añadir los grupos completos a ocultar
@@ -107,10 +129,13 @@ ckan.module('toggle-optional', function ($) {
         '.unesdoc-group.card2.mb-3',
         '.license_info-group.card2.mb-3',
         '.version_notes-group.card2.mb-3',
-        // IMPORTANTE: No incluir automatic_metadata aquí porque se maneja por separado
+        // Nuevos grupos de metadatos comprensivos (se ocultan por defecto)
+        '.spatial_info-group.card2.mb-3',
+        '.data_info-group.card2.mb-3',
+        '.geographic_info-group.card2.mb-3',
+        '.technical_info-group.card2.mb-3',
+        '.content_info-group.card2.mb-3'
       ];
-      
-
       
       // Identificar campos opcionales específicos y sus contenedores
       var $optionalFields = $('.form-group').filter(function() {
@@ -136,7 +161,7 @@ ckan.module('toggle-optional', function ($) {
         
         if ($(this).hasClass('active')) {
           $allOptionalElements.hide();
-          $(this).html('<i class="fa fa-cog"></i> Show Advanced fields');
+          $(this).html('<i class="fa fa-cog"></i> Show Advanced & Metadata fields');
           $hiddenInput.val('basic');
           
           // Ocultar los elementos de navegación correspondientes
@@ -151,7 +176,7 @@ ckan.module('toggle-optional', function ($) {
           
         } else {
           $allOptionalElements.show();
-          $(this).html('<i class="fa fa-cog"></i> Hide Advanced fields');
+          $(this).html('<i class="fa fa-cog"></i> Hide Advanced & Metadata fields');
           $hiddenInput.val('advanced');
           
           // Mostrar todos los elementos de navegación
@@ -165,14 +190,14 @@ ckan.module('toggle-optional', function ($) {
         // Para páginas 2-4, iniciar en modo avanzado
         $toggleBtn.removeClass('active');
         $allOptionalElements.show();
-        $toggleBtn.html('<i class="fa fa-cog"></i> Hide Advanced fields');
+        $toggleBtn.html('<i class="fa fa-cog"></i> Hide Advanced & Metadata fields');
         $hiddenInput.val('basic');
         $('.stages li').show();
       } else {
         // Para otras páginas, iniciar en modo básico
         $toggleBtn.addClass('active');
         $allOptionalElements.hide();
-        $toggleBtn.html('<i class="fa fa-cog"></i> Show Advanced fields');
+        $toggleBtn.html('<i class="fa fa-cog"></i> Show Advanced & Metadata fields');
         $hiddenInput.val('basic');
         
         // Ocultar los elementos de navegación correspondientes

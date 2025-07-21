@@ -77,14 +77,6 @@ schemingdcat-toggle-optional:
   contents:
     - js/modules/schemingdcat-toggle-optional.js
 
-schemingdcat-resource-metadata:
-  output: ckanext-schemingdcat/%(version)s-schemingdcat_resource_metadata.js
-  extra:
-    preload:
-      - base/main
-  contents:
-    - js/modules/schemingdcat-resource-metadata.js
-
 schemingdcat-publisher-uri:
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:
