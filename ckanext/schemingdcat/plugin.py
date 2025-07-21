@@ -140,13 +140,13 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IResourceController, inherit=True)
 
     def __init__(self):
-        super(SchemingDCATDatasetsPlugin, self).__init__()
+        super().__init__()
         log.info("🚀 [PLUGIN INIT] SchemingDCATDatasetsPlugin initialized with IResourceController")
         log.info("🚀 [PLUGIN INIT] Spatial extent extraction will be processed after resource creation/update")
 
     def update_config(self, config_):
         # Call parent update_config first
-        super(SchemingDCATDatasetsPlugin, self).update_config(config_)
+        super().update_config(config_)
         
         # Add custom CSS for cloudstorage integration
         toolkit.add_public_directory(config_, 'public')
@@ -169,7 +169,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
     def get_helpers(self):
         # Merge schemingdcat helpers with cloudstorage helpers
-        schemingdcat_helpers = super(SchemingDCATDatasetsPlugin, self).get_helpers()
+        schemingdcat_helpers = super().get_helpers()
         cloudstorage_helper_dict = {
             'cloudstorage_use_secure_urls': cloudstorage_helpers.use_secure_urls,
             'cloudstorage_use_azure_direct_upload': cloudstorage_helpers.use_azure_direct_upload,
