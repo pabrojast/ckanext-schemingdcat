@@ -139,8 +139,8 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IUploader)
     plugins.implements(plugins.IResourceController, inherit=True)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         log.info("🚀 [PLUGIN INIT] SchemingDCATDatasetsPlugin initialized with IResourceController")
         log.info("🚀 [PLUGIN INIT] Spatial extent extraction will be processed after resource creation/update")
 
