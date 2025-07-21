@@ -110,81 +110,6 @@ class SchemingDCATPlugin(
         # configure Faceted class (parent of this)
         self.facet_load_config(config_.get("schemingdcat.facet_list", "").split())
 
-    def _cleanup_empty_metadata_fields(self, context, resource):
-        """
-        Clean up any metadata fields that contain empty lists or meaningless values.
-        This prevents showing ['', '', ''] in the UI for fields that haven't been populated.
-        
-        Args:
-            context: The CKAN context
-            resource: The resource dictionary
-        """
-        try:
-            resource_id = resource.get('id')
-            if not resource_id:
-                return
-                
-            # List of metadata fields that can get empty lists
-            metadata_fields_to_check = [
-                'data_fields', 'data_statistics', 'data_domains',
-                'geographic_coverage', 'administrative_boundaries',
-                'compression_info', 'format_version', 'file_integrity',
-                'content_type_detected', 'document_pages', 'spreadsheet_sheets', 'text_content_info'
-            ]
-            
-            # Check if any of these fields have meaningless values
-            fields_to_clear = {}
-            for field_name in metadata_fields_to_check:
-                field_value = resource.get(field_name)
-                
-                if field_value is not None:
-                    # Check for empty lists or lists with only empty strings
-                    if isinstance(field_value, list):
-                        # Filter out empty/meaningless values
-                        filtered_list = []
-                        for item in field_value:
-                            if item is not None:
-                                item_str = str(item).strip()
-                                if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                                    filtered_list.append(item_str)
-                        
-                        # If list is empty after filtering, mark for clearing
-                        if not filtered_list:
-                            fields_to_clear[field_name] = None
-                    
-                    # Check for empty strings or meaningless string values
-                    elif isinstance(field_value, str):
-                        field_str = field_value.strip()
-                        if not field_str or field_str in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                            fields_to_clear[field_name] = None
-            
-            # If we found fields to clear, update the resource
-            if fields_to_clear:
-                log.debug(f"Cleaning up empty metadata fields for resource {resource_id}: {list(fields_to_clear.keys())}")
-                
-                # Create system context for the update
-                system_context = {
-                    'model': context['model'],
-                    'session': context['session'],
-                    'ignore_auth': True,
-                    'user': '',  # System user
-                    'api_version': 3,
-                    'defer_commit': False
-                }
-                
-                # Prepare patch data
-                patch_data = {'id': resource_id}
-                patch_data.update(fields_to_clear)
-                
-                # Update the resource to clear empty fields
-                toolkit.get_action('resource_patch')(system_context, patch_data)
-                
-                log.debug(f"Successfully cleaned up {len(fields_to_clear)} empty metadata fields for resource {resource_id}")
-            
-        except Exception as e:
-            log.warning(f"Error cleaning up empty metadata fields for resource {resource.get('id', 'unknown')}: {str(e)}")
-            # Don't raise exception - this is cleanup, not critical
-
     def get_helpers(self):
         respuesta = dict(helpers.all_helpers)
         return respuesta
@@ -213,6 +138,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     # Add cloudstorage support
     plugins.implements(plugins.IUploader)
     plugins.implements(plugins.IResourceController, inherit=True)
+
+    def __init__(self):
+        super(SchemingDCATDatasetsPlugin, self).__init__()
+        log.info("🚀 [PLUGIN INIT] SchemingDCATDatasetsPlugin initialized with IResourceController")
+        log.info("🚀 [PLUGIN INIT] Spatial extent extraction will be processed after resource creation/update")
 
     def update_config(self, config_):
         # Call parent update_config first
@@ -316,20 +246,102 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 if old_file.name.startswith(upload_path):
                     old_file.delete()
 
+    def _cleanup_empty_metadata_fields(self, context, resource):
+        """
+        Clean up any metadata fields that contain empty lists or meaningless values.
+        This prevents showing ['', '', ''] in the UI for fields that haven't been populated.
+        
+        Args:
+            context: The CKAN context
+            resource: The resource dictionary
+        """
+        try:
+            resource_id = resource.get('id')
+            if not resource_id:
+                return
+                
+            # List of metadata fields that can get empty lists
+            metadata_fields_to_check = [
+                'data_fields', 'data_statistics', 'data_domains',
+                'geographic_coverage', 'administrative_boundaries',
+                'compression_info', 'format_version', 'file_integrity',
+                'content_type_detected', 'document_pages', 'spreadsheet_sheets', 'text_content_info'
+            ]
+            
+            # Check if any of these fields have meaningless values
+            fields_to_clear = {}
+            for field_name in metadata_fields_to_check:
+                field_value = resource.get(field_name)
+                
+                if field_value is not None:
+                    # Check for empty lists or lists with only empty strings
+                    if isinstance(field_value, list):
+                        # Filter out empty/meaningless values
+                        filtered_list = []
+                        for item in field_value:
+                            if item is not None:
+                                item_str = str(item).strip()
+                                if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                                    filtered_list.append(item_str)
+                        
+                        # If list is empty after filtering, mark for clearing
+                        if not filtered_list:
+                            fields_to_clear[field_name] = None
+                    
+                    # Check for empty strings or meaningless string values
+                    elif isinstance(field_value, str):
+                        field_str = field_value.strip()
+                        if not field_str or field_str in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                            fields_to_clear[field_name] = None
+            
+            # If we found fields to clear, update the resource
+            if fields_to_clear:
+                log.debug(f"Cleaning up empty metadata fields for resource {resource_id}: {list(fields_to_clear.keys())}")
+                
+                # Create system context for the update
+                system_context = {
+                    'model': context['model'],
+                    'session': context['session'],
+                    'ignore_auth': True,
+                    'user': '',  # System user
+                    'api_version': 3,
+                    'defer_commit': False
+                }
+                
+                # Prepare patch data
+                patch_data = {'id': resource_id}
+                patch_data.update(fields_to_clear)
+                
+                # Update the resource to clear empty fields
+                toolkit.get_action('resource_patch')(system_context, patch_data)
+                
+                log.debug(f"Successfully cleaned up {len(fields_to_clear)} empty metadata fields for resource {resource_id}")
+            
+        except Exception as e:
+            log.warning(f"Error cleaning up empty metadata fields for resource {resource.get('id', 'unknown')}: {str(e)}")
+            # Don't raise exception - this is cleanup, not critical
+
     # IResourceController - handle spatial extent extraction for spatial resources
     def after_create(self, context, resource):
         """
         Hook que se ejecuta después de crear un recurso.
         Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
         """
+        log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource.get('id', 'unknown')}")
+        log.info(f"🔥 Resource details: name={resource.get('name', 'N/A')}, format={resource.get('format', 'N/A')}, url={resource.get('url', 'N/A')}")
+        
         try:
             # FIRST: Clean up any empty list fields that might have been created
+            log.info(f"🧹 Cleaning up empty metadata fields for resource {resource.get('id', 'unknown')}")
             self._cleanup_empty_metadata_fields(context, resource)
             
             # THEN: Process spatial extent extraction  
+            log.info(f"🌍 Starting spatial extent extraction for resource {resource.get('id', 'unknown')}")
             self._process_spatial_extent_extraction_for_resource(context, resource)
+            log.info(f"✅ Completed spatial processing for resource {resource.get('id', 'unknown')}")
+            
         except Exception as e:
-            log.warning(f"Error in spatial extent extraction after resource creation: {str(e)}")
+            log.error(f"❌ Error in spatial extent extraction after resource creation: {str(e)}", exc_info=True)
         
         return resource
 
@@ -379,31 +391,41 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Returns:
             bool: True si el recurso puede contener datos espaciales
         """
+        resource_id = resource.get('id', 'unknown')
+        log.info(f"🔍 [SPATIAL CHECK] Checking if resource {resource_id} is spatial")
+        
         try:
             # Verificar formato del recurso - CLAVE: Los ZIP se marcan como "SHP"
             resource_format = resource.get('format', '').lower()
             spatial_formats = ['shp', 'shapefile', 'zip', 'tif', 'tiff', 'geotiff', 
                               'kml', 'gpkg', 'geopackage', 'geojson', 'json']
             
+            log.info(f"🔍 Resource format: '{resource_format}' (original: '{resource.get('format', '')}')")
+            log.info(f"🔍 Spatial formats list: {spatial_formats}")
+            
             if resource_format in spatial_formats:
-                log.debug(f"Resource {resource.get('id', 'unknown')} has spatial format: {resource_format}")
+                log.info(f"✅ Resource {resource_id} HAS SPATIAL FORMAT: {resource_format}")
                 return True
                 
             # Verificar extensión del archivo en la URL como respaldo
             url = resource.get('url', '')
+            log.info(f"🔍 Resource URL: {url}")
+            
             if url:
                 url_lower = url.lower()
                 spatial_extensions = ['.shp', '.zip', '.tif', '.tiff', '.kml', '.gpkg', '.geojson']
+                log.info(f"🔍 Checking URL extensions: {spatial_extensions}")
+                
                 for ext in spatial_extensions:
                     if url_lower.endswith(ext):
-                        log.debug(f"Resource {resource.get('id', 'unknown')} has spatial extension in URL: {ext}")
+                        log.info(f"✅ Resource {resource_id} HAS SPATIAL EXTENSION in URL: {ext}")
                         return True
             
-            log.debug(f"Resource {resource.get('id', 'unknown')} is not spatial - format: {resource_format}, url: {url}")
+            log.info(f"❌ Resource {resource_id} is NOT spatial - format: '{resource_format}', url: '{url}'")
             return False
             
         except Exception as e:
-            log.warning(f"Error checking if resource is spatial: {str(e)}")
+            log.error(f"❌ Error checking if resource is spatial: {str(e)}", exc_info=True)
             # En caso de error, ser conservador y asumir que no es espacial
             return False
         
@@ -464,55 +486,75 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Returns:
             bool: True si se debe omitir la extracción automática
         """
+        log.info(f"🚦 [SKIP CHECK] Checking if spatial extraction should be skipped for dataset {package_id}")
+        
         try:
             # 1. Verificar si el dataset actual ya tiene spatial_extent
             try:
                 dataset = toolkit.get_action('package_show')(context, {'id': package_id})
                 existing_extent = dataset.get('spatial_extent')
+                log.info(f"🚦 Dataset existing spatial_extent: {existing_extent}")
+                
                 if existing_extent and existing_extent.strip():
-                    log.debug(f"Dataset {package_id} already has spatial extent: {existing_extent[:100]}...")
+                    log.info(f"🚫 SKIPPING: Dataset {package_id} already has spatial extent: {existing_extent[:100]}...")
                     return True
             except Exception as e:
-                log.debug(f"Could not retrieve dataset {package_id} for extent check: {str(e)}")
+                log.info(f"🚦 Could not retrieve dataset {package_id} for extent check: {str(e)}")
                 # Si no podemos obtener el dataset, continuamos con otras verificaciones
             
             # 2. Verificar si hay datos manuales en el contexto/request actual
             # Esto captura casos donde el usuario está editando el formulario
             request_data = getattr(context.get('request'), 'form', None) if context.get('request') else None
+            log.info(f"🚦 Request form data available: {request_data is not None}")
+            
             if request_data:
                 manual_extent = request_data.get('spatial_extent')
+                log.info(f"🚦 Manual extent in form data: {manual_extent}")
                 if manual_extent and manual_extent.strip():
-                    log.debug(f"Manual spatial extent detected in form data: {manual_extent[:100]}...")
+                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in form data: {manual_extent[:100]}...")
                     return True
             
             # 3. Verificar flags del contexto que indican omitir extracción
+            skip_flags = {
+                'skip_spatial_extraction': context.get('skip_spatial_extraction'),
+                'manual_spatial_extent': context.get('manual_spatial_extent')
+            }
+            log.info(f"🚦 Context skip flags: {skip_flags}")
+            
             if context.get('skip_spatial_extraction') or context.get('manual_spatial_extent'):
-                log.debug(f"Spatial extraction explicitly skipped via context flags")
+                log.info(f"🚫 SKIPPING: Spatial extraction explicitly skipped via context flags")
                 return True
             
             # 4. Verificar si hay datos en el diccionario de datos del contexto
             # Esto captura casos donde se está creando/editando un dataset completo
             package_dict = context.get('package_dict', {})
+            log.info(f"🚦 Package dict available: {isinstance(package_dict, dict)}")
+            
             if isinstance(package_dict, dict):
                 manual_extent = package_dict.get('spatial_extent')
+                log.info(f"🚦 Manual extent in package dict: {manual_extent}")
                 if manual_extent and manual_extent.strip():
-                    log.debug(f"Manual spatial extent detected in package dict: {manual_extent[:100]}...")
+                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in package dict: {manual_extent[:100]}...")
                     return True
             
             # 5. Verificar en la sesión (para casos de formularios multi-paso)
             session = context.get('session')
+            log.info(f"🚦 Session available: {session is not None and hasattr(session, 'get')}")
+            
             if session and hasattr(session, 'get'):
                 session_extent = session.get('spatial_extent')
+                log.info(f"🚦 Session extent: {session_extent}")
                 if session_extent and session_extent.strip():
-                    log.debug(f"Manual spatial extent detected in session: {session_extent[:100]}...")
+                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in session: {session_extent[:100]}...")
                     return True
             
-            log.debug(f"No existing or manual spatial extent detected for dataset {package_id} - auto-extraction allowed")
+            log.info(f"✅ PROCEEDING: No existing or manual spatial extent detected for dataset {package_id} - auto-extraction allowed")
             return False
             
         except Exception as e:
-            log.warning(f"Error checking if spatial extraction should be skipped: {str(e)}")
+            log.error(f"❌ Error checking if spatial extraction should be skipped: {str(e)}", exc_info=True)
             # En caso de error, ser conservador y omitir la extracción automática
+            log.info(f"🚫 SKIPPING: Due to error in skip check")
             return True
         
     def _process_spatial_extent_extraction_for_resource(self, context, resource):
@@ -524,32 +566,44 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             context: El contexto de CKAN
             resource: El diccionario del recurso
         """
+        resource_id = resource.get('id', 'unknown')
+        log.info(f"🔄 [PROCESSING] Starting spatial extent extraction process for resource {resource_id}")
+        log.info(f"🔄 Resource context keys: {list(context.keys()) if context else 'No context'}")
+        
         try:
             # Verificar si es un recurso potencialmente espacial
+            log.info(f"🔄 Step 1: Checking if resource is spatial...")
             if not self._is_potential_spatial_resource(resource):
-                log.debug(f"Resource {resource.get('id', 'unknown')} is not a potential spatial resource")
+                log.info(f"⏭️ STOPPING: Resource {resource_id} is not a potential spatial resource")
                 return
                 
-            log.info(f"Processing spatial resource {resource.get('id', 'unknown')} with format {resource.get('format', 'unknown')}")
+            log.info(f"🎯 CONFIRMED: Processing spatial resource {resource_id} with format {resource.get('format', 'unknown')}")
             
             # Obtener el dataset padre
             package_id = resource.get('package_id')
+            log.info(f"🔄 Step 2: Found package_id: {package_id}")
+            
             if not package_id:
-                log.warning("No package_id found for resource")
+                log.error(f"❌ STOPPING: No package_id found for resource {resource_id}")
                 return
                 
             # Verificar si ya existe spatial_extent (manual o previo)
+            log.info(f"🔄 Step 3: Checking if extraction should be skipped...")
             should_skip = self._should_skip_spatial_extraction(context, package_id)
             if should_skip:
-                log.debug(f"Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
+                log.info(f"⏭️ STOPPING: Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
                 return
             
             # **PROCESAMIENTO ASÍNCRONO**: Usar CKAN Jobs Queue (preferido) o threading como fallback
+            log.info(f"🔄 Step 4: Starting asynchronous processing for resource {resource_id}")
+            
             try:
                 # Método 1: Usar CKAN Jobs Queue (recomendado)
+                log.info(f"🔄 Importing jobs library...")
                 from ckan.lib import jobs
                 import threading
                 import time
+                log.info(f"✅ Jobs library imported successfully")
                 
                 # Verificar si hay worker activo antes de encolar
                 try:
