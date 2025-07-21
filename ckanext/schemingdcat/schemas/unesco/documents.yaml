@@ -10,13 +10,27 @@ schema_name: geodcatap
 schema_title: GeoDCAT-AP
 schema_description: Geospatial extension for the DCAT application profile for data portals in Europe (GeoDCAT-AP)
 schema_form_groups:
-  # Basic Info parties form_page (#1)
+  # File upload section
+  - form_group_id: file_upload
+    label:
+      en: File Upload
+      es: Subida de archivo
+      fr: Téléchargement de fichier
+    fa_icon: fa-upload
+  
+  # Basic Info
   - form_group_id: title
     label:
       en: Title
       es: Título
       fr: Titre
     fa_icon: fa-sticky-note
+  - form_group_id: notes
+    label:
+      en: Abstract
+      es: Resumen
+      fr: Résumé
+    fa_icon: fa-file-text
   - form_group_id: general_info
     label:
       en: General information
@@ -29,74 +43,12 @@ schema_form_groups:
       es: Identificación del documento
       fr: Identification du document
     fa_icon: fa-id-card
-  - form_group_id: notes
-    label:
-      en: Abstract
-      es: Resumen
-      fr: Résumé
-    fa_icon: fa-file-text
-  - form_group_id: vocabs
-    label:
-      en: Vocabs information
-      es: Información de vocabularios
-      fr: Informations sur les vocabulaires
-    fa_icon: fa-database
   - form_group_id: contact
     label:
       en: Contact information
       es: Información de contacto
       fr: Informations de contact
     fa_icon: fa-address-book
-
-  # Resources form_page
-  - form_group_id: resource_title
-    label:
-      en: Title
-      es: Título
-      fr: Titre
-    fa_icon: fa-sticky-note
-  - form_group_id: resource_notes
-    label:
-      en: Abstract
-      es: Resumen
-      fr: Résumé
-    fa_icon: fa-file-text
-  - form_group_id: resource_identification
-    label:
-      en: Resource identification
-      es: Identificación del recurso
-      fr: Identification de la ressource
-    fa_icon: fa-id-card
-  - form_group_id: resource_url
-    label:
-      en: Resource locator
-      es: Localizador del recurso
-      fr: Localisateur de ressource
-    fa_icon: fa-link
-  - form_group_id: resource_type
-    label:
-      en: Resource type information 
-      es: Información del tipo de recurso
-      fr: Informations sur le type de ressource
-    fa_icon: fa-file-code-o 
-  - form_group_id: resource_license_info
-    label:
-      en: License and restrictions
-      es: Licencia y restricciones
-      fr: Licence et restrictions
-    fa_icon: fa-lock
-  - form_group_id: resource_lineage
-    label:
-      en: Provenance information
-      es: Información de procedencia
-      fr: Informations de provenance
-    fa_icon: fa-history
-  - form_group_id: resource_standards
-    label:
-      en: Standards compliance
-      es: Adecuación a estándares
-      fr: Conformité aux normes
-    fa_icon: fa-check-square-o
 
 ### Codes in Schema
 # (M): Mandatory
@@ -106,6 +58,23 @@ schema_form_groups:
 
 #--Dataset (dcat:Dataset) fields--#
 dataset_fields:
+
+# File Upload (First field for immediate file upload)
+- field_name: upload
+  label:
+    en: Upload Document File
+    es: Subir archivo del documento
+    fr: Télécharger le fichier du document
+  preset: resource_upload
+  form_placeholder:
+    en: Select a file to upload...
+    es: Seleccionar un archivo para subir...
+    fr: Sélectionner un fichier à télécharger...
+  help_text:
+    en: "Upload your document file. The system will automatically extract metadata when possible."
+    es: "Sube tu archivo de documento. El sistema extraerá automáticamente los metadatos cuando sea posible."
+    fr: "Téléchargez votre fichier de document. Le système extraira automatiquement les métadonnées lorsque cela sera possible."
+  form_group_id: file_upload
 
 # Dataset title translated (M)
 - field_name: title_translated
@@ -124,7 +93,7 @@ dataset_fields:
   required_language: "en"
   form_group_id: title
 
-# # Dataset abstract translated (M)
+# Dataset abstract translated (M)
 - field_name: notes_translated
   label: 
     en: Document abstract 
@@ -145,8 +114,19 @@ dataset_fields:
     fr: Résumé par défaut du document {document}.
   form_group_id: notes
 
-
-
+# CKAN Organization (M) // Dataset privacy (M)
+- field_name: owner_org
+  label:
+    en: Organization
+    es: Organización
+    fr: Organisation
+  required: True
+  help_text:
+    en: Entity (organisation) responsible for making the Dataset available.
+    es: Entidad (organización) responsable de publicar el conjunto de datos.
+    fr: Entité (organisation) responsable de la mise à disposition du jeu de données.
+  preset: dataset_organization
+  form_group_id: general_info
 
 # Non-spatial Dataset (Hidden field, based on dcat_type)
 - field_name: dataset_scope
@@ -167,20 +147,6 @@ dataset_fields:
         es: "Conjunto de datos espaciales"
         fr: "Jeu de données spatiales"
       value: spatial_dataset
-  form_group_id: general_info
-
-# CKAN Organization (M) // Dataset privacy (M)
-- field_name: owner_org
-  label:
-    en: Organization
-    es: Organización
-    fr: Organisation
-  required: True
-  help_text:
-    en: Entity (organisation) responsible for making the Dataset available.
-    es: Entidad (organización) responsable de publicar el conjunto de datos.
-    fr: Entité (organisation) responsable de la mise à disposition du jeu de données.
-  preset: dataset_organization
   form_group_id: general_info
 
 # - field_name: groups__0__id
@@ -493,188 +459,3 @@ dataset_fields:
   display_property: vcard:hasURL
   form_placeholder: http://www.example.com
   form_group_id: contact
-
-
-
-#--Resource/Distribution (dcat:Distribution) fields--#
-resource_fields:
-
-# Access URL (M)
-- field_name: url
-  label:
-    en: Access URL
-    es: URL de acceso
-    fr: URL d'accès
-  preset: resource_url_upload
-  display_property: dcat:accessURL
-  display_snippet: schemingdcat/display_snippets/link.html
-  form_group_id: resource_url
-
-#FIX: Resource title (M) -- name_translated field dont work
-- field_name: name
-  label:
-    en: Distribution title
-    es: Título de la distribución
-    fr: Titre de la distribution
-  form_placeholder:
-    en: e.g. Web Map Service
-    es: ej. Web Map Service
-    fr: p.ex. Service de cartographie Web
-  display_property: dct:title
-  form_group_id: resource_title
-
-#FIX: Resource abstract (M) -- description_translated field dont work
-- field_name: description
-  label:
-    en: Distribution abstract
-    es: Descripción de la distribución
-    fr: Résumé de la distribution
-  form_snippet: markdown.html
-  form_placeholder:
-    en: Some useful notes about the data.
-    es: Algunas notas útiles sobre los datos.
-    fr: Quelques notes utiles sur les données.
-  display_property: dct:description
-  form_group_id: resource_notes
-
-# Date of creation (M)
-- field_name: created
-  label: 
-    en: Date of creation
-    es: Fecha de creación
-    fr: Date de création
-  display_property: dct:created
-  preset: date_created
-  form_group_id: resource_identification
-
-# Date of last revision (M)
-- field_name: modified
-  label: 
-    en: Date of last revision
-    es: Fecha de última modificación
-    fr: Date de la dernière révision
-  display_property: dct:modified
-  preset: date_modified
-  form_group_id: resource_identification
-
-# Resource status (O)
-- field_name: availability
-  label:
-    en: Resource availability
-    es: Disponibilidad de la distribución
-    fr: Disponibilité de la distribution
-  preset: select
-  display_snippet: schemingdcat/display_snippets/link_schema.html
-  display_property: dcatap:availability
-  form_include_blank_choice: False
-  choices:
-  - label:
-      en: Available
-      es: Disponible
-      fr: Disponible
-    value: http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE
-  - label:
-      en: Stable
-      es: Estable
-      fr: Stable
-    value: http://publications.europa.eu/resource/authority/planned-availability/STABLE
-  - label:
-      en: Experimental
-      es: Experimental
-      fr: Expérimental
-    value: http://publications.europa.eu/resource/authority/planned-availability/EXPERIMENTAL
-  - label:
-      en: Provisional data
-      es: Datos provisionales
-      fr: Données provisoires
-    value: http://publications.europa.eu/resource/authority/planned-availability/OP_DATPRO
-  - label:
-      en: Temporary
-      es: Temporal
-      fr: Temporaire
-    value: http://publications.europa.eu/resource/authority/planned-availability/TEMPORARY
-  help_text:
-    en: 'This property indicates how long it is planned to keep the Distribution of the Dataset available according to <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Distribution availability vocabulary</a>.'
-    es: 'Esta propiedad indica durante cuánto tiempo se prevé mantener disponible la distribución del conjunto de datos de acuerdo con el <a href="http://publications.europa.eu/resource/authority/planned-availability" target="_blank" rel="noopener">Vocabulario de disponibilidad de la distribución</a>.'
-    fr: "Cette propriété indique la durée pendant laquelle il est prévu de maintenir la distribution de l'ensemble de données disponible selon le <a href='http://publications.europa.eu/resource/authority/planned-availability' target='_blank' rel='noopener'>vocabulaire de disponibilité de la distribution</a>."
-  help_allow_html: True
-  form_group_id: resource_lineage
-
-# Resource format (O)
-- field_name: format
-  label:
-    en: Format
-    es: Formato
-    fr: Format
-  preset: resource_format_autocomplete
-  display_property: dct:format
-  form_group_id: resource_type
-
-# Media type (O)
-- field_name: mimetype
-  label:
-    en: Media type
-    es: Tipo de medio
-    fr: Type de média
-  display_snippet: schemingdcat/display_snippets/link.html
-  display_property: dct:MediaType
-  form_placeholder: http://www.iana.org/assignments/media-types/application/vnd.shp
-  help_text:
-    en: 'This property refers to the media type of the Distribution as defined in the official <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">register of media types</a> (IANA)'
-    es: 'Esta propiedad se refiere al tipo de medio de la Distribución tal y como se define en el <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">registro oficial de tipos de medios</a> (IANA)'
-    fr: 'Cette propriété fait référence au type de média de la distribution tel que défini dans le <a href="http://www.iana.org/assignments/media-types/media-types.xhtml" target="_blank" rel="noopener">registre officiel des types de médias</a> (IANA)'
-  help_allow_html: True
-  form_group_id: resource_type
-
-# Resource status (O)
-- field_name: status
-  label:
-    en: Resource status
-    es: Estado de la distribución
-    fr: État de la distribution
-  preset: select
-  display_snippet: schemingdcat/display_snippets/link_schema.html
-  display_property: adms:status
-  form_include_blank_choice: False
-  choices:
-  - label:
-      en: Completed
-      es: Completado
-      fr: Complété
-    value: http://purl.org/adms/status/Completed
-  - label:
-      en: Under development
-      es: En desarrollo
-      fr: En développement
-    value: http://purl.org/adms/status/UnderDevelopment
-  - label:
-      en: Deprecated
-      es: Obsoleto
-      fr: Obsolète
-    value: http://purl.org/adms/status/Deprecated
-  - label:
-      en: Withdrawn
-      es: Retirado
-      fr: Retiré
-    value: http://purl.org/adms/status/Withdrawn
-  help_text:
-    en: 'This property refers to the maturity of the Distribution. It MUST take one of the values from the <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a> list.'
-    es: 'Esta propiedad hace referencia a la madurez de la distribución y debe tomar uno de los valores de la lista <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a>.'
-    fr: 'Cette propriété fait référence à la maturité de la distribution. Elle DOIT prendre une des valeurs de la liste <a href="http://purl.org/adms/status/" target="_blank" rel="noopener">ADMS status</a>.'
-  help_allow_html: True
-  form_group_id: resource_type
-
-# Resource character encoding (C)
-- field_name: encoding
-  label:
-    en: Character encoding
-    es: Codificación
-    fr: Codage des caractères
-  display_property: cnt:characterEncoding
-  form_placeholder: UTF-8
-  help_text:
-    en: 'Character encoding in ISO-19115 metadata is specified with a code list that can be mapped to the corresponding codes in <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>'
-    es: 'La codificación de caracteres en los metadatos ISO-19115 se especifica con una lista de códigos que puede asignarse a los códigos correspondientes en <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
-    fr: 'Le codage des caractères dans les métadonnées ISO-19115 est spécifié avec une liste de codes qui peuvent être mappés aux codes correspondants dans <a href="https://www.iana.org/assignments/character-sets" target="_blank" rel="noopener">[IANA-CHARSETS]</a>.'
-  help_allow_html: True
-  form_group_id: resource_type
