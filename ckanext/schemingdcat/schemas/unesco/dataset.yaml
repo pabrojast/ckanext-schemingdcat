@@ -5364,7 +5364,7 @@ resource_fields:
   form_placeholder: '{"type": "Polygon", "coordinates": [[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]}'
   help_text:
     en: 'This field will be automatically populated after creating the resource when uploading geospatial files (Shapefile, GeoTIFF, etc.). Once generated, you can modify the spatial extent from this field if needed.'
-    es: 'Este campo se rellenará automáticamente después de crear el recurso al subir archivos geoespaciales (Shapefile, GeoTIFF, etc.). Una vez generado, puede modificar la extensión espacial desde este campo si es necesario.'
+    es: 'Este campo se completará automáticamente después de crear el recurso al subir archivos geoespaciales (Shapefile, GeoTIFF, GeoJSON, etc.). El sistema extraerá y calculará automáticamente la extensión espacial (bounding box) de los datos geográficos del archivo subido. Una vez generada esta información automáticamente, puede modificar o ajustar la extensión espacial manualmente desde este campo si fuera necesario.'
     fr: 'Ce champ sera automatiquement rempli après la création de la ressource lors du téléchargement de fichiers géospatiaux (Shapefile, GeoTIFF, etc.). Une fois généré, vous pouvez modifier l''étendue spatiale depuis ce champ si nécessaire.'
   help_allow_html: True
   form_group_id: spatial_info
@@ -5380,9 +5380,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'EPSG code and projection information automatically extracted from geospatial files.'
-    es: 'Código EPSG e información de proyección extraída automáticamente de archivos geoespaciales.'
-    fr: 'Code EPSG et informations de projection extraites automatiquement des fichiers géospatiaux.'
+    en: 'EPSG code and projection information automatically extracted from geospatial files after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Código EPSG e información de proyección extraída automáticamente de archivos geoespaciales después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Code EPSG et informations de projection extraites automatiquement des fichiers géospatiaux après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: spatial_info
 
 # Resolución espacial para rasters
@@ -5394,9 +5394,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Pixel size for raster files (e.g., "30m x 30m").'
-    es: 'Tamaño de píxel para archivos raster (ej., "30m x 30m").'
-    fr: 'Taille de pixel pour les fichiers raster (ex., "30m x 30m").'
+    en: 'Pixel size for raster files (e.g., "30m x 30m") automatically extracted after uploading the resource. Once generated, you can modify this value if needed.'
+    es: 'Tamaño de píxel para archivos raster (ej., "30m x 30m") extraído automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
+    fr: 'Taille de pixel pour les fichiers raster (ex., "30m x 30m") extraite automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette valeur si nécessaire.'
   form_group_id: spatial_info
 
 # Número de features para vectores
@@ -5408,9 +5408,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Number of features in vector files (shapefiles, GeoJSON, etc.).'
-    es: 'Número de características en archivos vectoriales (shapefiles, GeoJSON, etc.).'
-    fr: 'Nombre de caractéristiques dans les fichiers vectoriels (shapefiles, GeoJSON, etc.).'
+    en: 'Number of features in vector files (shapefiles, GeoJSON, etc.) automatically counted after uploading the resource. Once generated, you can modify this value if needed.'
+    es: 'Número de características en archivos vectoriales (shapefiles, GeoJSON, etc.) contado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
+    fr: 'Nombre de caractéristiques dans les fichiers vectoriels (shapefiles, GeoJSON, etc.) compté automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette valeur si nécessaire.'
   form_group_id: spatial_info
 
 # Tipo de geometría
@@ -5422,9 +5422,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Type of geometry (Point, LineString, Polygon, MultiPolygon, etc.).'
-    es: 'Tipo de geometría (Point, LineString, Polygon, MultiPolygon, etc.).'
-    fr: 'Type de géométrie (Point, LineString, Polygon, MultiPolygon, etc.).'
+    en: 'Type of geometry (Point, LineString, Polygon, MultiPolygon, etc.) automatically detected after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Tipo de geometría (Point, LineString, Polygon, MultiPolygon, etc.) detectado automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Type de géométrie (Point, LineString, Polygon, MultiPolygon, etc.) détecté automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: spatial_info
 
 # === INFORMACIÓN DE DATOS ===
@@ -5438,9 +5438,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Column names and data types found in the file (JSON format).'
-    es: 'Nombres de columnas y tipos de datos encontrados en el archivo (formato JSON).'
-    fr: 'Noms de colonnes et types de données trouvés dans le fichier (format JSON).'
+    en: 'Column names and data types found in the file (JSON format) automatically extracted after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Nombres de columnas y tipos de datos encontrados en el archivo (formato JSON) extraídos automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Noms de colonnes et types de données trouvés dans le fichier (format JSON) extraits automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: data_info
 
 # Estadísticas básicas
@@ -5452,9 +5452,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Basic statistics like min/max values, counts, etc. (JSON format).'
-    es: 'Estadísticas básicas como valores mín/máx, conteos, etc. (formato JSON).'
-    fr: 'Statistiques de base comme les valeurs min/max, les comptages, etc. (format JSON).'
+    en: 'Basic statistics like min/max values, counts, etc. (JSON format) automatically calculated after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Estadísticas básicas como valores mín/máx, conteos, etc. (formato JSON) calculadas automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Statistiques de base comme les valeurs min/max, les comptages, etc. (format JSON) calculées automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: data_info
 
 # Dominios/Valores únicos
@@ -5466,9 +5466,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Unique values in categorical fields (JSON format).'
-    es: 'Valores únicos en campos categóricos (formato JSON).'
-    fr: 'Valeurs uniques dans les champs catégoriels (format JSON).'
+    en: 'Unique values in categorical fields (JSON format) automatically extracted after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Valores únicos en campos categóricos (formato JSON) extraídos automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Valeurs uniques dans les champs catégoriels (format JSON) extraites automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: data_info
 
 # === INFORMACIÓN GEOGRÁFICA ===
@@ -5482,9 +5482,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Countries and regions covered by the spatial extent (JSON format).'
-    es: 'Países y regiones cubiertas por la extensión espacial (formato JSON).'
-    fr: 'Pays et régions couverts par l''étendue spatiale (format JSON).'
+    en: 'Countries and regions covered by the spatial extent (JSON format) automatically determined after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Países y regiones cubiertas por la extensión espacial (formato JSON) determinados automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Pays et régions couverts par l''étendue spatiale (format JSON) déterminés automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: geographic_info
 
 # Límites administrativos
@@ -5496,9 +5496,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Administrative boundaries like provinces, municipalities (JSON format).'
-    es: 'Límites administrativos como provincias, municipios (formato JSON).'
-    fr: 'Limites administratives comme les provinces, municipalités (format JSON).'
+    en: 'Administrative boundaries like provinces, municipalities (JSON format) automatically identified after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Límites administrativos como provincias, municipios (formato JSON) identificados automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Limites administratives comme les provinces, municipalités (format JSON) identifiées automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: geographic_info
 
 # === INFORMACIÓN TEMPORAL ===
@@ -5512,9 +5512,9 @@ resource_fields:
   form_snippet: date.html
   display_snippet: schemingdcat/display_snippets/date_localised.html
   help_text:
-    en: 'Date when the file was originally created.'
-    es: 'Fecha en que se creó originalmente el archivo.'
-    fr: 'Date à laquelle le fichier a été créé à l''origine.'
+    en: 'Date when the file was originally created, automatically extracted from file metadata after uploading the resource. Once generated, you can modify this date if needed.'
+    es: 'Fecha en que se creó originalmente el archivo, extraída automáticamente de los metadatos del archivo después de subir el recurso. Una vez generado, puede modificar esta fecha si es necesario.'
+    fr: 'Date à laquelle le fichier a été créé à l''origine, extraite automatiquement des métadonnées du fichier après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette date si nécessaire.'
   form_group_id: temporal_info
 
 # Última modificación
@@ -5526,9 +5526,9 @@ resource_fields:
   form_snippet: date.html
   display_snippet: schemingdcat/display_snippets/date_localised.html
   help_text:
-    en: 'Date when the file was last modified.'
-    es: 'Fecha en que se modificó por última vez el archivo.'
-    fr: 'Date à laquelle le fichier a été modifié pour la dernière fois.'
+    en: 'Date when the file was last modified, automatically extracted from file metadata after uploading the resource. Once generated, you can modify this date if needed.'
+    es: 'Fecha en que se modificó por última vez el archivo, extraída automáticamente de los metadatos del archivo después de subir el recurso. Una vez generado, puede modificar esta fecha si es necesario.'
+    fr: 'Date à laquelle le fichier a été modifié pour la dernière fois, extraite automatiquement des métadonnées du fichier après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette date si nécessaire.'
   form_group_id: temporal_info
 
 # Período de datos
@@ -5540,9 +5540,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Time period covered by the data (if available in metadata).'
-    es: 'Período de tiempo cubierto por los datos (si está disponible en metadatos).'
-    fr: 'Période de temps couverte par les données (si disponible dans les métadonnées).'
+    en: 'Time period covered by the data automatically extracted from metadata (if available) after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Período de tiempo cubierto por los datos extraído automáticamente de los metadatos (si está disponible) después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Période de temps couverte par les données extraite automatiquement des métadonnées (si disponible) après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: temporal_info
 
 # === INFORMACIÓN TÉCNICA ===
@@ -5556,9 +5556,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: schemingdcat/display_snippets/file_size.html
   help_text:
-    en: 'File size in bytes, automatically detected.'
-    es: 'Tamaño del archivo en bytes, detectado automáticamente.'
-    fr: 'Taille du fichier en octets, détectée automatiquement.'
+    en: 'File size in bytes, automatically detected after uploading the resource. Once generated, you can modify this value if needed.'
+    es: 'Tamaño del archivo en bytes, detectado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
+    fr: 'Taille du fichier en octets, détectée automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette valeur si nécessaire.'
   form_group_id: technical_info
 
 # Información de compresión
@@ -5570,9 +5570,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Compression type and ratio if the file is compressed.'
-    es: 'Tipo de compresión y ratio si el archivo está comprimido.'
-    fr: 'Type de compression et ratio si le fichier est compressé.'
+    en: 'Compression type and ratio automatically detected if the file is compressed after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Tipo de compresión y ratio detectado automáticamente si el archivo está comprimido después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Type de compression et ratio détectés automatiquement si le fichier est compressé après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: technical_info
 
 # Versión del formato
@@ -5584,9 +5584,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Version of the file format (e.g., Shapefile version, GeoTIFF version).'
-    es: 'Versión del formato de archivo (ej., versión Shapefile, versión GeoTIFF).'
-    fr: 'Version du format de fichier (ex., version Shapefile, version GeoTIFF).'
+    en: 'Version of the file format (e.g., Shapefile version, GeoTIFF version) automatically detected after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Versión del formato de archivo (ej., versión Shapefile, versión GeoTIFF) detectada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Version du format de fichier (ex., version Shapefile, version GeoTIFF) détectée automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: technical_info
 
 # Integridad del archivo
@@ -5598,9 +5598,9 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'File integrity information including checksums and validation results (JSON format).'
-    es: 'Información de integridad del archivo incluyendo checksums y resultados de validación (formato JSON).'
-    fr: 'Informations d''intégrité du fichier incluant les checksums et les résultats de validation (format JSON).'
+    en: 'File integrity information including checksums and validation results (JSON format) automatically generated after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Información de integridad del archivo incluyendo checksums y resultados de validación (formato JSON) generada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Informations d''intégrité du fichier incluant les checksums et les résultats de validation (format JSON) générées automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: technical_info
 
 # === INFORMACIÓN PARA ARCHIVOS NO ESPACIALES ===
@@ -5614,9 +5614,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Automatically detected content type (PDF, CSV, Excel, etc.).'
-    es: 'Tipo de contenido detectado automáticamente (PDF, CSV, Excel, etc.).'
-    fr: 'Type de contenu détecté automatiquement (PDF, CSV, Excel, etc.).'
+    en: 'Automatically detected content type (PDF, CSV, Excel, etc.) after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Tipo de contenido detectado automáticamente (PDF, CSV, Excel, etc.) después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Type de contenu détecté automatiquement (PDF, CSV, Excel, etc.) après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: content_info
 
 # Número de páginas (para PDFs)
@@ -5628,9 +5628,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Number of pages in document files (PDF, etc.).'
-    es: 'Número de páginas en archivos de documento (PDF, etc.).'
-    fr: 'Nombre de pages dans les fichiers de document (PDF, etc.).'
+    en: 'Number of pages in document files (PDF, etc.) automatically counted after uploading the resource. Once generated, you can modify this value if needed.'
+    es: 'Número de páginas en archivos de documento (PDF, etc.) contado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
+    fr: 'Nombre de pages dans les fichiers de document (PDF, etc.) compté automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette valeur si nécessaire.'
   form_group_id: content_info
 
 # Número de hojas (para Excel)
@@ -5642,9 +5642,9 @@ resource_fields:
   form_snippet: text.html
   display_snippet: text.html
   help_text:
-    en: 'Number of sheets in spreadsheet files (Excel, etc.).'
-    es: 'Número de hojas en archivos de hoja de cálculo (Excel, etc.).'
-    fr: 'Nombre de feuilles dans les fichiers de feuille de calcul (Excel, etc.).'
+    en: 'Number of sheets in spreadsheet files (Excel, etc.) automatically counted after uploading the resource. Once generated, you can modify this value if needed.'
+    es: 'Número de hojas en archivos de hoja de cálculo (Excel, etc.) contado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
+    fr: 'Nombre de feuilles dans les fichiers de feuille de calcul (Excel, etc.) compté automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier cette valeur si nécessaire.'
   form_group_id: content_info
 
 # Información del texto extraído
@@ -5656,7 +5656,7 @@ resource_fields:
   form_snippet: textarea.html
   display_snippet: text.html
   help_text:
-    en: 'Information about extracted text content (character count, language detection, etc.) in JSON format.'
-    es: 'Información sobre el contenido de texto extraído (conteo de caracteres, detección de idioma, etc.) en formato JSON.'
-    fr: 'Informations sur le contenu textuel extrait (nombre de caractères, détection de langue, etc.) au format JSON.'
+    en: 'Information about extracted text content (character count, language detection, etc.) in JSON format automatically generated after uploading the resource. Once generated, you can modify this information if needed.'
+    es: 'Información sobre el contenido de texto extraído (conteo de caracteres, detección de idioma, etc.) en formato JSON generada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
+    fr: 'Informations sur le contenu textuel extrait (nombre de caractères, détection de langue, etc.) au format JSON générées automatiquement après le téléchargement de la ressource. Une fois généré, vous pouvez modifier ces informations si nécessaire.'
   form_group_id: content_info
