@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Resource Auto Fields Collapsible</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Basic styling for testing */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card2 {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .card2-header {
+            background: #f8f8f8;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .card2-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .card2-body {
+            padding: 15px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        /* Include the CSS from our module */
+        .schemingdcat-collapsible {
+            transition: all 0.3s ease;
+        }
+        .schemingdcat-collapsible.collapsed {
+            opacity: 0.9;
+        }
+        .schemingdcat-collapsible .card2-header {
+            position: relative;
+            padding-left: 35px;
+        }
+        .schemingdcat-collapse-toggle {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 2px 6px;
+            background: transparent;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        .schemingdcat-collapse-toggle:hover {
+            background: #f0f0f0;
+            border-color: #ccc;
+        }
+        .schemingdcat-collapse-toggle i {
+            transition: transform 0.2s ease;
+        }
+        .schemingdcat-auto-field-indicator {
+            float: right;
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+        .schemingdcat-auto-field-indicator i {
+            color: #2572B4;
+            margin-right: 4px;
+        }
+        .schemingdcat-collapsible.collapsed .card2-body {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Resource Auto Fields Collapsible</h1>
+    
+    <form action="/dataset/test/resource/new" method="post">
+        <h2>Resource Form</h2>
+        
+        <!-- Resource Title Group (contains auto-field: name) -->
+        <div class="resource_title-group card2 mb-3">
+            <div class="card2-header">
+                <h3 class="mb-0"><i class="fa fa-tag" style="padding-right:5px;"></i>Title Information</h3>
+            </div>
+            <div class="card2-body">
+                <div class="control-group">
+                    <label for="field-name">Resource Name</label>
+                    <input type="text" id="field-name" name="name" placeholder="Enter resource name">
+                </div>
+                <div class="control-group">
+                    <label for="field-description">Description</label>
+                    <input type="text" id="field-description" name="description" placeholder="Enter description">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resource Type Group (contains auto-fields: format, mimetype, encoding) -->
+        <div class="resource_type-group card2 mb-3">
+            <div class="card2-header">
+                <h3 class="mb-0"><i class="fa fa-file" style="padding-right:5px;"></i>Resource Type</h3>
+            </div>
+            <div class="card2-body">
+                <div class="control-group">
+                    <label for="field-format">Format</label>
+                    <input type="text" id="field-format" name="format" placeholder="e.g., CSV, JSON">
+                </div>
+                <div class="control-group">
+                    <label for="field-mimetype">MIME Type</label>
+                    <input type="text" id="field-mimetype" name="mimetype" placeholder="e.g., text/csv">
+                </div>
+                <div class="control-group">
+                    <label for="field-encoding">Encoding</label>
+                    <input type="text" id="field-encoding" name="encoding" placeholder="e.g., UTF-8">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resource Identification Group (contains auto-field: created) -->
+        <div class="resource_identification-group card2 mb-3">
+            <div class="card2-header">
+                <h3 class="mb-0"><i class="fa fa-info-circle" style="padding-right:5px;"></i>Identification</h3>
+            </div>
+            <div class="card2-body">
+                <div class="control-group">
+                    <label for="field-created">Created Date</label>
+                    <input type="date" id="field-created" name="created">
+                </div>
+                <div class="control-group">
+                    <label for="field-modified">Modified Date</label>
+                    <input type="date" id="field-modified" name="modified">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Non-auto field group for comparison -->
+        <div class="resource_license-group card2 mb-3">
+            <div class="card2-header">
+                <h3 class="mb-0"><i class="fa fa-legal" style="padding-right:5px;"></i>License Information</h3>
+            </div>
+            <div class="card2-body">
+                <div class="control-group">
+                    <label for="field-license">License</label>
+                    <input type="text" id="field-license" name="license" placeholder="License type">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upload wrapper to initialize the module -->
+        <div class="schemingdcat-upload-wrapper" data-module="schemingdcat-resource-auto-fields">
+            <p>Upload component would go here</p>
+        </div>
+    </form>
+    
+    <!-- Include our module script -->
+    <script>
+        // Simple CKAN module simulator for testing
+        window.ckan = {
+            module: function(name, factory) {
+                var module = factory($);
+                $(document).ready(function() {
+                    $('[data-module="' + name + '"]').each(function() {
+                        var instance = Object.create(module);
+                        instance.el = $(this);
+                        instance.initialize();
+                    });
+                });
+            }
+        };
+    </script>
+    
+    <!-- Include our actual module -->
+    <script src="ckanext/schemingdcat/assets/js/modules/schemingdcat-resource-auto-fields.js"></script>
+    
+    <script>
+        // Test auto-filling functionality
+        $(document).ready(function() {
+            setTimeout(function() {
+                console.log('Simulating auto-fill...');
+                $('#field-name').val('test-document.csv').attr('data-auto-filled', 'true').trigger('change');
+                $('#field-format').val('CSV').attr('data-auto-filled', 'true').trigger('change');
+                $('#field-mimetype').val('text/csv').attr('data-auto-filled', 'true').trigger('change');
+                $('#field-encoding').val('UTF-8').attr('data-auto-filled', 'true').trigger('change');
+                $('#field-created').val('2024-01-21').attr('data-auto-filled', 'true').trigger('change');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

@@ -117,3 +117,11 @@ schemingdcat-multi-resource-upload:
   contents:
     - js/modules/schemingdcat-multi-resource-upload.js
 
+schemingdcat-resource-auto-fields:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_resource_auto_fields.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-resource-auto-fields.js
+

@@ -7,7 +7,7 @@
 {%- set field_upload = field.upload_field or 'upload' -%}
 {%- set field_clear = field.upload_clear or 'clear_upload' -%}
 
-<div class="schemingdcat-upload-wrapper">
+<div class="schemingdcat-upload-wrapper" data-module="schemingdcat-resource-auto-fields">
   {% if is_upload and data.get('url') %}
     <div class="current-file-info alert alert-info">
       <i class="fa fa-info-circle"></i>
