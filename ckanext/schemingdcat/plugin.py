@@ -341,11 +341,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         context[processing_key] = True
         
         try:
-            # FIRST: Clean up any empty list fields that might have been created
-            log.info(f"🧹 Cleaning up empty metadata fields for resource {resource_id}")
-            self._cleanup_empty_metadata_fields(context, resource)
-            
-            # THEN: Process spatial extent extraction  
+            # FIRST: Process spatial extent extraction
             log.info(f"🌍 Starting spatial extent extraction for resource {resource_id}")
             self._process_spatial_extent_extraction_for_resource(context, resource)
             log.info(f"✅ Completed spatial processing for resource {resource_id}")
@@ -375,10 +371,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         context[processing_key] = True
         
         try:
-            # FIRST: Clean up any empty list fields that might have been created
-            self._cleanup_empty_metadata_fields(context, resource)
-            
-            # THEN: Process spatial extent extraction
+            # FIRST: Process spatial extent extraction
             self._process_spatial_extent_extraction_for_resource(context, resource)
         except Exception as e:
             log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
@@ -912,6 +905,88 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return False
 
 
+def _cleanup_empty_metadata_fields_post_processing(resource_id, model):
+    """
+    Post-processing cleanup of empty metadata fields AFTER successful metadata extraction.
+    This version works directly with the database and only clears truly empty fields.
+    """
+    try:
+        import json
+        
+        # Get the resource from the database
+        resource = model.Resource.get(resource_id)
+        if not resource:
+            return False
+        
+        # List of metadata fields that should be cleaned if they are truly empty
+        metadata_fields_to_check = [
+            'data_fields', 'data_statistics', 'data_domains',
+            'geographic_coverage', 'administrative_boundaries',
+            'compression_info', 'format_version', 'file_integrity',
+            'content_type_detected', 'document_pages', 'spreadsheet_sheets', 
+            'text_content_info', 'file_size_bytes'
+        ]
+        
+        # Get current values and check for empty lists
+        fields_to_clear = []
+        for field_name in metadata_fields_to_check:
+            field_value = getattr(resource, field_name, None)
+            
+            if field_value is not None:
+                # Check if it's a JSON string that represents an empty list
+                if isinstance(field_value, str):
+                    try:
+                        parsed_value = json.loads(field_value)
+                        if isinstance(parsed_value, list):
+                            # Filter out meaningless values
+                            filtered_list = []
+                            for item in parsed_value:
+                                if item is not None:
+                                    item_str = str(item).strip()
+                                    if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                                        filtered_list.append(item_str)
+                            
+                            # Only clear if the list is truly empty after filtering
+                            if not filtered_list:
+                                fields_to_clear.append(field_name)
+                    except (json.JSONDecodeError, TypeError):
+                        # If not JSON, check if it's an empty string
+                        if not field_value.strip():
+                            fields_to_clear.append(field_name)
+                
+                # Check lists directly
+                elif isinstance(field_value, list):
+                    filtered_list = []
+                    for item in field_value:
+                        if item is not None:
+                            item_str = str(item).strip()
+                            if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
+                                filtered_list.append(item_str)
+                    
+                    if not filtered_list:
+                        fields_to_clear.append(field_name)
+        
+        # Clear the truly empty fields
+        if fields_to_clear:
+            print(f"Post-processing cleanup: Clearing {len(fields_to_clear)} empty fields for resource {resource_id}: {fields_to_clear}")
+            for field_name in fields_to_clear:
+                setattr(resource, field_name, None)
+            
+            model.Session.add(resource)
+            model.Session.commit()
+            print(f"Post-processing cleanup: Successfully cleared empty fields for resource {resource_id}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Post-processing cleanup failed for resource {resource_id}: {e}")
+        try:
+            model.Session.rollback()
+        except:
+            pass
+        return False
+
+
 def _update_resource_metadata_direct_db(resource_id, metadata_fields, model):
     """
     Fallback function to update resource metadata directly in the database
@@ -1216,6 +1291,14 @@ def extract_comprehensive_metadata_job(job_data):
                         log.info(f"Resource_patch call completed successfully!")
                         log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
+                        
+                        # NOW: Clean up any empty metadata fields AFTER successful update
+                        log.info(f"🧹 Cleaning up empty metadata fields after successful update for resource {resource_id}")
+                        try:
+                            _cleanup_empty_metadata_fields_post_processing(resource_id, model)
+                        except Exception as cleanup_error:
+                            log.warning(f"Error in post-processing cleanup: {cleanup_error}")
+                        
                         return True
                     except Exception as patch_error:
                         log.error(f"Error in resource_patch for resource {resource_id}: {patch_error}", exc_info=True)
