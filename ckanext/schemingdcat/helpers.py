@@ -1487,4 +1487,3 @@ def safe_localised_filesize(size_value):
         return ckan_localised_filesize(size_value)
     except (ValueError, TypeError):
         return ''
-        }
