@@ -4,7 +4,7 @@
     {# If it's a list, take the first value #}
     {{ h.localised_filesize(file_size[0]) if file_size[0] else '-' }}
   {% else %}
-    {# If it's a single value #}
+    {# If it's a single value - now using safe_localised_filesize helper #}
     {{ h.localised_filesize(file_size) or '-' }}
   {% endif %}
 {% else %}

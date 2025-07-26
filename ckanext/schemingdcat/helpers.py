@@ -17,6 +17,8 @@ from urllib.error import URLError
 
 from six.moves.urllib.parse import urlencode
 
+from ckan.lib.formatters import localised_filesize as ckan_localised_filesize
+
 from ckanext.scheming.helpers import (
     scheming_choices_label,
     scheming_language_text,
@@ -1458,4 +1460,31 @@ def schemingdcat_spatial_extent_status():
             'api_safe': True,
             'mode': 'frontend_only',
             'error': 'Spatial extent module not available'
+        }
+
+
+def safe_localised_filesize(size_value):
+    """
+    Safely convert file size to human-readable format.
+    Handles string values, None values, and ensures proper conversion.
+    
+    Args:
+        size_value: The file size in bytes (can be int, string, or None)
+        
+    Returns:
+        str: Human-readable file size or empty string if invalid
+    """
+    if size_value is None:
+        return ''
+        
+    try:
+        # Convert to integer if it's a string
+        if isinstance(size_value, str):
+            if size_value.strip() == '':
+                return ''
+            size_value = int(float(size_value))
+        
+        return ckan_localised_filesize(size_value)
+    except (ValueError, TypeError):
+        return ''
         }

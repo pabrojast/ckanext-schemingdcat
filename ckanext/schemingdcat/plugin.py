@@ -174,7 +174,8 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             'cloudstorage_use_secure_urls': cloudstorage_helpers.use_secure_urls,
             'cloudstorage_use_azure_direct_upload': cloudstorage_helpers.use_azure_direct_upload,
             'cloudstorage_get_cloud_storage_type': cloudstorage_helpers.get_cloud_storage_type,
-            'cloudstorage_use_enhanced_upload': cloudstorage_helpers.use_enhanced_upload
+            'cloudstorage_use_enhanced_upload': cloudstorage_helpers.use_enhanced_upload,
+            'localised_filesize': helpers.safe_localised_filesize
         }
         schemingdcat_helpers.update(cloudstorage_helper_dict)
         return schemingdcat_helpers
@@ -1084,6 +1085,8 @@ def extract_comprehensive_metadata_job(job_data):
             import ckan.plugins.toolkit as toolkit
             from ckan.logic import get_action
             import traceback
+            # Import scheming logic functions to ensure they're registered
+            from ckanext.scheming import logic as scheming_logic
             log.info("CKAN modules imported successfully")
         except ImportError as e:
             log.error(f"Could not import CKAN modules: {e}")
@@ -1229,7 +1232,7 @@ def extract_comprehensive_metadata_job(job_data):
                     'file_created_date': metadata.get('file_created_date'),
                     'file_modified_date': metadata.get('file_modified_date'),
                     'data_temporal_coverage': metadata.get('data_temporal_coverage'),
-                    'file_size_bytes': metadata.get('file_size_bytes'),
+                    'file_size_bytes': int(metadata.get('file_size_bytes')) if metadata.get('file_size_bytes') is not None else None,
                     'compression_info': metadata.get('compression_info'),
                     'format_version': metadata.get('format_version'),
                     'file_integrity': json.dumps(metadata.get('file_integrity')) if metadata.get('file_integrity') else None,
