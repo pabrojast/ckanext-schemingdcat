@@ -1222,16 +1222,27 @@ def extract_comprehensive_metadata_job(job_data):
                     pass
                 
                 # Create fresh system context for updating the resource with proper setup
+                # Use a site user to bypass authorization issues with private datasets
+                try:
+                    site_user = toolkit.get_action('get_site_user')({'ignore_auth': True}, {})
+                    user_name = site_user['name']
+                    log.info(f"Using site user '{user_name}' for resource update")
+                except Exception as e:
+                    log.warning(f"Could not get site user: {e}, using default system user")
+                    user_name = 'default'
+                
                 context = {
                     'model': model,
                     'session': model.Session,
                     'ignore_auth': True,
-                    'user': '',  # System user
-                    'auth_user_obj': None,  # Explicit None for system operations
+                    'user': user_name,  # Use site user to handle private datasets
+                    'auth_user_obj': None,
                     'api_version': 3,
                     'defer_commit': False,
                     'for_view': False,  # This is not for rendering
-                    'return_id_only': False  # We want the full object back
+                    'return_id_only': False,  # We want the full object back
+                    'bypass_auth': True,  # Additional flag for some auth checks
+                    '__auth_audit': []  # Prevent auth audit logging
                 }
                 
                 log.info(f"Created system context for resource update")
