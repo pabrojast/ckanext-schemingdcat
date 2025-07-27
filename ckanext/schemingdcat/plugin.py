@@ -1087,6 +1087,28 @@ def extract_comprehensive_metadata_job(job_data):
             import traceback
             # Import scheming logic functions to ensure they're registered
             from ckanext.scheming import logic as scheming_logic
+            
+            # Ensure scheming actions are available in the worker context
+            # This is necessary because workers don't automatically load all plugin actions
+            import ckan.plugins as p
+            scheming_plugins = [
+                'scheming_datasets',
+                'scheming_groups', 
+                'scheming_organizations'
+            ]
+            
+            for plugin_name in scheming_plugins:
+                try:
+                    plugin = p.get_plugin(plugin_name)
+                    if hasattr(plugin, 'get_actions'):
+                        actions = plugin.get_actions()
+                        for action_name, action_func in actions.items():
+                            if action_name not in toolkit._actions:
+                                toolkit._actions[action_name] = action_func
+                                log.info(f"Registered action {action_name} from {plugin_name}")
+                except Exception as plugin_error:
+                    log.warning(f"Could not load actions from {plugin_name}: {plugin_error}")
+            
             log.info("CKAN modules imported successfully")
         except ImportError as e:
             log.error(f"Could not import CKAN modules: {e}")
