@@ -40,16 +40,34 @@ def get_facets_dict():
             if not _facets_dict:
                 _facets_dict = {}
 
-                schema = logic.get_action('scheming_dataset_schema_show')(
-                    {},
-                    {'type': 'dataset'}
-                    )
+                try:
+                    # Try to get the action
+                    action = logic.get_action('scheming_dataset_schema_show')
+                    schema = action({}, {'type': 'dataset'})
 
-                for item in schema['dataset_fields']:
-                    _facets_dict[item['field_name']] = item['label']
+                    for item in schema['dataset_fields']:
+                        _facets_dict[item['field_name']] = item['label']
 
-                for item in schema['resource_fields']:
-                    _facets_dict[item['field_name']] = item['label']
+                    for item in schema['resource_fields']:
+                        _facets_dict[item['field_name']] = item['label']
+                except KeyError:
+                    # Action not available (e.g., in worker context)
+                    # Try to import and register scheming actions
+                    try:
+                        from ckanext.scheming import logic as scheming_logic
+                        # Register the action manually
+                        logic._actions['scheming_dataset_schema_show'] = scheming_logic.scheming_dataset_schema_show
+                        # Try again
+                        schema = logic.get_action('scheming_dataset_schema_show')({}, {'type': 'dataset'})
+                        
+                        for item in schema['dataset_fields']:
+                            _facets_dict[item['field_name']] = item['label']
+
+                        for item in schema['resource_fields']:
+                            _facets_dict[item['field_name']] = item['label']
+                    except Exception:
+                        # If still failing, return empty dict to avoid breaking the worker
+                        pass
 
     return _facets_dict
 
