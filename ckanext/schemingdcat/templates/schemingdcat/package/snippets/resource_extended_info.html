@@ -12,13 +12,32 @@
     Returns:
         str: The rendered HTML.   
 #}
+    {# Check if field has meaningful content #}
+    {% set has_content = false %}
     {% if res[field_name] %}
+        {% if res[field_name] is iterable and res[field_name] is not string %}
+            {# For lists, check if any item is non-empty #}
+            {% for item in res[field_name] %}
+                {% if item and item|string|trim != '' %}
+                    {% set has_content = true %}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {# For non-lists, check if value is non-empty #}
+            {% if res[field_name]|string|trim != '' %}
+                {% set has_content = true %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+    
+    {% if has_content %}
         <tr>
             <th scope="row">{{ h.scheming_language_text(field.label) }}</th>
             <td>
                 {% if res[field_name] is iterable and res[field_name] is not string %}
                     <ul class="link-list">
                     {% for item in res[field_name] %}
+                        {% if item and item|string|trim != '' %}
                         <li>
                         {% if h.is_url(item) %}
                             {{ h.link_to(h.schemingdcat_prettify_url_name(item), item, target='_blank') }}
@@ -26,6 +45,7 @@
                             {{ item }}
                         {% endif %}
                         </li>
+                        {% endif %}
                     {% endfor %}
                     </ul>
                 {% else %}
