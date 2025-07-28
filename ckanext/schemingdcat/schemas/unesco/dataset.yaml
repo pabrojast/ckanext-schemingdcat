@@ -5436,7 +5436,7 @@ resource_fields:
     es: Campos/Atributos de Datos
     fr: Champs/Attributs de Données
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Column names and data types found in the file (JSON format) automatically extracted after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Nombres de columnas y tipos de datos encontrados en el archivo (formato JSON) extraídos automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5450,7 +5450,7 @@ resource_fields:
     es: Estadísticas de Datos
     fr: Statistiques de Données
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Basic statistics like min/max values, counts, etc. (JSON format) automatically calculated after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Estadísticas básicas como valores mín/máx, conteos, etc. (formato JSON) calculadas automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5464,7 +5464,7 @@ resource_fields:
     es: Dominios de Datos
     fr: Domaines de Données
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Unique values in categorical fields (JSON format) automatically extracted after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Valores únicos en campos categóricos (formato JSON) extraídos automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5480,7 +5480,7 @@ resource_fields:
     es: Cobertura Geográfica
     fr: Couverture Géographique
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Countries and regions covered by the spatial extent (JSON format) automatically determined after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Países y regiones cubiertas por la extensión espacial (formato JSON) determinados automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5494,7 +5494,7 @@ resource_fields:
     es: Límites Administrativos
     fr: Limites Administratives
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Administrative boundaries like provinces, municipalities (JSON format) automatically identified after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Límites administrativos como provincias, municipios (formato JSON) identificados automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5568,7 +5568,7 @@ resource_fields:
     es: Información de Compresión
     fr: Informations de Compression
   form_snippet: text.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Compression type and ratio automatically detected if the file is compressed after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Tipo de compresión y ratio detectado automáticamente si el archivo está comprimido después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5582,7 +5582,7 @@ resource_fields:
     es: Versión del Formato
     fr: Version du Format
   form_snippet: text.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Version of the file format (e.g., Shapefile version, GeoTIFF version) automatically detected after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Versión del formato de archivo (ej., versión Shapefile, versión GeoTIFF) detectada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5596,7 +5596,7 @@ resource_fields:
     es: Integridad del Archivo
     fr: Intégrité du Fichier
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'File integrity information including checksums and validation results (JSON format) automatically generated after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Información de integridad del archivo incluyendo checksums y resultados de validación (formato JSON) generada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'
@@ -5626,7 +5626,7 @@ resource_fields:
     es: Número de Páginas
     fr: Nombre de Pages
   form_snippet: text.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Number of pages in document files (PDF, etc.) automatically counted after uploading the resource. Once generated, you can modify this value if needed.'
     es: 'Número de páginas en archivos de documento (PDF, etc.) contado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
@@ -5640,7 +5640,7 @@ resource_fields:
     es: Número de Hojas
     fr: Nombre de Feuilles
   form_snippet: text.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Number of sheets in spreadsheet files (Excel, etc.) automatically counted after uploading the resource. Once generated, you can modify this value if needed.'
     es: 'Número de hojas en archivos de hoja de cálculo (Excel, etc.) contado automáticamente después de subir el recurso. Una vez generado, puede modificar este valor si es necesario.'
@@ -5654,7 +5654,7 @@ resource_fields:
     es: Información del Contenido de Texto
     fr: Informations sur le Contenu Textuel
   form_snippet: textarea.html
-  display_snippet: text.html
+  display_snippet: schemingdcat/display_snippets/list_non_empty.html
   help_text:
     en: 'Information about extracted text content (character count, language detection, etc.) in JSON format automatically generated after uploading the resource. Once generated, you can modify this information if needed.'
     es: 'Información sobre el contenido de texto extraído (conteo de caracteres, detección de idioma, etc.) en formato JSON generada automáticamente después de subir el recurso. Una vez generado, puede modificar esta información si es necesario.'

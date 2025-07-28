@@ -1,0 +1,38 @@
+{#
+Displays a list field filtering out empty values.
+Only shows the field if it contains at least one non-empty value.
+
+Example:
+  {% snippet 'schemingdcat/display_snippets/list_non_empty.html', field=field, data=data, schema=schema %}
+
+#}
+{% set field_value = data.get(field.field_name, []) %}
+
+{# Check if we have any non-empty values #}
+{% set has_content = false %}
+{% if field_value %}
+  {% if field_value is iterable and field_value is not string %}
+    {% for item in field_value %}
+      {% if item and item|string|trim != '' %}
+        {% set has_content = true %}
+      {% endif %}
+    {% endfor %}
+  {% elif field_value|string|trim != '' %}
+    {% set has_content = true %}
+  {% endif %}
+{% endif %}
+
+{# Only display if we have content #}
+{% if has_content %}
+  {% if field_value is iterable and field_value is not string %}
+    {% set filtered_items = [] %}
+    {% for item in field_value %}
+      {% if item and item|string|trim != '' %}
+        {% do filtered_items.append(item) %}
+      {% endif %}
+    {% endfor %}
+    {{ filtered_items }}
+  {% else %}
+    {{ field_value }}
+  {% endif %}
+{% endif %}
