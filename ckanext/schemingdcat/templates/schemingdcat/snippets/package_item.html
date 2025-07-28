@@ -77,7 +77,8 @@
                       {% block resources_inner %}
                         {% for resource in h.dict_list_reduce(package.resources, 'format') %}
                         <li>
-                          <a href="{{ h.url_for(package.type ~ '.read', id=package.name) }}" class="label badge-label" data-format="{{ resource.lower() }}">{{ resource }}</a>
+                          {% set blueprint_name = 'dataset' if package.type not in ['dataset', 'harvest'] else package.type %}
+                          <a href="{{ h.url_for(blueprint_name ~ '.read', id=package.name) }}" class="label badge-label" data-format="{{ resource.lower() }}">{{ resource }}</a>
                         </li>
                         {% endfor %}
                       {% endblock %}
