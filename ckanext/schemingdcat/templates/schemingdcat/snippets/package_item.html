@@ -46,7 +46,8 @@
                     {% endif %}
                   {% endblock %}
                   {% block heading_title %}
-                    {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % package.type, id=package.name)) }}
+                    {% set blueprint_name = 'dataset' if package.type not in ['dataset', 'harvest'] else package.type %}
+                    {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % blueprint_name, id=package.name)) }}
                     {% if package.featured %}
                       <i class="fa fa-star dataset-featured-icon" title="{{ ngettext('Featured dataset', 'Featured datasets', 1) }}"></i>
                     {% endif %}
