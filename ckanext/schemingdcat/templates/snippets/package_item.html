@@ -1,0 +1,17 @@
+{% ckan_extends %}
+
+{# Override the heading title block to handle custom dataset types #}
+{% block heading_title %}
+  {% set blueprint_name = 'dataset' if package.type not in ['dataset', 'harvest'] else package.type %}
+  {{ h.link_to(h.truncate(title, truncate_title), h.url_for('%s.read' % blueprint_name, id=package.name)) }}
+{% endblock %}
+
+{# Override resources section to handle custom dataset types #}
+{% block resources_inner %}
+  {% for resource in h.dict_list_reduce(package.resources, 'format') %}
+  <li>
+    {% set blueprint_name = 'dataset' if package.type not in ['dataset', 'harvest'] else package.type %}
+    <a href="{{ h.url_for(blueprint_name ~ '.read', id=package.name) }}" class="label" data-format="{{ resource.lower() }}">{{ resource }}</a>
+  </li>
+  {% endfor %}
+{% endblock %}

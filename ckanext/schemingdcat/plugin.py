@@ -1268,7 +1268,7 @@ def extract_comprehensive_metadata_job(job_data):
                     'file_size_bytes': int(metadata.get('file_size_bytes')) if metadata.get('file_size_bytes') is not None else None,
                     'compression_info': metadata.get('compression_info'),
                     'format_version': metadata.get('format_version'),
-                    'file_integrity': json.dumps(metadata.get('file_integrity')) if metadata.get('file_integrity') else None,
+                    'file_integrity': metadata.get('file_integrity'),
                     'content_type_detected': metadata.get('content_type_detected'),
                     'document_pages': metadata.get('document_pages'),
                     'spreadsheet_sheets': metadata.get('spreadsheet_sheets'),
@@ -1300,7 +1300,16 @@ def extract_comprehensive_metadata_job(job_data):
                         
                         # Only add the list if it has at least one meaningful item
                         if filtered_list:
-                            resource_patch_data[field_name] = filtered_list
+                            # Convert list to JSON string for fields that expect JSON format
+                            json_fields = ['data_fields', 'data_statistics', 'data_domains', 
+                                         'geographic_coverage', 'administrative_boundaries',
+                                         'compression_info', 'format_version', 'file_integrity',
+                                         'document_pages', 'spreadsheet_sheets', 'text_content_info']
+                            
+                            if field_name in json_fields:
+                                resource_patch_data[field_name] = json.dumps(filtered_list)
+                            else:
+                                resource_patch_data[field_name] = filtered_list
                             fields_to_update.append(field_name)
                         # If empty list after filtering, skip this field completely
                         continue
