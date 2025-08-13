@@ -321,6 +321,101 @@
     });
   }
 
+  // Global XHR progress hook to reflect real upload progress (no simulation)
+  (function setupGlobalXhrProgressHook() {
+    if (window.__schemingdcat_xhr_progress_hook_installed__) return;
+    window.__schemingdcat_xhr_progress_hook_installed__ = true;
+
+    function updateAllProgressBars(percent, status) {
+      try {
+        // Update CloudStorage progress bar if present
+        var csContainers = document.querySelectorAll('.cloudstorage-progress-container');
+        csContainers.forEach(function(csContainer) {
+          var csBar = csContainer.querySelector('.progress-bar');
+          var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
+          if (csBar && typeof percent === 'number') {
+            var p = Math.max(0, Math.min(100, Math.round(percent)));
+            csBar.style.width = p + '%';
+            csBar.setAttribute('aria-valuenow', String(p));
+            if (!csBar.textContent || /%$/.test(csBar.textContent)) {
+              csBar.textContent = p + '%';
+            }
+            if (p >= 100) {
+              csContainer.className = 'cloudstorage-progress-container completed';
+            }
+          }
+          if (csStatus && status) {
+            csStatus.textContent = status;
+          }
+        });
+
+        // Update preview progress (this snippet's bar)
+        var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+        if (wrapper) {
+          var filePreview = wrapper.querySelector('.file-preview');
+          var progressFill = filePreview ? filePreview.querySelector('.progress-fill') : null;
+          var progressText = filePreview ? filePreview.querySelector('.progress-text') : null;
+          if (progressFill && typeof percent === 'number') {
+            var p2 = Math.max(0, Math.min(100, Math.round(percent)));
+            progressFill.style.animation = 'none';
+            progressFill.style.width = p2 + '%';
+          }
+          if (progressText && status) {
+            progressText.textContent = status;
+          } else if (progressText && typeof percent === 'number') {
+            progressText.textContent = (Math.round(percent)) + '%';
+          }
+        }
+      } catch (e) {
+        // swallow
+      }
+    }
+
+    var origOpen = XMLHttpRequest.prototype.open;
+    var origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+      try {
+        this.__schemingdcat_req = { method: method, url: url };
+      } catch (e) {}
+      return origOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function(body) {
+      try {
+        if (this.upload && this.upload.addEventListener) {
+          var started = false;
+          this.upload.addEventListener('loadstart', function() {
+            started = true;
+            updateAllProgressBars(0, 'Uploading...');
+          });
+          this.upload.addEventListener('progress', function(evt) {
+            if (!started) {
+              started = true;
+              updateAllProgressBars(0, 'Uploading...');
+            }
+            if (evt && evt.lengthComputable) {
+              var percent = (evt.loaded / evt.total) * 100;
+              updateAllProgressBars(percent, 'Uploading...');
+            } else {
+              updateAllProgressBars(undefined, 'Uploading...');
+            }
+          });
+        }
+        this.addEventListener('load', function() {
+          updateAllProgressBars(100, 'Done');
+        });
+        this.addEventListener('error', function() {
+          updateAllProgressBars(undefined, 'Upload error');
+        });
+        this.addEventListener('abort', function() {
+          updateAllProgressBars(undefined, 'Upload cancelled');
+        });
+      } catch (e) {}
+      return origSend.apply(this, arguments);
+    };
+  })();
+
   // Wait for DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initUpload);
@@ -819,16 +914,13 @@
       if (progressBar) {
         progressBar.style.display = 'block';
         var progressFill = progressBar.querySelector('.progress-fill');
-        // After 2s (end of CSS animation), set bar to 100% and change text
-        setTimeout(function() {
-          if (progressFill) {
-            progressFill.style.animation = 'none';
-            progressFill.style.width = '100%';
-          }
-          if (progressText) {
-            progressText.textContent = 'Done';
-          }
-        }, 2000);
+        if (progressFill) {
+          // Start at 0% and let real progress (CloudStorage or XHR hook) drive updates
+          progressFill.style.width = '0%';
+        }
+        if (progressText) {
+          progressText.textContent = 'Uploading...';
+        }
       }
       
       // Check clear checkbox if exists
