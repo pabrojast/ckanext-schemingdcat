@@ -450,6 +450,26 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # En caso de error, ser conservador y asumir que no es espacial
             return False
         
+    def _is_potential_non_spatial_resource(self, resource):
+        """
+        Determina si un recurso no espacial podría aportar metadata técnica/contenido.
+        Considera formatos de documentos y tabulares: csv, xls, xlsx, pdf, txt, json.
+        """
+        try:
+            resource_format = (resource.get('format') or '').lower()
+            non_spatial_formats = ['csv', 'xls', 'xlsx', 'pdf', 'txt', 'json']
+            if resource_format in non_spatial_formats:
+                return True
+
+            url = (resource.get('url') or '').lower()
+            non_spatial_exts = ['.csv', '.xls', '.xlsx', '.pdf', '.txt', '.json']
+            for ext in non_spatial_exts:
+                if url.endswith(ext):
+                    return True
+        except Exception:
+            pass
+        return False
+
     def _extract_spatial_extent_from_resource(self, resource):
         """
         Extrae la extensión espacial de un recurso.
@@ -592,13 +612,17 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         log.info(f"🔄 Resource context keys: {list(context.keys()) if context else 'No context'}")
         
         try:
-            # Verificar si es un recurso potencialmente espacial
-            log.info(f"🔄 Step 1: Checking if resource is spatial...")
-            if not self._is_potential_spatial_resource(resource):
-                log.info(f"⏭️ STOPPING: Resource {resource_id} is not a potential spatial resource")
+            # Verificar si es un recurso potencialmente analizables (espacial o no)
+            log.info(f"🔄 Step 1: Checking if resource is analyzable (spatial or non-spatial)...")
+            is_spatial = self._is_potential_spatial_resource(resource)
+            is_non_spatial = self._is_potential_non_spatial_resource(resource)
+            if not (is_spatial or is_non_spatial):
+                log.info(f"⏭️ STOPPING: Resource {resource_id} not analyzable (unsupported format)")
                 return
-                
-            log.info(f"🎯 CONFIRMED: Processing spatial resource {resource_id} with format {resource.get('format', 'unknown')}")
+            if is_spatial:
+                log.info(f"🎯 CONFIRMED: Resource {resource_id} is spatial")
+            if is_non_spatial and not is_spatial:
+                log.info(f"🎯 CONFIRMED: Resource {resource_id} is non-spatial but analyzable for technical/content metadata")
             
             # Obtener el dataset padre
             package_id = resource.get('package_id')
@@ -608,11 +632,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 log.error(f"❌ STOPPING: No package_id found for resource {resource_id}")
                 return
                 
-            # Verificar si ya existe spatial_extent (manual o previo)
-            log.info(f"🔄 Step 3: Checking if extraction should be skipped...")
-            should_skip = self._should_skip_spatial_extraction(context, package_id)
-            if should_skip:
-                log.info(f"⏭️ STOPPING: Skipping spatial extent extraction for dataset {package_id} - manual or existing extent detected")
+            # Verificar si ya existe spatial_extent (manual o previo) — solo afecta a campos espaciales
+            log.info(f"🔄 Step 3: Checking if spatial extraction should be skipped...")
+            skip_spatial = self._should_skip_spatial_extraction(context, package_id) if is_spatial else True
+            if skip_spatial and not is_non_spatial:
+                log.info(f"⏭️ STOPPING: Skipping spatial extraction and no non-spatial metadata to extract for dataset {package_id}")
                 return
             
             # **PROCESAMIENTO ASÍNCRONO**: Usar CKAN Jobs Queue (preferido) o threading como fallback
@@ -653,7 +677,8 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'resource_id': resource.get('id'),
                     'resource_url': resource.get('url'),
                     'resource_format': resource.get('format'),
-                    'package_id': package_id
+                    'package_id': package_id,
+                    'skip_spatial': bool(skip_spatial)
                 }
                 
                 log.info(f"Preparing to enqueue job with data: {job_data}")
@@ -995,33 +1020,70 @@ def _update_resource_metadata_direct_db(resource_id, metadata_fields, model):
     """
     try:
         import json
+        from ckan.model.resource import ResourceExtra
         
         # Get the resource from the database
         resource = model.Resource.get(resource_id)
         if not resource:
             return False
         
-        # Update resource fields directly
+        # Index existing extras (if available)
+        extras_by_key = {}
+        try:
+            if hasattr(resource, 'extras'):
+                for extra in resource.extras:
+                    extras_by_key[extra.key] = extra
+        except Exception:
+            pass
+
+        def _has_column(res, name):
+            try:
+                return hasattr(res.__class__, name)
+            except Exception:
+                return False
+
         updates_made = 0
         for field_name, field_value in metadata_fields.items():
-            if field_value is not None and field_value != '':
+            if field_value is None or field_value == '':
+                continue
+
+            # Convert complex structures to JSON text
+            if isinstance(field_value, (dict, list)):
                 try:
-                    # Convert to JSON string if it's a dict or list
-                    if isinstance(field_value, (dict, list)):
-                        field_value = json.dumps(field_value)
-                    
-                    # Set the attribute on the resource object
+                    field_value = json.dumps(field_value)
+                except Exception:
+                    field_value = str(field_value)
+
+            # First try to write into a concrete Resource column (if it exists)
+            try:
+                if _has_column(resource, field_name):
                     setattr(resource, field_name, field_value)
                     updates_made += 1
-                except Exception as field_error:
-                    print(f"Error setting field {field_name}: {field_error}")
                     continue
+            except Exception as field_error:
+                print(f"Error setting direct column {field_name}: {field_error}")
+
+            # Fallback: store/update as Resource extra
+            try:
+                existing_extra = extras_by_key.get(field_name)
+                if existing_extra:
+                    existing_extra.value = str(field_value)
+                else:
+                    new_extra = ResourceExtra(
+                        resource_id=resource_id,
+                        key=field_name,
+                        value=str(field_value)
+                    )
+                    model.Session.add(new_extra)
+                updates_made += 1
+            except Exception as extra_error:
+                print(f"Error setting resource extra {field_name}: {extra_error}")
+                continue
         
         if updates_made > 0:
-            # Commit the changes
             model.Session.add(resource)
             model.Session.commit()
-            print(f"Direct DB update: Successfully updated {updates_made} fields for resource {resource_id}")
+            print(f"Direct DB update: Successfully updated {updates_made} fields (columns/extras) for resource {resource_id}")
             return True
         else:
             print(f"Direct DB update: No fields to update for resource {resource_id}")
@@ -1069,6 +1131,7 @@ def extract_comprehensive_metadata_job(job_data):
         resource_url = job_data.get('resource_url')
         resource_format = job_data.get('resource_format')
         package_id = job_data.get('package_id')
+        skip_spatial = bool(job_data.get('skip_spatial'))
         
         if not resource_id:
             log.error("No resource_id in job_data")
@@ -1130,7 +1193,7 @@ def extract_comprehensive_metadata_job(job_data):
             log.info(f"FileAnalyzer created successfully for resource {resource_id}")
             
             # Check if file is local or remote
-            if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
+                if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
                 # Local file
                 log.info(f"Analyzing local file: {resource_url}")
                 
@@ -1162,31 +1225,57 @@ def extract_comprehensive_metadata_job(job_data):
                             
                             log.info(f"Starting download from: {resource_url}")
                             
-                            with urllib.request.urlopen(req, timeout=30) as response:
-                                log.info(f"Download response received, content-type: {response.headers.get('Content-Type', 'unknown')}")
-                                
-                                chunk_size = 8192
-                                total_size = 0
-                                while True:
-                                    chunk = response.read(chunk_size)
-                                    if not chunk:
-                                        break
-                                    tmp_file.write(chunk)
-                                    total_size += len(chunk)
-                                    # Limit file size to 100MB
-                                    if total_size > 100 * 1024 * 1024:
-                                        log.warning("File too large (>100MB), aborting download")
-                                        raise Exception("File too large (>100MB)")
-                            
-                            tmp_file.flush()
-                            
-                            if total_size > 0:
-                                log.info(f"Downloaded {total_size} bytes to {tmp_file.name}, starting analysis...")
-                                # Analyze downloaded file
+                            import time
+                            max_attempts = 3
+                            backoff = 2
+                            last_error = None
+
+                            for attempt in range(1, max_attempts + 1):
+                                try:
+                                    with urllib.request.urlopen(req, timeout=45) as response:
+                                        log.info(f"Download response received, content-type: {response.headers.get('Content-Type', 'unknown')}")
+                                        
+                                        chunk_size = 8192
+                                        total_size = 0
+                                        while True:
+                                            chunk = response.read(chunk_size)
+                                            if not chunk:
+                                                break
+                                            tmp_file.write(chunk)
+                                            total_size += len(chunk)
+                                            # Limit file size to 100MB
+                                            if total_size > 100 * 1024 * 1024:
+                                                log.warning("File too large (>100MB), aborting download")
+                                                raise Exception("File too large (>100MB)")
+                                        
+                                        tmp_file.flush()
+                                        
+                                        if total_size > 0:
+                                            log.info(f"Downloaded {total_size} bytes to {tmp_file.name}, starting analysis...")
+                                            # Analyze downloaded file
+                                # If spatial is explicitly skipped, post-filter spatial keys
                                 metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
-                                log.info(f"Remote file analysis completed, extracted {len(metadata)} metadata fields")
-                            else:
-                                log.warning(f"Downloaded file is empty")
+                                if skip_spatial and isinstance(metadata, dict):
+                                    for k in ['spatial_extent','spatial_crs','spatial_resolution','feature_count','geometry_type','geographic_coverage','administrative_boundaries']:
+                                        metadata.pop(k, None)
+                                            log.info(f"Remote file analysis completed, extracted {len(metadata)} metadata fields")
+                                        else:
+                                            log.warning(f"Downloaded file is empty")
+                                        last_error = None
+                                        break
+                                except urllib.error.URLError as e:
+                                    last_error = e
+                                    log.warning(f"Download attempt {attempt}/{max_attempts} failed: {e}")
+                                except Exception as e:
+                                    last_error = e
+                                    log.warning(f"Download attempt {attempt}/{max_attempts} failed: {e}")
+                                
+                                if attempt < max_attempts:
+                                    time.sleep(backoff)
+                                    backoff *= 2
+
+                            if last_error is not None:
+                                log.error(f"All download attempts failed: {last_error}")
                             
                         except urllib.error.URLError as e:
                             log.error(f"URL error downloading file: {e}")
@@ -1265,7 +1354,7 @@ def extract_comprehensive_metadata_job(job_data):
                     'file_created_date': metadata.get('file_created_date'),
                     'file_modified_date': metadata.get('file_modified_date'),
                     'data_temporal_coverage': metadata.get('data_temporal_coverage'),
-                    'file_size_bytes': int(metadata.get('file_size_bytes')) if metadata.get('file_size_bytes') is not None else None,
+                    'file_size_bytes': metadata.get('file_size_bytes'),
                     'compression_info': metadata.get('compression_info'),
                     'format_version': metadata.get('format_version'),
                     'file_integrity': metadata.get('file_integrity'),
@@ -1332,10 +1421,44 @@ def extract_comprehensive_metadata_job(job_data):
                         log.info(f"Getting resource_patch action...")
                         resource_patch_action = get_action('resource_patch')
                         log.info(f"Calling resource_patch action with context and data...")
-                        result = resource_patch_action(context, resource_patch_data)
+                        # Defensive: ensure strings where fields expect text to avoid TypeErrors in validators
+                        safe_patch_data = {}
+                        for k, v in resource_patch_data.items():
+                            if isinstance(v, (dict, list)):
+                                try:
+                                    safe_patch_data[k] = json.dumps(v)
+                                except Exception:
+                                    safe_patch_data[k] = str(v)
+                            else:
+                                safe_patch_data[k] = v
+                        result = resource_patch_action(context, safe_patch_data)
                         log.info(f"Resource_patch call completed successfully!")
                         log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
+
+                        # Verify that all intended fields persisted; if some are missing (likely not in active schema), store them as extras
+                        try:
+                            resource_show = get_action('resource_show')(context, {'id': resource_id})
+                            missing_fields = []
+                            for fname in fields_to_update:
+                                persisted = False
+                                # Check direct field
+                                if fname in resource_show and resource_show.get(fname):
+                                    persisted = True
+                                # Check extras list structure
+                                if not persisted and isinstance(resource_show.get('extras'), list):
+                                    for ex in resource_show['extras']:
+                                        if isinstance(ex, dict) and ex.get('key') == fname and ex.get('value'):
+                                            persisted = True
+                                            break
+                                if not persisted:
+                                    missing_fields.append(fname)
+                            if missing_fields:
+                                log.info(f"Some fields not persisted via action (likely not in schema): {missing_fields}. Writing as extras via fallback.")
+                                fallback_map = {k: metadata_fields.get(k) for k in missing_fields}
+                                _update_resource_metadata_direct_db(resource_id, fallback_map, model)
+                        except Exception as verify_error:
+                            log.debug(f"Could not verify persisted fields: {verify_error}")
                         
                         # NOW: Clean up any empty metadata fields AFTER successful update
                         log.info(f"🧹 Cleaning up empty metadata fields after successful update for resource {resource_id}")
@@ -1354,10 +1477,12 @@ def extract_comprehensive_metadata_job(job_data):
                         except Exception as rollback_error:
                             log.error(f"Error during rollback: {rollback_error}")
                         
-                        # FALLBACK: Try direct database update if action fails
+                        # FALLBACK: Try direct database update if action fails (only for fields we prepared)
                         log.warning(f"Attempting fallback direct database update for resource {resource_id}")
                         try:
-                            fallback_success = _update_resource_metadata_direct_db(resource_id, metadata_fields, model)
+                            # Restrict to fields we attempted to update
+                            fallback_field_map = {k: metadata_fields.get(k) for k in fields_to_update}
+                            fallback_success = _update_resource_metadata_direct_db(resource_id, fallback_field_map, model)
                             if fallback_success:
                                 log.info(f"Successfully updated resource {resource_id} via fallback direct database access")
                                 return True
