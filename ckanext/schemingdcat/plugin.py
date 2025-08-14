@@ -1193,7 +1193,7 @@ def extract_comprehensive_metadata_job(job_data):
             log.info(f"FileAnalyzer created successfully for resource {resource_id}")
             
             # Check if file is local or remote
-                if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
+            if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
                 # Local file
                 log.info(f"Analyzing local file: {resource_url}")
                 
@@ -1253,11 +1253,11 @@ def extract_comprehensive_metadata_job(job_data):
                                         if total_size > 0:
                                             log.info(f"Downloaded {total_size} bytes to {tmp_file.name}, starting analysis...")
                                             # Analyze downloaded file
-                                # If spatial is explicitly skipped, post-filter spatial keys
-                                metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
-                                if skip_spatial and isinstance(metadata, dict):
-                                    for k in ['spatial_extent','spatial_crs','spatial_resolution','feature_count','geometry_type','geographic_coverage','administrative_boundaries']:
-                                        metadata.pop(k, None)
+                                            metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
+                                            # If spatial is explicitly skipped, post-filter spatial keys
+                                            if skip_spatial and isinstance(metadata, dict):
+                                                for k in ['spatial_extent','spatial_crs','spatial_resolution','feature_count','geometry_type','geographic_coverage','administrative_boundaries']:
+                                                    metadata.pop(k, None)
                                             log.info(f"Remote file analysis completed, extracted {len(metadata)} metadata fields")
                                         else:
                                             log.warning(f"Downloaded file is empty")
