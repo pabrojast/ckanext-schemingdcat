@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Upload Blocking</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+        .upload-status {
+            color: #007bff;
+        }
+        .complete-status {
+            color: #28a745;
+        }
+        .error-status {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Blocking Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Scenario 1: File Upload</h2>
+        <p>When you select a file, the "Add" button should be disabled during upload.</p>
+        
+        <form id="testForm1">
+            <input type="file" id="fileInput" />
+            <br><br>
+            <button type="submit" name="save">Add Resource</button>
+            <button type="button" onclick="alert('Other action')">Other Action</button>
+        </form>
+        
+        <div class="status" id="status1"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Scenario 2: Name Change Only</h2>
+        <p>When you only change the name field (no file upload), the "Add" button should remain enabled.</p>
+        
+        <form id="testForm2">
+            <label>Resource Name:</label>
+            <input type="text" id="resourceName" placeholder="Enter resource name" />
+            <br><br>
+            <button type="submit" name="save">Add Resource</button>
+        </form>
+        
+        <div class="status" id="status2"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Scenario 3: Multiple Uploads</h2>
+        <p>Test with multiple file inputs - all should block the submit button.</p>
+        
+        <form id="testForm3">
+            <label>File 1:</label>
+            <input type="file" class="multi-file" />
+            <br><br>
+            <label>File 2:</label>
+            <input type="file" class="multi-file" />
+            <br><br>
+            <button type="submit" name="save">Add All Resources</button>
+        </form>
+        
+        <div class="status" id="status3"></div>
+    </div>
+
+    <script>
+        // Simulated upload tracking system (simplified version)
+        window.__schemingdcat_active_uploads__ = {};
+        
+        function hasActiveUploads() {
+            for (var key in window.__schemingdcat_active_uploads__) {
+                if (window.__schemingdcat_active_uploads__[key]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function updateFormSubmitButtons(disable) {
+            var submitButtons = document.querySelectorAll('button[type="submit"], button[name="save"]');
+            submitButtons.forEach(function(button) {
+                if (disable) {
+                    button.disabled = true;
+                    button.setAttribute('data-upload-disabled', 'true');
+                    var originalText = button.innerHTML;
+                    button.setAttribute('data-original-text', originalText);
+                    button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Uploading...';
+                } else {
+                    if (button.getAttribute('data-upload-disabled') === 'true') {
+                        button.disabled = false;
+                        button.removeAttribute('data-upload-disabled');
+                        var originalText = button.getAttribute('data-original-text');
+                        if (originalText) {
+                            button.innerHTML = originalText;
+                            button.removeAttribute('data-original-text');
+                        }
+                    }
+                }
+            });
+        }
+        
+        function registerUpload(uploadId) {
+            window.__schemingdcat_active_uploads__[uploadId] = true;
+            updateFormSubmitButtons(true);
+            console.log('Upload registered:', uploadId);
+        }
+        
+        function unregisterUpload(uploadId) {
+            delete window.__schemingdcat_active_uploads__[uploadId];
+            if (!hasActiveUploads()) {
+                updateFormSubmitButtons(false);
+            }
+            console.log('Upload completed:', uploadId);
+        }
+        
+        // Test 1: Single file upload
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                var uploadId = 'test_' + Date.now();
+                var status = document.getElementById('status1');
+                
+                status.innerHTML = '<span class="upload-status">Upload started for: ' + e.target.files[0].name + '</span>';
+                registerUpload(uploadId);
+                
+                // Simulate upload completion after 3 seconds
+                setTimeout(function() {
+                    unregisterUpload(uploadId);
+                    status.innerHTML = '<span class="complete-status">Upload completed! Button should be re-enabled.</span>';
+                }, 3000);
+            }
+        });
+        
+        // Test 2: Name change only
+        document.getElementById('resourceName').addEventListener('input', function(e) {
+            var status = document.getElementById('status2');
+            status.innerHTML = 'Name changed to: ' + e.target.value + ' (button should remain enabled)';
+        });
+        
+        // Test 3: Multiple file uploads
+        document.querySelectorAll('.multi-file').forEach(function(input, index) {
+            input.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files.length > 0) {
+                    var uploadId = 'multi_' + index + '_' + Date.now();
+                    var status = document.getElementById('status3');
+                    
+                    status.innerHTML += '<br><span class="upload-status">Upload ' + (index + 1) + ' started: ' + e.target.files[0].name + '</span>';
+                    registerUpload(uploadId);
+                    
+                    // Simulate upload completion after random time
+                    var uploadTime = 2000 + Math.random() * 3000;
+                    setTimeout(function() {
+                        unregisterUpload(uploadId);
+                        status.innerHTML += '<br><span class="complete-status">Upload ' + (index + 1) + ' completed!</span>';
+                        
+                        if (!hasActiveUploads()) {
+                            status.innerHTML += '<br><strong>All uploads completed - button re-enabled!</strong>';
+                        }
+                    }, uploadTime);
+                }
+            });
+        });
+        
+        // Prevent actual form submission for testing
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Form submitted! (prevented for testing)');
+            });
+        });
+    </script>
+</body>
+</html>

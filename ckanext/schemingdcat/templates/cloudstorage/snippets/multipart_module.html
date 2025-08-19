@@ -175,6 +175,11 @@
             
             console.log('[schemingdcat-cloudstorage] Starting enhanced upload for:', fileName, 'Size:', (fileSize / 1024 / 1024).toFixed(2) + ' MB');
             
+            // Register upload with global tracker if available
+            if (typeof registerUpload === 'function') {
+                registerUpload(fileId);
+            }
+            
             // Auto-populate filename in form fields
             autoPopulateFilename(fileName, inputElement);
             
@@ -189,6 +194,9 @@
                 status: 'preparing',
                 startTime: Date.now()
             };
+            
+            // Store upload ID in progress container for tracking
+            progressElements.container.setAttribute('data-upload-id', fileId);
             
             if (azureDirectUploadEnabled) {
                 // Azure Direct Upload with enhanced progress tracking
@@ -255,6 +263,11 @@
                         console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                     }
                     
+                    // Unregister upload with global tracker if available
+                    if (typeof unregisterUpload === 'function') {
+                        unregisterUpload(fileId);
+                    }
+                    
                     updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', true);
                 }
                 
@@ -288,6 +301,11 @@
                     
                     if (window.cloudStorageUploads[fileId]) {
                         window.cloudStorageUploads[fileId].status = 'completed';
+                    }
+                    
+                    // Unregister upload with global tracker if available
+                    if (typeof unregisterUpload === 'function') {
+                        unregisterUpload(fileId);
                     }
                 }
                 

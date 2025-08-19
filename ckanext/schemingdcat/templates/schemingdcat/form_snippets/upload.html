@@ -321,6 +321,68 @@
     });
   }
 
+  // Global upload tracking system
+  window.__schemingdcat_active_uploads__ = window.__schemingdcat_active_uploads__ || {};
+  
+  // Function to check if any uploads are active
+  function hasActiveUploads() {
+    for (var key in window.__schemingdcat_active_uploads__) {
+      if (window.__schemingdcat_active_uploads__[key]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  // Function to update form submit buttons
+  function updateFormSubmitButtons(disable) {
+    var forms = document.querySelectorAll('form');
+    forms.forEach(function(form) {
+      // Find all submit buttons and "Add" buttons
+      var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
+      submitButtons.forEach(function(button) {
+        if (disable) {
+          button.disabled = true;
+          button.setAttribute('data-upload-disabled', 'true');
+          // Add visual feedback
+          if (!button.querySelector('.upload-indicator')) {
+            var originalText = button.innerHTML;
+            button.setAttribute('data-original-text', originalText);
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Uploading...") }}';
+          }
+        } else {
+          // Only re-enable if it was disabled by upload
+          if (button.getAttribute('data-upload-disabled') === 'true') {
+            button.disabled = false;
+            button.removeAttribute('data-upload-disabled');
+            // Restore original text
+            var originalText = button.getAttribute('data-original-text');
+            if (originalText) {
+              button.innerHTML = originalText;
+              button.removeAttribute('data-original-text');
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  // Function to register an upload
+  function registerUpload(uploadId) {
+    window.__schemingdcat_active_uploads__[uploadId] = true;
+    updateFormSubmitButtons(true);
+    console.log('[Upload Tracker] Upload registered:', uploadId);
+  }
+  
+  // Function to unregister an upload
+  function unregisterUpload(uploadId) {
+    delete window.__schemingdcat_active_uploads__[uploadId];
+    if (!hasActiveUploads()) {
+      updateFormSubmitButtons(false);
+    }
+    console.log('[Upload Tracker] Upload completed:', uploadId);
+  }
+
   // Global XHR progress hook to reflect real upload progress (no simulation)
   (function setupGlobalXhrProgressHook() {
     if (window.__schemingdcat_xhr_progress_hook_installed__) return;
@@ -383,6 +445,15 @@
 
     XMLHttpRequest.prototype.send = function(body) {
       try {
+        var uploadId = 'xhr_' + Date.now() + '_' + Math.random();
+        var isFileUpload = false;
+        
+        // Check if this is a file upload request
+        if (body instanceof FormData || (this.upload && this.upload.addEventListener)) {
+          isFileUpload = true;
+          registerUpload(uploadId);
+        }
+        
         if (this.upload && this.upload.addEventListener) {
           var started = false;
           this.upload.addEventListener('loadstart', function() {
@@ -404,12 +475,21 @@
         }
         this.addEventListener('load', function() {
           updateAllProgressBars(100, 'Done');
+          if (isFileUpload) {
+            unregisterUpload(uploadId);
+          }
         });
         this.addEventListener('error', function() {
           updateAllProgressBars(undefined, 'Upload error');
+          if (isFileUpload) {
+            unregisterUpload(uploadId);
+          }
         });
         this.addEventListener('abort', function() {
           updateAllProgressBars(undefined, 'Upload cancelled');
+          if (isFileUpload) {
+            unregisterUpload(uploadId);
+          }
         });
       } catch (e) {}
       return origSend.apply(this, arguments);
@@ -604,11 +684,25 @@
         } else {
           processNewFile(files[0]);
         }
+      } else {
+        // No file selected (user might have cancelled), don't block buttons
+        var uploadId = wrapper.getAttribute('data-upload-id');
+        if (uploadId) {
+          unregisterUpload(uploadId);
+          wrapper.removeAttribute('data-upload-id');
+        }
       }
     });
     
     function processNewFile(file) {
       displayFile(file);
+      
+      // Register this file upload
+      var uploadId = 'file_' + Date.now() + '_' + Math.random();
+      registerUpload(uploadId);
+      
+      // Store upload ID in wrapper for tracking
+      wrapper.setAttribute('data-upload-id', uploadId);
       
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
@@ -932,7 +1026,17 @@
       // Synchronize with CloudStorage (if available) to show real progress
       setTimeout(function() {
         var csContainer = wrapper.querySelector('.cloudstorage-progress-container');
-        if (!csContainer) return; // no CloudStorage
+        if (!csContainer) {
+          // No CloudStorage, set a timeout to unregister after reasonable time
+          setTimeout(function() {
+            var uploadId = wrapper.getAttribute('data-upload-id');
+            if (uploadId) {
+              unregisterUpload(uploadId);
+              wrapper.removeAttribute('data-upload-id');
+            }
+          }, 30000); // 30 seconds timeout for non-CloudStorage uploads
+          return;
+        }
         var csBar = csContainer.querySelector('.progress-bar');
         var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
         if (!csBar) return;
@@ -951,6 +1055,14 @@
             if (progressText) progressText.textContent = 'Done';
             clearInterval(previewSyncTimer);
             previewSyncTimer = null;
+            // Unregister upload when complete
+            var uploadId = wrapper.getAttribute('data-upload-id');
+            if (uploadId) {
+              setTimeout(function() {
+                unregisterUpload(uploadId);
+                wrapper.removeAttribute('data-upload-id');
+              }, 1000); // Small delay to ensure upload is really done
+            }
           }
         }, 300);
       }, 300);
@@ -960,6 +1072,13 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
+      
+      // Unregister upload if it was tracked
+      var uploadId = wrapper.getAttribute('data-upload-id');
+      if (uploadId) {
+        unregisterUpload(uploadId);
+        wrapper.removeAttribute('data-upload-id');
+      }
       
       // Clear auto-filled form fields
       clearAutoFilledFields();
