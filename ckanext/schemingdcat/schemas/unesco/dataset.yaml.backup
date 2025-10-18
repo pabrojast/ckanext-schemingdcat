@@ -1232,126 +1232,63 @@ dataset_fields:
   form_attrs:
     data-module: "autofill-responsible-party"
 
-# Author name (O) - Legacy field for backward compatibility
+# Author name (O)
 - field_name: author
   label:
-    en: Name of the dataset creator (Legacy)
-    es: Nombre del autor (Heredado)
-    fr: Nom du créateur de l'ensemble de données (Hérité)
+    en: Name of the dataset creator
+    es: Nombre del autor
+    fr: Nom du créateur de l'ensemble de données
   display_property: dct:creator
   form_placeholder: José Blanco
   help_text:
-    en: "Legacy field for backward compatibility. Use 'Authors' field below for new datasets with enhanced functionality."
-    es: "Campo heredado para retrocompatibilidad. Use el campo 'Autores' de abajo para nuevos conjuntos de datos con funcionalidad mejorada."
-    fr: "Champ hérité pour la rétrocompatibilité. Utilisez le champ 'Auteurs' ci-dessous pour les nouveaux ensembles de données avec des fonctionnalités améliorées."
+    en: "A party that creates or produces a particular dataset."
+    es: "Persona u organización creadora o productora de un conjunto de datos."
+    fr: "Partie qui crée ou produit un ensemble de données particulier."
   form_group_id: author
   form_attrs:
     data-module: "autofill-responsible-party"
 
-# Enhanced Authors with ORCID and Affiliations (O)
-- field_name: authors
-  label:
-    en: Authors
-    es: Autores
-    fr: Auteurs
-  preset: repeating_subfields
-  display_property: dct:creator
-  help_text:
-    en: "List of authors who created or contributed to this dataset. Support for ORCID identifiers and institutional affiliations."
-    es: "Lista de autores que crearon o contribuyeron a este conjunto de datos. Soporte para identificadores ORCID y afiliaciones institucionales."
-    fr: "Liste des auteurs qui ont créé ou contribué à cet ensemble de données. Support pour les identifiants ORCID et les affiliations institutionnelles."
-  form_group_id: author
-  subfields:
-    - field_name: name
-      label:
-        en: Author Name
-        es: Nombre del Autor
-        fr: Nom de l'Auteur
-      form_placeholder: "Dr. José Blanco"
-      help_text:
-        en: "Full name of the author (including titles if appropriate)"
-        es: "Nombre completo del autor (incluyendo títulos si es apropiado)"
-        fr: "Nom complet de l'auteur (y compris les titres le cas échéant)"
-      required: true
-    - field_name: orcid
-      label:
-        en: ORCID ID
-        es: ID ORCID
-        fr: ID ORCID
-      form_placeholder: "0000-0000-0000-0000"
-      help_text:
-        en: "ORCID identifier (format: 0000-0000-0000-0000). Visit <a href='https://orcid.org' target='_blank'>orcid.org</a> to get your ORCID ID."
-        es: "Identificador ORCID (formato: 0000-0000-0000-0000). Visite <a href='https://orcid.org' target='_blank'>orcid.org</a> para obtener su ID ORCID."
-        fr: "Identifiant ORCID (format: 0000-0000-0000-0000). Visitez <a href='https://orcid.org' target='_blank'>orcid.org</a> pour obtenir votre ID ORCID."
-      help_allow_html: True
-      validators: orcid_validator
-    - field_name: affiliation
-      label:
-        en: Affiliation
-        es: Afiliación
-        fr: Affiliation
-      form_placeholder: "University of Example, Department of Science"
-      help_text:
-        en: "Institutional affiliation of the author"
-        es: "Afiliación institucional del autor"
-        fr: "Affiliation institutionnelle de l'auteur"
-    - field_name: email
-      label:
-        en: Email
-        es: Correo electrónico
-        fr: Courriel
-      form_placeholder: "jose.blanco@example.com"
-      preset: email
-      help_text:
-        en: "Contact email for the author"
-        es: "Correo de contacto del autor"
-        fr: "Courriel de contact de l'auteur"
-
-# Author Identifier (O) - Legacy field for backward compatibility
+# Author Identifier (O)
 - field_name: author_uri
   label:
-    en: Identifier of the dataset creator (Legacy)
-    es: Identificador del autor (Heredado)
-    fr: Identifiant du créateur de l'ensemble de données (Hérité)
+    en: Identifier of the dataset creator
+    es: Identificador del autor
+    fr: Identifiant du créateur de l'ensemble de données
   display_snippet: schemingdcat/display_snippets/link_name.html
   form_placeholder: http://datos.gob.es/recurso/sector-publico/org/Organismo/E05068001
   help_text:
-    en: "Legacy field for backward compatibility. Use ORCID field in 'Authors' section above for new datasets."
-    es: "Campo heredado para retrocompatibilidad. Use el campo ORCID en la sección 'Autores' de arriba para nuevos conjuntos de datos."
-    fr: "Champ hérité pour la rétrocompatibilité. Utilisez le champ ORCID dans la section 'Auteurs' ci-dessus pour les nouveaux ensembles de données."
+    en: "Unique identifier of the publisher. Spain: Unique identifier (DIR3) of the public organization (<a href='http://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)."
+    es: "Identificador único del publicador. España: Identificador único (DIR3) del organismo público. (<a href='http://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)"
+    fr: "Identifiant unique de l'éditeur. Espagne: Identifiant unique (DIR3) de l'organisation publique. (<a href='http://datos.gob.es/es/recurso/sector-publico/org/Organismo' target='_blank'>datos.gob.es</a>)"
   help_allow_html: True
   form_group_id: author
 
-# Author email (O) - Legacy field for backward compatibility
+# Author email (O)
 - field_name: author_email
   label:
-    en: Email of the dataset creator (Legacy)
-    es: Email del autor (Heredado)
-    fr: Courriel du créateur de l'ensemble de données (Hérité)
+    en: Email of the dataset creator
+    es: Email del autor
+    fr: Courriel du créateur de l'ensemble de données
   preset: schemingdcat_valid_email
   display_property: vcard:hasEmail
   form_placeholder: joseblanco@example.com
-  help_text:
-    en: "Legacy field for backward compatibility. Use email field in 'Authors' section above for new datasets."
-    es: "Campo heredado para retrocompatibilidad. Use el campo email en la sección 'Autores' de arriba para nuevos conjuntos de datos."
-    fr: "Champ hérité pour la rétrocompatibilité. Utilisez le champ email dans la section 'Auteurs' ci-dessus pour les nouveaux ensembles de données."
   form_group_id: author
   form_attrs:
     data-module: "autofill-responsible-party"
 
-# Author web (O) - Legacy field for backward compatibility
+# Author web (O)
 - field_name: author_url
   label:
-    en: Website of the dataset creator (Legacy)
-    es: Web del autor (Heredado)
-    fr: Site web du créateur de l'ensemble de données (Hérité)
+    en: Website of the dataset creator
+    es: Web del autor
+    fr: Site web du créateur de l'ensemble de données
   display_property: foaf:homepage
   preset: valid_url
   form_placeholder: http://www.example.com
   help_text:
-    en: "Legacy field for backward compatibility. Use 'Authors' section above for new datasets."
-    es: "Campo heredado para retrocompatibilidad. Use la sección 'Autores' de arriba para nuevos conjuntos de datos."
-    fr: "Champ hérité pour la rétrocompatibilité. Utilisez la section 'Auteurs' ci-dessus pour les nouveaux ensembles de données."
+    en: This property refers to a web page that acts as the author's homepage. URL
+    es: Esta propiedad se refiere a una página web que actúa como página principal del publicador. URL
+    fr: Cette propriété fait référence à une page web qui sert de page d'accueil de l'auteur. URL
   form_group_id: author
   form_attrs:
     data-module: "autofill-responsible-party"

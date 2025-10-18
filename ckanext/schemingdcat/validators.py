@@ -945,3 +945,58 @@ def schemingdcat_valid_email(field, schema):
         data[key] = value
 
     return validator
+
+@scheming_validator
+@validator
+def orcid_validator(field, schema):
+    """
+    Validates if the provided string is a valid ORCID identifier.
+    
+    ORCID identifiers follow the format: 0000-0000-0000-0000
+    where the last digit is a check digit that can be 0-9 or X.
+    
+    Args:
+        field (dict): Information about the field to be validated.
+        schema (dict): The schema for the field to be validated.
+        
+    Returns:
+        function: A validation function that checks if the ORCID is valid.
+    """
+    
+    def validator(key, data, errors, context):
+        value = data[key]
+        
+        if value is missing or value is None or value == '':
+            data[key] = value
+            return
+            
+        value = value.strip()
+        
+        # ORCID pattern: 0000-0000-0000-000X (where X can be 0-9 or X)
+        orcid_pattern = re.compile(r'^(\d{4}-\d{4}-\d{4}-\d{3}[\dX])$')
+        
+        if not orcid_pattern.match(value):
+            errors[key].append(_('Invalid ORCID format. Expected format: 0000-0000-0000-0000'))
+            return
+            
+        # Validate check digit
+        digits = value.replace('-', '')
+        check_digit = digits[-1]
+        base_digits = digits[:-1]
+        
+        # Calculate check digit according to ORCID algorithm
+        total = 0
+        for digit in base_digits:
+            total = (total + int(digit)) * 2
+            
+        remainder = total % 11
+        result = (12 - remainder) % 11
+        expected_check = str(result) if result < 10 else 'X'
+        
+        if check_digit != expected_check:
+            errors[key].append(_('Invalid ORCID check digit'))
+            return
+            
+        data[key] = value
+
+    return validator
