@@ -1300,7 +1300,7 @@ dataset_fields:
         es: Correo electrónico
         fr: Courriel
       form_placeholder: "jose.blanco@example.com"
-      preset: email
+      preset: schemingdcat_valid_email
       help_text:
         en: "Contact email for the author"
         es: "Correo de contacto del autor"
