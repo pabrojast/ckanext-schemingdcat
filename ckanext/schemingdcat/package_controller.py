@@ -76,12 +76,15 @@ class PackageController():
 
         Iterates through each facet defined in the system's facets dictionary. For each facet present in the data dictionary, it attempts to parse its value as JSON. If the value is a valid JSON string, it replaces the original string value with the parsed JSON object. If the value cannot be parsed as JSON (e.g., because it's not a valid JSON string), it leaves the value unchanged. Facets present in the data dictionary but not containing any data are removed.
 
+        Also handles repeating_subfields by converting them to JSON strings for Solr indexing.
+
         Args:
             data_dict (dict): The data dictionary to be processed. It's expected to contain keys corresponding to facet names with their associated data as values.
 
         Returns:
             dict: The processed data dictionary with JSON strings parsed into objects where applicable and empty facets removed.
         """
+        # Process facets
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
             #log.debug("[before_index] Data ({1}) in facet: {0}".format(data, facet))
@@ -94,6 +97,23 @@ class PackageController():
             else:
                 if facet in data_dict:
                     del data_dict[facet]
+
+        # Handle repeating_subfields: convert complex objects to JSON strings for Solr
+        # List of fields with repeating_subfields that need special handling
+        repeating_fields = ['authors']
+
+        for field_name in repeating_fields:
+            if field_name in data_dict:
+                field_data = data_dict[field_name]
+                # If the field contains a list of dicts (repeating_subfields), convert to JSON string
+                if isinstance(field_data, list) and field_data and isinstance(field_data[0], dict):
+                    try:
+                        data_dict[field_name] = json.dumps(field_data)
+                        log.debug(f"[before_index] Converted {field_name} to JSON string for Solr indexing")
+                    except (TypeError, ValueError) as e:
+                        log.warning(f"[before_index] Could not serialize {field_name} to JSON: {e}")
+                        # If serialization fails, remove the field from indexing to avoid Solr errors
+                        del data_dict[field_name]
 
         return data_dict
 
