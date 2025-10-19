@@ -1254,14 +1254,13 @@ dataset_fields:
     en: Authors
     es: Autores
     fr: Auteurs
-  preset: repeating_subfields
   display_property: dct:creator
   help_text:
     en: "List of authors who created or contributed to this dataset. Support for ORCID identifiers and institutional affiliations."
     es: "Lista de autores que crearon o contribuyeron a este conjunto de datos. Soporte para identificadores ORCID y afiliaciones institucionales."
     fr: "Liste des auteurs qui ont créé ou contribué à cet ensemble de données. Support pour les identifiants ORCID et les affiliations institutionnelles."
   form_group_id: author
-  subfields:
+  repeating_subfields:
     - field_name: name
       label:
         en: Author Name
