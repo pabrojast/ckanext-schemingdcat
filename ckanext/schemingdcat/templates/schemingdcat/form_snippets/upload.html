@@ -636,6 +636,19 @@
 
             // Submit via AJAX to prevent HARAKIRI
             var formData = new FormData(form);
+
+            // Add the 'save' field if not present (required by CKAN backend)
+            if (!formData.has('save')) {
+              // Try to find which submit button was clicked
+              var submitButton = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+              if (submitButton && submitButton.name) {
+                formData.append(submitButton.name, submitButton.value || '');
+              } else {
+                // Default to 'save' if no specific button was found
+                formData.append('save', 'save');
+              }
+            }
+
             var xhr = new XMLHttpRequest();
 
             xhr.open(form.method || 'POST', form.action || window.location.href, true);
@@ -687,7 +700,30 @@
                 }
               } else {
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
-                alert('Error submitting form. Please try again.');
+                console.error('[Form Interceptor] Response:', xhr.responseText);
+
+                // Try to extract error message from response
+                var errorMessage = 'Error submitting form (Status: ' + xhr.status + ')';
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  if (response.error && response.error.message) {
+                    errorMessage = response.error.message;
+                  } else if (response.message) {
+                    errorMessage = response.message;
+                  }
+                } catch (e) {
+                  // Not JSON, try to extract from HTML
+                  if (xhr.responseText.indexOf('error') !== -1) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = xhr.responseText;
+                    var errorDiv = tempDiv.querySelector('.error-explanation, .alert-error, .alert-danger');
+                    if (errorDiv) {
+                      errorMessage = errorDiv.textContent.trim().substring(0, 200);
+                    }
+                  }
+                }
+
+                alert(errorMessage + '\n\nNote: The file was uploaded successfully to storage. Please check the server logs for details.');
 
                 // Re-enable form
                 var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
