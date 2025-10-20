@@ -207,114 +207,39 @@
             }
         }
         
-        // Enhanced Azure Direct Upload simulation with realistic timing
+        // NOTE: Progress simulation removed - now using real XHR progress from upload.html
+        // The global XHR hook (in upload.html) tracks real upload progress and updates
+        // all progress bars including CloudStorage ones. This eliminates simulation
+        // and synchronization issues.
+
         function simulateAzureDirectUpload(fileId, file, progressElements) {
-            console.log('[schemingdcat-cloudstorage] Starting Azure Direct Upload');
-            
-            var progress = 0;
-            var fileSize = file.size;
-            var uploadSpeed = fileSize / (5000 + Math.random() * 10000); // Simulate varying upload speeds
-            var increment = Math.random() * 2 + 0.5;
-            
+            console.log('[schemingdcat-cloudstorage] Azure Direct Upload - progress tracked by XHR hook');
+
+            // Store upload reference for cleanup
+            window.cloudStorageUploads[fileId] = {
+                file: file,
+                progress: progressElements,
+                status: 'uploading',
+                startTime: Date.now()
+            };
+
+            // Show initial state - actual progress will be updated by XHR hook
             updateProgress(progressElements, 0, '{{ _("Connecting to Azure Blob Storage...") }}', false);
-            
-            var phases = [
-                { max: 15, messages: ['{{ _("Authenticating with Azure...") }}', '{{ _("Obtaining SAS token...") }}'] },
-                { max: 85, messages: ['{{ _("Uploading to Azure Blob Storage...") }}', '{{ _("Transferring data chunks...") }}', '{{ _("Syncing with Azure...") }}'] },
-                { max: 95, messages: ['{{ _("Finalizing upload...") }}', '{{ _("Verifying integrity...") }}'] },
-                { max: 100, messages: ['{{ _("Upload completed successfully!") }}'] }
-            ];
-            
-            var currentPhase = 0;
-            var messageIndex = 0;
-            
-            var uploadInterval = setInterval(function() {
-                progress += increment;
-                
-                // Adjust increment based on file size and current progress
-                if (progress > 80) {
-                    increment *= 0.7; // Slow down near completion
-                } else if (fileSize > 10 * 1024 * 1024 && progress < 50) {
-                    increment *= 1.2; // Speed up for large files in middle phase
-                }
-                
-                // Update phase and message
-                while (currentPhase < phases.length && progress >= phases[currentPhase].max) {
-                    currentPhase++;
-                    messageIndex = 0;
-                }
-                
-                if (currentPhase < phases.length) {
-                    var currentMessages = phases[currentPhase].messages;
-                    var message = currentMessages[Math.floor(Math.random() * currentMessages.length)];
-                    
-                    updateProgress(progressElements, Math.min(progress, 100), message, progress >= 100);
-                }
-                
-                if (progress >= 100) {
-                    clearInterval(uploadInterval);
-                    
-                    // Mark upload as complete
-                    if (window.cloudStorageUploads[fileId]) {
-                        window.cloudStorageUploads[fileId].status = 'completed';
-                        window.cloudStorageUploads[fileId].endTime = Date.now();
-                        
-                        var duration = (window.cloudStorageUploads[fileId].endTime - window.cloudStorageUploads[fileId].startTime) / 1000;
-                        console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
-                    }
-                    
-                    // Unregister upload with global tracker if available
-                    if (typeof unregisterUpload === 'function') {
-                        unregisterUpload(fileId);
-                    }
-                    
-                    updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', true);
-                }
-                
-                increment = Math.random() * 1.5 + 0.3; // Vary increment for realism
-            }, 200 + Math.random() * 300);
         }
-        
-        // Standard upload simulation (unchanged but enhanced)
+
         function simulateStandardUpload(fileId, file, progressElements) {
-            console.log('[schemingdcat-cloudstorage] Starting standard upload');
-            
-            var progress = 0;
-            var increment = Math.random() * 4 + 1;
-            
+            console.log('[schemingdcat-cloudstorage] Standard upload - progress tracked by XHR hook');
+
+            // Store upload reference for cleanup
+            window.cloudStorageUploads[fileId] = {
+                file: file,
+                progress: progressElements,
+                status: 'uploading',
+                startTime: Date.now()
+            };
+
+            // Show initial state - actual progress will be updated by XHR hook
             updateProgress(progressElements, 0, '{{ _("Preparing upload...") }}', false);
-            
-            var uploadInterval = setInterval(function() {
-                progress += increment;
-                increment = Math.random() * 2.5 + 0.8;
-                
-                var status = '';
-                if (progress < 30) {
-                    status = '{{ _("Uploading to cloud storage...") }}';
-                } else if (progress < 70) {
-                    status = '{{ _("Processing file...") }}';
-                } else if (progress < 95) {
-                    status = '{{ _("Finalizing...") }}';
-                } else {
-                    status = '{{ _("Upload completed!") }}';
-                    clearInterval(uploadInterval);
-                    
-                    if (window.cloudStorageUploads[fileId]) {
-                        window.cloudStorageUploads[fileId].status = 'completed';
-                    }
-                    
-                    // Unregister upload with global tracker if available
-                    if (typeof unregisterUpload === 'function') {
-                        unregisterUpload(fileId);
-                    }
-                }
-                
-                updateProgress(progressElements, Math.min(progress, 100), status, progress >= 95);
-                
-                if (progress > 85) {
-                    increment *= 0.6;
-                }
-            }, 350 + Math.random() * 400);
         }
         
         // Function to initialize cloudstorage when jQuery is available
