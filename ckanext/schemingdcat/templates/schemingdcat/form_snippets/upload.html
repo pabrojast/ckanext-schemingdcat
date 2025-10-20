@@ -727,10 +727,33 @@
                         window.location.href = finalUrl;
                       }, 100);
                     } else {
-                      // Replace current page with response
-                      document.open();
-                      document.write(xhr.responseText);
-                      document.close();
+                      // HTML response in same URL - likely the form was re-rendered with errors
+                      // or we're already on the final page
+                      console.log('[Form Interceptor] Received HTML response, checking for redirect in body');
+
+                      // Try to find redirect URL in response HTML
+                      var tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = xhr.responseText;
+                      var metaRefresh = tempDiv.querySelector('meta[http-equiv="refresh"]');
+
+                      if (metaRefresh) {
+                        var content = metaRefresh.getAttribute('content');
+                        var urlMatch = content.match(/url=(.+)$/i);
+                        if (urlMatch) {
+                          console.log('[Form Interceptor] Found meta refresh redirect to:', urlMatch[1]);
+                          setTimeout(function() {
+                            window.location.href = urlMatch[1];
+                          }, 100);
+                          return;
+                        }
+                      }
+
+                      // For resource forms, always reload to ensure clean state
+                      // This prevents buttons getting stuck in "Uploading..." state
+                      console.log('[Form Interceptor] Reloading page to show final state');
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
                     }
                   } else {
                     // Unknown response type, reload
