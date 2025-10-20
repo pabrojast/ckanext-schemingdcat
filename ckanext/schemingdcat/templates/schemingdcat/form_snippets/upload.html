@@ -610,6 +610,146 @@
     };
   })();
 
+  // Intercept form submission to make it asynchronous and prevent HARAKIRI
+  (function setupFormInterceptor() {
+    if (window.__schemingdcat_form_interceptor_installed__) return;
+    window.__schemingdcat_form_interceptor_installed__ = true;
+
+    // Wait for DOM to be ready
+    function installInterceptor() {
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+
+      forms.forEach(function(form) {
+        if (form.getAttribute('data-ajax-interceptor')) return; // Already installed
+
+        form.setAttribute('data-ajax-interceptor', 'true');
+        console.log('[Form Interceptor] Installing interceptor on form:', form.id || form.className);
+
+        form.addEventListener('submit', function(e) {
+          var fileInput = form.querySelector('input[type="file"][name="upload"]');
+
+          // Only intercept if there's a file being uploaded
+          if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            console.log('[Form Interceptor] Intercepting form submit with file upload');
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Submit via AJAX to prevent HARAKIRI
+            var formData = new FormData(form);
+            var xhr = new XMLHttpRequest();
+
+            xhr.open(form.method || 'POST', form.action || window.location.href, true);
+
+            // Copy any CSRF tokens or headers
+            var csrfToken = form.querySelector('input[name="csrf_token"]');
+            if (csrfToken) {
+              xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+            }
+
+            xhr.onload = function() {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                console.log('[Form Interceptor] Form submitted successfully');
+
+                // Try to parse response
+                try {
+                  var contentType = xhr.getResponseHeader('Content-Type');
+
+                  if (contentType && contentType.indexOf('application/json') !== -1) {
+                    // JSON response
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success && response.redirect_url) {
+                      window.location.href = response.redirect_url;
+                    } else if (response.success) {
+                      window.location.reload();
+                    }
+                  } else if (contentType && contentType.indexOf('text/html') !== -1) {
+                    // HTML response - check if it's a redirect or full page
+                    var finalUrl = xhr.responseURL || window.location.href;
+
+                    if (finalUrl !== window.location.href) {
+                      // URL changed, redirect there
+                      console.log('[Form Interceptor] Redirecting to:', finalUrl);
+                      window.location.href = finalUrl;
+                    } else {
+                      // Replace current page with response
+                      document.open();
+                      document.write(xhr.responseText);
+                      document.close();
+                    }
+                  } else {
+                    // Unknown response type, reload
+                    window.location.reload();
+                  }
+                } catch (e) {
+                  console.warn('[Form Interceptor] Error parsing response:', e);
+                  // Default: reload page
+                  window.location.reload();
+                }
+              } else {
+                console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
+                alert('Error submitting form. Please try again.');
+
+                // Re-enable form
+                var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitButtons.forEach(function(btn) {
+                  btn.disabled = false;
+                  var originalText = btn.getAttribute('data-original-text');
+                  if (originalText) {
+                    btn.innerHTML = originalText;
+                  }
+                });
+              }
+            };
+
+            xhr.onerror = function() {
+              console.error('[Form Interceptor] Network error during form submission');
+              alert('Network error. Please check your connection and try again.');
+
+              // Re-enable form
+              var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+              submitButtons.forEach(function(btn) {
+                btn.disabled = false;
+                var originalText = btn.getAttribute('data-original-text');
+                if (originalText) {
+                  btn.innerHTML = originalText;
+                }
+              });
+            };
+
+            xhr.send(formData);
+          } else {
+            // No file upload, let form submit normally
+            console.log('[Form Interceptor] No file upload detected, allowing normal submit');
+          }
+        }, true); // Use capture phase to intercept early
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', installInterceptor);
+    } else {
+      installInterceptor();
+    }
+
+    // Also watch for new forms added dynamically
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.tagName === 'FORM') {
+            if (node.classList.contains('dataset-form') || node.classList.contains('dataset-resource-form')) {
+              installInterceptor();
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  })();
+
   // Wait for DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initUpload);
@@ -627,9 +767,9 @@
     var filePreview = wrapper.querySelector('.file-preview');
     var removeButton = wrapper.querySelector('.remove-file');
     var previewSyncTimer = null; // to cancel intervals
-    
+
     if (!fileInput || !dropzone) return;
-    
+
     // Setup format field listener for spatial processing
     setupFormatFieldListener();
     
