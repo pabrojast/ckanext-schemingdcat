@@ -673,6 +673,11 @@
                 // Success (2xx) or Redirect (3xx)
                 console.log('[Form Interceptor] Form submitted successfully, status:', xhr.status);
 
+                // Force unregister all active uploads before redirect
+                console.log('[Form Interceptor] Forcing cleanup of all active uploads');
+                window.__schemingdcat_active_uploads__ = {};
+                updateFormSubmitButtons(false);
+
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (xhr.status >= 300 && xhr.status < 400) {
                   var redirectUrl = xhr.getResponseHeader('Location') || xhr.responseURL;
@@ -680,12 +685,17 @@
 
                   if (redirectUrl && redirectUrl !== window.location.href) {
                     console.log('[Form Interceptor] Following redirect to:', redirectUrl);
-                    window.location.href = redirectUrl;
+                    // Small delay to ensure buttons are updated before redirect
+                    setTimeout(function() {
+                      window.location.href = redirectUrl;
+                    }, 100);
                     return;
                   } else {
                     // Fallback: reload page
                     console.log('[Form Interceptor] No redirect URL, reloading page');
-                    window.location.reload();
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
                     return;
                   }
                 }
@@ -698,9 +708,13 @@
                     // JSON response
                     var response = JSON.parse(xhr.responseText);
                     if (response.success && response.redirect_url) {
-                      window.location.href = response.redirect_url;
+                      setTimeout(function() {
+                        window.location.href = response.redirect_url;
+                      }, 100);
                     } else if (response.success) {
-                      window.location.reload();
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
                     }
                   } else if (contentType && contentType.indexOf('text/html') !== -1) {
                     // HTML response - check if it's a redirect or full page
@@ -709,7 +723,9 @@
                     if (finalUrl !== window.location.href) {
                       // URL changed, redirect there
                       console.log('[Form Interceptor] Redirecting to:', finalUrl);
-                      window.location.href = finalUrl;
+                      setTimeout(function() {
+                        window.location.href = finalUrl;
+                      }, 100);
                     } else {
                       // Replace current page with response
                       document.open();
@@ -718,12 +734,16 @@
                     }
                   } else {
                     // Unknown response type, reload
-                    window.location.reload();
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
                   }
                 } catch (e) {
                   console.warn('[Form Interceptor] Error parsing response:', e);
                   // Default: reload page
-                  window.location.reload();
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 100);
                 }
               } else {
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
