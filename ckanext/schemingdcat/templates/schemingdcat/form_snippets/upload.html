@@ -634,6 +634,15 @@
             e.preventDefault();
             e.stopPropagation();
 
+            // Disable beforeunload handlers to prevent "Are you sure you want to leave?" prompt
+            window.onbeforeunload = null;
+            var beforeUnloadHandlers = window.getEventListeners ? window.getEventListeners(window)['beforeunload'] : [];
+            if (beforeUnloadHandlers) {
+              beforeUnloadHandlers.forEach(function(handler) {
+                window.removeEventListener('beforeunload', handler.listener);
+              });
+            }
+
             // Submit via AJAX to prevent HARAKIRI
             var formData = new FormData(form);
 
@@ -660,10 +669,28 @@
             }
 
             xhr.onload = function() {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                console.log('[Form Interceptor] Form submitted successfully');
+              if (xhr.status >= 200 && xhr.status < 400) {
+                // Success (2xx) or Redirect (3xx)
+                console.log('[Form Interceptor] Form submitted successfully, status:', xhr.status);
 
-                // Try to parse response
+                // Handle redirects (301, 302, 303, 307, 308)
+                if (xhr.status >= 300 && xhr.status < 400) {
+                  var redirectUrl = xhr.getResponseHeader('Location') || xhr.responseURL;
+                  console.log('[Form Interceptor] Server redirect detected to:', redirectUrl);
+
+                  if (redirectUrl && redirectUrl !== window.location.href) {
+                    console.log('[Form Interceptor] Following redirect to:', redirectUrl);
+                    window.location.href = redirectUrl;
+                    return;
+                  } else {
+                    // Fallback: reload page
+                    console.log('[Form Interceptor] No redirect URL, reloading page');
+                    window.location.reload();
+                    return;
+                  }
+                }
+
+                // Handle success responses (2xx)
                 try {
                   var contentType = xhr.getResponseHeader('Content-Type');
 
