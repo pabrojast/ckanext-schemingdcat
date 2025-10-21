@@ -1,0 +1,2426 @@
+{% import 'macros/form.html' as form %}
+
+{%- set is_upload = data.get((field.upload_field or 'upload')) -%}
+{%- set is_url = data.get(field.field_name) and not is_upload -%}
+{%- set upload_enabled = h.uploads_enabled() -%}
+{%- set field_url = field.field_name -%}
+{%- set field_upload = field.upload_field or 'upload' -%}
+{%- set field_clear = field.upload_clear or 'clear_upload' -%}
+
+<div class="schemingdcat-upload-wrapper" data-module="schemingdcat-resource-auto-fields">
+  {% if is_upload and data.get('url') %}
+    <div class="current-file-info alert alert-info">
+      <i class="fa fa-info-circle"></i>
+      <strong>{{ _('Current file:') }}</strong> 
+      <span class="current-filename">{{ data.get('name', data.get('url', '')) }}</span>
+      <label class="checkbox pull-right">
+        <input type="checkbox" id="{{ field_clear }}" name="{{ field_clear }}" value="true">
+        {{ _('Replace existing file') }}
+      </label>
+    </div>
+  {% endif %}
+
+  {% if upload_enabled %}
+    <div class="upload-section">
+      <label class="control-label">{{ _('Upload file') }}</label>
+      <div class="upload-dropzone" id="dropzone-{{ field_url }}">
+        <div class="dropzone-content">
+          <div class="dropzone-icon">
+            <i class="fa fa-cloud-upload"></i>
+          </div>
+          <h4>{{ _('Drag and drop a file here') }}</h4>
+          <p class="drop-hint">{{ _('or') }}</p>
+          <label for="{{ field_upload }}" class="btn btn-primary browse-button">
+            <i class="fa fa-folder-open"></i> {{ _('Browse File') }}
+          </label>
+          <input type="file" 
+                 id="{{ field_upload }}" 
+                 name="{{ field_upload }}" 
+                 class="upload-file-input"
+                 style="position: absolute; left: -9999px;">
+          <p class="text-muted small">
+            {{ _('Supported formats: CSV, XLS, JSON, XML, PDF, and more') }}
+          </p>
+        </div>
+
+        <div class="file-preview" style="display: none;">
+          <div class="file-info">
+            <i class="fa fa-file-o fa-2x file-icon"></i>
+            <div class="file-details">
+              <p class="file-name"></p>
+              <p class="file-size text-muted"></p>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger remove-file" title="{{ _('Remove file and cancel upload') }}">
+              <i class="fa fa-trash"></i> {{ _('Remove') }}
+            </button>
+          </div>
+          <div class="upload-progress">
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+            <p class="progress-text">{{ _('Processing...') }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="url-or-separator">
+      <span>{{ _('OR') }}</span>
+    </div>
+  {% endif %}
+
+  <div class="url-section">
+    <label class="control-label" for="{{ field_url }}">
+      {{ _('Link to a file') }}
+    </label>
+    <input type="text" 
+           id="{{ field_url }}" 
+           name="{{ field_url }}" 
+           value="{{ data.get(field_url, '') }}"
+           placeholder="{{ field.form_placeholder or _('https://example.com/data.csv') }}"
+           class="form-control">
+  </div>
+
+  {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
+</div>
+
+<script>
+(function() {
+  // Cache for CSV data
+  var mimeTypeCache = null;
+  var csvDataPromise = null;
+  var charsetCache = null;
+  var charsetDataPromise = null;
+  
+  // Function to load CSV data and create extension to MIME type mapping
+  function loadMimeTypeData() {
+    if (csvDataPromise) {
+      return csvDataPromise;
+    }
+    
+    csvDataPromise = new Promise(function(resolve, reject) {
+      if (mimeTypeCache) {
+        resolve(mimeTypeCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/application.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              var lines = csvData.split('\n');
+              
+              // Skip header line
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                
+                var parts = line.split(',');
+                if (parts.length >= 2) {
+                  var name = parts[0].trim().toLowerCase();
+                  var template = parts[1].trim();
+                  
+                  // Map common file extensions to MIME types
+                  mapping[name] = template;
+                  
+                  // Add additional mappings for common extensions
+                  if (name === 'json') {
+                    mapping['geojson'] = 'application/geo+json';
+                  } else if (name === 'msword') {
+                    mapping['doc'] = template;
+                  } else if (name === 'vnd.ms-excel') {
+                    mapping['xls'] = template;
+                    mapping['xlsx'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                  } else if (name === 'vnd.ms-powerpoint') {
+                    mapping['ppt'] = template;
+                    mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                  } else if (name === 'xml') {
+                    mapping['rdf'] = 'application/rdf+xml';
+                    mapping['kml'] = 'application/vnd.google-earth.kml+xml';
+                    mapping['gml'] = 'application/gml+xml';
+                    mapping['sld'] = 'application/vnd.ogc.sld+xml';
+                  } else if (name === 'zip') {
+                    mapping['kmz'] = 'application/vnd.google-earth.kmz';
+                    mapping['gpkg'] = 'application/geopackage+sqlite3';
+                  }
+                }
+              }
+              
+              // Add common MIME types not in the CSV
+              mapping['csv'] = 'text/csv';
+              mapping['txt'] = 'text/plain';
+              mapping['docx'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+              mapping['tar'] = 'application/x-tar';
+              mapping['gz'] = 'application/gzip';
+              mapping['mp4'] = 'video/mp4';
+              mapping['avi'] = 'video/x-msvideo';
+              mapping['mov'] = 'video/quicktime';
+              mapping['shp'] = 'application/x-esri-shape';
+              
+              mimeTypeCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load CSV data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return csvDataPromise;
+  }
+  
+  // Function to load character sets CSV data
+  function loadCharsetData() {
+    if (charsetDataPromise) {
+      return charsetDataPromise;
+    }
+    
+    charsetDataPromise = new Promise(function(resolve, reject) {
+      if (charsetCache) {
+        resolve(charsetCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/character-sets-1.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              
+              // The CSV format is complex with line breaks inside cells
+              // We'll use a simpler approach with known mappings for common file types
+              var lines = csvData.split('\n');
+              
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line || line.startsWith(',')) continue;
+                
+                // Try to extract the preferred MIME name (first column)
+                var commaIndex = line.indexOf(',');
+                if (commaIndex > 0) {
+                  var mimeName = line.substring(0, commaIndex).trim();
+                  if (mimeName) {
+                    mapping[mimeName.toLowerCase()] = mimeName;
+                  }
+                }
+              }
+              
+              // Add common charset mappings for file types
+              mapping['utf-8'] = 'UTF-8';
+              mapping['utf8'] = 'UTF-8';
+              mapping['iso-8859-1'] = 'ISO-8859-1';
+              mapping['latin1'] = 'ISO-8859-1';
+              mapping['windows-1252'] = 'windows-1252';
+              mapping['ascii'] = 'US-ASCII';
+              mapping['us-ascii'] = 'US-ASCII';
+              
+              charsetCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load charset data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return charsetDataPromise;
+  }
+  
+  // Function to get character encoding for a file extension or format
+  function getCharsetForFormat(extension, format, callback) {
+    // Default charset mappings based on file type
+    var defaultCharsets = {
+      'csv': 'UTF-8',
+      'json': 'UTF-8',
+      'geojson': 'UTF-8',
+      'xml': 'UTF-8',
+      'rdf': 'UTF-8',
+      'txt': 'UTF-8',
+      'kml': 'UTF-8',
+      'gml': 'UTF-8',
+      'sld': 'UTF-8',
+      'html': 'UTF-8',
+      'htm': 'UTF-8',
+      'js': 'UTF-8',
+      'css': 'UTF-8'
+    };
+    
+    var ext = extension ? extension.toLowerCase() : '';
+    var fmt = format ? format.toLowerCase() : '';
+    
+    // First try to get from extension, then from format
+    var defaultCharset = defaultCharsets[ext] || defaultCharsets[fmt] || 'UTF-8';
+    
+    loadCharsetData().then(function(mapping) {
+      // For text-based formats, default to UTF-8
+      callback(defaultCharset);
+    }).catch(function(error) {
+      console.warn('Failed to load charset data:', error);
+      // Use default charset
+      callback(defaultCharset);
+    });
+  }
+  
+  // Function to get MIME type for a file extension
+  function getMimeTypeForExtension(extension, callback) {
+    // Fallback MIME types for common extensions
+    var fallbackMimeTypes = {
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'geojson': 'application/geo+json',
+      'xml': 'application/xml',
+      'rdf': 'application/rdf+xml',
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'txt': 'text/plain',
+      'zip': 'application/zip',
+      'tar': 'application/x-tar',
+      'gz': 'application/gzip',
+      'mp4': 'video/mp4',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+      'shp': 'application/x-esri-shape',
+      'kml': 'application/vnd.google-earth.kml+xml',
+      'kmz': 'application/vnd.google-earth.kmz',
+      'gml': 'application/gml+xml',
+      'gpkg': 'application/geopackage+sqlite3',
+      'sld': 'application/vnd.ogc.sld+xml'
+    };
+    
+    loadMimeTypeData().then(function(mapping) {
+      var ext = extension.toLowerCase();
+      var mimeType = mapping[ext] || fallbackMimeTypes[ext];
+      callback(mimeType);
+    }).catch(function(error) {
+      console.warn('Failed to load MIME type data:', error);
+      // Use fallback MIME types
+      var ext = extension.toLowerCase();
+      var mimeType = fallbackMimeTypes[ext];
+      callback(mimeType);
+    });
+  }
+
+  // Global upload tracking system
+  window.__schemingdcat_active_uploads__ = window.__schemingdcat_active_uploads__ || {};
+  
+  // Helper to collect relevant forms (those that contain the upload input)
+  function getUploadTargetForms() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll('form'));
+    return forms.filter(function(form) {
+      return form.querySelector('input[type="file"][name="upload"]');
+    });
+  }
+
+  // Function to check if any uploads are active
+  function hasActiveUploads() {
+    for (var key in window.__schemingdcat_active_uploads__) {
+      if (window.__schemingdcat_active_uploads__[key]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  // Function to update form submit buttons
+  function updateFormSubmitButtons(disable) {
+    var forms = getUploadTargetForms();
+    forms.forEach(function(form) {
+      // Find all submit buttons and "Add" buttons
+      var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
+      Array.prototype.forEach.call(submitButtons, function(button) {
+        if (disable) {
+          button.disabled = true;
+          button.setAttribute('data-upload-disabled', 'true');
+          // Add visual feedback
+          if (!button.querySelector('.upload-indicator')) {
+            var originalText = button.innerHTML;
+            button.setAttribute('data-original-text', originalText);
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Uploading...") }}';
+          }
+        } else {
+          // Only re-enable if it was disabled by upload
+          if (button.getAttribute('data-upload-disabled') === 'true') {
+            button.disabled = false;
+            button.removeAttribute('data-upload-disabled');
+            // Restore original text
+            var originalText = button.getAttribute('data-original-text');
+            if (originalText) {
+              button.innerHTML = originalText;
+              button.removeAttribute('data-original-text');
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  // Function to register an upload
+  function registerUpload(uploadId, options) {
+    options = options || {};
+    window.__schemingdcat_active_uploads__[uploadId] = {
+      manual: !!options.manual,
+      createdAt: Date.now()
+    };
+    updateFormSubmitButtons(true);
+    console.log('[Upload Tracker] Upload registered:', uploadId);
+  }
+  
+  // Function to unregister an upload
+  function unregisterUpload(uploadId) {
+    if (window.__schemingdcat_active_uploads__ && window.__schemingdcat_active_uploads__.hasOwnProperty(uploadId)) {
+      delete window.__schemingdcat_active_uploads__[uploadId];
+      if (!hasActiveUploads()) {
+        updateFormSubmitButtons(false);
+      }
+      console.log('[Upload Tracker] Upload completed:', uploadId);
+    }
+  }
+
+  // Global XHR progress hook to reflect real upload progress (no simulation)
+  (function setupGlobalXhrProgressHook() {
+    if (window.__schemingdcat_xhr_progress_hook_installed__) return;
+    window.__schemingdcat_xhr_progress_hook_installed__ = true;
+
+    function updateAllProgressBars(percent, status, isError) {
+      try {
+        var isErrorState = isError || (status && (
+          status.toLowerCase().indexOf('error') !== -1 ||
+          status.toLowerCase().indexOf('timeout') !== -1 ||
+          status.toLowerCase().indexOf('failed') !== -1
+        ));
+
+        // Update CloudStorage progress bar if present
+        var csContainers = document.querySelectorAll('.cloudstorage-progress-container');
+        csContainers.forEach(function(csContainer) {
+          var csBar = csContainer.querySelector('.progress-bar');
+          var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
+          var manualUploadId = csContainer.getAttribute('data-upload-id');
+
+          function cleanupManualEntry() {
+            if (
+              manualUploadId &&
+              window.__schemingdcat_active_uploads__ &&
+              window.__schemingdcat_active_uploads__[manualUploadId] &&
+              window.__schemingdcat_active_uploads__[manualUploadId].manual
+            ) {
+              unregisterUpload(manualUploadId);
+            }
+          }
+
+          if (csBar && typeof percent === 'number') {
+            var p = Math.max(0, Math.min(100, Math.round(percent)));
+            csBar.style.width = p + '%';
+            csBar.setAttribute('aria-valuenow', String(p));
+            if (!csBar.textContent || /%$/.test(csBar.textContent)) {
+              csBar.textContent = p + '%';
+            }
+            if (p >= 100 && !isErrorState) {
+              csContainer.className = 'cloudstorage-progress-container completed';
+              cleanupManualEntry();
+            } else if (isErrorState) {
+              csContainer.className = 'cloudstorage-progress-container error';
+              csBar.className = 'progress-bar bg-danger';
+              cleanupManualEntry();
+            }
+          } else if (isErrorState) {
+            cleanupManualEntry();
+          }
+
+          if (csStatus && status) {
+            csStatus.textContent = status;
+            if (isErrorState) {
+              csStatus.style.color = '#dc3545';
+              csStatus.style.fontWeight = 'bold';
+              cleanupManualEntry();
+            }
+          }
+        });
+
+        // Update preview progress (this snippet's bar)
+        var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+        if (wrapper) {
+          var filePreview = wrapper.querySelector('.file-preview');
+          var progressFill = filePreview ? filePreview.querySelector('.progress-fill') : null;
+          var progressText = filePreview ? filePreview.querySelector('.progress-text') : null;
+
+          if (progressFill && typeof percent === 'number') {
+            var p2 = Math.max(0, Math.min(100, Math.round(percent)));
+            progressFill.style.animation = 'none';
+            progressFill.style.width = p2 + '%';
+
+            if (isErrorState) {
+              progressFill.classList.add('error');
+            } else {
+              progressFill.classList.remove('error');
+            }
+          }
+
+          if (progressText) {
+            if (status) {
+              progressText.textContent = status;
+            } else if (typeof percent === 'number') {
+              progressText.textContent = (Math.round(percent)) + '%';
+            }
+
+            if (isErrorState) {
+              progressText.classList.add('error');
+            } else {
+              progressText.classList.remove('error');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Upload Tracker] Error updating progress bars:', e);
+      }
+    }
+
+    var origOpen = XMLHttpRequest.prototype.open;
+    var origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+      try {
+        this.__schemingdcat_req = { method: method, url: url };
+      } catch (e) {}
+      return origOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function(body) {
+      var xhr = this;
+      var uploadId = 'xhr_' + Date.now() + '_' + Math.random();
+      var isTrackedUpload = false;
+      var uploadStartTime = Date.now();
+      var safetyTimeoutId = null;
+
+      function formDataContainsFile(fd) {
+        var found = false;
+        if (!fd) return found;
+
+        try {
+          if (typeof fd.forEach === 'function') {
+            fd.forEach(function(value) {
+              if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                found = true;
+              }
+            });
+          } else if (typeof fd.getAll === 'function') {
+            var keys = fd.keys ? fd.keys() : [];
+            var nextKey = keys.next ? keys.next() : null;
+            while (nextKey && !nextKey.done) {
+              var values = fd.getAll(nextKey.value);
+              for (var i = 0; i < values.length; i++) {
+                var value = values[i];
+                if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                  found = true;
+                  break;
+                }
+              }
+              if (found) break;
+              nextKey = keys.next ? keys.next() : null;
+            }
+          }
+        } catch (err) {
+          console.warn('[Upload Tracker] Unable to inspect FormData contents:', err);
+        }
+        return found;
+      }
+
+      function shouldTrackUpload(payload) {
+        if (!payload) return false;
+
+        if (typeof Blob !== 'undefined' && (payload instanceof Blob || (typeof File !== 'undefined' && payload instanceof File))) {
+          return true;
+        }
+
+        if (payload instanceof FormData) {
+          if (formDataContainsFile(payload)) {
+            return true;
+          }
+          // Fallback: attempt to detect common field names when direct inspection fails
+          try {
+            if (typeof payload.get === 'function') {
+              var candidate = payload.get('upload') || payload.get('file') || payload.get('image');
+              if (candidate && (candidate instanceof Blob || (typeof File !== 'undefined' && candidate instanceof File))) {
+                return true;
+              }
+            }
+          } catch (err) {
+            console.warn('[Upload Tracker] FormData fallback inspection failed:', err);
+          }
+        }
+
+        return false;
+      }
+
+      try {
+        // Check if this is a file upload request
+        if (shouldTrackUpload(body)) {
+          isTrackedUpload = true;
+          registerUpload(uploadId);
+
+          // Safety timeout: force unregister after 10 minutes
+          safetyTimeoutId = setTimeout(function() {
+            console.warn('[Upload Tracker] Safety timeout triggered for upload:', uploadId);
+            updateAllProgressBars(undefined, 'Upload timeout - please refresh and try again');
+            unregisterUpload(uploadId);
+          }, 600000); // 10 minutes
+        }
+
+        if (this.upload && this.upload.addEventListener) {
+          var started = false;
+          var lastProgressUpdate = Date.now();
+
+          this.upload.addEventListener('loadstart', function() {
+            started = true;
+            lastProgressUpdate = Date.now();
+            if (isTrackedUpload) {
+              updateAllProgressBars(0, 'Uploading...');
+            }
+          });
+
+          this.upload.addEventListener('progress', function(evt) {
+            if (!started) {
+              started = true;
+              if (isTrackedUpload) {
+                updateAllProgressBars(0, 'Uploading...');
+              }
+            }
+            lastProgressUpdate = Date.now();
+            if (evt && evt.lengthComputable) {
+              var percent = (evt.loaded / evt.total) * 100;
+              if (isTrackedUpload) {
+                updateAllProgressBars(percent, 'Uploading...');
+              }
+            } else {
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Uploading...');
+              }
+            }
+          });
+
+          this.upload.addEventListener('load', function() {
+            // Upload complete, but server may still be processing
+            var uploadDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+            console.log('[Upload Tracker] Upload transferred in', uploadDuration, 'seconds');
+            if (isTrackedUpload) {
+              updateAllProgressBars(100, 'Processing on server...');
+            }
+          });
+        }
+
+        this.addEventListener('readystatechange', function() {
+          if (xhr.readyState === 4) {
+            // Clear safety timeout
+            if (safetyTimeoutId) {
+              clearTimeout(safetyTimeoutId);
+            }
+
+            var totalDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+            console.log('[Upload Tracker] Request completed in', totalDuration, 'seconds, status:', xhr.status);
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+              // Success
+              if (isTrackedUpload) {
+                updateAllProgressBars(100, 'Done', false);
+              }
+              if (isTrackedUpload) {
+                // Small delay to let user see "Done" message
+                setTimeout(function() {
+                  unregisterUpload(uploadId);
+                }, 500);
+              }
+            } else if (xhr.status >= 400) {
+              // Error
+              var errorMsg = 'Upload error';
+              if (xhr.status === 413) {
+                errorMsg = 'File too large';
+              } else if (xhr.status === 504 || xhr.status === 502) {
+                errorMsg = 'Server timeout - file may still be processing';
+              } else if (xhr.status >= 500) {
+                errorMsg = 'Server error';
+              }
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, errorMsg, true);
+              }
+              if (isTrackedUpload) {
+                unregisterUpload(uploadId);
+              }
+            } else if (xhr.status === 0) {
+              // Status 0 can mean network error or CORS issue
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Connection lost - check network', true);
+              }
+              if (isTrackedUpload) {
+                unregisterUpload(uploadId);
+              }
+            }
+          }
+        });
+
+        this.addEventListener('error', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.error('[Upload Tracker] Network error for upload:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Network error - please check your connection', true);
+          }
+          if (isTrackedUpload) {
+            unregisterUpload(uploadId);
+          }
+        });
+
+        this.addEventListener('abort', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.log('[Upload Tracker] Upload aborted:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Upload cancelled', false);
+          }
+          if (isTrackedUpload) {
+            unregisterUpload(uploadId);
+          }
+        });
+
+        this.addEventListener('timeout', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.error('[Upload Tracker] Request timeout for upload:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Request timeout - file may still be uploading', true);
+          }
+          if (isTrackedUpload) {
+            // Don't unregister immediately on timeout, wait a bit more
+            setTimeout(function() {
+              unregisterUpload(uploadId);
+            }, 5000);
+          }
+        });
+      } catch (e) {
+        console.error('[Upload Tracker] Error setting up XHR hooks:', e);
+        if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+        if (isTrackedUpload) {
+          unregisterUpload(uploadId);
+        }
+      }
+      return origSend.apply(this, arguments);
+    };
+  })();
+
+  // Intercept form submission to make it asynchronous and prevent HARAKIRI
+  (function setupFormInterceptor() {
+    if (window.__schemingdcat_form_interceptor_installed__) return;
+    window.__schemingdcat_form_interceptor_installed__ = true;
+
+    // Wait for DOM to be ready
+    function installInterceptor() {
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+
+      forms.forEach(function(form) {
+        if (form.getAttribute('data-ajax-interceptor')) return; // Already installed
+
+        form.setAttribute('data-ajax-interceptor', 'true');
+        console.log('[Form Interceptor] Installing interceptor on form:', form.id || form.className);
+
+        form.addEventListener('submit', function(e) {
+          var fileInput = form.querySelector('input[type="file"][name="upload"]');
+
+          // Only intercept if there's a file being uploaded
+          if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            console.log('[Form Interceptor] Intercepting form submit with file upload');
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Disable beforeunload handlers to prevent "Are you sure you want to leave?" prompt
+            window.onbeforeunload = null;
+            var beforeUnloadHandlers = window.getEventListeners ? window.getEventListeners(window)['beforeunload'] : [];
+            if (beforeUnloadHandlers) {
+              beforeUnloadHandlers.forEach(function(handler) {
+                window.removeEventListener('beforeunload', handler.listener);
+              });
+            }
+
+            // Submit via AJAX to prevent HARAKIRI
+            var formData = new FormData(form);
+
+            // Add the 'save' field if not present (required by CKAN backend)
+            if (!formData.has('save')) {
+              // Try to find which submit button was clicked
+              var submitButton = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+              if (submitButton && submitButton.name) {
+                formData.append(submitButton.name, submitButton.value || '');
+              } else {
+                // Default to 'save' if no specific button was found
+                formData.append('save', 'save');
+              }
+            }
+
+            var xhr = new XMLHttpRequest();
+
+            xhr.open(form.method || 'POST', form.action || window.location.href, true);
+
+            // Copy any CSRF tokens or headers
+            var csrfToken = form.querySelector('input[name="csrf_token"]');
+            if (csrfToken) {
+              xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+            }
+
+            xhr.onload = function() {
+              if (xhr.status >= 200 && xhr.status < 400) {
+                // Success (2xx) or Redirect (3xx)
+                console.log('[Form Interceptor] Form submitted successfully, status:', xhr.status);
+
+                // Force unregister all active uploads before redirect
+                console.log('[Form Interceptor] Forcing cleanup of all active uploads');
+                window.__schemingdcat_active_uploads__ = {};
+                updateFormSubmitButtons(false);
+
+                // Handle redirects (301, 302, 303, 307, 308)
+                if (xhr.status >= 300 && xhr.status < 400) {
+                  var redirectUrl = xhr.getResponseHeader('Location') || xhr.responseURL;
+                  console.log('[Form Interceptor] Server redirect detected to:', redirectUrl);
+
+                  if (redirectUrl && redirectUrl !== window.location.href) {
+                    console.log('[Form Interceptor] Following redirect to:', redirectUrl);
+                    // Small delay to ensure buttons are updated before redirect
+                    setTimeout(function() {
+                      window.location.href = redirectUrl;
+                    }, 100);
+                    return;
+                  } else {
+                    // Fallback: reload page
+                    console.log('[Form Interceptor] No redirect URL, reloading page');
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
+                    return;
+                  }
+                }
+
+                // Handle success responses (2xx)
+                try {
+                  var contentType = xhr.getResponseHeader('Content-Type');
+
+                  if (contentType && contentType.indexOf('application/json') !== -1) {
+                    // JSON response
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success && response.redirect_url) {
+                      setTimeout(function() {
+                        window.location.href = response.redirect_url;
+                      }, 100);
+                    } else if (response.success) {
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  } else if (contentType && contentType.indexOf('text/html') !== -1) {
+                    // HTML response - check if it's a redirect or full page
+                    var finalUrl = xhr.responseURL || window.location.href;
+
+                    if (finalUrl !== window.location.href) {
+                      // URL changed, redirect there
+                      console.log('[Form Interceptor] Redirecting to:', finalUrl);
+                      setTimeout(function() {
+                        window.location.href = finalUrl;
+                      }, 100);
+                    } else {
+                      // HTML response in same URL - likely the form was re-rendered with errors
+                      // or we're already on the final page
+                      console.log('[Form Interceptor] Received HTML response, checking for redirect in body');
+
+                      // Try to find redirect URL in response HTML
+                      var tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = xhr.responseText;
+                      var metaRefresh = tempDiv.querySelector('meta[http-equiv="refresh"]');
+
+                      if (metaRefresh) {
+                        var content = metaRefresh.getAttribute('content');
+                        var urlMatch = content.match(/url=(.+)$/i);
+                        if (urlMatch) {
+                          console.log('[Form Interceptor] Found meta refresh redirect to:', urlMatch[1]);
+                          setTimeout(function() {
+                            window.location.href = urlMatch[1];
+                          }, 100);
+                          return;
+                        }
+                      }
+
+                      // For resource forms, always reload to ensure clean state
+                      // This prevents buttons getting stuck in "Uploading..." state
+                      console.log('[Form Interceptor] Reloading page to show final state');
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  } else {
+                    // Unknown response type, reload
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
+                  }
+                } catch (e) {
+                  console.warn('[Form Interceptor] Error parsing response:', e);
+                  // Default: reload page
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 100);
+                }
+              } else {
+                console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
+                console.error('[Form Interceptor] Response:', xhr.responseText);
+
+                // Try to extract error message from response
+                var errorMessage = 'Error submitting form (Status: ' + xhr.status + ')';
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  if (response.error && response.error.message) {
+                    errorMessage = response.error.message;
+                  } else if (response.message) {
+                    errorMessage = response.message;
+                  }
+                } catch (e) {
+                  // Not JSON, try to extract from HTML
+                  if (xhr.responseText.indexOf('error') !== -1) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = xhr.responseText;
+                    var errorDiv = tempDiv.querySelector('.error-explanation, .alert-error, .alert-danger');
+                    if (errorDiv) {
+                      errorMessage = errorDiv.textContent.trim().substring(0, 200);
+                    }
+                  }
+                }
+
+                alert(errorMessage + '\n\nNote: The file was uploaded successfully to storage. Please check the server logs for details.');
+
+                // Re-enable form
+                var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitButtons.forEach(function(btn) {
+                  btn.disabled = false;
+                  var originalText = btn.getAttribute('data-original-text');
+                  if (originalText) {
+                    btn.innerHTML = originalText;
+                  }
+                });
+              }
+            };
+
+            xhr.onerror = function() {
+              console.error('[Form Interceptor] Network error during form submission');
+              alert('Network error. Please check your connection and try again.');
+
+              // Re-enable form
+              var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+              submitButtons.forEach(function(btn) {
+                btn.disabled = false;
+                var originalText = btn.getAttribute('data-original-text');
+                if (originalText) {
+                  btn.innerHTML = originalText;
+                }
+              });
+            };
+
+            xhr.send(formData);
+          } else {
+            // No file upload, let form submit normally
+            console.log('[Form Interceptor] No file upload detected, allowing normal submit');
+          }
+        }, true); // Use capture phase to intercept early
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', installInterceptor);
+    } else {
+      installInterceptor();
+    }
+
+    // Also watch for new forms added dynamically
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.tagName === 'FORM') {
+            if (node.classList.contains('dataset-form') || node.classList.contains('dataset-resource-form')) {
+              installInterceptor();
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  })();
+
+  // Wait for DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUpload);
+  } else {
+    initUpload();
+  }
+
+  function initUpload() {
+    var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+    if (!wrapper) return;
+
+    var fileInput = wrapper.querySelector('.upload-file-input');
+    var dropzone = wrapper.querySelector('.upload-dropzone');
+    var dropzoneContent = wrapper.querySelector('.dropzone-content');
+    var filePreview = wrapper.querySelector('.file-preview');
+    var removeButton = wrapper.querySelector('.remove-file');
+    var previewSyncTimer = null; // to cancel intervals
+
+    if (!fileInput || !dropzone) return;
+
+    // Setup format field listener for spatial processing
+    setupFormatFieldListener();
+    
+    // Auto-fill date field if exists and is empty
+    // Look for resource date fields specifically
+    var dateFields = document.querySelectorAll('input[type="date"]');
+    dateFields.forEach(function(field) {
+      if ((field.name.indexOf('created') !== -1 || field.name.indexOf('__0__created') !== -1) && !field.value) {
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = today.getMonth() + 1;
+        var dd = today.getDate();
+        
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+        
+        field.value = yyyy + '-' + mm + '-' + dd;
+      }
+    });
+
+    // Function to auto-fill name field with filename (similar to CloudStorage functionality)
+    function autoFillNameField(fileName, forceUpdate) {
+      // Extract name without extension
+      var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+      
+      // Clean name: replace underscores and hyphens with spaces, normalize whitespace
+      var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      // Find form fields to populate
+      var form = wrapper.closest('form');
+      if (form) {
+        // Priority order for name field detection
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.querySelector(nameSelectors[i]);
+          if (nameField) break;
+        }
+        
+        // Update field if it's empty OR if we're forcing an update (new file upload)
+        if (nameField && (!nameField.value.trim() || forceUpdate)) {
+          nameField.value = cleanName;
+          nameField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
+          nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          nameField.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Add visual feedback
+          nameField.style.backgroundColor = '#d4edda';
+          setTimeout(function() {
+            nameField.style.backgroundColor = '';
+          }, 2000);
+          
+          console.log('[schemingdcat-upload] Auto-populated name field:', cleanName);
+        }
+      }
+    }
+
+    // Function to clear auto-filled fields when removing a file
+    function clearAutoFilledFields() {
+      var form = wrapper.closest('form');
+      if (form) {
+        // Clear name field if it was auto-filled
+        var nameSelectors = [
+          'input[name="name"]',
+          'input[name="title"]', 
+          '#field-name',
+          '#field-title',
+          'input[id*="name"]',
+          'input[id*="title"]',
+          'input[name*="name"]',
+          'input[name*="title"]'
+        ];
+        
+        var nameField = null;
+        for (var i = 0; i < nameSelectors.length; i++) {
+          nameField = form.querySelector(nameSelectors[i]);
+          if (nameField) break;
+        }
+        
+        if (nameField && nameField.hasAttribute('data-auto-filled')) {
+          nameField.value = '';
+          nameField.removeAttribute('data-auto-filled');
+          nameField.dispatchEvent(new Event('change', { bubbles: true }));
+          nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        // Clear format field if it was auto-filled
+        var formatFields = document.querySelectorAll('input[name*="format"]');
+        formatFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear mimetype field if it was auto-filled
+        var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+        mimetypeFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'mimetype') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear encoding field if it was auto-filled
+        var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+        encodingFields.forEach(function(field) {
+          if ((field.name.indexOf('resources') !== -1 || field.name === 'encoding') && 
+              field.hasAttribute('data-auto-filled')) {
+            field.value = '';
+            field.removeAttribute('data-auto-filled');
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        
+        // Clear description field if it was auto-filled
+        var descriptionSelectors = [
+          'textarea[name="description"]',
+          'textarea[name*="description"]',
+          '#field-description',
+          'textarea[id*="description"]'
+        ];
+        
+        var descriptionField = null;
+        for (var i = 0; i < descriptionSelectors.length; i++) {
+          descriptionField = form.querySelector(descriptionSelectors[i]);
+          if (descriptionField) break;
+        }
+        
+        if (descriptionField && descriptionField.hasAttribute('data-auto-filled')) {
+          descriptionField.value = '';
+          descriptionField.removeAttribute('data-auto-filled');
+          descriptionField.dispatchEvent(new Event('change', { bubbles: true }));
+          descriptionField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        console.log('[schemingdcat-upload] Cleared auto-filled fields');
+      }
+    }
+
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+      var files = e.target.files;
+      if (files && files.length > 0) {
+        // Clear any previous file/upload before showing the new one
+        if (filePreview.style.display !== 'none') {
+          clearFile();
+          // Small pause for user to see the transition
+          setTimeout(function() {
+            processNewFile(files[0]);
+          }, 100);
+        } else {
+          processNewFile(files[0]);
+        }
+      } else {
+        // No file selected (user might have cancelled), don't block buttons
+        var uploadId = wrapper.getAttribute('data-upload-id');
+        if (uploadId) {
+          unregisterUpload(uploadId);
+          wrapper.removeAttribute('data-upload-id');
+        }
+      }
+    });
+    
+    function processNewFile(file) {
+      displayFile(file);
+
+      // NOTE: Upload registration is now handled by XHR hook (lines 446-574)
+      // when the actual form submission happens, not when file is selected.
+      // This prevents premature button blocking.
+      
+      var fileName = file.name;
+      var ext = fileName.split('.').pop().toLowerCase();
+      
+      // Auto-fill name field (force update to overwrite previous values)
+      autoFillNameField(fileName, true);
+      
+      // Auto-fill format field if exists
+      var formatFields = document.querySelectorAll('input[name*="format"]');
+      var formatField = null;
+      formatFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+          formatField = field;
+        }
+      });
+      
+      if (formatField) {
+        var extUpper = ext.toUpperCase();
+        
+        // Format mapping
+        var formatMap = {
+          'CSV': 'CSV',
+          'XLS': 'XLS', 
+          'XLSX': 'XLS',
+          'JSON': 'JSON',
+          'GEOJSON': 'GeoJSON',
+          'XML': 'XML',
+          'RDF': 'RDF',
+          'PDF': 'PDF',
+          'DOC': 'DOC',
+          'DOCX': 'DOC',
+          'PPT': 'PPT',
+          'PPTX': 'PPT',
+          'TXT': 'TXT',
+          'ZIP': 'ZIP',
+          'TAR': 'TAR',
+          'GZ': 'GZ',
+          'MP4': 'MP4',
+          'AVI': 'AVI',
+          'MOV': 'MOV',
+          'SHP': 'SHP',
+          'KML': 'KML',
+          'KMZ': 'KMZ',
+          'GML': 'GML',
+          'GPKG': 'GPKG',
+          'SLD': 'SLD'
+        };
+        
+        formatField.value = formatMap[extUpper] || extUpper;
+        formatField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
+        // Trigger change event
+        var event = new Event('change', { bubbles: true });
+        formatField.dispatchEvent(event);
+      }
+      
+      // Auto-fill mimetype field if exists
+      var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+      var mimetypeField = null;
+      mimetypeFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
+          mimetypeField = field;
+        }
+      });
+      
+      if (mimetypeField) {
+        getMimeTypeForExtension(ext, function(mimeType) {
+          if (mimeType) {
+            mimetypeField.value = mimeType;
+            mimetypeField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
+            // Trigger change event
+            var event = new Event('change', { bubbles: true });
+            mimetypeField.dispatchEvent(event);
+          }
+        });
+      }
+      
+      // Auto-fill encoding field if exists
+      var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+      var encodingField = null;
+      encodingFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
+          encodingField = field;
+        }
+      });
+      
+      if (encodingField) {
+        var currentFormat = formatField ? formatField.value : '';
+        getCharsetForFormat(ext, currentFormat, function(charset) {
+          if (charset) {
+            encodingField.value = charset;
+            encodingField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
+            // Trigger change event
+            var event = new Event('change', { bubbles: true });
+            encodingField.dispatchEvent(event);
+          }
+        });
+      }
+      
+      // Extract spatial extent from geospatial files
+      // Note: Para archivos ZIP que pueden contener shapefiles, la extracción se realizará
+      // después de crear el dataset, no durante la selección del archivo
+      if (ext.toLowerCase() !== 'zip') {
+        extractSpatialExtentFromFile(file, ext);
+      } else {
+        console.log('[schemingdcat-upload] ZIP file detected - spatial extent extraction will be performed after dataset creation');
+      }
+      
+      // Set up format field change listener for spatial processing
+      if (formatField) {
+        setupSpatialProcessingOnFormatChange(formatField);
+      }
+    }
+
+    // Remove file button
+    if (removeButton) {
+      removeButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearFile();
+      });
+    }
+
+    // Drag and drop
+    dropzone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+      
+      var files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        fileInput.files = files;
+        
+        // Clear any previous file/upload before showing the new one
+        if (filePreview.style.display !== 'none') {
+          clearFile();
+          // Small pause for user to see the transition
+          setTimeout(function() {
+            processNewFile(files[0]);
+            // Trigger change event for other modules
+            var event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+          }, 100);
+        } else {
+          processNewFile(files[0]);
+          // Trigger change event for other modules
+          var event = new Event('change', { bubbles: true });
+          fileInput.dispatchEvent(event);
+        }
+      }
+    });
+
+    dropzone.addEventListener('click', function(e) {
+      // Avoid opening dialog if click comes from specific buttons or preview area
+      var isBrowseBtn = e.target.closest('.browse-button');
+      var isRemoveBtn = e.target.closest('.remove-file');
+      var isPreviewArea = filePreview.contains(e.target);
+      if (!isBrowseBtn && !isRemoveBtn && !isPreviewArea) {
+        // Open file selector
+        fileInput.click();
+      }
+    });
+    
+    // URL input change for format detection
+    var urlInput = wrapper.querySelector('input[name="{{ field_url }}"]');
+    if (urlInput) {
+      urlInput.addEventListener('blur', function(e) {
+        var url = e.target.value;
+        if (url) {
+          // Extract filename from URL for auto-fill name field
+          var urlPath = url.split('?')[0].split('#')[0]; // Remove query params and fragments
+          var fileName = urlPath.split('/').pop(); // Get last part of path
+          if (fileName) {
+            autoFillNameField(fileName);
+          }
+          
+          // Extract extension from URL
+          var urlParts = url.split('?')[0].split('.');
+          if (urlParts.length > 1) {
+            var ext = urlParts[urlParts.length - 1].toLowerCase();
+            var extUpper = ext.toUpperCase();
+            
+            // Auto-fill format field
+            var formatFields = document.querySelectorAll('input[name*="format"]');
+            var formatField = null;
+            formatFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+                formatField = field;
+              }
+            });
+            
+            if (formatField && !formatField.value) {
+              // Format mapping
+              var formatMap = {
+                'CSV': 'CSV',
+                'XLS': 'XLS', 
+                'XLSX': 'XLS',
+                'JSON': 'JSON',
+                'GEOJSON': 'GeoJSON',
+                'XML': 'XML',
+                'RDF': 'RDF',
+                'PDF': 'PDF',
+                'DOC': 'DOC',
+                'DOCX': 'DOC',
+                'PPT': 'PPT',
+                'PPTX': 'PPT',
+                'TXT': 'TXT',
+                'ZIP': 'ZIP',
+                'TAR': 'TAR',
+                'GZ': 'GZ',
+                'MP4': 'MP4',
+                'AVI': 'AVI',
+                'MOV': 'MOV',
+                'SHP': 'SHP',
+                'KML': 'KML',
+                'KMZ': 'KMZ',
+                'GML': 'GML',
+                'GPKG': 'GPKG',
+                'SLD': 'SLD'
+              };
+              
+              formatField.value = formatMap[extUpper] || extUpper;
+              // Trigger change event
+              var event = new Event('change', { bubbles: true });
+              formatField.dispatchEvent(event);
+            }
+            
+            // Auto-fill mimetype field
+            var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+            var mimetypeField = null;
+            mimetypeFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
+                mimetypeField = field;
+              }
+            });
+            
+            if (mimetypeField && !mimetypeField.value) {
+              getMimeTypeForExtension(ext, function(mimeType) {
+                if (mimeType) {
+                  mimetypeField.value = mimeType;
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  mimetypeField.dispatchEvent(event);
+                }
+              });
+            }
+            
+            // Auto-fill encoding field
+            var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+            var encodingField = null;
+            encodingFields.forEach(function(field) {
+              if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
+                encodingField = field;
+              }
+            });
+            
+            if (encodingField && !encodingField.value) {
+              var currentFormat = formatField ? formatField.value : '';
+              getCharsetForFormat(ext, currentFormat, function(charset) {
+                if (charset) {
+                  encodingField.value = charset;
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  encodingField.dispatchEvent(event);
+                }
+              });
+            }
+          }
+        }
+      });
+    }
+
+    function displayFile(file) {
+      var fileName = filePreview.querySelector('.file-name');
+      var fileSize = filePreview.querySelector('.file-size');
+      var fileIcon = filePreview.querySelector('.file-icon');
+      var progressBar = filePreview.querySelector('.upload-progress');
+      var progressText = filePreview.querySelector('.progress-text');
+      
+      fileName.textContent = file.name;
+      fileSize.textContent = formatFileSize(file.size);
+      
+      // Update icon
+      var ext = file.name.split('.').pop().toLowerCase();
+      var iconClass = getFileIcon(ext);
+      fileIcon.className = 'fa fa-2x file-icon ' + iconClass;
+      
+      // Show preview, hide dropzone content
+      dropzoneContent.style.display = 'none';
+      filePreview.style.display = 'block';
+      
+      // Show progress animation and mark as completed when initial animation finishes
+      if (progressBar) {
+        progressBar.style.display = 'block';
+        var progressFill = progressBar.querySelector('.progress-fill');
+        if (progressFill) {
+          // Start at 0% and let real progress (CloudStorage or XHR hook) drive updates
+          progressFill.style.width = '0%';
+        }
+        if (progressText) {
+          progressText.textContent = 'Uploading...';
+        }
+      }
+      
+      // Check clear checkbox if exists
+      var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
+      if (clearCheckbox) {
+        clearCheckbox.checked = true;
+      }
+
+      // NOTE: Progress is now handled by global XHR hook (lines 386-574)
+      // No need to synchronize with CloudStorage - XHR hook updates all progress bars in real-time
+      // This eliminates the race condition between simulated and real progress
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      dropzoneContent.style.display = 'block';
+      filePreview.style.display = 'none';
+
+      // Clear auto-filled form fields
+      clearAutoFilledFields();
+
+      // Reset internal progress
+      var progressFill = filePreview.querySelector('.progress-fill');
+      if (progressFill) {
+        progressFill.style.width = '0%';
+        progressFill.style.animation = 'progressAnimation 2s ease-in-out infinite, shimmer 1.5s linear infinite';
+      }
+      var progressText = filePreview.querySelector('.progress-text');
+      if (progressText) {
+        progressText.textContent = 'Processing...';
+      }
+      
+      // Uncheck clear checkbox if exists
+      var clearCheckbox = wrapper.querySelector('input[type="checkbox"][id*="clear"]');
+      if (clearCheckbox) {
+        clearCheckbox.checked = false;
+      }
+      
+      // Cancel/hide CloudStorage if active and delete file from cloud storage
+      var cloudStorageContainers = document.querySelectorAll('.cloudstorage-progress-container');
+      cloudStorageContainers.forEach(function(container) {
+        // Hide CloudStorage progress container
+        container.style.display = 'none';
+        
+        // Get upload information to delete the file
+        var uploadId = container.getAttribute('data-upload-id');
+        var fileName = container.getAttribute('data-file-name');
+        var resourceId = container.getAttribute('data-resource-id');
+        
+        if (uploadId && window.cloudStorageUploads && window.cloudStorageUploads[uploadId]) {
+          // Mark as cancelled
+          window.cloudStorageUploads[uploadId].cancelled = true;
+          
+          // If it's a multipart upload, try to abort it
+          if (window.cloudStorageUploads[uploadId].isMultipart) {
+            abortMultipartUpload(uploadId);
+          }
+        }
+        if (uploadId) {
+          unregisterUpload(uploadId);
+        }
+        
+        // If we have file information, try to delete it from cloud storage
+        if (resourceId && fileName) {
+          deleteCloudStorageFile(resourceId, fileName);
+        }
+      });
+      
+      // Also clear CloudStorage indicator if it exists
+      var cloudStorageIndicator = wrapper.parentElement.querySelector('.cloudstorage-indicator');
+      if (cloudStorageIndicator) {
+        cloudStorageIndicator.style.display = 'none';
+      }
+      
+      // Dispatch custom event so other modules know it was cancelled
+      var cancelEvent = new CustomEvent('schemingdcat:upload-cancelled', {
+        detail: { wrapper: wrapper },
+        bubbles: true
+      });
+      wrapper.dispatchEvent(cancelEvent);
+      
+      // Show temporary cancellation notification
+      var notification = document.createElement('div');
+      notification.className = 'upload-cancelled-notification';
+      notification.innerHTML = '<i class="fa fa-check-circle"></i> ' + 'Upload cancelled';
+      dropzone.appendChild(notification);
+      
+      setTimeout(function() {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 2000);
+    }
+    
+    // Function to abort multipart upload
+    function abortMultipartUpload(uploadId) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/cloudstorage_abort_multipart', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          upload_id: uploadId
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Multipart upload aborted successfully:', uploadId);
+            } else {
+              console.warn('Failed to abort multipart upload:', xhr.status, xhr.responseText);
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error aborting multipart upload:', e);
+      }
+    }
+    
+    // Function to delete file from cloud storage
+    function deleteCloudStorageFile(resourceId, fileName) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/cloudstorage_delete_file', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          resource_id: resourceId,
+          filename: fileName
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Cloud storage file deleted successfully:', fileName);
+            } else {
+              console.warn('Failed to delete cloud storage file:', xhr.status, xhr.responseText);
+              // Try alternative method using resource_delete if file was already created as resource
+              if (resourceId) {
+                deleteResourceAndFile(resourceId);
+              }
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error deleting cloud storage file:', e);
+      }
+    }
+    
+    // Alternative function to delete complete resource (includes file)
+    function deleteResourceAndFile(resourceId) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/action/resource_delete', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        var data = JSON.stringify({
+          id: resourceId
+        });
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.debug('Resource and file deleted successfully:', resourceId);
+            } else {
+              console.warn('Failed to delete resource:', xhr.status, xhr.responseText);
+            }
+          }
+        };
+        
+        xhr.send(data);
+      } catch (e) {
+        console.warn('Error deleting resource:', e);
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      var k = 1024;
+      var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(ext) {
+      var iconMap = {
+        'pdf': 'fa-file-pdf-o',
+        'doc': 'fa-file-word-o',
+        'docx': 'fa-file-word-o',
+        'ppt': 'fa-file-powerpoint-o',
+        'pptx': 'fa-file-powerpoint-o',
+        'xls': 'fa-file-excel-o',
+        'xlsx': 'fa-file-excel-o',
+        'csv': 'fa-file-text-o',
+        'txt': 'fa-file-text-o',
+        'json': 'fa-file-code-o',
+        'geojson': 'fa-file-code-o',
+        'xml': 'fa-file-code-o',
+        'rdf': 'fa-file-code-o',
+        'kml': 'fa-file-code-o',
+        'gml': 'fa-file-code-o',
+        'sld': 'fa-file-code-o',
+        'zip': 'fa-file-archive-o',
+        'tar': 'fa-file-archive-o',
+        'gz': 'fa-file-archive-o',
+        'kmz': 'fa-file-archive-o',
+        'mp4': 'fa-file-video-o',
+        'avi': 'fa-file-video-o',
+        'mov': 'fa-file-video-o',
+        'shp': 'fa-map-o',
+        'gpkg': 'fa-map-o',
+        'tif': 'fa-file-image-o',
+        'tiff': 'fa-file-image-o',
+        'jpg': 'fa-file-image-o',
+        'jpeg': 'fa-file-image-o',
+        'png': 'fa-file-image-o',
+        'gif': 'fa-file-image-o'
+      };
+      return iconMap[ext] || 'fa-file-o';
+    }
+  }
+
+
+
+  // Function to setup format field listener for spatial processing
+  function setupFormatFieldListener() {
+    // Find format fields
+    var formatFields = document.querySelectorAll('input[name*="format"]');
+    formatFields.forEach(function(formatField) {
+      if (formatField.name.indexOf('resources') !== -1 || formatField.name === 'format') {
+        formatField.addEventListener('change', function(e) {
+          var format = e.target.value.toUpperCase();
+          
+          // If format is changed to SHP, try to process any existing URL for spatial extent
+          if (format === 'SHP' || format === 'SHAPEFILE') {
+            // Look for URL field
+            var urlFields = document.querySelectorAll('input[name*="url"]');
+            var resourceUrl = null;
+            
+            urlFields.forEach(function(urlField) {
+              if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
+                resourceUrl = urlField.value;
+              }
+            });
+            
+            if (resourceUrl && resourceUrl.trim()) {
+              console.log('Format changed to SHP, processing resource:', resourceUrl);
+              extractSpatialExtentFromResource(resourceUrl, format);
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // Function to extract spatial extent from geospatial files
+  function extractSpatialExtentFromFile(file, ext) {
+    // Check if this is a geospatial file type
+    // Note: ZIP files are excluded here because they are processed after dataset creation
+    var spatialExtensions = ['shp', 'tif', 'tiff', 'geotiff', 'kml', 'gpkg', 'geojson', 'json'];
+    
+    if (!spatialExtensions.includes(ext.toLowerCase())) {
+      return; // Not a spatial file, skip extraction
+    }
+
+    // Find the spatial_extent field in the form
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) {
+      console.debug('No spatial_extent field found in form');
+      return;
+    }
+
+    // Show a loading indicator in the spatial extent field
+    var originalPlaceholder = spatialExtentField.placeholder;
+    spatialExtentField.placeholder = '{{ _("Extracting spatial extent from file...") }}';
+    spatialExtentField.classList.add('loading');
+
+    // Create FormData to send the file
+      var formData = new FormData();
+      formData.append('file', file);
+      
+    // Make request to extract spatial extent
+    fetch('/api/extract-spatial-extent', {
+      method: 'POST',
+      body: formData
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      if (data.success && data.extent) {
+        // Set the extracted extent in the field
+        spatialExtentField.value = JSON.stringify(data.extent, null, 2);
+                  
+                  // Trigger change event
+                  var event = new Event('change', { bubbles: true });
+                  spatialExtentField.dispatchEvent(event);
+                  
+        // Show success message
+        showSpatialExtentMessage('{{ _("Spatial extent extracted successfully from file.") }}', 'success');
+        
+        console.log('Spatial extent extracted:', data.extent);
+                } else {
+        console.debug('Could not extract spatial extent:', data.error || 'Unknown error');
+        showSpatialExtentMessage('{{ _("Could not extract spatial extent from this file. You can manually enter the spatial extent if needed.") }}', 'info');
+      }
+    })
+    .catch(function(error) {
+      spatialExtentField.classList.remove('loading');
+      spatialExtentField.placeholder = originalPlaceholder;
+      
+      console.debug('Error in spatial extent extraction:', error);
+      showSpatialExtentMessage('{{ _("Error extracting spatial extent. You can manually enter the spatial extent if needed.") }}', 'warning');
+    });
+  }
+
+  // Function to setup spatial processing when format is changed
+  function setupSpatialProcessingOnFormatChange(formatField) {
+    // Remove existing listener if any
+    if (formatField._spatialListener) {
+      formatField.removeEventListener('change', formatField._spatialListener);
+    }
+    
+    // Add new listener
+    formatField._spatialListener = function(e) {
+      var format = e.target.value;
+      
+      // If user changed format to SHP, try to extract spatial extent
+      if (format && format.toLowerCase() === 'shp') {
+        console.log('Format changed to SHP, attempting spatial extent extraction');
+        
+        // Look for resource URL in the form
+        var resourceUrlField = document.querySelector('input[name*="url"]');
+        if (resourceUrlField && resourceUrlField.value) {
+          var resourceUrl = resourceUrlField.value;
+          console.log('Found resource URL:', resourceUrl);
+          
+          // Extract spatial extent from the resource
+          extractSpatialExtentFromResource(resourceUrl, format);
+        } else {
+          console.debug('No resource URL found for spatial processing');
+        }
+      }
+    };
+    
+    formatField.addEventListener('change', formatField._spatialListener);
+    
+    // Also check immediately if format is already SHP
+    if (formatField.value && formatField.value.toLowerCase() === 'shp') {
+      formatField._spatialListener({ target: formatField });
+    }
+  }
+
+  // Function to show spatial extent extraction messages
+  function showSpatialExtentMessage(message, type) {
+    // Find or create a message container near the spatial extent field
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) return;
+
+    var messageContainer = spatialExtentField.parentNode.querySelector('.spatial-extent-message');
+    if (!messageContainer) {
+      messageContainer = document.createElement('div');
+      messageContainer.className = 'spatial-extent-message';
+      spatialExtentField.parentNode.appendChild(messageContainer);
+    }
+
+    // Set message content and style
+    messageContainer.innerHTML = '<i class="fa fa-info-circle"></i> ' + message;
+    messageContainer.className = 'spatial-extent-message alert alert-' + 
+      (type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info');
+
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'warning') {
+        setTimeout(function() {
+        if (messageContainer && messageContainer.parentNode) {
+          messageContainer.style.opacity = '0';
+          setTimeout(function() {
+            if (messageContainer && messageContainer.parentNode) {
+              messageContainer.parentNode.removeChild(messageContainer);
+            }
+          }, 300);
+        }
+      }, 5000);
+    }
+  }
+
+  // Function to check spatial extent processing status periodically
+  function checkSpatialExtentStatus(resourceId, retryCount = 0, maxRetries = 30) {
+    if (retryCount >= maxRetries) {
+      console.debug('Max retries reached for spatial extent status check');
+      return;
+    }
+    
+    fetch('/api/spatial-extent-status/' + resourceId, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      if (data.success && data.status === 'completed' && data.has_spatial_extent) {
+        // Processing completed successfully
+        var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+        if (spatialExtentField && (!spatialExtentField.value || spatialExtentField.value.trim() === '')) {
+          // Only update if field is empty (respect manual input)
+          spatialExtentField.value = JSON.stringify(data.spatial_extent, null, 2);
+          
+          // Trigger change event
+          var event = new Event('change', { bubbles: true });
+          spatialExtentField.dispatchEvent(event);
+          
+          // Show success message
+          showSpatialExtentMessage('{{ _("Spatial extent extracted successfully in background.") }}', 'success');
+          console.log('Background spatial extent extraction completed:', data.spatial_extent);
+        }
+      } else if (data.status === 'pending') {
+        // Still processing, check again in a few seconds
+        setTimeout(function() {
+          checkSpatialExtentStatus(resourceId, retryCount + 1, maxRetries);
+        }, 3000); // Check every 3 seconds
+      } else if (data.status === 'error') {
+        console.debug('Error in spatial extent processing:', data.error);
+      }
+      // For other statuses (not_found, etc.), we just stop checking
+    })
+    .catch(function(error) {
+      console.debug('Error checking spatial extent status:', error);
+      // On error, try again a few more times
+      if (retryCount < 5) {
+        setTimeout(function() {
+          checkSpatialExtentStatus(resourceId, retryCount + 1, maxRetries);
+        }, 5000); // Wait longer on error
+      }
+    });
+  }
+
+  // Enhanced function to show spatial extent processing status
+  function showSpatialExtentProcessingStatus(resourceId) {
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) {
+      return;
+    }
+    
+    // Show processing message
+    showSpatialExtentMessage('{{ _("Processing spatial extent in background... This may take a few moments.") }}', 'info');
+    
+    // Start checking status periodically
+    setTimeout(function() {
+      checkSpatialExtentStatus(resourceId);
+    }, 2000); // Start checking after 2 seconds
+  }
+
+  // Modified function to handle resource creation with background processing
+  function handleResourceCreatedWithBackgroundProcessing(result) {
+    console.log('Resource created with background processing:', result);
+    
+    if (result && result.id) {
+      // Show immediate feedback about background processing
+      showSpatialExtentProcessingStatus(result.id);
+    }
+  }
+
+
+
+
+
+
+
+  // Function to extract spatial extent from uploaded file (direct upload)
+  // Frontend extraction disabled - all processing handled by backend
+  function extractSpatialExtentFromFile(file, ext) {
+    console.log('Frontend metadata extraction disabled - metadata will be processed by backend after upload');
+    
+    // Show a message that processing will happen in the background
+    showSpatialExtentMessage('{{ _("File uploaded successfully. Metadata will be extracted automatically in the background.") }}', 'info');
+  }
+
+  // Function to extract spatial extent from resource URL (after upload)
+  // Frontend extraction disabled - all processing handled by backend
+  function extractSpatialExtentFromResource(resourceUrl, resourceFormat) {
+    console.log('Frontend resource metadata extraction disabled - processing handled by backend job system');
+    console.log('Resource:', resourceUrl, 'Format:', resourceFormat);
+    
+    // Show a message that processing will happen in the background
+    showSpatialExtentMessage('{{ _("File uploaded successfully. Comprehensive metadata will be extracted automatically in the background.") }}', 'info');
+  }
+
+  // Function to setup spatial processing when format is changed
+  function setupSpatialProcessingOnFormatChange(formatField) {
+    // Remove existing listener if any
+    if (formatField._spatialListener) {
+      formatField.removeEventListener('change', formatField._spatialListener);
+    }
+    
+    // Add new listener
+    formatField._spatialListener = function(e) {
+      var format = e.target.value;
+      
+      // If user changed format to SHP, try to extract spatial extent
+      if (format && format.toLowerCase() === 'shp') {
+        console.log('Format changed to SHP, attempting spatial extent extraction');
+        
+        // Look for resource URL in the form
+        var resourceUrlField = document.querySelector('input[name*="url"]');
+        if (resourceUrlField && resourceUrlField.value) {
+          var resourceUrl = resourceUrlField.value;
+          console.log('Found resource URL:', resourceUrl);
+          
+          // Extract spatial extent from the resource
+          extractSpatialExtentFromResource(resourceUrl, format);
+        } else {
+          console.debug('No resource URL found for spatial processing');
+        }
+      }
+    };
+    
+    formatField.addEventListener('change', formatField._spatialListener);
+    
+    // Also check immediately if format is already SHP
+    if (formatField.value && formatField.value.toLowerCase() === 'shp') {
+      formatField._spatialListener({ target: formatField });
+    }
+  }
+
+  // Function to show spatial extent extraction messages
+  function showSpatialExtentMessage(message, type) {
+    // Find or create a message container near the spatial extent field
+    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
+    if (!spatialExtentField) return;
+
+    var messageContainer = spatialExtentField.parentNode.querySelector('.spatial-extent-message');
+    if (!messageContainer) {
+      messageContainer = document.createElement('div');
+      messageContainer.className = 'spatial-extent-message';
+      spatialExtentField.parentNode.appendChild(messageContainer);
+    }
+
+    // Set message content and style
+    messageContainer.innerHTML = '<i class="fa fa-info-circle"></i> ' + message;
+    messageContainer.className = 'spatial-extent-message alert alert-' + 
+      (type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info');
+
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== 'warning') {
+        setTimeout(function() {
+        if (messageContainer && messageContainer.parentNode) {
+          messageContainer.style.opacity = '0';
+          setTimeout(function() {
+            if (messageContainer && messageContainer.parentNode) {
+              messageContainer.parentNode.removeChild(messageContainer);
+            }
+          }, 300);
+        }
+      }, 5000);
+    }
+  }
+  // Initialize spatial processing on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Setting up spatial extent processing...');
+    
+    // Setup format field listener for spatial processing
+    var formatField = document.querySelector('select[name*="format"], input[name*="format"]');
+    if (formatField) {
+      console.log('Found format field, setting up spatial processing listener');
+      setupSpatialProcessingOnFormatChange(formatField);
+    } else {
+      console.debug('No format field found');
+    }
+    
+    // Also watch for dynamically added format fields (for resource forms that may be loaded via AJAX)
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1) { // Element node
+            var formatField = node.querySelector ? node.querySelector('select[name*="format"], input[name*="format"]') : null;
+            if (formatField) {
+              console.log('Found new format field, setting up spatial processing listener');
+              setupSpatialProcessingOnFormatChange(formatField);
+            }
+          }
+        });
+      });
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  });
+
+})();
+</script>
+
+<style>
+.schemingdcat-upload-wrapper {
+  margin-bottom: 20px;
+}
+
+.schemingdcat-upload-wrapper .upload-section {
+  margin-bottom: 25px;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone {
+  border: 3px dashed #c8d6e5;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 25%, transparent 25%) -50px 0,
+              linear-gradient(225deg, #f8f9fa 25%, transparent 25%) -50px 0,
+              linear-gradient(315deg, #f8f9fa 25%, transparent 25%),
+              linear-gradient(45deg, #f8f9fa 25%, transparent 25%);
+  background-size: 100px 100px;
+  background-color: #fafbfc;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  min-height: 220px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #2572B4, #4a90e2, #2572B4);
+  border-radius: 12px;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone:hover {
+  border-color: #a0b3c7;
+  background-color: #f5f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone.dragover {
+  border-color: #2572B4;
+  background-color: #e8f2ff;
+  border-style: solid;
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(37, 114, 180, 0.25);
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone.dragover::before {
+  opacity: 0.1;
+}
+
+.schemingdcat-upload-wrapper .dropzone-icon {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.schemingdcat-upload-wrapper .dropzone-icon i {
+  font-size: 60px;
+  color: #7f8c9b;
+  transition: all 0.3s ease;
+}
+
+.schemingdcat-upload-wrapper .upload-dropzone:hover .dropzone-icon i,
+.schemingdcat-upload-wrapper .upload-dropzone.dragover .dropzone-icon i {
+  color: #2572B4;
+  transform: translateY(-5px);
+}
+
+.schemingdcat-upload-wrapper .dropzone-content h4 {
+  color: #495057;
+  margin: 15px 0 10px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.schemingdcat-upload-wrapper .drop-hint {
+  color: #6c757d;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.schemingdcat-upload-wrapper .browse-button {
+  margin: 15px 0;
+  cursor: pointer;
+  background: #2572B4;
+  border: none;
+  padding: 10px 24px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(37, 114, 180, 0.3);
+}
+
+.schemingdcat-upload-wrapper .browse-button:hover {
+  background: #1e5a90;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 114, 180, 0.4);
+}
+
+.schemingdcat-upload-wrapper .file-preview {
+  text-align: left;
+}
+
+.schemingdcat-upload-wrapper .file-info {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: #f0f7ff;
+  border-radius: 6px;
+  gap: 15px;
+}
+
+.schemingdcat-upload-wrapper .file-icon {
+  color: #2572B4;
+}
+
+.schemingdcat-upload-wrapper .file-details {
+  flex: 1;
+}
+
+.schemingdcat-upload-wrapper .file-details p {
+  margin: 0 0 5px 0;
+}
+
+.schemingdcat-upload-wrapper .file-name {
+  font-weight: bold;
+  word-break: break-all;
+}
+
+.schemingdcat-upload-wrapper .remove-file {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.schemingdcat-upload-wrapper .remove-file:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.schemingdcat-upload-wrapper .remove-file i {
+  margin-right: 4px;
+}
+
+.schemingdcat-upload-wrapper .current-file-info {
+  margin-bottom: 20px;
+}
+
+/* Upload progress styles */
+.schemingdcat-upload-wrapper .upload-progress {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.schemingdcat-upload-wrapper .progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.schemingdcat-upload-wrapper .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2572B4 0%, #4a90e2 50%, #2572B4 100%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: progressAnimation 2s ease-in-out infinite, shimmer 1.5s linear infinite;
+  width: 0%;
+}
+
+@keyframes progressAnimation {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 100%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.schemingdcat-upload-wrapper .progress-text {
+  text-align: center;
+  margin-top: 10px;
+  color: #6c757d;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.schemingdcat-upload-wrapper .url-or-separator {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.schemingdcat-upload-wrapper .url-or-separator span {
+  background: white;
+  padding: 0 15px;
+  color: #999;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
+}
+
+.schemingdcat-upload-wrapper .url-or-separator:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ddd;
+}
+
+.schemingdcat-upload-wrapper .url-section {
+  margin-bottom: 15px;
+}
+
+.schemingdcat-upload-wrapper .url-section .form-control {
+  margin-top: 10px;
+}
+
+/* Upload notifications */
+.upload-cancelled-notification,
+.upload-error-notification {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+.upload-cancelled-notification {
+  background: rgba(40, 167, 69, 0.9);
+}
+
+.upload-error-notification {
+  background: rgba(220, 53, 69, 0.9);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.upload-cancelled-notification i,
+.upload-error-notification i {
+  margin-right: 8px;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Progress bar error state */
+.schemingdcat-upload-wrapper .progress-fill.error {
+  background: linear-gradient(90deg, #dc3545 0%, #c82333 50%, #dc3545 100%);
+  animation: none;
+}
+
+.schemingdcat-upload-wrapper .progress-text.error {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* Spatial extent loading and message styles */
+.spatial-extent-message {
+  margin-top: 8px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: opacity 0.3s ease;
+}
+
+.spatial-extent-message.alert-info {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+.spatial-extent-message.alert-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.spatial-extent-message.alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.spatial-extent-field .loading {
+  background-image: linear-gradient(90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 768px) {
+  .schemingdcat-upload-wrapper .upload-dropzone {
+    padding: 20px;
+  }
+  
+  .schemingdcat-upload-wrapper .dropzone-content h4 {
+    font-size: 16px;
+  }
+}
+</style>

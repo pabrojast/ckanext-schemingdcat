@@ -5,11 +5,7 @@ import ckan.logic as logic
 from flask import Blueprint, request, redirect, url_for, jsonify
 from ckan.logic import ValidationError
 from ckan.plugins.toolkit import render, g, h, _, config as tk_config
-import tempfile
-import os
-import time
 import re
-import importlib
 
 import ckanext.schemingdcat.utils as sdct_utils
 import ckanext.schemingdcat.helpers as sdct_helpers
@@ -132,158 +128,15 @@ def handle_malformed_snippet_url(snippet_path):
     # For other templates, just pass through to the standard CKAN handler
     return base.abort(404, _('Template not found'))
 
-def is_module_available(module_name):
-    """Check if a module is available for import without raising an exception."""
-    try:
-        importlib.import_module(module_name)
-        return True
-    except (ImportError, ModuleNotFoundError):
-        return False
-
 @schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])
 def extract_spatial_extent():
-    """
-    API endpoint to extract spatial extent from uploaded geospatial files.
-    
-    This endpoint can work with:
-    1. Direct file uploads (multipart/form-data with 'file')
-    2. Resource URLs (JSON with 'resource_url' and 'resource_format')
-    
-    This endpoint is designed for frontend use only and does not interfere 
-    with CKAN's core API operations.
-    """
-    try:
-        # Check if spatial extent extraction is available
-        if not is_module_available('ckanext.schemingdcat.spatial_extent'):
-            return jsonify({
-                'success': False,
-                'error': 'Spatial extent extraction not available',
-                'extent': None
-            }), 400
-
-        from ckanext.schemingdcat.spatial_extent import extent_extractor
-        
-        # Check if it's a direct file upload
-        if 'file' in request.files:
-            file = request.files['file']
-            if file.filename == '':
-                return jsonify({
-                    'success': False,
-                    'error': 'No file selected',
-                    'extent': None
-                }), 400
-            
-            # Extract extent from uploaded file
-            extent = extent_extractor.extract_extent_from_upload(file)
-            
-        # Check if it's a resource URL processing request
-        elif request.is_json:
-            data = request.get_json()
-            resource_url = data.get('resource_url')
-            resource_format = data.get('resource_format', '').lower()
-            
-            if not resource_url:
-                return jsonify({
-                    'success': False,
-                    'error': 'No resource_url provided',
-                    'extent': None
-                }), 400
-            
-            # Extract extent from resource URL
-            extent = extent_extractor.extract_extent_from_url(resource_url, resource_format)
-            
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'No file or resource_url provided',
-                'extent': None
-            }), 400
-        
-        if extent:
-            return jsonify({
-                'success': True,
-                'error': None,
-                'extent': extent
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Could not extract spatial extent from file',
-                'extent': None
-            }), 400
-            
-    except Exception as e:
-        logger.error(f"Error in spatial extent extraction API: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': f'Internal error: {str(e)}',
-            'extent': None
-        }), 500
+    """API endpoint to extract spatial extent from uploaded geospatial files."""
+    from ckanext.schemingdcat.upload.api import extract_spatial_extent_endpoint
+    return extract_spatial_extent_endpoint()
 
 @schemingdcat.route('/api/extract-spatial-extent-from-resource', methods=['POST'])
 def extract_spatial_extent_from_resource():
-    """
-    API endpoint to extract spatial extent from uploaded resources (post-upload processing).
-    
-    This endpoint is designed for processing resources that have already been uploaded
-    to cloud storage (like Azure) and processes them based on their format.
-    """
-    try:
-        # Check if spatial extent extraction is available
-        if not is_module_available('ckanext.schemingdcat.spatial_extent'):
-            return jsonify({
-                'success': False,
-                'error': 'Spatial extent extraction not available',
-                'extent': None
-            }), 400
-
-        from ckanext.schemingdcat.spatial_extent import extent_extractor
-        
-        data = request.get_json()
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No JSON data provided',
-                'extent': None
-            }), 400
-        
-        resource_url = data.get('resource_url')
-        resource_format = data.get('resource_format', '').upper()
-        
-        if not resource_url:
-            return jsonify({
-                'success': False,
-                'error': 'No resource_url provided',
-                'extent': None
-            }), 400
-        
-        logger.info(f"Processing resource for spatial extent: {resource_url} (format: {resource_format})")
-        
-        # Extract extent from resource
-        extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
-        
-        if extent:
-            return jsonify({
-                'success': True,
-                'error': None,
-                'extent': extent,
-                'processed_url': resource_url,
-                'format': resource_format
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Could not extract spatial extent from resource',
-                'extent': None,
-                'processed_url': resource_url,
-                'format': resource_format
-            }), 400
-            
-    except Exception as e:
-        logger.error(f"Error in resource spatial extent extraction API: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': f'Internal error: {str(e)}',
-            'extent': None
-        }), 500
+    """API endpoint to extract spatial extent from uploaded resources."""
+    from ckanext.schemingdcat.upload.api import extract_spatial_extent_from_resource_endpoint
+    return extract_spatial_extent_from_resource_endpoint()
 
