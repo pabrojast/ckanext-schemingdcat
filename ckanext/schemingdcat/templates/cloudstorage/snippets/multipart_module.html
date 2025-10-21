@@ -177,7 +177,7 @@
             
             // Register upload with global tracker if available
             if (typeof registerUpload === 'function') {
-                registerUpload(fileId);
+                registerUpload(fileId, { manual: true });
             }
             
             // Auto-populate filename in form fields
@@ -197,6 +197,7 @@
             
             // Store upload ID in progress container for tracking
             progressElements.container.setAttribute('data-upload-id', fileId);
+            progressElements.container.setAttribute('data-file-name', fileName);
             
             if (azureDirectUploadEnabled) {
                 // Azure Direct Upload with enhanced progress tracking

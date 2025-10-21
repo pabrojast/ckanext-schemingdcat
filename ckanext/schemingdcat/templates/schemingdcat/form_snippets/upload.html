@@ -324,8 +324,12 @@
   // Global upload tracking system
   window.__schemingdcat_active_uploads__ = window.__schemingdcat_active_uploads__ || {};
   
+  // Helper to collect relevant forms (those that contain the upload input)
   function getUploadTargetForms() {
-    return document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+    var forms = Array.prototype.slice.call(document.querySelectorAll('form'));
+    return forms.filter(function(form) {
+      return form.querySelector('input[type="file"][name="upload"]');
+    });
   }
 
   // Function to check if any uploads are active
@@ -344,7 +348,7 @@
     forms.forEach(function(form) {
       // Find all submit buttons and "Add" buttons
       var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
-      submitButtons.forEach(function(button) {
+      Array.prototype.forEach.call(submitButtons, function(button) {
         if (disable) {
           button.disabled = true;
           button.setAttribute('data-upload-disabled', 'true');
@@ -372,19 +376,25 @@
   }
   
   // Function to register an upload
-  function registerUpload(uploadId) {
-    window.__schemingdcat_active_uploads__[uploadId] = true;
+  function registerUpload(uploadId, options) {
+    options = options || {};
+    window.__schemingdcat_active_uploads__[uploadId] = {
+      manual: !!options.manual,
+      createdAt: Date.now()
+    };
     updateFormSubmitButtons(true);
     console.log('[Upload Tracker] Upload registered:', uploadId);
   }
   
   // Function to unregister an upload
   function unregisterUpload(uploadId) {
-    delete window.__schemingdcat_active_uploads__[uploadId];
-    if (!hasActiveUploads()) {
-      updateFormSubmitButtons(false);
+    if (window.__schemingdcat_active_uploads__ && window.__schemingdcat_active_uploads__.hasOwnProperty(uploadId)) {
+      delete window.__schemingdcat_active_uploads__[uploadId];
+      if (!hasActiveUploads()) {
+        updateFormSubmitButtons(false);
+      }
+      console.log('[Upload Tracker] Upload completed:', uploadId);
     }
-    console.log('[Upload Tracker] Upload completed:', uploadId);
   }
 
   // Global XHR progress hook to reflect real upload progress (no simulation)
@@ -405,6 +415,18 @@
         csContainers.forEach(function(csContainer) {
           var csBar = csContainer.querySelector('.progress-bar');
           var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
+          var manualUploadId = csContainer.getAttribute('data-upload-id');
+
+          function cleanupManualEntry() {
+            if (
+              manualUploadId &&
+              window.__schemingdcat_active_uploads__ &&
+              window.__schemingdcat_active_uploads__[manualUploadId] &&
+              window.__schemingdcat_active_uploads__[manualUploadId].manual
+            ) {
+              unregisterUpload(manualUploadId);
+            }
+          }
 
           if (csBar && typeof percent === 'number') {
             var p = Math.max(0, Math.min(100, Math.round(percent)));
@@ -415,10 +437,14 @@
             }
             if (p >= 100 && !isErrorState) {
               csContainer.className = 'cloudstorage-progress-container completed';
+              cleanupManualEntry();
             } else if (isErrorState) {
               csContainer.className = 'cloudstorage-progress-container error';
               csBar.className = 'progress-bar bg-danger';
+              cleanupManualEntry();
             }
+          } else if (isErrorState) {
+            cleanupManualEntry();
           }
 
           if (csStatus && status) {
@@ -426,6 +452,7 @@
             if (isErrorState) {
               csStatus.style.color = '#dc3545';
               csStatus.style.fontWeight = 'bold';
+              cleanupManualEntry();
             }
           }
         });
@@ -1476,9 +1503,6 @@
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
 
-      // NOTE: Upload unregister is handled by XHR hook when upload completes/fails
-      // No need to manually unregister here
-
       // Clear auto-filled form fields
       clearAutoFilledFields();
 
@@ -1518,6 +1542,9 @@
           if (window.cloudStorageUploads[uploadId].isMultipart) {
             abortMultipartUpload(uploadId);
           }
+        }
+        if (uploadId) {
+          unregisterUpload(uploadId);
         }
         
         // If we have file information, try to delete it from cloud storage
