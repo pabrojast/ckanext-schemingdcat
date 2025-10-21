@@ -1,4 +1,14 @@
 (function() {
+  // ============================================================================
+  // CLOUDSTORAGE INTEGRATION CHECK
+  // ============================================================================
+  // Check if cloudstorage is already handling uploads to avoid duplication
+  var cloudStorageActive = window.cloudStorageUploads !== undefined;
+  
+  if (cloudStorageActive) {
+    console.log('[schemingdcat-upload] CloudStorage module detected - coordinating upload handling');
+  }
+  
   // Cache for CSV data
   var mimeTypeCache = null;
   var csvDataPromise = null;
@@ -1058,6 +1068,12 @@
 
     // File input change
     fileInput.addEventListener('change', function(e) {
+      // Skip if cloudstorage is handling the upload
+      if (cloudStorageActive && window.cloudStorageUploads) {
+        console.log('[schemingdcat-upload] CloudStorage handling upload - skipping duplicate processing');
+        return;
+      }
+      
       var files = e.target.files;
       if (files && files.length > 0) {
         // Clear any previous file/upload before showing the new one
@@ -1081,6 +1097,30 @@
     });
     
     function processNewFile(file) {
+      // Disable beforeunload warning as soon as file is selected
+      // This prevents "You will lose unsaved changes" message during upload
+      if (window.onbeforeunload) {
+        window._originalBeforeUnload = window.onbeforeunload;
+        window.onbeforeunload = null;
+        console.log('[schemingdcat-upload] Disabled beforeunload warning for upload');
+      }
+      
+      // Register a temporary upload to keep buttons disabled
+      // This will be replaced by the actual XHR upload registration later
+      var tempUploadId = 'temp_' + Date.now();
+      registerUpload(tempUploadId, { temporary: true });
+      
+      // Store temp ID for cleanup
+      if (!window._tempUploadIds) window._tempUploadIds = [];
+      window._tempUploadIds.push(tempUploadId);
+      
+      // Clean up temp upload after a short delay (XHR hook will have registered by then)
+      setTimeout(function() {
+        unregisterUpload(tempUploadId);
+        var idx = window._tempUploadIds.indexOf(tempUploadId);
+        if (idx > -1) window._tempUploadIds.splice(idx, 1);
+      }, 2000);
+      
       displayFile(file);
 
       // NOTE: Upload registration is now handled by XHR hook (lines 446-574)
@@ -1228,6 +1268,15 @@
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
         fileInput.files = files;
+        
+        // Skip duplicate processing if cloudstorage is active
+        if (cloudStorageActive && window.cloudStorageUploads) {
+          console.log('[schemingdcat-upload] CloudStorage will handle dropped file');
+          // Just trigger change event for cloudstorage
+          var event = new Event('change', { bubbles: true });
+          fileInput.dispatchEvent(event);
+          return;
+        }
         
         // Clear any previous file/upload before showing the new one
         if (filePreview.style.display !== 'none') {
