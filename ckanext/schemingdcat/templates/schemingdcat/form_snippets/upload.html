@@ -324,6 +324,10 @@
   // Global upload tracking system
   window.__schemingdcat_active_uploads__ = window.__schemingdcat_active_uploads__ || {};
   
+  function getUploadTargetForms() {
+    return document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+  }
+
   // Function to check if any uploads are active
   function hasActiveUploads() {
     for (var key in window.__schemingdcat_active_uploads__) {
@@ -336,7 +340,7 @@
   
   // Function to update form submit buttons
   function updateFormSubmitButtons(disable) {
-    var forms = document.querySelectorAll('form');
+    var forms = getUploadTargetForms();
     forms.forEach(function(form) {
       // Find all submit buttons and "Add" buttons
       var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
@@ -477,14 +481,74 @@
     XMLHttpRequest.prototype.send = function(body) {
       var xhr = this;
       var uploadId = 'xhr_' + Date.now() + '_' + Math.random();
-      var isFileUpload = false;
+      var isTrackedUpload = false;
       var uploadStartTime = Date.now();
       var safetyTimeoutId = null;
 
+      function formDataContainsFile(fd) {
+        var found = false;
+        if (!fd) return found;
+
+        try {
+          if (typeof fd.forEach === 'function') {
+            fd.forEach(function(value) {
+              if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                found = true;
+              }
+            });
+          } else if (typeof fd.getAll === 'function') {
+            var keys = fd.keys ? fd.keys() : [];
+            var nextKey = keys.next ? keys.next() : null;
+            while (nextKey && !nextKey.done) {
+              var values = fd.getAll(nextKey.value);
+              for (var i = 0; i < values.length; i++) {
+                var value = values[i];
+                if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                  found = true;
+                  break;
+                }
+              }
+              if (found) break;
+              nextKey = keys.next ? keys.next() : null;
+            }
+          }
+        } catch (err) {
+          console.warn('[Upload Tracker] Unable to inspect FormData contents:', err);
+        }
+        return found;
+      }
+
+      function shouldTrackUpload(payload) {
+        if (!payload) return false;
+
+        if (typeof Blob !== 'undefined' && (payload instanceof Blob || (typeof File !== 'undefined' && payload instanceof File))) {
+          return true;
+        }
+
+        if (payload instanceof FormData) {
+          if (formDataContainsFile(payload)) {
+            return true;
+          }
+          // Fallback: attempt to detect common field names when direct inspection fails
+          try {
+            if (typeof payload.get === 'function') {
+              var candidate = payload.get('upload') || payload.get('file') || payload.get('image');
+              if (candidate && (candidate instanceof Blob || (typeof File !== 'undefined' && candidate instanceof File))) {
+                return true;
+              }
+            }
+          } catch (err) {
+            console.warn('[Upload Tracker] FormData fallback inspection failed:', err);
+          }
+        }
+
+        return false;
+      }
+
       try {
         // Check if this is a file upload request
-        if (body instanceof FormData || (this.upload && this.upload.addEventListener)) {
-          isFileUpload = true;
+        if (shouldTrackUpload(body)) {
+          isTrackedUpload = true;
           registerUpload(uploadId);
 
           // Safety timeout: force unregister after 10 minutes
@@ -502,20 +566,28 @@
           this.upload.addEventListener('loadstart', function() {
             started = true;
             lastProgressUpdate = Date.now();
-            updateAllProgressBars(0, 'Uploading...');
+            if (isTrackedUpload) {
+              updateAllProgressBars(0, 'Uploading...');
+            }
           });
 
           this.upload.addEventListener('progress', function(evt) {
             if (!started) {
               started = true;
-              updateAllProgressBars(0, 'Uploading...');
+              if (isTrackedUpload) {
+                updateAllProgressBars(0, 'Uploading...');
+              }
             }
             lastProgressUpdate = Date.now();
             if (evt && evt.lengthComputable) {
               var percent = (evt.loaded / evt.total) * 100;
-              updateAllProgressBars(percent, 'Uploading...');
+              if (isTrackedUpload) {
+                updateAllProgressBars(percent, 'Uploading...');
+              }
             } else {
-              updateAllProgressBars(undefined, 'Uploading...');
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Uploading...');
+              }
             }
           });
 
@@ -523,7 +595,9 @@
             // Upload complete, but server may still be processing
             var uploadDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
             console.log('[Upload Tracker] Upload transferred in', uploadDuration, 'seconds');
-            updateAllProgressBars(100, 'Processing on server...');
+            if (isTrackedUpload) {
+              updateAllProgressBars(100, 'Processing on server...');
+            }
           });
         }
 
@@ -539,8 +613,10 @@
 
             if (xhr.status >= 200 && xhr.status < 300) {
               // Success
-              updateAllProgressBars(100, 'Done', false);
-              if (isFileUpload) {
+              if (isTrackedUpload) {
+                updateAllProgressBars(100, 'Done', false);
+              }
+              if (isTrackedUpload) {
                 // Small delay to let user see "Done" message
                 setTimeout(function() {
                   unregisterUpload(uploadId);
@@ -556,14 +632,18 @@
               } else if (xhr.status >= 500) {
                 errorMsg = 'Server error';
               }
-              updateAllProgressBars(undefined, errorMsg, true);
-              if (isFileUpload) {
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, errorMsg, true);
+              }
+              if (isTrackedUpload) {
                 unregisterUpload(uploadId);
               }
             } else if (xhr.status === 0) {
               // Status 0 can mean network error or CORS issue
-              updateAllProgressBars(undefined, 'Connection lost - check network', true);
-              if (isFileUpload) {
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Connection lost - check network', true);
+              }
+              if (isTrackedUpload) {
                 unregisterUpload(uploadId);
               }
             }
@@ -573,8 +653,10 @@
         this.addEventListener('error', function() {
           if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
           console.error('[Upload Tracker] Network error for upload:', uploadId);
-          updateAllProgressBars(undefined, 'Network error - please check your connection', true);
-          if (isFileUpload) {
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Network error - please check your connection', true);
+          }
+          if (isTrackedUpload) {
             unregisterUpload(uploadId);
           }
         });
@@ -582,8 +664,10 @@
         this.addEventListener('abort', function() {
           if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
           console.log('[Upload Tracker] Upload aborted:', uploadId);
-          updateAllProgressBars(undefined, 'Upload cancelled', false);
-          if (isFileUpload) {
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Upload cancelled', false);
+          }
+          if (isTrackedUpload) {
             unregisterUpload(uploadId);
           }
         });
@@ -591,8 +675,10 @@
         this.addEventListener('timeout', function() {
           if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
           console.error('[Upload Tracker] Request timeout for upload:', uploadId);
-          updateAllProgressBars(undefined, 'Request timeout - file may still be uploading', true);
-          if (isFileUpload) {
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Request timeout - file may still be uploading', true);
+          }
+          if (isTrackedUpload) {
             // Don't unregister immediately on timeout, wait a bit more
             setTimeout(function() {
               unregisterUpload(uploadId);
@@ -602,7 +688,7 @@
       } catch (e) {
         console.error('[Upload Tracker] Error setting up XHR hooks:', e);
         if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
-        if (isFileUpload) {
+        if (isTrackedUpload) {
           unregisterUpload(uploadId);
         }
       }
