@@ -1,0 +1,410 @@
+// ============================================================================
+// UPLOAD TRACKING
+// ============================================================================
+// Upload tracking system and XHR progress hooks
+// 
+// This is part of the modular upload system.
+// Included by upload_script.html (main) via standard JS includes
+// ============================================================================
+
+  // Global upload tracking system
+  window.__schemingdcat_active_uploads__ = window.__schemingdcat_active_uploads__ || {};
+  
+  // Helper to collect relevant forms (those that contain the upload input)
+  function getUploadTargetForms() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll('form'));
+    return forms.filter(function(form) {
+      return form.querySelector('input[type="file"][name="upload"]');
+    });
+  }
+
+  // Function to check if any uploads are active
+  function hasActiveUploads() {
+    for (var key in window.__schemingdcat_active_uploads__) {
+      if (window.__schemingdcat_active_uploads__[key]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  // Function to update form submit buttons
+  function updateFormSubmitButtons(disable) {
+    var forms = getUploadTargetForms();
+    forms.forEach(function(form) {
+      // Find all submit buttons and "Add" buttons
+      var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
+      Array.prototype.forEach.call(submitButtons, function(button) {
+        if (disable) {
+          button.disabled = true;
+          button.setAttribute('data-upload-disabled', 'true');
+          // Add visual feedback
+          if (!button.querySelector('.upload-indicator')) {
+            var originalText = button.innerHTML;
+            button.setAttribute('data-original-text', originalText);
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Uploading...") }}';
+          }
+        } else {
+          // Only re-enable if it was disabled by upload
+          if (button.getAttribute('data-upload-disabled') === 'true') {
+            button.disabled = false;
+            button.removeAttribute('data-upload-disabled');
+            // Restore original text
+            var originalText = button.getAttribute('data-original-text');
+            if (originalText) {
+              button.innerHTML = originalText;
+              button.removeAttribute('data-original-text');
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  // Function to register an upload
+  function registerUpload(uploadId, options) {
+    options = options || {};
+    window.__schemingdcat_active_uploads__[uploadId] = {
+      manual: !!options.manual,
+      createdAt: Date.now()
+    };
+    updateFormSubmitButtons(true);
+    console.log('[Upload Tracker] Upload registered:', uploadId);
+  }
+  
+  // Function to unregister an upload
+  function unregisterUpload(uploadId) {
+    if (window.__schemingdcat_active_uploads__ && window.__schemingdcat_active_uploads__.hasOwnProperty(uploadId)) {
+      delete window.__schemingdcat_active_uploads__[uploadId];
+      if (!hasActiveUploads()) {
+        updateFormSubmitButtons(false);
+      }
+      console.log('[Upload Tracker] Upload completed:', uploadId);
+    }
+  }
+
+  // Global XHR progress hook to reflect real upload progress (no simulation)
+  (function setupGlobalXhrProgressHook() {
+    if (window.__schemingdcat_xhr_progress_hook_installed__) return;
+    window.__schemingdcat_xhr_progress_hook_installed__ = true;
+
+    function updateAllProgressBars(percent, status, isError) {
+      try {
+        var isErrorState = isError || (status && (
+          status.toLowerCase().indexOf('error') !== -1 ||
+          status.toLowerCase().indexOf('timeout') !== -1 ||
+          status.toLowerCase().indexOf('failed') !== -1
+        ));
+
+        // Update CloudStorage progress bar if present
+        var csContainers = document.querySelectorAll('.cloudstorage-progress-container');
+        csContainers.forEach(function(csContainer) {
+          var csBar = csContainer.querySelector('.progress-bar');
+          var csStatus = csContainer.querySelector('.cloudstorage-progress-status');
+          var manualUploadId = csContainer.getAttribute('data-upload-id');
+
+          function cleanupManualEntry() {
+            if (
+              manualUploadId &&
+              window.__schemingdcat_active_uploads__ &&
+              window.__schemingdcat_active_uploads__[manualUploadId] &&
+              window.__schemingdcat_active_uploads__[manualUploadId].manual
+            ) {
+              unregisterUpload(manualUploadId);
+            }
+          }
+
+          if (csBar && typeof percent === 'number') {
+            var p = Math.max(0, Math.min(100, Math.round(percent)));
+            csBar.style.width = p + '%';
+            csBar.setAttribute('aria-valuenow', String(p));
+            if (!csBar.textContent || /%$/.test(csBar.textContent)) {
+              csBar.textContent = p + '%';
+            }
+            if (p >= 100 && !isErrorState) {
+              csContainer.className = 'cloudstorage-progress-container completed';
+              cleanupManualEntry();
+            } else if (isErrorState) {
+              csContainer.className = 'cloudstorage-progress-container error';
+              csBar.className = 'progress-bar bg-danger';
+              cleanupManualEntry();
+            }
+          } else if (isErrorState) {
+            cleanupManualEntry();
+          }
+
+          if (csStatus && status) {
+            csStatus.textContent = status;
+            if (isErrorState) {
+              csStatus.style.color = '#dc3545';
+              csStatus.style.fontWeight = 'bold';
+              cleanupManualEntry();
+            }
+          }
+        });
+
+        // Update preview progress (this snippet's bar)
+        var wrapper = document.querySelector('.schemingdcat-upload-wrapper');
+        if (wrapper) {
+          var filePreview = wrapper.querySelector('.file-preview');
+          var progressFill = filePreview ? filePreview.querySelector('.progress-fill') : null;
+          var progressText = filePreview ? filePreview.querySelector('.progress-text') : null;
+
+          if (progressFill && typeof percent === 'number') {
+            var p2 = Math.max(0, Math.min(100, Math.round(percent)));
+            progressFill.style.animation = 'none';
+            progressFill.style.width = p2 + '%';
+
+            if (isErrorState) {
+              progressFill.classList.add('error');
+            } else {
+              progressFill.classList.remove('error');
+            }
+          }
+
+          if (progressText) {
+            if (status) {
+              progressText.textContent = status;
+            } else if (typeof percent === 'number') {
+              progressText.textContent = (Math.round(percent)) + '%';
+            }
+
+            if (isErrorState) {
+              progressText.classList.add('error');
+            } else {
+              progressText.classList.remove('error');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Upload Tracker] Error updating progress bars:', e);
+      }
+    }
+
+    var origOpen = XMLHttpRequest.prototype.open;
+    var origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+      try {
+        this.__schemingdcat_req = { method: method, url: url };
+      } catch (e) {}
+      return origOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function(body) {
+      var xhr = this;
+      var uploadId = 'xhr_' + Date.now() + '_' + Math.random();
+      var isTrackedUpload = false;
+      var uploadStartTime = Date.now();
+      var safetyTimeoutId = null;
+
+      function formDataContainsFile(fd) {
+        var found = false;
+        if (!fd) return found;
+
+        try {
+          if (typeof fd.forEach === 'function') {
+            fd.forEach(function(value) {
+              if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                found = true;
+              }
+            });
+          } else if (typeof fd.getAll === 'function') {
+            var keys = fd.keys ? fd.keys() : [];
+            var nextKey = keys.next ? keys.next() : null;
+            while (nextKey && !nextKey.done) {
+              var values = fd.getAll(nextKey.value);
+              for (var i = 0; i < values.length; i++) {
+                var value = values[i];
+                if (value instanceof Blob || (typeof File !== 'undefined' && value instanceof File)) {
+                  found = true;
+                  break;
+                }
+              }
+              if (found) break;
+              nextKey = keys.next ? keys.next() : null;
+            }
+          }
+        } catch (err) {
+          console.warn('[Upload Tracker] Unable to inspect FormData contents:', err);
+        }
+        return found;
+      }
+
+      function shouldTrackUpload(payload) {
+        if (!payload) return false;
+
+        if (typeof Blob !== 'undefined' && (payload instanceof Blob || (typeof File !== 'undefined' && payload instanceof File))) {
+          return true;
+        }
+
+        if (payload instanceof FormData) {
+          if (formDataContainsFile(payload)) {
+            return true;
+          }
+          // Fallback: attempt to detect common field names when direct inspection fails
+          try {
+            if (typeof payload.get === 'function') {
+              var candidate = payload.get('upload') || payload.get('file') || payload.get('image');
+              if (candidate && (candidate instanceof Blob || (typeof File !== 'undefined' && candidate instanceof File))) {
+                return true;
+              }
+            }
+          } catch (err) {
+            console.warn('[Upload Tracker] FormData fallback inspection failed:', err);
+          }
+        }
+
+        return false;
+      }
+
+      try {
+        // Check if this is a file upload request
+        if (shouldTrackUpload(body)) {
+          isTrackedUpload = true;
+          registerUpload(uploadId);
+
+          // Safety timeout: force unregister after 10 minutes
+          safetyTimeoutId = setTimeout(function() {
+            console.warn('[Upload Tracker] Safety timeout triggered for upload:', uploadId);
+            updateAllProgressBars(undefined, 'Upload timeout - please refresh and try again');
+            unregisterUpload(uploadId);
+          }, 600000); // 10 minutes
+        }
+
+        if (this.upload && this.upload.addEventListener) {
+          var started = false;
+          var lastProgressUpdate = Date.now();
+
+          this.upload.addEventListener('loadstart', function() {
+            started = true;
+            lastProgressUpdate = Date.now();
+            if (isTrackedUpload) {
+              updateAllProgressBars(0, 'Uploading...');
+            }
+          });
+
+          this.upload.addEventListener('progress', function(evt) {
+            if (!started) {
+              started = true;
+              if (isTrackedUpload) {
+                updateAllProgressBars(0, 'Uploading...');
+              }
+            }
+            lastProgressUpdate = Date.now();
+            if (evt && evt.lengthComputable) {
+              var percent = (evt.loaded / evt.total) * 100;
+              if (isTrackedUpload) {
+                updateAllProgressBars(percent, 'Uploading...');
+              }
+            } else {
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Uploading...');
+              }
+            }
+          });
+
+          this.upload.addEventListener('load', function() {
+            // Upload complete, but server may still be processing
+            var uploadDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+            console.log('[Upload Tracker] Upload transferred in', uploadDuration, 'seconds');
+            if (isTrackedUpload) {
+              updateAllProgressBars(100, 'Processing on server...');
+            }
+          });
+        }
+
+        this.addEventListener('readystatechange', function() {
+          if (xhr.readyState === 4) {
+            // Clear safety timeout
+            if (safetyTimeoutId) {
+              clearTimeout(safetyTimeoutId);
+            }
+
+            var totalDuration = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+            console.log('[Upload Tracker] Request completed in', totalDuration, 'seconds, status:', xhr.status);
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+              // Success
+              if (isTrackedUpload) {
+                updateAllProgressBars(100, 'Done', false);
+              }
+              if (isTrackedUpload) {
+                // Small delay to let user see "Done" message
+                setTimeout(function() {
+                  unregisterUpload(uploadId);
+                }, 500);
+              }
+            } else if (xhr.status >= 400) {
+              // Error
+              var errorMsg = 'Upload error';
+              if (xhr.status === 413) {
+                errorMsg = 'File too large';
+              } else if (xhr.status === 504 || xhr.status === 502) {
+                errorMsg = 'Server timeout - file may still be processing';
+              } else if (xhr.status >= 500) {
+                errorMsg = 'Server error';
+              }
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, errorMsg, true);
+              }
+              if (isTrackedUpload) {
+                unregisterUpload(uploadId);
+              }
+            } else if (xhr.status === 0) {
+              // Status 0 can mean network error or CORS issue
+              if (isTrackedUpload) {
+                updateAllProgressBars(undefined, 'Connection lost - check network', true);
+              }
+              if (isTrackedUpload) {
+                unregisterUpload(uploadId);
+              }
+            }
+          }
+        });
+
+        this.addEventListener('error', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.error('[Upload Tracker] Network error for upload:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Network error - please check your connection', true);
+          }
+          if (isTrackedUpload) {
+            unregisterUpload(uploadId);
+          }
+        });
+
+        this.addEventListener('abort', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.log('[Upload Tracker] Upload aborted:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Upload cancelled', false);
+          }
+          if (isTrackedUpload) {
+            unregisterUpload(uploadId);
+          }
+        });
+
+        this.addEventListener('timeout', function() {
+          if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+          console.error('[Upload Tracker] Request timeout for upload:', uploadId);
+          if (isTrackedUpload) {
+            updateAllProgressBars(undefined, 'Request timeout - file may still be uploading', true);
+          }
+          if (isTrackedUpload) {
+            // Don't unregister immediately on timeout, wait a bit more
+            setTimeout(function() {
+              unregisterUpload(uploadId);
+            }, 5000);
+          }
+        });
+      } catch (e) {
+        console.error('[Upload Tracker] Error setting up XHR hooks:', e);
+        if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
+        if (isTrackedUpload) {
+          unregisterUpload(uploadId);
+        }
+      }
+      return origSend.apply(this, arguments);
+    };
+  })();

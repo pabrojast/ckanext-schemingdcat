@@ -1,0 +1,262 @@
+// ============================================================================
+// UPLOAD INTERCEPTOR
+// ============================================================================
+// Form submission interceptor for async uploads
+// 
+// This is part of the modular upload system.
+// Included by upload_script.html (main) via standard JS includes
+// ============================================================================
+
+
+  // Intercept form submission to make it asynchronous and prevent HARAKIRI
+  (function setupFormInterceptor() {
+    if (window.__schemingdcat_form_interceptor_installed__) return;
+    window.__schemingdcat_form_interceptor_installed__ = true;
+
+    // Wait for DOM to be ready
+    function installInterceptor() {
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+
+      forms.forEach(function(form) {
+        if (form.getAttribute('data-ajax-interceptor')) return; // Already installed
+
+        form.setAttribute('data-ajax-interceptor', 'true');
+        console.log('[Form Interceptor] Installing interceptor on form:', form.id || form.className);
+
+        form.addEventListener('submit', function(e) {
+          var fileInput = form.querySelector('input[type="file"][name="upload"]');
+
+          // Only intercept if there's a file being uploaded
+          if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            console.log('[Form Interceptor] Intercepting form submit with file upload');
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Disable beforeunload handlers to prevent "Are you sure you want to leave?" prompt
+            window.onbeforeunload = null;
+            var beforeUnloadHandlers = window.getEventListeners ? window.getEventListeners(window)['beforeunload'] : [];
+            if (beforeUnloadHandlers) {
+              beforeUnloadHandlers.forEach(function(handler) {
+                window.removeEventListener('beforeunload', handler.listener);
+              });
+            }
+
+            // Submit via AJAX to prevent HARAKIRI
+            var formData = new FormData(form);
+
+            // Add the 'save' field if not present (required by CKAN backend)
+            if (!formData.has('save')) {
+              // Try to find which submit button was clicked
+              var submitButton = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+              if (submitButton && submitButton.name) {
+                formData.append(submitButton.name, submitButton.value || '');
+              } else {
+                // Default to 'save' if no specific button was found
+                formData.append('save', 'save');
+              }
+            }
+
+            var xhr = new XMLHttpRequest();
+
+            xhr.open(form.method || 'POST', form.action || window.location.href, true);
+
+            // Copy any CSRF tokens or headers
+            var csrfToken = form.querySelector('input[name="csrf_token"]');
+            if (csrfToken) {
+              xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+            }
+
+            xhr.onload = function() {
+              if (xhr.status >= 200 && xhr.status < 400) {
+                // Success (2xx) or Redirect (3xx)
+                console.log('[Form Interceptor] Form submitted successfully, status:', xhr.status);
+
+                // Force unregister all active uploads before redirect
+                console.log('[Form Interceptor] Forcing cleanup of all active uploads');
+                window.__schemingdcat_active_uploads__ = {};
+                updateFormSubmitButtons(false);
+
+                // Handle redirects (301, 302, 303, 307, 308)
+                if (xhr.status >= 300 && xhr.status < 400) {
+                  var redirectUrl = xhr.getResponseHeader('Location') || xhr.responseURL;
+                  console.log('[Form Interceptor] Server redirect detected to:', redirectUrl);
+
+                  if (redirectUrl && redirectUrl !== window.location.href) {
+                    console.log('[Form Interceptor] Following redirect to:', redirectUrl);
+                    // Small delay to ensure buttons are updated before redirect
+                    setTimeout(function() {
+                      window.location.href = redirectUrl;
+                    }, 100);
+                    return;
+                  } else {
+                    // Fallback: reload page
+                    console.log('[Form Interceptor] No redirect URL, reloading page');
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
+                    return;
+                  }
+                }
+
+                // Handle success responses (2xx)
+                try {
+                  var contentType = xhr.getResponseHeader('Content-Type');
+
+                  if (contentType && contentType.indexOf('application/json') !== -1) {
+                    // JSON response
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success && response.redirect_url) {
+                      setTimeout(function() {
+                        window.location.href = response.redirect_url;
+                      }, 100);
+                    } else if (response.success) {
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  } else if (contentType && contentType.indexOf('text/html') !== -1) {
+                    // HTML response - check if it's a redirect or full page
+                    var finalUrl = xhr.responseURL || window.location.href;
+
+                    if (finalUrl !== window.location.href) {
+                      // URL changed, redirect there
+                      console.log('[Form Interceptor] Redirecting to:', finalUrl);
+                      setTimeout(function() {
+                        window.location.href = finalUrl;
+                      }, 100);
+                    } else {
+                      // HTML response in same URL - likely the form was re-rendered with errors
+                      // or we're already on the final page
+                      console.log('[Form Interceptor] Received HTML response, checking for redirect in body');
+
+                      // Try to find redirect URL in response HTML
+                      var tempDiv = document.createElement('div');
+                      tempDiv.innerHTML = xhr.responseText;
+                      var metaRefresh = tempDiv.querySelector('meta[http-equiv="refresh"]');
+
+                      if (metaRefresh) {
+                        var content = metaRefresh.getAttribute('content');
+                        var urlMatch = content.match(/url=(.+)$/i);
+                        if (urlMatch) {
+                          console.log('[Form Interceptor] Found meta refresh redirect to:', urlMatch[1]);
+                          setTimeout(function() {
+                            window.location.href = urlMatch[1];
+                          }, 100);
+                          return;
+                        }
+                      }
+
+                      // For resource forms, always reload to ensure clean state
+                      // This prevents buttons getting stuck in "Uploading..." state
+                      console.log('[Form Interceptor] Reloading page to show final state');
+                      setTimeout(function() {
+                        window.location.reload();
+                      }, 100);
+                    }
+                  } else {
+                    // Unknown response type, reload
+                    setTimeout(function() {
+                      window.location.reload();
+                    }, 100);
+                  }
+                } catch (e) {
+                  console.warn('[Form Interceptor] Error parsing response:', e);
+                  // Default: reload page
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 100);
+                }
+              } else {
+                console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
+                console.error('[Form Interceptor] Response:', xhr.responseText);
+
+                // Try to extract error message from response
+                var errorMessage = 'Error submitting form (Status: ' + xhr.status + ')';
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  if (response.error && response.error.message) {
+                    errorMessage = response.error.message;
+                  } else if (response.message) {
+                    errorMessage = response.message;
+                  }
+                } catch (e) {
+                  // Not JSON, try to extract from HTML
+                  if (xhr.responseText.indexOf('error') !== -1) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = xhr.responseText;
+                    var errorDiv = tempDiv.querySelector('.error-explanation, .alert-error, .alert-danger');
+                    if (errorDiv) {
+                      errorMessage = errorDiv.textContent.trim().substring(0, 200);
+                    }
+                  }
+                }
+
+                alert(errorMessage + '\n\nNote: The file was uploaded successfully to storage. Please check the server logs for details.');
+
+                // Re-enable form
+                var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitButtons.forEach(function(btn) {
+                  btn.disabled = false;
+                  var originalText = btn.getAttribute('data-original-text');
+                  if (originalText) {
+                    btn.innerHTML = originalText;
+                  }
+                });
+              }
+            };
+
+            xhr.onerror = function() {
+              console.error('[Form Interceptor] Network error during form submission');
+              alert('Network error. Please check your connection and try again.');
+
+              // Re-enable form
+              var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+              submitButtons.forEach(function(btn) {
+                btn.disabled = false;
+                var originalText = btn.getAttribute('data-original-text');
+                if (originalText) {
+                  btn.innerHTML = originalText;
+                }
+              });
+            };
+
+            xhr.send(formData);
+          } else {
+            // No file upload, let form submit normally
+            console.log('[Form Interceptor] No file upload detected, allowing normal submit');
+          }
+        }, true); // Use capture phase to intercept early
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', installInterceptor);
+    } else {
+      installInterceptor();
+    }
+
+    // Also watch for new forms added dynamically
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.tagName === 'FORM') {
+            if (node.classList.contains('dataset-form') || node.classList.contains('dataset-resource-form')) {
+              installInterceptor();
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  })();
+
+  // Wait for DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUpload);
+  } else {
+    initUpload();
+  }

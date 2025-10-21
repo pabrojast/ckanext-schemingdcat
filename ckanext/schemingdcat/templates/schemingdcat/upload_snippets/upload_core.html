@@ -1,0 +1,255 @@
+// ============================================================================
+// UPLOAD CORE
+// ============================================================================
+// Core utilities: CloudStorage integration, MIME types, Charsets
+// 
+// This is part of the modular upload system.
+// Included by upload_script.html (main) via standard JS includes
+// ============================================================================
+
+(function() {
+  // ============================================================================
+  // CLOUDSTORAGE INTEGRATION CHECK
+  // ============================================================================
+  // Check if cloudstorage is already handling uploads to avoid duplication
+  var cloudStorageActive = window.cloudStorageUploads !== undefined;
+  
+  if (cloudStorageActive) {
+    console.log('[schemingdcat-upload] CloudStorage module detected - coordinating upload handling');
+  }
+  
+  // Cache for CSV data
+  var mimeTypeCache = null;
+  var csvDataPromise = null;
+  var charsetCache = null;
+  var charsetDataPromise = null;
+  
+  // Function to load CSV data and create extension to MIME type mapping
+  function loadMimeTypeData() {
+    if (csvDataPromise) {
+      return csvDataPromise;
+    }
+    
+    csvDataPromise = new Promise(function(resolve, reject) {
+      if (mimeTypeCache) {
+        resolve(mimeTypeCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/application.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              var lines = csvData.split('\n');
+              
+              // Skip header line
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                
+                var parts = line.split(',');
+                if (parts.length >= 2) {
+                  var name = parts[0].trim().toLowerCase();
+                  var template = parts[1].trim();
+                  
+                  // Map common file extensions to MIME types
+                  mapping[name] = template;
+                  
+                  // Add additional mappings for common extensions
+                  if (name === 'json') {
+                    mapping['geojson'] = 'application/geo+json';
+                  } else if (name === 'msword') {
+                    mapping['doc'] = template;
+                  } else if (name === 'vnd.ms-excel') {
+                    mapping['xls'] = template;
+                    mapping['xlsx'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                  } else if (name === 'vnd.ms-powerpoint') {
+                    mapping['ppt'] = template;
+                    mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                  } else if (name === 'xml') {
+                    mapping['rdf'] = 'application/rdf+xml';
+                    mapping['kml'] = 'application/vnd.google-earth.kml+xml';
+                    mapping['gml'] = 'application/gml+xml';
+                    mapping['sld'] = 'application/vnd.ogc.sld+xml';
+                  } else if (name === 'zip') {
+                    mapping['kmz'] = 'application/vnd.google-earth.kmz';
+                    mapping['gpkg'] = 'application/geopackage+sqlite3';
+                  }
+                }
+              }
+              
+              // Add common MIME types not in the CSV
+              mapping['csv'] = 'text/csv';
+              mapping['txt'] = 'text/plain';
+              mapping['docx'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+              mapping['pptx'] = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+              mapping['tar'] = 'application/x-tar';
+              mapping['gz'] = 'application/gzip';
+              mapping['mp4'] = 'video/mp4';
+              mapping['avi'] = 'video/x-msvideo';
+              mapping['mov'] = 'video/quicktime';
+              mapping['shp'] = 'application/x-esri-shape';
+              
+              mimeTypeCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load CSV data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return csvDataPromise;
+  }
+  
+  // Function to load character sets CSV data
+  function loadCharsetData() {
+    if (charsetDataPromise) {
+      return charsetDataPromise;
+    }
+    
+    charsetDataPromise = new Promise(function(resolve, reject) {
+      if (charsetCache) {
+        resolve(charsetCache);
+        return;
+      }
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/static/character-sets-1.csv', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var csvData = xhr.responseText;
+              var mapping = {};
+              
+              // The CSV format is complex with line breaks inside cells
+              // We'll use a simpler approach with known mappings for common file types
+              var lines = csvData.split('\n');
+              
+              for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line || line.startsWith(',')) continue;
+                
+                // Try to extract the preferred MIME name (first column)
+                var commaIndex = line.indexOf(',');
+                if (commaIndex > 0) {
+                  var mimeName = line.substring(0, commaIndex).trim();
+                  if (mimeName) {
+                    mapping[mimeName.toLowerCase()] = mimeName;
+                  }
+                }
+              }
+              
+              // Add common charset mappings for file types
+              mapping['utf-8'] = 'UTF-8';
+              mapping['utf8'] = 'UTF-8';
+              mapping['iso-8859-1'] = 'ISO-8859-1';
+              mapping['latin1'] = 'ISO-8859-1';
+              mapping['windows-1252'] = 'windows-1252';
+              mapping['ascii'] = 'US-ASCII';
+              mapping['us-ascii'] = 'US-ASCII';
+              
+              charsetCache = mapping;
+              resolve(mapping);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error('Failed to load charset data'));
+          }
+        }
+      };
+      xhr.send();
+    });
+    
+    return charsetDataPromise;
+  }
+  
+  // Function to get character encoding for a file extension or format
+  function getCharsetForFormat(extension, format, callback) {
+    // Default charset mappings based on file type
+    var defaultCharsets = {
+      'csv': 'UTF-8',
+      'json': 'UTF-8',
+      'geojson': 'UTF-8',
+      'xml': 'UTF-8',
+      'rdf': 'UTF-8',
+      'txt': 'UTF-8',
+      'kml': 'UTF-8',
+      'gml': 'UTF-8',
+      'sld': 'UTF-8',
+      'html': 'UTF-8',
+      'htm': 'UTF-8',
+      'js': 'UTF-8',
+      'css': 'UTF-8'
+    };
+    
+    var ext = extension ? extension.toLowerCase() : '';
+    var fmt = format ? format.toLowerCase() : '';
+    
+    // First try to get from extension, then from format
+    var defaultCharset = defaultCharsets[ext] || defaultCharsets[fmt] || 'UTF-8';
+    
+    loadCharsetData().then(function(mapping) {
+      // For text-based formats, default to UTF-8
+      callback(defaultCharset);
+    }).catch(function(error) {
+      console.warn('Failed to load charset data:', error);
+      // Use default charset
+      callback(defaultCharset);
+    });
+  }
+  
+  // Function to get MIME type for a file extension
+  function getMimeTypeForExtension(extension, callback) {
+    // Fallback MIME types for common extensions
+    var fallbackMimeTypes = {
+      'csv': 'text/csv',
+      'json': 'application/json',
+      'geojson': 'application/geo+json',
+      'xml': 'application/xml',
+      'rdf': 'application/rdf+xml',
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'txt': 'text/plain',
+      'zip': 'application/zip',
+      'tar': 'application/x-tar',
+      'gz': 'application/gzip',
+      'mp4': 'video/mp4',
+      'avi': 'video/x-msvideo',
+      'mov': 'video/quicktime',
+      'shp': 'application/x-esri-shape',
+      'kml': 'application/vnd.google-earth.kml+xml',
+      'kmz': 'application/vnd.google-earth.kmz',
+      'gml': 'application/gml+xml',
+      'gpkg': 'application/geopackage+sqlite3',
+      'sld': 'application/vnd.ogc.sld+xml'
+    };
+    
+    loadMimeTypeData().then(function(mapping) {
+      var ext = extension.toLowerCase();
+      var mimeType = mapping[ext] || fallbackMimeTypes[ext];
+      callback(mimeType);
+    }).catch(function(error) {
+      console.warn('Failed to load MIME type data:', error);
+      // Use fallback MIME types
+      var ext = extension.toLowerCase();
+      var mimeType = fallbackMimeTypes[ext];
+      callback(mimeType);
+    });
+  }
+
