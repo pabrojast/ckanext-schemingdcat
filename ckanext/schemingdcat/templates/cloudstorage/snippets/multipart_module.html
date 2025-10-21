@@ -224,34 +224,23 @@
                 startTime: Date.now()
             };
 
-            updateProgress(progressElements, 0, '{{ _("Preparing upload...") }}', false);
-
-            // Get resource ID from the form
+            // Get resource ID from the form (may be empty for new resources)
             var resourceIdInput = document.querySelector('input[name="id"]');
             var resourceId = resourceIdInput ? resourceIdInput.value : null;
 
-            // For NEW resources (no ID yet), we need to save the resource first
-            if (!resourceId || resourceId.trim() === '') {
-                console.log('[schemingdcat-cloudstorage] New resource - will upload when form is saved');
-                updateProgress(progressElements, 0, '{{ _("File ready. Click Save to upload to Azure") }}', false);
-                
-                // Store file for later upload
-                window.cloudStorageUploads[fileId].status = 'pending';
-                window.cloudStorageUploads[fileId].pendingAzureUpload = true;
-                
-                // Don't block the Save button for new resources
-                if (typeof unregisterUpload === 'function' && fileId) {
-                    unregisterUpload(fileId);
-                }
-                return;
-            }
-
-            // For EXISTING resources, upload directly to Azure
+            // Upload to Azure regardless of whether it's new or existing resource
             uploadFileToAzure(fileId, file, progressElements, resourceId);
         }
 
         function uploadFileToAzure(fileId, file, progressElements, resourceId) {
-            console.log('[schemingdcat-cloudstorage] Uploading existing resource to Azure, ID:', resourceId);
+            var isNewResource = !resourceId || resourceId.trim() === '';
+            
+            if (isNewResource) {
+                console.log('[schemingdcat-cloudstorage] Uploading NEW resource to Azure (temp location)');
+            } else {
+                console.log('[schemingdcat-cloudstorage] Uploading EXISTING resource to Azure, ID:', resourceId);
+            }
+            
             updateProgress(progressElements, 0, '{{ _("Requesting Azure upload URL...") }}', false);
 
             // Step 1: Get Azure SAS URL
@@ -261,7 +250,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    resource_id: resourceId,
+                    resource_id: resourceId || '',  // Empty string for new resources
                     filename: file.name,
                     content_type: file.type || 'application/octet-stream'
                 })
@@ -280,7 +269,16 @@
                 }
 
                 console.log('[schemingdcat-cloudstorage] Got Azure upload URL, starting upload...');
+                console.log('[schemingdcat-cloudstorage] Blob path:', data.blob_path);
+                console.log('[schemingdcat-cloudstorage] Is temp:', data.is_temp);
+                
                 updateProgress(progressElements, 5, '{{ _("Uploading to Azure Blob Storage...") }}', false);
+
+                // Store blob path for form submission
+                if (window.cloudStorageUploads[fileId]) {
+                    window.cloudStorageUploads[fileId].blobPath = data.blob_path;
+                    window.cloudStorageUploads[fileId].isTemp = data.is_temp;
+                }
 
                 // Step 2: Upload file directly to Azure
                 return uploadToAzure(file, data.upload_url, data.content_type, progressElements, fileId);
@@ -298,8 +296,10 @@
                     console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                 }
 
-                // Update the resource to reflect the uploaded file
-                updateResourceAfterUpload(resourceId, file.name);
+                // If it's an existing resource, update it
+                if (resourceId && resourceId.trim()) {
+                    updateResourceAfterUpload(resourceId, file.name);
+                }
 
                 // Enable the Save button now that upload is complete
                 if (typeof unregisterUpload === 'function' && fileId) {
@@ -316,7 +316,7 @@
                     window.cloudStorageUploads[fileId].status = 'failed';
                 }
 
-                // Enable the Save button even on error
+                // Enable the Save button even on error so user can try again
                 if (typeof unregisterUpload === 'function' && fileId) {
                     unregisterUpload(fileId);
                 }
@@ -325,13 +325,12 @@
 
         function updateResourceAfterUpload(resourceId, filename) {
             // Update the resource metadata to point to the uploaded file
-            // This is needed so CKAN knows the file is in cloud storage
             console.log('[schemingdcat-cloudstorage] Updating resource metadata for:', resourceId);
             
-            // The URL field should be updated to use the cloud storage path
+            // The URL field should be updated
             var urlInput = document.querySelector('input[name="url"]');
             if (urlInput && !urlInput.value) {
-                // Set a placeholder - CKAN's cloudstorage will handle the actual URL
+                // Set filename - CKAN's cloudstorage will handle the actual URL
                 urlInput.value = filename;
             }
         }
@@ -394,7 +393,7 @@
             // and will be tracked by the XHR hook in upload_script.html
         }
         
-        // Handle form submission for new resources with pending Azure uploads
+        // Handle form submission for resources with Azure uploads
         function setupFormSubmitHandler() {
             var form = document.querySelector('form.dataset-form, form#resource-edit');
             if (!form) {
@@ -408,30 +407,60 @@
             }
             form.dataset.cloudstorageHandlerInstalled = 'true';
 
-            console.log('[schemingdcat-cloudstorage] Setting up form submit handler for pending uploads');
+            console.log('[schemingdcat-cloudstorage] Setting up form submit handler for Azure uploads');
 
             form.addEventListener('submit', function(e) {
-                // Check if there are any pending Azure uploads
-                var hasPendingUpload = false;
-                var pendingUpload = null;
+                // Check if there are any completed Azure uploads
+                var hasAzureUpload = false;
+                var azureUpload = null;
+                var uploadId = null;
 
-                for (var uploadId in window.cloudStorageUploads) {
-                    var upload = window.cloudStorageUploads[uploadId];
-                    if (upload && upload.pendingAzureUpload && upload.status === 'pending') {
-                        hasPendingUpload = true;
-                        pendingUpload = upload;
+                for (var id in window.cloudStorageUploads) {
+                    var upload = window.cloudStorageUploads[id];
+                    if (upload && upload.status === 'completed' && upload.blobPath) {
+                        hasAzureUpload = true;
+                        azureUpload = upload;
+                        uploadId = id;
                         break;
                     }
                 }
 
-                if (!hasPendingUpload) {
-                    // No pending uploads, allow normal form submission
+                if (!hasAzureUpload) {
+                    // No Azure upload, allow normal form submission
+                    console.log('[schemingdcat-cloudstorage] No completed Azure upload, normal submission');
                     return true;
                 }
 
-                // We have a pending upload - for new resources, let CKAN handle it normally
-                // The file will be uploaded via the standard CKAN mechanism
-                console.log('[schemingdcat-cloudstorage] New resource with file - using standard CKAN upload');
+                console.log('[schemingdcat-cloudstorage] Found completed Azure upload:', azureUpload.blobPath);
+
+                // Clear the file input so the file isn't uploaded again
+                var fileInput = document.querySelector('input[type="file"][name="upload"]');
+                if (fileInput && fileInput.files.length > 0) {
+                    console.log('[schemingdcat-cloudstorage] Clearing file input to prevent duplicate upload');
+                    
+                    // Create a hidden input with the blob path
+                    var blobPathInput = document.createElement('input');
+                    blobPathInput.type = 'hidden';
+                    blobPathInput.name = 'azure_blob_path';
+                    blobPathInput.value = azureUpload.blobPath;
+                    form.appendChild(blobPathInput);
+                    
+                    // Also add a flag to indicate this is an Azure upload
+                    var azureFlagInput = document.createElement('input');
+                    azureFlagInput.type = 'hidden';
+                    azureFlagInput.name = 'azure_upload';
+                    azureFlagInput.value = 'true';
+                    form.appendChild(azureFlagInput);
+                    
+                    // Clear the file input by cloning it
+                    var newFileInput = fileInput.cloneNode(true);
+                    newFileInput.value = '';
+                    fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                    
+                    console.log('[schemingdcat-cloudstorage] Added azure_blob_path:', azureUpload.blobPath);
+                }
+
+                // Allow form submission
                 return true;
             });
         }
