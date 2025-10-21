@@ -224,17 +224,35 @@
                 startTime: Date.now()
             };
 
-            updateProgress(progressElements, 0, '{{ _("Requesting Azure upload URL...") }}', false);
+            updateProgress(progressElements, 0, '{{ _("Preparing upload...") }}', false);
 
             // Get resource ID from the form
             var resourceIdInput = document.querySelector('input[name="id"]');
-            if (!resourceIdInput || !resourceIdInput.value) {
-                console.error('[schemingdcat-cloudstorage] Resource ID not found');
-                updateProgress(progressElements, 0, '{{ _("Error: Resource ID not found") }}', true);
+            var resourceId = resourceIdInput ? resourceIdInput.value : null;
+
+            // For NEW resources (no ID yet), we need to save the resource first
+            if (!resourceId || resourceId.trim() === '') {
+                console.log('[schemingdcat-cloudstorage] New resource - will upload when form is saved');
+                updateProgress(progressElements, 0, '{{ _("File ready. Click Save to upload to Azure") }}', false);
+                
+                // Store file for later upload
+                window.cloudStorageUploads[fileId].status = 'pending';
+                window.cloudStorageUploads[fileId].pendingAzureUpload = true;
+                
+                // Don't block the Save button for new resources
+                if (typeof unregisterUpload === 'function' && fileId) {
+                    unregisterUpload(fileId);
+                }
                 return;
             }
 
-            var resourceId = resourceIdInput.value;
+            // For EXISTING resources, upload directly to Azure
+            uploadFileToAzure(fileId, file, progressElements, resourceId);
+        }
+
+        function uploadFileToAzure(fileId, file, progressElements, resourceId) {
+            console.log('[schemingdcat-cloudstorage] Uploading existing resource to Azure, ID:', resourceId);
+            updateProgress(progressElements, 0, '{{ _("Requesting Azure upload URL...") }}', false);
 
             // Step 1: Get Azure SAS URL
             fetch('/api/get-azure-upload-url', {
@@ -280,12 +298,8 @@
                     console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                 }
 
-                // Update the resource URL field to point to the blob
-                var urlInput = document.querySelector('input[name="url"]');
-                if (urlInput) {
-                    // The URL will be set by CKAN's cloudstorage when the form is saved
-                    console.log('[schemingdcat-cloudstorage] File uploaded to cloud storage');
-                }
+                // Update the resource to reflect the uploaded file
+                updateResourceAfterUpload(resourceId, file.name);
 
                 // Enable the Save button now that upload is complete
                 if (typeof unregisterUpload === 'function' && fileId) {
@@ -307,6 +321,19 @@
                     unregisterUpload(fileId);
                 }
             });
+        }
+
+        function updateResourceAfterUpload(resourceId, filename) {
+            // Update the resource metadata to point to the uploaded file
+            // This is needed so CKAN knows the file is in cloud storage
+            console.log('[schemingdcat-cloudstorage] Updating resource metadata for:', resourceId);
+            
+            // The URL field should be updated to use the cloud storage path
+            var urlInput = document.querySelector('input[name="url"]');
+            if (urlInput && !urlInput.value) {
+                // Set a placeholder - CKAN's cloudstorage will handle the actual URL
+                urlInput.value = filename;
+            }
         }
 
         function uploadToAzure(file, uploadUrl, contentType, progressElements, fileId) {
@@ -367,6 +394,48 @@
             // and will be tracked by the XHR hook in upload_script.html
         }
         
+        // Handle form submission for new resources with pending Azure uploads
+        function setupFormSubmitHandler() {
+            var form = document.querySelector('form.dataset-form, form#resource-edit');
+            if (!form) {
+                console.log('[schemingdcat-cloudstorage] No resource form found');
+                return;
+            }
+
+            // Check if we've already set up the handler
+            if (form.dataset.cloudstorageHandlerInstalled) {
+                return;
+            }
+            form.dataset.cloudstorageHandlerInstalled = 'true';
+
+            console.log('[schemingdcat-cloudstorage] Setting up form submit handler for pending uploads');
+
+            form.addEventListener('submit', function(e) {
+                // Check if there are any pending Azure uploads
+                var hasPendingUpload = false;
+                var pendingUpload = null;
+
+                for (var uploadId in window.cloudStorageUploads) {
+                    var upload = window.cloudStorageUploads[uploadId];
+                    if (upload && upload.pendingAzureUpload && upload.status === 'pending') {
+                        hasPendingUpload = true;
+                        pendingUpload = upload;
+                        break;
+                    }
+                }
+
+                if (!hasPendingUpload) {
+                    // No pending uploads, allow normal form submission
+                    return true;
+                }
+
+                // We have a pending upload - for new resources, let CKAN handle it normally
+                // The file will be uploaded via the standard CKAN mechanism
+                console.log('[schemingdcat-cloudstorage] New resource with file - using standard CKAN upload');
+                return true;
+            });
+        }
+        
         // Function to initialize cloudstorage when jQuery is available
         function initCloudStorage() {
             console.log('[schemingdcat-cloudstorage] Enhanced CloudStorage with Azure integration initialized');
@@ -377,6 +446,9 @@
             var cloudStorageAvailable = enhancedUploadEnabled || azureDirectUploadEnabled;
             
             if (cloudStorageAvailable) {
+                // Setup form submit handler for new resources
+                setupFormSubmitHandler();
+                
                 // Use jQuery if available, otherwise vanilla JS
                 if (typeof $ !== 'undefined' && $) {
                     // jQuery is available
