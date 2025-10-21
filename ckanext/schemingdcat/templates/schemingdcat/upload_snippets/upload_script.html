@@ -713,6 +713,13 @@
                 console.log('[Form Interceptor] Forcing cleanup of all active uploads');
                 window.__schemingdcat_active_uploads__ = {};
                 updateFormSubmitButtons(false);
+                
+                // IMPORTANT: Clear beforeunload warning to prevent "Do you want to leave?" dialog
+                console.log('[Form Interceptor] Clearing beforeunload warning');
+                window.onbeforeunload = null;
+                if (window._originalBeforeUnload) {
+                  window._originalBeforeUnload = null;
+                }
 
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (xhr.status >= 300 && xhr.status < 400) {

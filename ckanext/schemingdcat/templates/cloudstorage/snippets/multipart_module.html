@@ -301,11 +301,18 @@
                     updateResourceAfterUpload(resourceId, file.name);
                 }
 
-                // Enable the Save button now that upload is complete
+                // IMPORTANT: Unregister upload immediately to enable Save button
                 if (typeof unregisterUpload === 'function' && fileId) {
-                    setTimeout(function() {
-                        unregisterUpload(fileId);
-                    }, 1000);
+                    console.log('[schemingdcat-cloudstorage] Unregistering upload to enable Save button');
+                    unregisterUpload(fileId);
+                }
+                
+                // Clear beforeunload warning since upload is complete
+                if (window._originalBeforeUnload) {
+                    window.onbeforeunload = window._originalBeforeUnload;
+                    window._originalBeforeUnload = null;
+                } else {
+                    window.onbeforeunload = null;
                 }
             })
             .catch(function(error) {
