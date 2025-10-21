@@ -214,9 +214,9 @@
         // and synchronization issues.
 
         function simulateAzureDirectUpload(fileId, file, progressElements) {
-            console.log('[schemingdcat-cloudstorage] Azure Direct Upload - progress tracked by XHR hook');
+            console.log('[schemingdcat-cloudstorage] Starting Azure Direct Upload');
 
-            // Store upload reference for cleanup
+            // Store upload reference
             window.cloudStorageUploads[fileId] = {
                 file: file,
                 progress: progressElements,
@@ -224,23 +224,147 @@
                 startTime: Date.now()
             };
 
-            // Show initial state - actual progress will be updated by XHR hook
-            updateProgress(progressElements, 0, '{{ _("Connecting to Azure Blob Storage...") }}', false);
+            updateProgress(progressElements, 0, '{{ _("Requesting Azure upload URL...") }}', false);
+
+            // Get resource ID from the form
+            var resourceIdInput = document.querySelector('input[name="id"]');
+            if (!resourceIdInput || !resourceIdInput.value) {
+                console.error('[schemingdcat-cloudstorage] Resource ID not found');
+                updateProgress(progressElements, 0, '{{ _("Error: Resource ID not found") }}', true);
+                return;
+            }
+
+            var resourceId = resourceIdInput.value;
+
+            // Step 1: Get Azure SAS URL
+            fetch('/api/get-azure-upload-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    resource_id: resourceId,
+                    filename: file.name,
+                    content_type: file.type || 'application/octet-stream'
+                })
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(function(err) {
+                        throw new Error(err.error || 'Failed to get upload URL');
+                    });
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (!data.success || !data.upload_url) {
+                    throw new Error('Invalid response from server');
+                }
+
+                console.log('[schemingdcat-cloudstorage] Got Azure upload URL, starting upload...');
+                updateProgress(progressElements, 5, '{{ _("Uploading to Azure Blob Storage...") }}', false);
+
+                // Step 2: Upload file directly to Azure
+                return uploadToAzure(file, data.upload_url, data.content_type, progressElements, fileId);
+            })
+            .then(function() {
+                console.log('[schemingdcat-cloudstorage] Upload completed successfully');
+                updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', false);
+                
+                // Mark upload as complete
+                if (window.cloudStorageUploads[fileId]) {
+                    window.cloudStorageUploads[fileId].status = 'completed';
+                    window.cloudStorageUploads[fileId].endTime = Date.now();
+                    
+                    var duration = (window.cloudStorageUploads[fileId].endTime - window.cloudStorageUploads[fileId].startTime) / 1000;
+                    console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
+                }
+
+                // Update the resource URL field to point to the blob
+                var urlInput = document.querySelector('input[name="url"]');
+                if (urlInput) {
+                    // The URL will be set by CKAN's cloudstorage when the form is saved
+                    console.log('[schemingdcat-cloudstorage] File uploaded to cloud storage');
+                }
+
+                // Enable the Save button now that upload is complete
+                if (typeof unregisterUpload === 'function' && fileId) {
+                    setTimeout(function() {
+                        unregisterUpload(fileId);
+                    }, 1000);
+                }
+            })
+            .catch(function(error) {
+                console.error('[schemingdcat-cloudstorage] Upload error:', error);
+                updateProgress(progressElements, 0, '{{ _("Upload failed:") }} ' + error.message, true);
+                
+                if (window.cloudStorageUploads[fileId]) {
+                    window.cloudStorageUploads[fileId].status = 'failed';
+                }
+
+                // Enable the Save button even on error
+                if (typeof unregisterUpload === 'function' && fileId) {
+                    unregisterUpload(fileId);
+                }
+            });
+        }
+
+        function uploadToAzure(file, uploadUrl, contentType, progressElements, fileId) {
+            return new Promise(function(resolve, reject) {
+                var xhr = new XMLHttpRequest();
+
+                // Track progress
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var percentComplete = (e.loaded / e.total) * 95; // Reserve 5% for completion
+                        percentComplete = Math.max(5, Math.min(95, percentComplete)); // Between 5-95%
+                        updateProgress(progressElements, percentComplete, '{{ _("Uploading to Azure...") }} ' + Math.round(percentComplete) + '%', false);
+                    }
+                });
+
+                xhr.addEventListener('load', function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        updateProgress(progressElements, 100, '{{ _("Upload completed!") }}', false);
+                        resolve();
+                    } else {
+                        reject(new Error('Azure upload failed with status: ' + xhr.status));
+                    }
+                });
+
+                xhr.addEventListener('error', function() {
+                    reject(new Error('Network error during upload'));
+                });
+
+                xhr.addEventListener('abort', function() {
+                    reject(new Error('Upload cancelled'));
+                });
+
+                // Azure Blob Storage requires PUT method and specific headers
+                xhr.open('PUT', uploadUrl, true);
+                xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+                xhr.setRequestHeader('Content-Type', contentType);
+                
+                xhr.send(file);
+            });
         }
 
         function simulateStandardUpload(fileId, file, progressElements) {
-            console.log('[schemingdcat-cloudstorage] Standard upload - progress tracked by XHR hook');
+            console.log('[schemingdcat-cloudstorage] Standard upload - file selected, ready to save');
 
             // Store upload reference for cleanup
             window.cloudStorageUploads[fileId] = {
                 file: file,
                 progress: progressElements,
-                status: 'uploading',
+                status: 'ready',
                 startTime: Date.now()
             };
 
-            // Show initial state - actual progress will be updated by XHR hook
-            updateProgress(progressElements, 0, '{{ _("Preparing upload...") }}', false);
+            // For standard (non-Azure) uploads, the file will be uploaded when the form is submitted
+            // Show ready state
+            updateProgress(progressElements, 0, '{{ _("File ready. Click Save to upload") }}', false);
+            
+            // The actual upload will happen through the normal form submission
+            // and will be tracked by the XHR hook in upload_script.html
         }
         
         // Function to initialize cloudstorage when jQuery is available

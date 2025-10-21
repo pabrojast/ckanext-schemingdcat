@@ -140,3 +140,9 @@ def extract_spatial_extent_from_resource():
     from ckanext.schemingdcat.upload.api import extract_spatial_extent_from_resource_endpoint
     return extract_spatial_extent_from_resource_endpoint()
 
+@schemingdcat.route('/api/get-azure-upload-url', methods=['POST'])
+def get_azure_upload_url():
+    """API endpoint to get Azure Blob Storage SAS URL for direct upload."""
+    from ckanext.schemingdcat.upload.api import get_azure_upload_url_endpoint
+    return get_azure_upload_url_endpoint()
+
