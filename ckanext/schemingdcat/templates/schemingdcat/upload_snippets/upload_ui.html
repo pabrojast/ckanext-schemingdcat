@@ -177,9 +177,22 @@
 
     // File input change
     fileInput.addEventListener('change', function(e) {
+      // Prevent duplicate processing
+      if (fileInput.hasAttribute('data-processing')) {
+        console.log('[schemingdcat-upload] File input already processing, skipping');
+        return;
+      }
+      
+      // Mark as processing to prevent duplicates
+      fileInput.setAttribute('data-processing', 'true');
+      
       // Skip if cloudstorage is handling the upload
       if (cloudStorageActive && window.cloudStorageUploads) {
         console.log('[schemingdcat-upload] CloudStorage handling upload - skipping duplicate processing');
+        // Remove processing flag after a short delay
+        setTimeout(function() {
+          fileInput.removeAttribute('data-processing');
+        }, 100);
         return;
       }
       
@@ -191,9 +204,15 @@
           // Small pause for user to see the transition
           setTimeout(function() {
             processNewFile(files[0]);
+            // Remove processing flag
+            fileInput.removeAttribute('data-processing');
           }, 100);
         } else {
           processNewFile(files[0]);
+          // Remove processing flag
+          setTimeout(function() {
+            fileInput.removeAttribute('data-processing');
+          }, 100);
         }
       } else {
         // No file selected (user might have cancelled), don't block buttons
@@ -202,10 +221,20 @@
           unregisterUpload(uploadId);
           wrapper.removeAttribute('data-upload-id');
         }
+        // Remove processing flag
+        fileInput.removeAttribute('data-processing');
       }
     });
     
     function processNewFile(file) {
+      // Check if already processing this file
+      var currentFileName = wrapper.getAttribute('data-current-file');
+      if (currentFileName === file.name && filePreview.style.display !== 'none') {
+        console.log('[schemingdcat-upload] File already being processed: ' + file.name);
+        return;
+      }
+      wrapper.setAttribute('data-current-file', file.name);
+      
       // Disable beforeunload warning as soon as file is selected
       // This prevents "You will lose unsaved changes" message during upload
       if (window.onbeforeunload) {
@@ -221,16 +250,26 @@
         console.log('[schemingdcat-upload] Azure direct upload is enabled');
       }
       
-      // Register a temporary upload to keep buttons disabled
-      // This will be replaced by the actual XHR upload registration later
-      var tempUploadId = 'temp_' + Date.now();
-      registerUpload(tempUploadId, { temporary: true });
+      // Don't register temporary uploads for CloudStorage - it handles its own
+      if (!cloudStorageActive) {
+        // Register a temporary upload to keep buttons disabled
+        // This will be replaced by the actual XHR upload registration later
+        var tempUploadId = 'temp_' + Date.now();
+        registerUpload(tempUploadId, { temporary: true });
+        
+        // Store temp ID for cleanup
+        if (!window._tempUploadIds) window._tempUploadIds = [];
+        window._tempUploadIds.push(tempUploadId);
+        
+        // Clean up temp upload after a short delay (XHR hook will have registered by then)
+        setTimeout(function() {
+          unregisterUpload(tempUploadId);
+          var idx = window._tempUploadIds.indexOf(tempUploadId);
+          if (idx > -1) window._tempUploadIds.splice(idx, 1);
+        }, 2000);
+      }
       
-      // Store temp ID for cleanup
-      if (!window._tempUploadIds) window._tempUploadIds = [];
-      window._tempUploadIds.push(tempUploadId);
-      
-      // For Azure direct upload, don't wait for XHR hook - handle it directly
+      // For Azure direct upload, mark it for later processing
       if (isAzureDirectUpload) {
         // Mark this as an Azure upload for later processing
         wrapper.setAttribute('data-azure-upload', 'true');
@@ -238,13 +277,6 @@
         
         // The actual Azure upload will be handled by cloudstorage module
         console.log('[schemingdcat-upload] File marked for Azure direct upload: ' + file.name);
-      } else {
-        // Clean up temp upload after a short delay (XHR hook will have registered by then)
-        setTimeout(function() {
-          unregisterUpload(tempUploadId);
-          var idx = window._tempUploadIds.indexOf(tempUploadId);
-          if (idx > -1) window._tempUploadIds.splice(idx, 1);
-        }, 2000);
       }
       
       displayFile(file);
@@ -393,6 +425,12 @@
       
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
+        // Prevent duplicate processing
+        if (fileInput.hasAttribute('data-processing')) {
+          console.log('[schemingdcat-upload] File input already processing, skipping drop');
+          return;
+        }
+        
         fileInput.files = files;
         
         // Skip duplicate processing if cloudstorage is active
@@ -404,6 +442,9 @@
           return;
         }
         
+        // Mark as processing
+        fileInput.setAttribute('data-processing', 'true');
+        
         // Clear any previous file/upload before showing the new one
         if (filePreview.style.display !== 'none') {
           clearFile();
@@ -413,12 +454,18 @@
             // Trigger change event for other modules
             var event = new Event('change', { bubbles: true });
             fileInput.dispatchEvent(event);
+            // Remove processing flag
+            fileInput.removeAttribute('data-processing');
           }, 100);
         } else {
           processNewFile(files[0]);
           // Trigger change event for other modules
           var event = new Event('change', { bubbles: true });
           fileInput.dispatchEvent(event);
+          // Remove processing flag
+          setTimeout(function() {
+            fileInput.removeAttribute('data-processing');
+          }, 100);
         }
       }
     });
@@ -428,6 +475,13 @@
       var isBrowseBtn = e.target.closest('.browse-button');
       var isRemoveBtn = e.target.closest('.remove-file');
       var isPreviewArea = filePreview.contains(e.target);
+      
+      // Also check if already processing
+      if (fileInput.hasAttribute('data-processing')) {
+        console.log('[schemingdcat-upload] File input already processing, skipping click');
+        return;
+      }
+      
       if (!isBrowseBtn && !isRemoveBtn && !isPreviewArea) {
         // Open file selector
         fileInput.click();
@@ -562,8 +616,8 @@
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
       
-      // Show progress animation and mark as completed when initial animation finishes
-      if (progressBar) {
+      // Show progress animation - only if CloudStorage is not handling it
+      if (progressBar && !cloudStorageActive) {
         progressBar.style.display = 'block';
         var progressFill = progressBar.querySelector('.progress-fill');
         if (progressFill) {
@@ -573,6 +627,9 @@
         if (progressText) {
           progressText.textContent = 'Uploading...';
         }
+      } else if (progressBar && cloudStorageActive) {
+        // Hide our progress bar if CloudStorage is active
+        progressBar.style.display = 'none';
       }
       
       // Check clear checkbox if exists
@@ -590,6 +647,11 @@
       fileInput.value = '';
       dropzoneContent.style.display = 'block';
       filePreview.style.display = 'none';
+      
+      // Clear the current file attribute
+      wrapper.removeAttribute('data-current-file');
+      wrapper.removeAttribute('data-azure-upload');
+      wrapper.removeAttribute('data-azure-file-name');
 
       // Clear auto-filled form fields
       clearAutoFilledFields();
