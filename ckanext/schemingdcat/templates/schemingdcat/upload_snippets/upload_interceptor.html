@@ -72,6 +72,11 @@
               xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
             }
 
+            // Track retry attempts for 502/504 errors
+            var retryCount = 0;
+            var maxRetries = 3;
+            var retryDelay = 2000; // 2 seconds
+
             xhr.onload = function() {
               if (xhr.status >= 200 && xhr.status < 400) {
                 // Success (2xx) or Redirect (3xx)
@@ -181,7 +186,31 @@
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
                 console.error('[Form Interceptor] Response:', xhr.responseText);
 
-                // Try to extract error message from response
+                // Handle retryable errors (502, 504 - server timeout/gateway errors)
+                if ((xhr.status === 502 || xhr.status === 504) && retryCount < maxRetries) {
+                  retryCount++;
+                  console.warn('[Form Interceptor] Retrying form submission (' + retryCount + '/' + maxRetries + ') after ' + retryDelay + 'ms');
+
+                  // Update UI to show retry attempt
+                  var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                  submitButtons.forEach(function(btn) {
+                    btn.textContent = 'Retrying... (' + retryCount + '/' + maxRetries + ')';
+                  });
+
+                  // Retry after delay
+                  setTimeout(function() {
+                    console.log('[Form Interceptor] Executing retry #' + retryCount + ' for form submission');
+                    xhr.onload = xhr.onload; // Keep the same handler for retry
+                    xhr.open(form.method || 'POST', form.action || window.location.href, true);
+                    if (csrfToken) {
+                      xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+                    }
+                    xhr.send(formData);
+                  }, retryDelay);
+                  return;
+                }
+
+                // Extract error message from response
                 var errorMessage = 'Error submitting form (Status: ' + xhr.status + ')';
                 try {
                   var response = JSON.parse(xhr.responseText);
@@ -192,7 +221,7 @@
                   }
                 } catch (e) {
                   // Not JSON, try to extract from HTML
-                  if (xhr.responseText.indexOf('error') !== -1) {
+                  if (xhr.responseText && (xhr.responseText.indexOf('error') !== -1 || xhr.responseText.indexOf('Error') !== -1)) {
                     var tempDiv = document.createElement('div');
                     tempDiv.innerHTML = xhr.responseText;
                     var errorDiv = tempDiv.querySelector('.error-explanation, .alert-error, .alert-danger');
@@ -202,9 +231,21 @@
                   }
                 }
 
-                alert(errorMessage + '\n\nNote: The file was uploaded successfully to storage. Please check the server logs for details.');
+                // Build comprehensive error message
+                var fullMessage = errorMessage;
+                if (xhr.status >= 500) {
+                  fullMessage += '\n\n✅ The file was uploaded successfully to cloud storage.\n\n⚠️  However, there was a server error while saving the resource metadata. This is likely a temporary issue.';
+                } else {
+                  fullMessage += '\n\nNote: The file was uploaded successfully to storage. Please check the server logs for details.';
+                }
 
-                // Re-enable form
+                alert(fullMessage);
+
+                // Ensure clean state and re-enable form
+                console.log('[Form Interceptor] Cleaning up after error and re-enabling form');
+                window.__schemingdcat_active_uploads__ = {};
+                updateFormSubmitButtons(false);
+
                 var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
                 submitButtons.forEach(function(btn) {
                   btn.disabled = false;
@@ -218,7 +259,12 @@
 
             xhr.onerror = function() {
               console.error('[Form Interceptor] Network error during form submission');
-              alert('Network error. Please check your connection and try again.');
+
+              // Ensure clean state
+              window.__schemingdcat_active_uploads__ = {};
+              updateFormSubmitButtons(false);
+
+              alert('Network error. Please check your connection and try again.\n\n✅ The file was uploaded successfully to cloud storage.');
 
               // Re-enable form
               var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');

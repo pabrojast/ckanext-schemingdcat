@@ -383,7 +383,7 @@
               if (xhr.status === 413) {
                 errorMsg = 'File too large';
               } else if (xhr.status === 504 || xhr.status === 502) {
-                errorMsg = 'Server timeout - file may still be processing';
+                errorMsg = 'Server processing... (retry in progress)';
               } else if (xhr.status >= 500) {
                 errorMsg = 'Server error';
               }
@@ -391,7 +391,10 @@
                 updateAllProgressBars(undefined, errorMsg, true);
               }
               if (isTrackedUpload) {
-                unregisterUpload(uploadId);
+                // Small delay to ensure cleanup is visible to user
+                setTimeout(function() {
+                  unregisterUpload(uploadId);
+                }, 300);
               }
             } else if (xhr.status === 0) {
               // Status 0 can mean network error or CORS issue

@@ -373,38 +373,45 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Hook que se ejecuta después de crear un recurso.
         Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
         También iniciamos el movimiento de blobs de Azure en background.
+
+        IMPORTANT: This hook must not block the HTTP response. All processing is async.
         """
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource_id}")
         log.info(f"🔥 Resource details: name={resource.get('name', 'N/A')}, format={resource.get('format', 'N/A')}, url={resource.get('url', 'N/A')}")
-        
+
         # Check if this resource is already being processed
         processing_key = f"_processing_spatial_{resource_id}"
         if context.get(processing_key):
             log.info(f"⏭️ Resource {resource_id} is already being processed, skipping duplicate processing")
             return resource
-        
+
         # Mark as being processed
         context[processing_key] = True
-        
+
         try:
-            # FIRST: Handle Azure blob move if this was a direct upload
-            # Do this in a background thread to avoid blocking
+            # IMPORTANT: Schedule async processing without blocking
+            # Both Azure blob move and spatial extraction run in background
+
+            # FIRST: Handle Azure blob move if this was a direct upload (async)
             if resource.get('_azure_blob_uploaded') and resource.get('_azure_temp_path'):
                 log.info(f"🔷 [AZURE UPLOAD] Scheduling blob move for resource {resource_id}")
+                # Run in background - no blocking
                 self._schedule_azure_blob_move(resource)
-            
-            # SECOND: Process spatial extent extraction
-            log.info(f"🌍 Starting spatial extent extraction for resource {resource_id}")
+
+            # SECOND: Schedule spatial extent extraction (async via jobs or threading)
+            # This returns immediately without blocking
+            log.info(f"🌍 Scheduling spatial extent extraction for resource {resource_id}")
             self._process_spatial_extent_extraction_for_resource(context, resource)
-            log.info(f"✅ Completed spatial processing for resource {resource_id}")
-            
+            log.info(f"✅ Scheduled background processing for resource {resource_id}")
+
         except Exception as e:
-            log.error(f"❌ Error in after_create processing: {str(e)}", exc_info=True)
+            # Log error but don't raise - allow resource creation to complete
+            log.error(f"❌ Error scheduling background processing: {str(e)}", exc_info=True)
         finally:
             # Clean up the processing flag
             context.pop(processing_key, None)
-        
+
         return resource
     
     def _schedule_azure_blob_move(self, resource):
