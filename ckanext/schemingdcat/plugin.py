@@ -371,65 +371,84 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def after_create(self, context, resource):
         """
         Hook que se ejecuta después de crear un recurso.
-        Aquí encolamos jobs para procesamiento asincrónico en background.
 
-        IMPORTANT: This hook MUST NOT BLOCK the HTTP response. All processing must be async.
-        Returns immediately after enqueueing jobs.
+        CRITICAL: This hook MUST RETURN IMMEDIATELY without blocking!
+        All background processing is done in a daemon thread.
+
+        Do NOT wait for or call any blocking operations here.
+        The thread will handle everything asynchronously.
         """
         resource_id = resource.get('id', 'unknown')
-        log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource_id}")
-        log.info(f"🔥 Resource details: name={resource.get('name', 'N/A')}, format={resource.get('format', 'N/A')}, url={resource.get('url', 'N/A')}")
+        log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Check if this resource is already being processed
-        processing_key = f"_processing_spatial_{resource_id}"
-        if context.get(processing_key):
-            log.info(f"⏭️ Resource {resource_id} is already being processed, skipping duplicate processing")
-            return resource
+        # Copy resource data needed for background processing
+        # (we can't pass the resource dict directly - it may be modified)
+        resource_data = {
+            'id': resource.get('id'),
+            'package_id': resource.get('package_id'),
+            'url': resource.get('url'),
+            'format': resource.get('format'),
+            'name': resource.get('name'),
+            '_azure_blob_uploaded': resource.get('_azure_blob_uploaded'),
+            '_azure_temp_path': resource.get('_azure_temp_path'),
+            '_azure_filename': resource.get('_azure_filename'),
+        }
 
-        # Mark as being processed
-        context[processing_key] = True
+        # Start background processing in a daemon thread
+        # This returns immediately without blocking
+        def process_resource_async():
+            """Background thread - handles all async processing"""
+            try:
+                log.info(f"🔄 [BG THREAD] Starting async processing for resource {resource_id}")
 
-        try:
-            from ckan.lib import jobs
+                # 1. Handle Azure blob move if this was a direct upload
+                if resource_data.get('_azure_blob_uploaded') and resource_data.get('_azure_temp_path'):
+                    log.info(f"🔷 [BG THREAD] Processing Azure blob move for resource {resource_id}")
+                    try:
+                        job_data = {
+                            'resource_id': resource_data['id'],
+                            'temp_path': resource_data['_azure_temp_path'],
+                            'filename': resource_data.get('_azure_filename') or resource_data['_azure_temp_path'].split('/')[-1],
+                        }
+                        move_azure_blob_job(job_data)
+                        log.info(f"✅ [BG THREAD] Azure blob move completed for resource {resource_id}")
+                    except Exception as azure_error:
+                        log.error(f"❌ [BG THREAD] Azure blob move failed: {azure_error}", exc_info=True)
 
-            # FIRST: Enqueue Azure blob move job if this was a direct upload
-            if resource.get('_azure_blob_uploaded') and resource.get('_azure_temp_path'):
-                temp_path = resource['_azure_temp_path']
-                filename = resource.get('_azure_filename') or temp_path.split('/')[-1]
-
-                log.info(f"🔷 [AZURE UPLOAD] Enqueueing blob move job for resource {resource_id}")
-
+                # 2. Handle spatial extent extraction
+                log.info(f"🌍 [BG THREAD] Processing metadata extraction for resource {resource_id}")
                 try:
                     job_data = {
-                        'resource_id': resource_id,
-                        'temp_path': temp_path,
-                        'filename': filename
+                        'resource_id': resource_data['id'],
+                        'resource_url': resource_data['url'],
+                        'resource_format': resource_data['format'],
+                        'package_id': resource_data['package_id'],
                     }
+                    extract_comprehensive_metadata_job(job_data)
+                    log.info(f"✅ [BG THREAD] Metadata extraction completed for resource {resource_id}")
+                except Exception as extract_error:
+                    log.error(f"❌ [BG THREAD] Metadata extraction failed: {extract_error}", exc_info=True)
 
-                    job = jobs.enqueue(
-                        move_azure_blob_job,
-                        [job_data],
-                        title=f"Azure blob move for resource {resource_id[:8]}"
-                    )
+                log.info(f"✅ [BG THREAD] All async processing completed for resource {resource_id}")
 
-                    log.info(f"✅ [AZURE UPLOAD] Enqueued blob move job {job.id} for resource {resource_id}")
+            except Exception as e:
+                log.error(f"❌ [BG THREAD] Unexpected error in background processing: {e}", exc_info=True)
 
-                except Exception as enqueue_error:
-                    log.error(f"❌ [AZURE UPLOAD] Failed to enqueue blob move job: {enqueue_error}", exc_info=True)
-                    # Don't raise - let the resource creation complete
+        # Launch daemon thread - returns immediately
+        try:
+            import threading
+            thread = threading.Thread(
+                target=process_resource_async,
+                name=f"resource-async-{resource_id[:8]}",
+                daemon=True
+            )
+            thread.start()
+            log.info(f"✅ [HOOK] Background thread started, returning immediately")
+        except Exception as thread_error:
+            log.error(f"⚠️ [HOOK] Could not start background thread: {thread_error}")
+            # Don't block - just continue
 
-            # SECOND: Enqueue spatial extent extraction job
-            log.info(f"🌍 Enqueueing spatial extent extraction for resource {resource_id}")
-            self._process_spatial_extent_extraction_for_resource(context, resource)
-            log.info(f"✅ Enqueued background processing jobs for resource {resource_id}")
-
-        except Exception as e:
-            # Log error but don't raise - allow resource creation to complete
-            log.error(f"❌ Error enqueueing background jobs: {str(e)}", exc_info=True)
-        finally:
-            # Clean up the processing flag
-            context.pop(processing_key, None)
-
+        # RETURN IMMEDIATELY - don't wait for thread
         return resource
     
     def _schedule_azure_blob_move(self, resource):
