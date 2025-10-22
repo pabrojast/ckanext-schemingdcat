@@ -435,8 +435,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def _move_azure_blob_async(self, resource_id, temp_path, filename):
         """Move Azure blob from temporary location to final resource location (runs in background)."""
         try:
+            # Import at function level to avoid issues with thread context
             from ckanext.cloudstorage.storage import ResourceCloudStorage
             from azure.storage.blob import BlobServiceClient
+            import ckan.model as model
             
             log.info(f"🔷 [AZURE UPLOAD] Background thread: Moving blob for resource {resource_id}")
             
@@ -464,18 +466,33 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.info(f"✅ [AZURE UPLOAD] Copy initiated from {temp_path} to {final_path}")
             log.info(f"Copy ID: {copy_result.get('copy_id', 'unknown')}")
             
-            # Update resource URL in database immediately
-            # The file is accessible at both temp and final location during copy
+            # Update resource URL in database immediately using direct DB access
+            # Can't use CKAN actions here because we're in a background thread without HTTP context
             try:
-                import ckan.model as model
-                resource_obj = model.Resource.get(resource_id)
+                # Create new session for this thread
+                Session = model.meta.Session
+                
+                # Query resource
+                resource_obj = Session.query(model.Resource).filter_by(id=resource_id).first()
+                
                 if resource_obj:
+                    # Update using direct attribute assignment
                     resource_obj.url = filename
                     resource_obj.url_type = 'upload'
-                    model.Session.commit()
+                    
+                    # Commit directly without triggering hooks
+                    Session.commit()
+                    
                     log.info(f"✅ [AZURE UPLOAD] Updated resource URL in database: {filename}")
+                else:
+                    log.warning(f"⚠️ [AZURE UPLOAD] Resource {resource_id} not found in database")
             except Exception as e:
-                log.error(f"❌ [AZURE UPLOAD] Error updating resource URL: {str(e)}")
+                log.error(f"❌ [AZURE UPLOAD] Error updating resource URL: {str(e)}", exc_info=True)
+                # Try to rollback on error
+                try:
+                    Session.rollback()
+                except:
+                    pass
             
             # Schedule cleanup of temp blob in a separate thread (don't block)
             import threading
