@@ -83,6 +83,48 @@
     }
   }
 
+  if (!window.__schemingdcat_clearBeforeUnloadWarning__) {
+    window.__schemingdcat_clearBeforeUnloadWarning__ = function(context) {
+      var hadHandler = typeof window.onbeforeunload === 'function';
+      var hadJqueryHandlers = false;
+
+      if (window.jQuery && window.jQuery._data) {
+        try {
+          var events = window.jQuery._data(window, 'events');
+          if (events && events.beforeunload && events.beforeunload.length) {
+            hadJqueryHandlers = true;
+          }
+        } catch (inspectionError) {
+          // Older jQuery versions may not expose internal data structures
+        }
+      }
+
+      if (hadHandler || hadJqueryHandlers) {
+        var message = '[Form Interceptor] Clearing beforeunload warning';
+        if (context) {
+          message += ' (' + context + ')';
+        }
+        console.log(message);
+      }
+
+      window.onbeforeunload = null;
+
+      if (window.jQuery && typeof window.jQuery === 'function') {
+        try {
+          window.jQuery(window).off('beforeunload');
+        } catch (detachError) {
+          console.warn('[Form Interceptor] Failed to remove jQuery beforeunload handler:', detachError);
+        }
+      }
+
+      if (window._originalBeforeUnload) {
+        window._originalBeforeUnload = null;
+      }
+    };
+  }
+
+  var clearBeforeUnloadWarning = window.__schemingdcat_clearBeforeUnloadWarning__;
+
   // Global XHR progress hook to reflect real upload progress (no simulation)
   (function setupGlobalXhrProgressHook() {
     if (window.__schemingdcat_xhr_progress_hook_installed__) return;

@@ -33,12 +33,18 @@
             e.stopPropagation();
 
             // Disable beforeunload handlers to prevent "Are you sure you want to leave?" prompt
-            window.onbeforeunload = null;
-            var beforeUnloadHandlers = window.getEventListeners ? window.getEventListeners(window)['beforeunload'] : [];
-            if (beforeUnloadHandlers) {
-              beforeUnloadHandlers.forEach(function(handler) {
-                window.removeEventListener('beforeunload', handler.listener);
-              });
+            if (typeof clearBeforeUnloadWarning === 'function') {
+              clearBeforeUnloadWarning('form submit intercept');
+            } else if (window.__schemingdcat_clearBeforeUnloadWarning__) {
+              window.__schemingdcat_clearBeforeUnloadWarning__('form submit intercept');
+            } else {
+              window.onbeforeunload = null;
+              if (window.jQuery && typeof window.jQuery === 'function') {
+                window.jQuery(window).off('beforeunload');
+              }
+              if (window._originalBeforeUnload) {
+                window._originalBeforeUnload = null;
+              }
             }
 
             // Submit via AJAX to prevent HARAKIRI
@@ -75,6 +81,11 @@
                 console.log('[Form Interceptor] Forcing cleanup of all active uploads');
                 window.__schemingdcat_active_uploads__ = {};
                 updateFormSubmitButtons(false);
+                if (typeof clearBeforeUnloadWarning === 'function') {
+                  clearBeforeUnloadWarning('successful submit');
+                } else if (window.__schemingdcat_clearBeforeUnloadWarning__) {
+                  window.__schemingdcat_clearBeforeUnloadWarning__('successful submit');
+                }
 
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (xhr.status >= 300 && xhr.status < 400) {

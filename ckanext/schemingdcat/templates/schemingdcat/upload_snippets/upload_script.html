@@ -345,6 +345,49 @@
     }
   }
 
+  // Helper to clear any beforeunload warnings installed by CKAN or other modules
+  if (!window.__schemingdcat_clearBeforeUnloadWarning__) {
+    window.__schemingdcat_clearBeforeUnloadWarning__ = function(context) {
+      var hadHandler = typeof window.onbeforeunload === 'function';
+      var hadJqueryHandlers = false;
+
+      if (window.jQuery && window.jQuery._data) {
+        try {
+          var events = window.jQuery._data(window, 'events');
+          if (events && events.beforeunload && events.beforeunload.length) {
+            hadJqueryHandlers = true;
+          }
+        } catch (inspectionError) {
+          // Ignore inspection errors (older jQuery versions may not expose _data)
+        }
+      }
+
+      if (hadHandler || hadJqueryHandlers) {
+        var message = '[Form Interceptor] Clearing beforeunload warning';
+        if (context) {
+          message += ' (' + context + ')';
+        }
+        console.log(message);
+      }
+
+      window.onbeforeunload = null;
+
+      if (window.jQuery && typeof window.jQuery === 'function') {
+        try {
+          window.jQuery(window).off('beforeunload');
+        } catch (detachError) {
+          console.warn('[Form Interceptor] Failed to remove jQuery beforeunload handler:', detachError);
+        }
+      }
+
+      if (window._originalBeforeUnload) {
+        window._originalBeforeUnload = null;
+      }
+    };
+  }
+
+  var clearBeforeUnloadWarning = window.__schemingdcat_clearBeforeUnloadWarning__;
+
   // Global XHR progress hook to reflect real upload progress (no simulation)
   (function setupGlobalXhrProgressHook() {
     if (window.__schemingdcat_xhr_progress_hook_installed__) return;
@@ -696,13 +739,7 @@
             e.stopPropagation();
 
             // Disable beforeunload handlers to prevent "Are you sure you want to leave?" prompt
-            window.onbeforeunload = null;
-            var beforeUnloadHandlers = window.getEventListeners ? window.getEventListeners(window)['beforeunload'] : [];
-            if (beforeUnloadHandlers) {
-              beforeUnloadHandlers.forEach(function(handler) {
-                window.removeEventListener('beforeunload', handler.listener);
-              });
-            }
+            clearBeforeUnloadWarning('form submit intercept');
 
             // Submit via AJAX to prevent HARAKIRI
             var formData = new FormData(form);
@@ -749,6 +786,7 @@
                 console.log('[Form Interceptor] Forcing cleanup of all active uploads');
                 window.__schemingdcat_active_uploads__ = {};
                 updateFormSubmitButtons(false);
+                clearBeforeUnloadWarning('successful submit');
 
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (xhr.status >= 300 && xhr.status < 400) {
