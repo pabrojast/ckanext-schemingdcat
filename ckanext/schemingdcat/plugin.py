@@ -345,22 +345,17 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     log.warning("Azure not configured properly, skipping blob processing")
                     return resource
                 
-                # The blob is already uploaded to temp location
-                # We just need to set the URL to point to it
-                # When resource_create finishes, cloudstorage will move it to the final location
-                
                 # Extract filename from blob path
                 filename = blob_path.split('/')[-1]
                 
-                # Set the URL to the filename - cloudstorage will handle the rest
-                resource['url'] = filename
-                resource['url_type'] = 'upload'
-                
-                # Add a marker so cloudstorage knows this is already in Azure
+                # IMPORTANT: Don't set url or url_type here
+                # Just mark the resource with metadata about the Azure upload
+                # The actual blob move will happen asynchronously in after_create
                 resource['_azure_blob_uploaded'] = True
                 resource['_azure_temp_path'] = blob_path
+                resource['_azure_filename'] = filename
                 
-                log.info(f"✅ [AZURE UPLOAD] Configured resource to use Azure blob: {filename}")
+                log.info(f"✅ [AZURE UPLOAD] Marked resource for Azure blob processing: {filename}")
                 
                 # Clean up the azure_* fields so they don't get saved to DB
                 resource.pop('azure_upload', None)
@@ -377,7 +372,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         Hook que se ejecuta después de crear un recurso.
         Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
-        También movemos blobs de Azure de ubicaciones temporales a finales.
+        También iniciamos el movimiento de blobs de Azure en background.
         """
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource_id}")
@@ -394,9 +389,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         try:
             # FIRST: Handle Azure blob move if this was a direct upload
+            # Do this in a background thread to avoid blocking
             if resource.get('_azure_blob_uploaded') and resource.get('_azure_temp_path'):
-                log.info(f"🔷 [AZURE UPLOAD] Moving blob from temp to final location for resource {resource_id}")
-                self._move_azure_blob_to_final_location(resource)
+                log.info(f"🔷 [AZURE UPLOAD] Scheduling blob move for resource {resource_id}")
+                self._schedule_azure_blob_move(resource)
             
             # SECOND: Process spatial extent extraction
             log.info(f"🌍 Starting spatial extent extraction for resource {resource_id}")
@@ -411,20 +407,43 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         return resource
     
-    def _move_azure_blob_to_final_location(self, resource):
-        """Move Azure blob from temporary location to final resource location."""
+    def _schedule_azure_blob_move(self, resource):
+        """Schedule Azure blob move in background thread to avoid blocking the request."""
+        try:
+            import threading
+            
+            resource_id = resource['id']
+            temp_path = resource['_azure_temp_path']
+            filename = resource.get('_azure_filename') or temp_path.split('/')[-1]
+            
+            log.info(f"🔷 [AZURE UPLOAD] Starting background thread to move blob for resource {resource_id}")
+            
+            # Create thread to move blob without blocking
+            thread = threading.Thread(
+                target=self._move_azure_blob_async,
+                args=(resource_id, temp_path, filename),
+                name=f"azure-blob-move-{resource_id}"
+            )
+            thread.daemon = True  # Thread will die when main process dies
+            thread.start()
+            
+            log.info(f"✅ [AZURE UPLOAD] Background thread started for resource {resource_id}")
+            
+        except Exception as e:
+            log.error(f"❌ [AZURE UPLOAD] Error scheduling blob move: {str(e)}", exc_info=True)
+    
+    def _move_azure_blob_async(self, resource_id, temp_path, filename):
+        """Move Azure blob from temporary location to final resource location (runs in background)."""
         try:
             from ckanext.cloudstorage.storage import ResourceCloudStorage
             from azure.storage.blob import BlobServiceClient
+            
+            log.info(f"🔷 [AZURE UPLOAD] Background thread: Moving blob for resource {resource_id}")
             
             storage = ResourceCloudStorage({})
             if not storage.can_use_advanced_azure:
                 log.warning("Azure not available for blob move")
                 return
-            
-            resource_id = resource['id']
-            temp_path = resource['_azure_temp_path']
-            filename = temp_path.split('/')[-1]
             
             # Generate final path
             final_path = storage.path_from_filename(resource_id, filename)
@@ -435,38 +454,58 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
             container_client = svc_client.get_container_client(storage.container_name)
             
-            # Copy blob to final location
+            # Copy blob to final location (this is non-blocking server-side copy)
             source_blob = container_client.get_blob_client(temp_path)
             dest_blob = container_client.get_blob_client(final_path)
             
-            # Copy
+            # Start async copy (returns immediately)
             dest_blob.start_copy_from_url(source_blob.url)
             
-            # Wait for copy to complete (for small files this is instant)
+            log.info(f"✅ [AZURE UPLOAD] Copy initiated from {temp_path} to {final_path}")
+            
+            # Check copy status (with timeout to avoid infinite wait)
             import time
             max_wait = 30  # seconds
             waited = 0
             while waited < max_wait:
-                props = dest_blob.get_blob_properties()
-                if props.copy.status == 'success':
+                try:
+                    props = dest_blob.get_blob_properties()
+                    if props.copy.status == 'success':
+                        log.info(f"✅ [AZURE UPLOAD] Copy completed successfully")
+                        break
+                    elif props.copy.status == 'failed':
+                        log.error(f"❌ [AZURE UPLOAD] Copy failed: {props.copy.status_description}")
+                        return
+                    # Status is 'pending', wait a bit
+                    time.sleep(0.5)
+                    waited += 0.5
+                except Exception as e:
+                    log.warning(f"Could not check copy status: {e}")
                     break
-                time.sleep(0.5)
-                waited += 0.5
             
-            # Delete temp blob
+            # Delete temp blob (best effort, don't fail if it doesn't work)
             try:
                 source_blob.delete_blob()
-                log.info(f"✅ Deleted temporary blob: {temp_path}")
+                log.info(f"✅ [AZURE UPLOAD] Deleted temporary blob: {temp_path}")
             except Exception as e:
                 log.warning(f"Could not delete temp blob {temp_path}: {e}")
             
-            # Update resource URL to final path
-            resource['url'] = filename
-            log.info(f"✅ [AZURE UPLOAD] Successfully moved blob to final location: {final_path}")
+            # Update resource URL in database
+            try:
+                import ckan.model as model
+                resource_obj = model.Resource.get(resource_id)
+                if resource_obj:
+                    resource_obj.url = filename
+                    resource_obj.url_type = 'upload'
+                    model.Session.commit()
+                    log.info(f"✅ [AZURE UPLOAD] Updated resource URL in database: {filename}")
+            except Exception as e:
+                log.error(f"❌ [AZURE UPLOAD] Error updating resource URL: {str(e)}")
+            
+            log.info(f"✅ [AZURE UPLOAD] Blob move completed for resource {resource_id}")
             
         except Exception as e:
-            log.error(f"❌ [AZURE UPLOAD] Error moving blob: {str(e)}", exc_info=True)
-            # Don't fail - the file is uploaded, just in wrong location
+            log.error(f"❌ [AZURE UPLOAD] Error in async blob move: {str(e)}", exc_info=True)
 
 
     def after_update(self, context, resource):
