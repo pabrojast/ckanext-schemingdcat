@@ -713,32 +713,6 @@
                 console.log('[Form Interceptor] Forcing cleanup of all active uploads');
                 window.__schemingdcat_active_uploads__ = {};
                 updateFormSubmitButtons(false);
-                
-                // IMPORTANT: Clear ALL beforeunload warnings to prevent "Do you want to leave?" dialog
-                console.log('[Form Interceptor] Clearing beforeunload warning');
-                
-                // Function to force clear beforeunload
-                function forceClearBeforeUnload() {
-                  window.onbeforeunload = null;
-                  if (window._originalBeforeUnload) {
-                    window._originalBeforeUnload = null;
-                  }
-                  
-                  // Also try to remove event listeners (if they exist)
-                  try {
-                    var events = window.getEventListeners ? window.getEventListeners(window) : null;
-                    if (events && events.beforeunload) {
-                      events.beforeunload.forEach(function(listener) {
-                        window.removeEventListener('beforeunload', listener.listener);
-                      });
-                    }
-                  } catch(e) {
-                    // getEventListeners might not be available in all browsers
-                  }
-                }
-                
-                // Clear now
-                forceClearBeforeUnload();
 
                 // Handle redirects (301, 302, 303, 307, 308)
                 if (xhr.status >= 300 && xhr.status < 400) {
@@ -747,22 +721,17 @@
 
                   if (redirectUrl && redirectUrl !== window.location.href) {
                     console.log('[Form Interceptor] Following redirect to:', redirectUrl);
-                    // Clear again right before redirect
-                    forceClearBeforeUnload();
-                    // Small delay to ensure buttons are updated before redirect
+                    // Small delay to ensure cleanup is complete
                     setTimeout(function() {
-                      forceClearBeforeUnload(); // One more time
                       window.location.href = redirectUrl;
-                    }, 100);
+                    }, 50);
                     return;
                   } else {
                     // Fallback: reload page
                     console.log('[Form Interceptor] No redirect URL, reloading page');
-                    forceClearBeforeUnload();
                     setTimeout(function() {
-                      forceClearBeforeUnload();
                       window.location.reload();
-                    }, 100);
+                    }, 50);
                     return;
                   }
                 }
@@ -775,17 +744,13 @@
                     // JSON response
                     var response = JSON.parse(xhr.responseText);
                     if (response.success && response.redirect_url) {
-                      forceClearBeforeUnload();
                       setTimeout(function() {
-                        forceClearBeforeUnload();
                         window.location.href = response.redirect_url;
-                      }, 100);
+                      }, 50);
                     } else if (response.success) {
-                      forceClearBeforeUnload();
                       setTimeout(function() {
-                        forceClearBeforeUnload();
                         window.location.reload();
-                      }, 100);
+                      }, 50);
                     }
                   } else if (contentType && contentType.indexOf('text/html') !== -1) {
                     // HTML response - check if it's a redirect or full page
@@ -794,11 +759,9 @@
                     if (finalUrl !== window.location.href) {
                       // URL changed, redirect there
                       console.log('[Form Interceptor] Redirecting to:', finalUrl);
-                      forceClearBeforeUnload();
                       setTimeout(function() {
-                        forceClearBeforeUnload();
                         window.location.href = finalUrl;
-                      }, 100);
+                      }, 50);
                     } else {
                       // HTML response in same URL - likely the form was re-rendered with errors
                       // or we're already on the final page
@@ -814,40 +777,31 @@
                         var urlMatch = content.match(/url=(.+)$/i);
                         if (urlMatch) {
                           console.log('[Form Interceptor] Found meta refresh redirect to:', urlMatch[1]);
-                          forceClearBeforeUnload();
                           setTimeout(function() {
-                            forceClearBeforeUnload();
                             window.location.href = urlMatch[1];
-                          }, 100);
+                          }, 50);
                           return;
                         }
                       }
 
                       // For resource forms, always reload to ensure clean state
-                      // This prevents buttons getting stuck in "Uploading..." state
                       console.log('[Form Interceptor] Reloading page to show final state');
-                      forceClearBeforeUnload();
                       setTimeout(function() {
-                        forceClearBeforeUnload();
                         window.location.reload();
-                      }, 100);
+                      }, 50);
                     }
                   } else {
                     // Unknown response type, reload
-                    forceClearBeforeUnload();
                     setTimeout(function() {
-                      forceClearBeforeUnload();
                       window.location.reload();
-                    }, 100);
+                    }, 50);
                   }
                 } catch (e) {
                   console.warn('[Form Interceptor] Error parsing response:', e);
                   // Default: reload page
-                  forceClearBeforeUnload();
                   setTimeout(function() {
-                    forceClearBeforeUnload();
                     window.location.reload();
-                  }, 100);
+                  }, 50);
                 }
               } else {
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);

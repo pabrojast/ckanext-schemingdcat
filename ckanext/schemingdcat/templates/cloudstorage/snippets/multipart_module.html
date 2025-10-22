@@ -307,13 +307,11 @@
                     unregisterUpload(fileId);
                 }
                 
-                // Clear beforeunload warning since upload is complete
-                if (window._originalBeforeUnload) {
-                    window.onbeforeunload = window._originalBeforeUnload;
-                    window._originalBeforeUnload = null;
-                } else {
-                    window.onbeforeunload = null;
-                }
+                // IMPORTANT: Clear beforeunload warning since upload is complete
+                // Don't restore the original - we want to allow form submission without warnings
+                console.log('[schemingdcat-cloudstorage] Clearing beforeunload warning after successful upload');
+                window.onbeforeunload = null;
+                window._originalBeforeUnload = null;
             })
             .catch(function(error) {
                 console.error('[schemingdcat-cloudstorage] Upload error:', error);
