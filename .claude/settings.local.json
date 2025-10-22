@@ -4,7 +4,10 @@
       "Bash(grep:*)",
       "Bash(python:*)",
       "Bash(find:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(python3:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nrefactor: Move Azure blob upload to background job queue instead of daemon threads\n\n## Changes\n\n### New Job Function\n- **move_azure_blob_job()**: New background job function that handles Azure blob\n  move from temporary location to final resource location\n  - Runs in dedicated worker with its own DB session\n  - Avoids deadlock issues with main HTTP request session\n  - Includes cleanup monitoring for temp blob deletion\n  - Proper error handling and logging\n\n### Modified Backend\n- **after_create() hook**: Refactored to enqueue blob move job instead of\n  launching daemon threads\n  - Now calls jobs.enqueue(move_azure_blob_job) for Azure uploads\n  - Returns immediately without blocking HTTP response\n  - Improved error handling - doesn''t raise on job enqueue failures\n\n- **Deprecated Methods**: Marked as deprecated with warnings\n  - _schedule_azure_blob_move(): Kept for backward compatibility\n  - _move_azure_blob_async(): Replaced by move_azure_blob_job()\n\n## Problem Solved\nThe previous threading approach could cause SQLAlchemy session deadlocks when\nthe main HTTP request and the daemon thread both tried to access/update the\ndatabase simultaneously. This could result in 502 Bad Gateway timeouts.\n\n## Solution\nBy moving blob operations to the CKAN Jobs Queue:\n1. Blob move runs in a separate worker process\n2. Each worker has its own DB session (no deadlock)\n3. Worker only starts after HTTP response is sent\n4. Main request can complete quickly\n\n## Benefits\n- No database deadlocks\n- Cleaner, more reliable code\n- Follows CKAN best practices (use jobs queue for background work)\n- Better scalability\n- Consistent with existing metadata extraction job\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": []
   }

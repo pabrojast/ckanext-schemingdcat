@@ -371,10 +371,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def after_create(self, context, resource):
         """
         Hook que se ejecuta después de crear un recurso.
-        Aquí procesamos la extracción de extensión espacial para recursos geoespaciales.
-        También iniciamos el movimiento de blobs de Azure en background.
+        Aquí encolamos jobs para procesamiento asincrónico en background.
 
-        IMPORTANT: This hook must not block the HTTP response. All processing is async.
+        IMPORTANT: This hook MUST NOT BLOCK the HTTP response. All processing must be async.
+        Returns immediately after enqueueing jobs.
         """
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK FIRED] after_create called for resource: {resource_id}")
@@ -390,24 +390,42 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         context[processing_key] = True
 
         try:
-            # IMPORTANT: Schedule async processing without blocking
-            # Both Azure blob move and spatial extraction run in background
+            from ckan.lib import jobs
 
-            # FIRST: Handle Azure blob move if this was a direct upload (async)
+            # FIRST: Enqueue Azure blob move job if this was a direct upload
             if resource.get('_azure_blob_uploaded') and resource.get('_azure_temp_path'):
-                log.info(f"🔷 [AZURE UPLOAD] Scheduling blob move for resource {resource_id}")
-                # Run in background - no blocking
-                self._schedule_azure_blob_move(resource)
+                temp_path = resource['_azure_temp_path']
+                filename = resource.get('_azure_filename') or temp_path.split('/')[-1]
 
-            # SECOND: Schedule spatial extent extraction (async via jobs or threading)
-            # This returns immediately without blocking
-            log.info(f"🌍 Scheduling spatial extent extraction for resource {resource_id}")
+                log.info(f"🔷 [AZURE UPLOAD] Enqueueing blob move job for resource {resource_id}")
+
+                try:
+                    job_data = {
+                        'resource_id': resource_id,
+                        'temp_path': temp_path,
+                        'filename': filename
+                    }
+
+                    job = jobs.enqueue(
+                        move_azure_blob_job,
+                        [job_data],
+                        title=f"Azure blob move for resource {resource_id[:8]}"
+                    )
+
+                    log.info(f"✅ [AZURE UPLOAD] Enqueued blob move job {job.id} for resource {resource_id}")
+
+                except Exception as enqueue_error:
+                    log.error(f"❌ [AZURE UPLOAD] Failed to enqueue blob move job: {enqueue_error}", exc_info=True)
+                    # Don't raise - let the resource creation complete
+
+            # SECOND: Enqueue spatial extent extraction job
+            log.info(f"🌍 Enqueueing spatial extent extraction for resource {resource_id}")
             self._process_spatial_extent_extraction_for_resource(context, resource)
-            log.info(f"✅ Scheduled background processing for resource {resource_id}")
+            log.info(f"✅ Enqueued background processing jobs for resource {resource_id}")
 
         except Exception as e:
             # Log error but don't raise - allow resource creation to complete
-            log.error(f"❌ Error scheduling background processing: {str(e)}", exc_info=True)
+            log.error(f"❌ Error enqueueing background jobs: {str(e)}", exc_info=True)
         finally:
             # Clean up the processing flag
             context.pop(processing_key, None)
@@ -415,126 +433,26 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         return resource
     
     def _schedule_azure_blob_move(self, resource):
-        """Schedule Azure blob move in background thread to avoid blocking the request."""
-        try:
-            import threading
-            
-            resource_id = resource['id']
-            temp_path = resource['_azure_temp_path']
-            filename = resource.get('_azure_filename') or temp_path.split('/')[-1]
-            
-            log.info(f"🔷 [AZURE UPLOAD] Starting background thread to move blob for resource {resource_id}")
-            
-            # Create thread to move blob without blocking
-            thread = threading.Thread(
-                target=self._move_azure_blob_async,
-                args=(resource_id, temp_path, filename),
-                name=f"azure-blob-move-{resource_id}"
-            )
-            thread.daemon = True  # Thread will die when main process dies
-            thread.start()
-            
-            log.info(f"✅ [AZURE UPLOAD] Background thread started for resource {resource_id}")
-            
-        except Exception as e:
-            log.error(f"❌ [AZURE UPLOAD] Error scheduling blob move: {str(e)}", exc_info=True)
+        """
+        DEPRECATED: Azure blob move is now handled by move_azure_blob_job().
+
+        This method is kept for backward compatibility but should not be called.
+        All Azure blob moves are now enqueued as jobs in after_create().
+        """
+        log.warning("_schedule_azure_blob_move() is deprecated. Use move_azure_blob_job instead.")
+        pass
     
     def _move_azure_blob_async(self, resource_id, temp_path, filename):
-        """Move Azure blob from temporary location to final resource location (runs in background)."""
-        try:
-            # Import at function level to avoid issues with thread context
-            from ckanext.cloudstorage.storage import ResourceCloudStorage
-            from azure.storage.blob import BlobServiceClient
-            import ckan.model as model
-            
-            log.info(f"🔷 [AZURE UPLOAD] Background thread: Moving blob for resource {resource_id}")
-            
-            storage = ResourceCloudStorage({})
-            if not storage.can_use_advanced_azure:
-                log.warning("Azure not available for blob move")
-                return
-            
-            # Generate final path
-            final_path = storage.path_from_filename(resource_id, filename)
-            
-            log.info(f"🔷 Moving Azure blob from {temp_path} to {final_path}")
-            
-            # Connect to Azure
-            svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
-            container_client = svc_client.get_container_client(storage.container_name)
-            
-            # Copy blob to final location - Azure handles this server-side (fast)
-            source_blob = container_client.get_blob_client(temp_path)
-            dest_blob = container_client.get_blob_client(final_path)
-            
-            # Start async copy - returns immediately
-            copy_result = dest_blob.start_copy_from_url(source_blob.url)
-            
-            log.info(f"✅ [AZURE UPLOAD] Copy initiated from {temp_path} to {final_path}")
-            log.info(f"Copy ID: {copy_result.get('copy_id', 'unknown')}")
-            
-            # Update resource URL in database immediately using direct DB access
-            # Can't use CKAN actions here because we're in a background thread without HTTP context
-            try:
-                # Create new session for this thread
-                Session = model.meta.Session
-                
-                # Query resource
-                resource_obj = Session.query(model.Resource).filter_by(id=resource_id).first()
-                
-                if resource_obj:
-                    # Update using direct attribute assignment
-                    resource_obj.url = filename
-                    resource_obj.url_type = 'upload'
-                    
-                    # Commit directly without triggering hooks
-                    Session.commit()
-                    
-                    log.info(f"✅ [AZURE UPLOAD] Updated resource URL in database: {filename}")
-                else:
-                    log.warning(f"⚠️ [AZURE UPLOAD] Resource {resource_id} not found in database")
-            except Exception as e:
-                log.error(f"❌ [AZURE UPLOAD] Error updating resource URL: {str(e)}", exc_info=True)
-                # Try to rollback on error
-                try:
-                    Session.rollback()
-                except:
-                    pass
-            
-            # Schedule cleanup of temp blob in a separate thread (don't block)
-            import threading
-            def cleanup_later():
-                import time
-                # Wait for copy to complete (check every 2 seconds, max 60 seconds total)
-                for i in range(30):  # 30 * 2 = 60 seconds max
-                    try:
-                        time.sleep(2)
-                        props = dest_blob.get_blob_properties()
-                        if props.copy.status == 'success':
-                            log.info(f"✅ [AZURE UPLOAD] Copy completed after {(i+1)*2} seconds")
-                            # Delete temp blob
-                            try:
-                                source_blob.delete_blob()
-                                log.info(f"✅ [AZURE UPLOAD] Deleted temp blob: {temp_path}")
-                            except Exception as e:
-                                log.warning(f"Could not delete temp blob: {e}")
-                            return
-                        elif props.copy.status == 'failed':
-                            log.error(f"❌ [AZURE UPLOAD] Copy failed: {props.copy.status_description}")
-                            return
-                    except Exception as e:
-                        log.warning(f"Error checking copy status: {e}")
-                        return
-                log.warning(f"⚠️ [AZURE UPLOAD] Copy timeout after 60s, temp blob may remain: {temp_path}")
-            
-            cleanup_thread = threading.Thread(target=cleanup_later, name=f"cleanup-{resource_id}")
-            cleanup_thread.daemon = True
-            cleanup_thread.start()
-            
-            log.info(f"✅ [AZURE UPLOAD] Blob move initiated for resource {resource_id}")
-            
-        except Exception as e:
-            log.error(f"❌ [AZURE UPLOAD] Error in async blob move: {str(e)}", exc_info=True)
+        """
+        DEPRECATED: Azure blob move is now handled by move_azure_blob_job().
+
+        This method is kept for backward compatibility but should not be called.
+        All Azure blob moves are now enqueued as jobs in after_create().
+
+        Migration: Use move_azure_blob_job() instead, which runs in a worker
+        with its own DB session, avoiding deadlock issues.
+        """
+        log.warning("_move_azure_blob_async() is deprecated. Use move_azure_blob_job instead.")
 
 
     def after_update(self, context, resource):
@@ -1277,6 +1195,148 @@ def _update_resource_metadata_direct_db(resource_id, metadata_fields, model):
             model.Session.rollback()
         except:
             pass
+        return False
+
+
+def move_azure_blob_job(job_data):
+    """
+    Job function to move Azure blob from temporary location to final resource location.
+
+    This job runs in a background worker with its own DB session, avoiding deadlocks
+    with the main HTTP request session.
+
+    Args:
+        job_data: Dictionary with 'resource_id', 'temp_path', 'filename'
+
+    Returns:
+        True if successful, False otherwise
+    """
+    import logging
+    import threading
+    import time
+
+    log = logging.getLogger(__name__)
+
+    try:
+        # Validate job_data
+        if not isinstance(job_data, dict):
+            log.error(f"[AZURE BLOB JOB] Invalid job_data type: {type(job_data)}")
+            return False
+
+        resource_id = job_data.get('resource_id')
+        temp_path = job_data.get('temp_path')
+        filename = job_data.get('filename')
+
+        if not all([resource_id, temp_path, filename]):
+            log.error(f"[AZURE BLOB JOB] Missing required fields. Got: {job_data.keys()}")
+            return False
+
+        log.info(f"[AZURE BLOB JOB] Starting blob move for resource {resource_id}")
+        log.info(f"[AZURE BLOB JOB] From: {temp_path} To: {filename}")
+
+        # Import CKAN modules
+        import ckan.model as model
+        import ckan.plugins.toolkit as toolkit
+        from ckanext.cloudstorage.storage import ResourceCloudStorage
+        from azure.storage.blob import BlobServiceClient
+
+        # Check if Azure is configured
+        storage = ResourceCloudStorage({})
+        if not storage.can_use_advanced_azure:
+            log.warning("[AZURE BLOB JOB] Azure not available for blob move")
+            return False
+
+        # Generate final path
+        final_path = storage.path_from_filename(resource_id, filename)
+        log.info(f"[AZURE BLOB JOB] Final path: {final_path}")
+
+        # Connect to Azure
+        svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
+        container_client = svc_client.get_container_client(storage.container_name)
+
+        # Get blob clients
+        source_blob = container_client.get_blob_client(temp_path)
+        dest_blob = container_client.get_blob_client(final_path)
+
+        # Start async copy - returns immediately
+        copy_result = dest_blob.start_copy_from_url(source_blob.url)
+        log.info(f"[AZURE BLOB JOB] Copy initiated. Copy ID: {copy_result.get('copy_id', 'unknown')}")
+
+        # Update resource URL in database using new session (no deadlock risk)
+        try:
+            Session = model.meta.Session
+            resource_obj = Session.query(model.Resource).filter_by(id=resource_id).first()
+
+            if resource_obj:
+                resource_obj.url = filename
+                resource_obj.url_type = 'upload'
+                Session.commit()
+                log.info(f"[AZURE BLOB JOB] Updated resource URL in DB: {filename}")
+            else:
+                log.warning(f"[AZURE BLOB JOB] Resource {resource_id} not found in database")
+                Session.rollback()
+                return False
+
+        except Exception as db_error:
+            log.error(f"[AZURE BLOB JOB] Error updating resource URL: {str(db_error)}", exc_info=True)
+            try:
+                Session.rollback()
+            except:
+                pass
+            return False
+
+        # Schedule cleanup of temp blob in separate thread
+        def cleanup_later():
+            """Wait for Azure copy to complete, then delete temp blob"""
+            log.info(f"[AZURE BLOB JOB] Starting cleanup monitor for temp blob: {temp_path}")
+
+            try:
+                # Check copy status every 2 seconds, max 60 seconds
+                for i in range(30):
+                    time.sleep(2)
+                    try:
+                        props = dest_blob.get_blob_properties()
+                        copy_status = props.copy.status
+
+                        if copy_status == 'success':
+                            log.info(f"[AZURE BLOB JOB] Copy completed after {(i+1)*2} seconds")
+
+                            # Delete temp blob
+                            try:
+                                source_blob.delete_blob()
+                                log.info(f"[AZURE BLOB JOB] Deleted temp blob: {temp_path}")
+                            except Exception as del_error:
+                                log.warning(f"[AZURE BLOB JOB] Could not delete temp blob: {del_error}")
+                            return True
+
+                        elif copy_status == 'failed':
+                            log.error(f"[AZURE BLOB JOB] Copy failed: {props.copy.status_description}")
+                            return False
+
+                    except Exception as status_error:
+                        log.warning(f"[AZURE BLOB JOB] Error checking copy status: {status_error}")
+                        return False
+
+                log.warning(f"[AZURE BLOB JOB] Copy timeout after 60s, temp blob may remain: {temp_path}")
+                return False
+
+            except Exception as cleanup_error:
+                log.error(f"[AZURE BLOB JOB] Cleanup error: {cleanup_error}", exc_info=True)
+                return False
+
+        # Launch cleanup in background thread
+        cleanup_thread = threading.Thread(
+            target=cleanup_later,
+            name=f"azure-cleanup-{resource_id}",
+            daemon=True
+        )
+        cleanup_thread.start()
+
+        log.info(f"[AZURE BLOB JOB] Blob move completed successfully for resource {resource_id}")
+        return True
+
+    except Exception as e:
+        log.error(f"[AZURE BLOB JOB] Unexpected error: {str(e)}", exc_info=True)
         return False
 
 
