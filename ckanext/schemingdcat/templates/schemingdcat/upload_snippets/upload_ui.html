@@ -214,6 +214,13 @@
         console.log('[schemingdcat-upload] Disabled beforeunload warning for upload');
       }
       
+      // Check if Azure direct upload is enabled
+      var isAzureDirectUpload = false;
+      if (typeof window.use_azure_direct_upload !== 'undefined' && window.use_azure_direct_upload) {
+        isAzureDirectUpload = true;
+        console.log('[schemingdcat-upload] Azure direct upload is enabled');
+      }
+      
       // Register a temporary upload to keep buttons disabled
       // This will be replaced by the actual XHR upload registration later
       var tempUploadId = 'temp_' + Date.now();
@@ -223,12 +230,22 @@
       if (!window._tempUploadIds) window._tempUploadIds = [];
       window._tempUploadIds.push(tempUploadId);
       
-      // Clean up temp upload after a short delay (XHR hook will have registered by then)
-      setTimeout(function() {
-        unregisterUpload(tempUploadId);
-        var idx = window._tempUploadIds.indexOf(tempUploadId);
-        if (idx > -1) window._tempUploadIds.splice(idx, 1);
-      }, 2000);
+      // For Azure direct upload, don't wait for XHR hook - handle it directly
+      if (isAzureDirectUpload) {
+        // Mark this as an Azure upload for later processing
+        wrapper.setAttribute('data-azure-upload', 'true');
+        wrapper.setAttribute('data-azure-file-name', file.name);
+        
+        // The actual Azure upload will be handled by cloudstorage module
+        console.log('[schemingdcat-upload] File marked for Azure direct upload: ' + file.name);
+      } else {
+        // Clean up temp upload after a short delay (XHR hook will have registered by then)
+        setTimeout(function() {
+          unregisterUpload(tempUploadId);
+          var idx = window._tempUploadIds.indexOf(tempUploadId);
+          if (idx > -1) window._tempUploadIds.splice(idx, 1);
+        }, 2000);
+      }
       
       displayFile(file);
 

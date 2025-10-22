@@ -348,14 +348,17 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 # Extract filename from blob path
                 filename = blob_path.split('/')[-1]
                 
-                # IMPORTANT: Don't set url or url_type here
-                # Just mark the resource with metadata about the Azure upload
-                # The actual blob move will happen asynchronously in after_create
+                # Set the resource URL to the final filename
+                # The cloudstorage module will handle the actual blob operations
+                resource['url'] = filename
+                resource['url_type'] = 'upload'
+                
+                # Mark for async processing but don't block
                 resource['_azure_blob_uploaded'] = True
                 resource['_azure_temp_path'] = blob_path
                 resource['_azure_filename'] = filename
                 
-                log.info(f"✅ [AZURE UPLOAD] Marked resource for Azure blob processing: {filename}")
+                log.info(f"✅ [AZURE UPLOAD] Resource configured for Azure blob: {filename}")
                 
                 # Clean up the azure_* fields so they don't get saved to DB
                 resource.pop('azure_upload', None)
@@ -373,18 +376,22 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Hook que se ejecuta después de crear un recurso.
 
         CRITICAL: This hook MUST RETURN IMMEDIATELY without blocking!
-        All background processing is done in a daemon thread.
-
-        Do NOT wait for or call any blocking operations here.
-        The thread will handle everything asynchronously.
+        All background processing is done via job queue.
         """
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Copy resource data needed for background processing
-        # (we can't pass the resource dict directly - it may be modified)
-        resource_data = {
-            'id': resource.get('id'),
+        # Check if job queue is available
+        try:
+            from ckan.lib import jobs
+            job_queue_available = True
+        except ImportError:
+            job_queue_available = False
+            log.warning("Job queue not available, using threading fallback")
+
+        # Prepare job data
+        job_data = {
+            'resource_id': resource.get('id'),
             'package_id': resource.get('package_id'),
             'url': resource.get('url'),
             'format': resource.get('format'),
@@ -394,968 +401,188 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             '_azure_filename': resource.get('_azure_filename'),
         }
 
-        # Start background processing in a daemon thread
-        # This returns immediately without blocking
-        def process_resource_async():
-            """Background thread - handles all async processing"""
+        if job_queue_available:
+            # Queue jobs for async processing
             try:
-                log.info(f"🔄 [BG THREAD] Starting async processing for resource {resource_id}")
-
-                # 1. Handle Azure blob move if this was a direct upload
-                if resource_data.get('_azure_blob_uploaded') and resource_data.get('_azure_temp_path'):
-                    log.info(f"🔷 [BG THREAD] Processing Azure blob move for resource {resource_id}")
-                    try:
-                        job_data = {
-                            'resource_id': resource_data['id'],
-                            'temp_path': resource_data['_azure_temp_path'],
-                            'filename': resource_data.get('_azure_filename') or resource_data['_azure_temp_path'].split('/')[-1],
-                        }
-                        move_azure_blob_job(job_data)
-                        log.info(f"✅ [BG THREAD] Azure blob move completed for resource {resource_id}")
-                    except Exception as azure_error:
-                        log.error(f"❌ [BG THREAD] Azure blob move failed: {azure_error}", exc_info=True)
-
-                # 2. Handle spatial extent extraction
-                log.info(f"🌍 [BG THREAD] Processing metadata extraction for resource {resource_id}")
-                try:
-                    job_data = {
-                        'resource_id': resource_data['id'],
-                        'resource_url': resource_data['url'],
-                        'resource_format': resource_data['format'],
-                        'package_id': resource_data['package_id'],
+                # 1. Queue Azure blob move if needed
+                if resource.get('_azure_blob_uploaded') and resource.get('_azure_temp_path'):
+                    azure_job_data = {
+                        'resource_id': resource.get('id'),
+                        'temp_path': resource.get('_azure_temp_path'),
+                        'filename': resource.get('_azure_filename', 'unknown'),
                     }
-                    extract_comprehensive_metadata_job(job_data)
-                    log.info(f"✅ [BG THREAD] Metadata extraction completed for resource {resource_id}")
-                except Exception as extract_error:
-                    log.error(f"❌ [BG THREAD] Metadata extraction failed: {extract_error}", exc_info=True)
+                    jobs.enqueue(
+                        move_azure_blob_job,
+                        [azure_job_data],
+                        title=f"Move Azure blob for resource {resource_id[:8]}",
+                        queue='priority'  # Use priority queue for faster processing
+                    )
+                    log.info(f"✅ [HOOK] Queued Azure blob move job for resource {resource_id}")
 
-                log.info(f"✅ [BG THREAD] All async processing completed for resource {resource_id}")
-
-            except Exception as e:
-                log.error(f"❌ [BG THREAD] Unexpected error in background processing: {e}", exc_info=True)
-
-        # Launch daemon thread - returns immediately
-        try:
-            import threading
-            thread = threading.Thread(
-                target=process_resource_async,
-                name=f"resource-async-{resource_id[:8]}",
-                daemon=True
-            )
-            thread.start()
-            log.info(f"✅ [HOOK] Background thread started, returning immediately")
-        except Exception as thread_error:
-            log.error(f"⚠️ [HOOK] Could not start background thread: {thread_error}")
-            # Don't block - just continue
-
-        # RETURN IMMEDIATELY - don't wait for thread
-        return resource
-    
-    def _schedule_azure_blob_move(self, resource):
-        """
-        DEPRECATED: Azure blob move is now handled by move_azure_blob_job().
-
-        This method is kept for backward compatibility but should not be called.
-        All Azure blob moves are now enqueued as jobs in after_create().
-        """
-        log.warning("_schedule_azure_blob_move() is deprecated. Use move_azure_blob_job instead.")
-        pass
-    
-    def _move_azure_blob_async(self, resource_id, temp_path, filename):
-        """
-        DEPRECATED: Azure blob move is now handled by move_azure_blob_job().
-
-        This method is kept for backward compatibility but should not be called.
-        All Azure blob moves are now enqueued as jobs in after_create().
-
-        Migration: Use move_azure_blob_job() instead, which runs in a worker
-        with its own DB session, avoiding deadlock issues.
-        """
-        log.warning("_move_azure_blob_async() is deprecated. Use move_azure_blob_job instead.")
-
-
-    def after_update(self, context, resource):
-        """
-        Hook que se ejecuta después de actualizar un recurso.
-        También procesamos la extracción de extensión espacial aquí.
-        """
-        resource_id = resource.get('id', 'unknown')
-        
-        # Check if this resource is already being processed
-        processing_key = f"_processing_spatial_{resource_id}"
-        if context.get(processing_key):
-            log.info(f"⏭️ Resource {resource_id} is already being processed, skipping duplicate processing")
-            return resource
-        
-        # Mark as being processed
-        context[processing_key] = True
-        
-        try:
-            # FIRST: Process spatial extent extraction
-            self._process_spatial_extent_extraction_for_resource(context, resource)
-        except Exception as e:
-            log.warning(f"Error in spatial extent extraction after resource update: {str(e)}")
-        finally:
-            # Clean up the processing flag
-            context.pop(processing_key, None)
-        
-        return resource
-
-    # Hook para evitar problemas con otros plugins durante actualizaciones espaciales automáticas
-    def before_dataset_update(self, context, current, updated):
-        """
-        Hook que se ejecuta antes de actualizar un dataset.
-        Detecta si es una actualización automática de spatial extent para evitar hooks problemáticos.
-        """
-        # Detectar si esta es una actualización automática de spatial extent
-        if (context.get('spatial_extent_update') or 
-            context.get('skip_spatial_hooks') or
-            (len(updated.keys()) == 2 and 'id' in updated and 'spatial_extent' in updated)):
-            
-            # Marcar el contexto para que otros plugins sepan que es una actualización espacial
-            context['__spatial_extent_auto_update__'] = True
-            log.debug(f"Detected automatic spatial extent update for dataset {updated.get('id', 'unknown')}")
-        
-        return updated
-        
-    def _is_potential_spatial_resource(self, resource):
-        """
-        Determina si un recurso puede contener datos geoespaciales.
-        
-        IMPORTANTE: Los archivos ZIP con shapefiles se suben con formato "SHP", no "ZIP"
-        porque CKAN detecta el contenido y asigna el formato basado en los archivos principales.
-        
-        Args:
-            resource: El diccionario del recurso
-            
-        Returns:
-            bool: True si el recurso puede contener datos espaciales
-        """
-        resource_id = resource.get('id', 'unknown')
-        log.info(f"🔍 [SPATIAL CHECK] Checking if resource {resource_id} is spatial")
-        
-        try:
-            # Verificar formato del recurso - CLAVE: Los ZIP se marcan como "SHP"
-            resource_format = resource.get('format', '').lower()
-            spatial_formats = ['shp', 'shapefile', 'zip', 'tif', 'tiff', 'geotiff', 
-                              'kml', 'gpkg', 'geopackage', 'geojson', 'json']
-            
-            log.info(f"🔍 Resource format: '{resource_format}' (original: '{resource.get('format', '')}')")
-            log.info(f"🔍 Spatial formats list: {spatial_formats}")
-            
-            if resource_format in spatial_formats:
-                log.info(f"✅ Resource {resource_id} HAS SPATIAL FORMAT: {resource_format}")
-                return True
-                
-            # Verificar extensión del archivo en la URL como respaldo
-            url = resource.get('url', '')
-            log.info(f"🔍 Resource URL: {url}")
-            
-            if url:
-                url_lower = url.lower()
-                spatial_extensions = ['.shp', '.zip', '.tif', '.tiff', '.kml', '.gpkg', '.geojson']
-                log.info(f"🔍 Checking URL extensions: {spatial_extensions}")
-                
-                for ext in spatial_extensions:
-                    if url_lower.endswith(ext):
-                        log.info(f"✅ Resource {resource_id} HAS SPATIAL EXTENSION in URL: {ext}")
-                        return True
-            
-            log.info(f"❌ Resource {resource_id} is NOT spatial - format: '{resource_format}', url: '{url}'")
-            return False
-            
-        except Exception as e:
-            log.error(f"❌ Error checking if resource is spatial: {str(e)}", exc_info=True)
-            # En caso de error, ser conservador y asumir que no es espacial
-            return False
-        
-    def _is_potential_non_spatial_resource(self, resource):
-        """
-        Determina si un recurso no espacial podría aportar metadata técnica/contenido.
-        Considera formatos de documentos y tabulares: csv, xls, xlsx, pdf, txt, json.
-        """
-        try:
-            resource_format = (resource.get('format') or '').lower()
-            non_spatial_formats = ['csv', 'xls', 'xlsx', 'pdf', 'txt', 'json']
-            if resource_format in non_spatial_formats:
-                return True
-
-            url = (resource.get('url') or '').lower()
-            non_spatial_exts = ['.csv', '.xls', '.xlsx', '.pdf', '.txt', '.json']
-            for ext in non_spatial_exts:
-                if url.endswith(ext):
-                    return True
-        except Exception:
-            pass
-        return False
-
-    def _extract_spatial_extent_from_resource(self, resource):
-        """
-        Extrae la extensión espacial de un recurso.
-        
-        Args:
-            resource: El diccionario del recurso
-            
-        Returns:
-            dict: La extensión espacial en formato GeoJSON o None
-        """
-        try:
-            # Verificar si el módulo de extensión espacial está disponible
-            try:
-                from ckanext.schemingdcat.spatial_extent import extent_extractor
-            except ImportError:
-                log.debug("Spatial extent extraction module not available")
-                return None
-            
-            resource_url = resource.get('url')
-            resource_format = resource.get('format', '').upper()
-            
-            if not resource_url:
-                log.debug("No URL found for resource")
-                return None
-                
-            log.info(f"Attempting to extract spatial extent from resource: {resource_url} (format: {resource_format})")
-            
-            # Usar el método para extraer desde URL de recurso
-            extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
-            
-            if extent:
-                log.info(f"Successfully extracted extent: {extent}")
-                return extent
-            else:
-                log.debug(f"Could not extract extent from resource: {resource_url}")
-                return None
-                
-        except Exception as e:
-            log.warning(f"Error extracting spatial extent from resource: {str(e)}")
-            return None
-        
-    def _should_skip_spatial_extraction(self, context, package_id):
-        """
-        Determina si se debe omitir la extracción automática de extensión espacial.
-        
-        Retorna True si:
-        - El dataset ya tiene spatial_extent (respeta datos existentes)
-        - Hay datos manuales en el contexto del formulario (respeta entrada manual)
-        - Se detecta que el usuario ha ingresado datos manualmente
-        
-        Args:
-            context: El contexto de CKAN
-            package_id: ID del dataset
-            
-        Returns:
-            bool: True si se debe omitir la extracción automática
-        """
-        log.info(f"🚦 [SKIP CHECK] Checking if spatial extraction should be skipped for dataset {package_id}")
-        
-        try:
-            # 1. Verificar si el dataset actual ya tiene spatial_extent
-            try:
-                dataset = toolkit.get_action('package_show')(context, {'id': package_id})
-                existing_extent = dataset.get('spatial_extent')
-                log.info(f"🚦 Dataset existing spatial_extent: {existing_extent}")
-                
-                if existing_extent and existing_extent.strip():
-                    log.info(f"🚫 SKIPPING: Dataset {package_id} already has spatial extent: {existing_extent[:100]}...")
-                    return True
-            except Exception as e:
-                log.info(f"🚦 Could not retrieve dataset {package_id} for extent check: {str(e)}")
-                # Si no podemos obtener el dataset, continuamos con otras verificaciones
-            
-            # 2. Verificar si hay datos manuales en el contexto/request actual
-            # Esto captura casos donde el usuario está editando el formulario
-            request_data = getattr(context.get('request'), 'form', None) if context.get('request') else None
-            log.info(f"🚦 Request form data available: {request_data is not None}")
-            
-            if request_data:
-                manual_extent = request_data.get('spatial_extent')
-                log.info(f"🚦 Manual extent in form data: {manual_extent}")
-                if manual_extent and manual_extent.strip():
-                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in form data: {manual_extent[:100]}...")
-                    return True
-            
-            # 3. Verificar flags del contexto que indican omitir extracción
-            skip_flags = {
-                'skip_spatial_extraction': context.get('skip_spatial_extraction'),
-                'manual_spatial_extent': context.get('manual_spatial_extent')
-            }
-            log.info(f"🚦 Context skip flags: {skip_flags}")
-            
-            if context.get('skip_spatial_extraction') or context.get('manual_spatial_extent'):
-                log.info(f"🚫 SKIPPING: Spatial extraction explicitly skipped via context flags")
-                return True
-            
-            # 4. Verificar si hay datos en el diccionario de datos del contexto
-            # Esto captura casos donde se está creando/editando un dataset completo
-            package_dict = context.get('package_dict', {})
-            log.info(f"🚦 Package dict available: {isinstance(package_dict, dict)}")
-            
-            if isinstance(package_dict, dict):
-                manual_extent = package_dict.get('spatial_extent')
-                log.info(f"🚦 Manual extent in package dict: {manual_extent}")
-                if manual_extent and manual_extent.strip():
-                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in package dict: {manual_extent[:100]}...")
-                    return True
-            
-            # 5. Verificar en la sesión (para casos de formularios multi-paso)
-            session = context.get('session')
-            log.info(f"🚦 Session available: {session is not None and hasattr(session, 'get')}")
-            
-            if session and hasattr(session, 'get'):
-                session_extent = session.get('spatial_extent')
-                log.info(f"🚦 Session extent: {session_extent}")
-                if session_extent and session_extent.strip():
-                    log.info(f"🚫 SKIPPING: Manual spatial extent detected in session: {session_extent[:100]}...")
-                    return True
-            
-            log.info(f"✅ PROCEEDING: No existing or manual spatial extent detected for dataset {package_id} - auto-extraction allowed")
-            return False
-            
-        except Exception as e:
-            log.error(f"❌ Error checking if spatial extraction should be skipped: {str(e)}", exc_info=True)
-            # En caso de error, ser conservador y omitir la extracción automática
-            log.info(f"🚫 SKIPPING: Due to error in skip check")
-            return True
-        
-    def _process_spatial_extent_extraction_for_resource(self, context, resource):
-        """
-        Procesa la extracción de extensión espacial para un recurso específico que pueda ser geoespacial.
-        Ahora ejecuta en segundo plano para no bloquear al usuario.
-        
-        Args:
-            context: El contexto de CKAN
-            resource: El diccionario del recurso
-        """
-        resource_id = resource.get('id', 'unknown')
-        log.info(f"🔄 [PROCESSING] Starting spatial extent extraction process for resource {resource_id}")
-        log.info(f"🔄 Resource context keys: {list(context.keys()) if context else 'No context'}")
-        
-        try:
-            # Verificar si es un recurso potencialmente analizables (espacial o no)
-            log.info(f"🔄 Step 1: Checking if resource is analyzable (spatial or non-spatial)...")
-            is_spatial = self._is_potential_spatial_resource(resource)
-            is_non_spatial = self._is_potential_non_spatial_resource(resource)
-            if not (is_spatial or is_non_spatial):
-                log.info(f"⏭️ STOPPING: Resource {resource_id} not analyzable (unsupported format)")
-                return
-            if is_spatial:
-                log.info(f"🎯 CONFIRMED: Resource {resource_id} is spatial")
-            if is_non_spatial and not is_spatial:
-                log.info(f"🎯 CONFIRMED: Resource {resource_id} is non-spatial but analyzable for technical/content metadata")
-            
-            # Obtener el dataset padre
-            package_id = resource.get('package_id')
-            log.info(f"🔄 Step 2: Found package_id: {package_id}")
-            
-            if not package_id:
-                log.error(f"❌ STOPPING: No package_id found for resource {resource_id}")
-                return
-                
-            # Verificar si ya existe spatial_extent (manual o previo) — solo afecta a campos espaciales
-            log.info(f"🔄 Step 3: Checking if spatial extraction should be skipped...")
-            skip_spatial = self._should_skip_spatial_extraction(context, package_id) if is_spatial else True
-            if skip_spatial and not is_non_spatial:
-                log.info(f"⏭️ STOPPING: Skipping spatial extraction and no non-spatial metadata to extract for dataset {package_id}")
-                return
-            
-            # **PROCESAMIENTO ASÍNCRONO**: Usar CKAN Jobs Queue (preferido) o threading como fallback
-            log.info(f"🔄 Step 4: Starting asynchronous processing for resource {resource_id}")
-            
-            try:
-                # Método 1: Usar CKAN Jobs Queue (recomendado)
-                log.info(f"🔄 Importing jobs library...")
-                from ckan.lib import jobs
-                import threading
-                import time
-                log.info(f"✅ Jobs library imported successfully")
-                
-                # Verificar si hay worker activo antes de encolar
-                try:
-                    # Intentar obtener estadísticas de la cola para verificar workers
-                    from ckan.lib.jobs import DEFAULT_QUEUE_NAME
-                    import redis
-                    
-                    # Si redis no está disponible o no hay workers, usar threading
-                    redis_url = toolkit.config.get('ckan.redis.url', 'redis://localhost:6379/1')
-                    
-                    # Verificación simple: Si el job anterior sigue pendiente por mucho tiempo, usar threading
-                    if hasattr(jobs, 'get_queue'):
-                        queue = jobs.get_queue(DEFAULT_QUEUE_NAME)
-                        if queue and hasattr(queue, 'count'):
-                            pending_jobs = queue.count
-                            if pending_jobs > 5:  # Si hay muchos jobs pendientes, probablemente no hay worker
-                                log.warning(f"Too many pending jobs ({pending_jobs}), worker may be inactive. Using threading fallback.")
-                                raise ImportError("Worker appears inactive")
-                    
-                except Exception:
-                    # Si no podemos verificar la cola, intentar encolar de todas formas
-                    pass
-                
-                # Preparar datos para el job
-                job_data = {
+                # 2. Queue metadata extraction
+                metadata_job_data = {
                     'resource_id': resource.get('id'),
                     'resource_url': resource.get('url'),
                     'resource_format': resource.get('format'),
-                    'package_id': package_id,
-                    'skip_spatial': bool(skip_spatial)
+                    'package_id': resource.get('package_id'),
                 }
-                
-                log.info(f"Preparing to enqueue job with data: {job_data}")
-                
-                # Encolar el job de extracción espacial
-                try:
-                    job = jobs.enqueue(
-                        extract_comprehensive_metadata_job,
-                        [job_data],  # Pasar job_data como primer argumento en la lista
-                        title=f"Comprehensive metadata extraction for resource {resource.get('id', 'unknown')[:8]}"
-                    )
-                    
-                    log.info(f"Successfully enqueued spatial extent extraction job {job.id} for resource {resource.get('id', 'unknown')}")
-                    log.info(f"Job status: {getattr(job, 'get_status', lambda: 'unknown')()}")
-                    
-                except Exception as enqueue_error:
-                    log.error(f"Failed to enqueue job: {enqueue_error}", exc_info=True)
-                    # Fall back to threading
-                    log.warning("Falling back to threading due to enqueue failure")
-                    self._process_spatial_extent_with_threading(resource, package_id)
-                    return
-                
-                # Programar fallback a threading si el job no se procesa en un tiempo razonable
-                
-                def check_job_progress():
-                    """Verificar si el job se procesa y usar threading como fallback si no."""
-                    time.sleep(30)  # Esperar 30 segundos
-                    try:
-                        # Si el job sigue sin procesar, usar threading
-                        if hasattr(job, 'get_status') and job.get_status() == 'queued':
-                            log.warning(f"Job {job.id} still queued after 30s, starting threading fallback")
-                            self._process_spatial_extent_with_threading(resource, package_id)
-                    except Exception as e:
-                        log.debug(f"Could not check job status: {e}")
-                
-                # Lanzar verificación en background
-                threading.Thread(target=check_job_progress, daemon=True).start()
-                
-            except ImportError:
-                # Fallback: Usar threading si jobs no está disponible
-                log.warning("CKAN Jobs not available, falling back to threading")
-                self._process_spatial_extent_with_threading(resource, package_id)
-            except TypeError as e:
-                # Error de parámetros en jobs.enqueue (versión antigua)
-                log.warning(f"Jobs.enqueue parameter error: {str(e)}, falling back to threading")
-                self._process_spatial_extent_with_threading(resource, package_id)
-                
-        except Exception as e:
-            log.warning(f"Error in spatial extent extraction for resource: {str(e)}")
-            # No lanzar excepción para no interrumpir el flujo normal de creación del recurso
+                jobs.enqueue(
+                    extract_comprehensive_metadata_job,
+                    [metadata_job_data],
+                    title=f"Extract metadata for resource {resource_id[:8]}",
+                    queue='default'
+                )
+                log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
 
-    def _process_spatial_extent_with_threading(self, resource, package_id):
-        """Fallback method using threading for spatial extent extraction WITHOUT Flask context."""
+            except Exception as queue_error:
+                log.error(f"⚠️ [HOOK] Could not queue jobs: {queue_error}")
+                # Fall back to threading
+                self._fallback_async_processing(job_data)
+        else:
+            # Use threading fallback
+            self._fallback_async_processing(job_data)
+
+        # RETURN IMMEDIATELY - don't wait for jobs
+        return resource
+
+    def _fallback_async_processing(self, job_data):
+        """Fallback async processing using threading when job queue is not available."""
         import threading
         
-        def extract_spatial_extent_async():
-            """Función que ejecuta la extracción en segundo plano SIN contexto Flask."""
+        def process_async():
             try:
-                log.info(f"Starting background spatial extent extraction for resource {resource.get('id', 'unknown')} (threading mode)")
+                # Process Azure blob if needed
+                if job_data.get('_azure_blob_uploaded') and job_data.get('_azure_temp_path'):
+                    azure_data = {
+                        'resource_id': job_data['resource_id'],
+                        'temp_path': job_data['_azure_temp_path'],
+                        'filename': job_data.get('_azure_filename', 'unknown'),
+                    }
+                    move_azure_blob_job(azure_data)
                 
-                # Llamar directamente a la función de extracción comprensiva
-                job_data = {
-                    'resource_id': resource.get('id'),
-                    'resource_url': resource.get('url'),
-                    'resource_format': resource.get('format'),
-                    'package_id': package_id
+                # Process metadata extraction
+                metadata_data = {
+                    'resource_id': job_data['resource_id'],
+                    'resource_url': job_data['url'],
+                    'resource_format': job_data['format'],
+                    'package_id': job_data['package_id'],
                 }
-                
-                log.info(f"Calling extract_comprehensive_metadata_job with data: {job_data}")
-                result = extract_comprehensive_metadata_job(job_data)
-                log.info(f"extract_comprehensive_metadata_job returned: {result}")
-                        
+                extract_comprehensive_metadata_job(metadata_data)
             except Exception as e:
-                log.error(f"General error in background spatial extent extraction for resource {resource.get('id', 'unknown')}: {str(e)}", exc_info=True)
+                log.error(f"Error in fallback async processing: {e}", exc_info=True)
         
-        try:
-            # Lanzar el thread de extracción en segundo plano
-            extraction_thread = threading.Thread(
-                target=extract_spatial_extent_async,
-                name=f"spatial_extent_extraction_{resource.get('id', 'unknown')[:8]}",
-                daemon=True  # Thread daemon para que no bloquee el cierre de la aplicación
-            )
-            extraction_thread.start()
-            
-            log.info(f"Successfully started background thread for spatial extent extraction - resource {resource.get('id', 'unknown')} (threading mode)")
-            log.info(f"Thread name: {extraction_thread.name}, alive: {extraction_thread.is_alive()}")
-            
-        except Exception as thread_error:
-            log.error(f"Failed to start threading fallback for resource {resource.get('id', 'unknown')}: {thread_error}", exc_info=True)
+        thread = threading.Thread(
+            target=process_async,
+            name=f"resource-async-{job_data['resource_id'][:8]}",
+            daemon=True
+        )
+        thread.start()
+        log.info(f"Started fallback threading for resource {job_data['resource_id']}")
 
-    def _update_dataset_spatial_extent_direct_db(self, package_id, extent):
-        """
-        Actualización directa en BD sin contexto Flask - para uso en threads.
-        
-        Args:
-            package_id: ID del dataset
-            extent: La extensión espacial en formato GeoJSON
-            
-        Returns:
-            bool: True si la actualización fue exitosa
-        """
-        try:
-            import ckan.model as model
-            import json
-            
-            # Preparar los datos
-            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
-            
-            log.info(f"Attempting direct DB update for dataset {package_id}")
-            
-            # Actualizar directamente en la base de datos sin contexto Flask
-            package = model.Package.get(package_id)
-            if not package:
-                log.error(f"Package {package_id} not found in database for direct update")
-                return False
-            
-            # Buscar si ya existe un extra con spatial_extent
-            spatial_extra = None
-            for extra in package.extras_list:
-                if extra.key == 'spatial_extent':
-                    spatial_extra = extra
-                    break
-            
-            if spatial_extra:
-                # Actualizar extra existente
-                spatial_extra.value = extent_json
-                log.debug(f"Updated existing spatial_extent extra for dataset {package_id}")
-            else:
-                # Crear nuevo extra
-                from ckan.model.package_extra import PackageExtra
-                new_extra = PackageExtra(
-                    package_id=package_id,
-                    key='spatial_extent',
-                    value=extent_json
-                )
-                model.Session.add(new_extra)
-                log.debug(f"Created new spatial_extent extra for dataset {package_id}")
-            
-            # Commit los cambios
-            model.Session.commit()
-            
-            log.info(f"Successfully updated spatial_extent for dataset {package_id} via direct DB access")
-            return True
-            
-        except Exception as e:
-            try:
-                model.Session.rollback()
-            except:
-                pass
-            log.error(f"Error in direct DB update for dataset {package_id}: {str(e)}", exc_info=True)
-            return False
+class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
+    plugins.implements(plugins.IConfigurer)
+    plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IGroupForm, inherit=True)
+    plugins.implements(plugins.IActions)
+    plugins.implements(plugins.IValidators)
 
-    def _update_resource_spatial_extent_direct_db(self, resource_id, extent):
-        """
-        Actualización directa del campo spatial_extent en un RESOURCE sin contexto Flask.
-        
-        Args:
-            resource_id: ID del resource
-            extent: La extensión espacial en formato GeoJSON
-            
-        Returns:
-            bool: True si la actualización fue exitosa
-        """
-        try:
-            import ckan.model as model
-            import json
-            
-            # Preparar los datos
-            extent_json = json.dumps(extent) if isinstance(extent, dict) else extent
-            
-            log.info(f"Attempting direct DB update for resource {resource_id}")
-            
-            # Actualizar directamente en la base de datos sin contexto Flask
-            resource = model.Resource.get(resource_id)
-            if not resource:
-                log.error(f"Resource {resource_id} not found in database for direct update")
-                return False
-            
-            # Los resources en CKAN pueden tener campos adicionales directamente en el modelo
-            # Actualizar el campo spatial_extent directamente
-            
-            # Método 1: Intentar actualizar como campo directo del resource
-            try:
-                # Verificar si spatial_extent ya existe en el resource
-                setattr(resource, 'spatial_extent', extent_json)
-                model.Session.commit()
-                log.info(f"Successfully updated spatial_extent for resource {resource_id} via direct field access")
-                return True
-            except Exception as field_error:
-                log.debug(f"Direct field access failed: {field_error}")
-                model.Session.rollback()
-            
-            # Método 2: Usar resource extras (si existe)
-            try:
-                # Algunos recursos pueden usar extras como los datasets
-                if hasattr(resource, 'extras'):
-                    spatial_extra = None
-                    for extra in resource.extras:
-                        if extra.key == 'spatial_extent':
-                            spatial_extra = extra
-                            break
-                    
-                    if spatial_extra:
-                        spatial_extra.value = extent_json
-                        log.debug(f"Updated existing spatial_extent extra for resource {resource_id}")
-                    else:
-                        # Crear nuevo extra para resource (si el modelo lo soporta)
-                        from ckan.model.resource import ResourceExtra
-                        new_extra = ResourceExtra(
-                            resource_id=resource_id,
-                            key='spatial_extent',
-                            value=extent_json
-                        )
-                        model.Session.add(new_extra)
-                        log.debug(f"Created new spatial_extent extra for resource {resource_id}")
-                    
-                    model.Session.commit()
-                    log.info(f"Successfully updated spatial_extent for resource {resource_id} via resource extras")
-                    return True
-            except Exception as extra_error:
-                log.debug(f"Resource extras method failed: {extra_error}")
-                model.Session.rollback()
-            
-            # Método 3: Actualizar usando SQL directo (fallback)
-            try:
-                # Actualización SQL directa como último recurso
-                sql = """
-                UPDATE resource 
-                SET spatial_extent = :extent_json 
-                WHERE id = :resource_id
-                """
-                model.Session.execute(sql, {
-                    'extent_json': extent_json,
-                    'resource_id': resource_id
-                })
-                model.Session.commit()
-                log.info(f"Successfully updated spatial_extent for resource {resource_id} via SQL update")
-                return True
-            except Exception as sql_error:
-                log.error(f"SQL update method failed: {sql_error}")
-                model.Session.rollback()
-                return False
-            
-        except Exception as e:
-            try:
-                model.Session.rollback()
-            except:
-                pass
-            log.error(f"Error in direct DB update for resource {resource_id}: {str(e)}", exc_info=True)
-            return False
+    def about_template(self):
+        return "schemingdcat/group/about.html"
 
 
-def _cleanup_empty_metadata_fields_post_processing(resource_id, model):
-    """
-    Post-processing cleanup of empty metadata fields AFTER successful metadata extraction.
-    This version works directly with the database and only clears truly empty fields.
-    """
-    try:
-        import json
-        
-        # Get the resource from the database
-        resource = model.Resource.get(resource_id)
-        if not resource:
-            return False
-        
-        # List of metadata fields that should be cleaned if they are truly empty
-        metadata_fields_to_check = [
-            'data_fields', 'data_statistics', 'data_domains',
-            'geographic_coverage', 'administrative_boundaries',
-            'compression_info', 'format_version', 'file_integrity',
-            'content_type_detected', 'document_pages', 'spreadsheet_sheets', 
-            'text_content_info', 'file_size_bytes'
-        ]
-        
-        # Get current values and check for empty lists
-        fields_to_clear = []
-        for field_name in metadata_fields_to_check:
-            field_value = getattr(resource, field_name, None)
-            
-            if field_value is not None:
-                # Check if it's a JSON string that represents an empty list
-                if isinstance(field_value, str):
-                    try:
-                        parsed_value = json.loads(field_value)
-                        if isinstance(parsed_value, list):
-                            # Filter out meaningless values
-                            filtered_list = []
-                            for item in parsed_value:
-                                if item is not None:
-                                    item_str = str(item).strip()
-                                    if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                                        filtered_list.append(item_str)
-                            
-                            # Only clear if the list is truly empty after filtering
-                            if not filtered_list:
-                                fields_to_clear.append(field_name)
-                    except (json.JSONDecodeError, TypeError):
-                        # If not JSON, check if it's an empty string
-                        if not field_value.strip():
-                            fields_to_clear.append(field_name)
-                
-                # Check lists directly
-                elif isinstance(field_value, list):
-                    filtered_list = []
-                    for item in field_value:
-                        if item is not None:
-                            item_str = str(item).strip()
-                            if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                                filtered_list.append(item_str)
-                    
-                    if not filtered_list:
-                        fields_to_clear.append(field_name)
-        
-        # Clear the truly empty fields
-        if fields_to_clear:
-            print(f"Post-processing cleanup: Clearing {len(fields_to_clear)} empty fields for resource {resource_id}: {fields_to_clear}")
-            for field_name in fields_to_clear:
-                setattr(resource, field_name, None)
-            
-            model.Session.add(resource)
-            model.Session.commit()
-            print(f"Post-processing cleanup: Successfully cleared empty fields for resource {resource_id}")
-        
-        return True
-        
-    except Exception as e:
-        print(f"Post-processing cleanup failed for resource {resource_id}: {e}")
-        try:
-            model.Session.rollback()
-        except:
-            pass
-        return False
+class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
+    plugins.implements(plugins.IConfigurer)
+    plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IGroupForm, inherit=True)
+    plugins.implements(plugins.IActions)
+    plugins.implements(plugins.IValidators)
 
-
-def _update_resource_metadata_direct_db(resource_id, metadata_fields, model):
-    """
-    Fallback function to update resource metadata directly in the database
-    when the CKAN action fails in a worker context.
-    """
-    try:
-        import json
-        from ckan.model.resource import ResourceExtra
-        
-        # Get the resource from the database
-        resource = model.Resource.get(resource_id)
-        if not resource:
-            return False
-        
-        # Index existing extras (if available)
-        extras_by_key = {}
-        try:
-            if hasattr(resource, 'extras'):
-                for extra in resource.extras:
-                    extras_by_key[extra.key] = extra
-        except Exception:
-            pass
-
-        def _has_column(res, name):
-            try:
-                return hasattr(res.__class__, name)
-            except Exception:
-                return False
-
-        updates_made = 0
-        for field_name, field_value in metadata_fields.items():
-            if field_value is None or field_value == '':
-                continue
-
-            # Convert complex structures to JSON text
-            if isinstance(field_value, (dict, list)):
-                try:
-                    field_value = json.dumps(field_value)
-                except Exception:
-                    field_value = str(field_value)
-
-            # First try to write into a concrete Resource column (if it exists)
-            try:
-                if _has_column(resource, field_name):
-                    setattr(resource, field_name, field_value)
-                    updates_made += 1
-                    continue
-            except Exception as field_error:
-                print(f"Error setting direct column {field_name}: {field_error}")
-
-            # Fallback: store/update as Resource extra
-            try:
-                existing_extra = extras_by_key.get(field_name)
-                if existing_extra:
-                    existing_extra.value = str(field_value)
-                else:
-                    new_extra = ResourceExtra(
-                        resource_id=resource_id,
-                        key=field_name,
-                        value=str(field_value)
-                    )
-                    model.Session.add(new_extra)
-                updates_made += 1
-            except Exception as extra_error:
-                print(f"Error setting resource extra {field_name}: {extra_error}")
-                continue
-        
-        if updates_made > 0:
-            model.Session.add(resource)
-            model.Session.commit()
-            print(f"Direct DB update: Successfully updated {updates_made} fields (columns/extras) for resource {resource_id}")
-            return True
-        else:
-            print(f"Direct DB update: No fields to update for resource {resource_id}")
-            return True
-            
-    except Exception as e:
-        print(f"Direct DB update failed for resource {resource_id}: {e}")
-        try:
-            model.Session.rollback()
-        except:
-            pass
-        return False
+    def about_template(self):
+        return "schemingdcat/organization/about.html"
 
 
 def move_azure_blob_job(job_data):
     """
     Job function to move Azure blob from temporary location to final resource location.
-
-    This job runs in a background worker with its own DB session, avoiding deadlocks
-    with the main HTTP request session.
-
-    Args:
-        job_data: Dictionary with 'resource_id', 'temp_path', 'filename'
-
-    Returns:
-        True if successful, False otherwise
+    Optimized for fast execution to prevent timeouts.
     """
     import logging
-    import threading
-    import time
-
     log = logging.getLogger(__name__)
 
     try:
-        # Validate job_data
-        if not isinstance(job_data, dict):
-            log.error(f"[AZURE BLOB JOB] Invalid job_data type: {type(job_data)}")
-            return False
-
         resource_id = job_data.get('resource_id')
         temp_path = job_data.get('temp_path')
         filename = job_data.get('filename')
 
         if not all([resource_id, temp_path, filename]):
-            log.error(f"[AZURE BLOB JOB] Missing required fields. Got: {job_data.keys()}")
+            log.error(f"[AZURE BLOB JOB] Missing required fields")
             return False
 
-        log.info(f"[AZURE BLOB JOB] Starting blob move for resource {resource_id}")
-        log.info(f"[AZURE BLOB JOB] From: {temp_path} To: {filename}")
+        log.info(f"[AZURE BLOB JOB] Starting optimized blob move for resource {resource_id}")
 
-        # Import CKAN modules
+        # Import required modules
         import ckan.model as model
-        import ckan.plugins.toolkit as toolkit
         from ckanext.cloudstorage.storage import ResourceCloudStorage
         from azure.storage.blob import BlobServiceClient
 
-        # Check if Azure is configured
+        # Check Azure configuration
         storage = ResourceCloudStorage({})
         if not storage.can_use_advanced_azure:
-            log.warning("[AZURE BLOB JOB] Azure not available for blob move")
+            log.warning("[AZURE BLOB JOB] Azure not available")
             return False
 
         # Generate final path
         final_path = storage.path_from_filename(resource_id, filename)
-        log.info(f"[AZURE BLOB JOB] Final path: {final_path}")
-
-        # Connect to Azure
+        
+        # Quick copy operation - Azure handles this server-side
         svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
         container_client = svc_client.get_container_client(storage.container_name)
-
-        # Get blob clients
+        
         source_blob = container_client.get_blob_client(temp_path)
         dest_blob = container_client.get_blob_client(final_path)
-
-        # Start async copy - returns immediately
+        
+        # Start server-side copy (fast, non-blocking)
         copy_result = dest_blob.start_copy_from_url(source_blob.url)
-        log.info(f"[AZURE BLOB JOB] Copy initiated. Copy ID: {copy_result.get('copy_id', 'unknown')}")
+        copy_id = copy_result.get('copy_id', 'unknown')
+        
+        log.info(f"[AZURE BLOB JOB] Server-side copy started: {copy_id}")
 
-        # Update resource URL in database using new session (no deadlock risk)
-        try:
-            Session = model.meta.Session
-            resource_obj = Session.query(model.Resource).filter_by(id=resource_id).first()
-
-            if resource_obj:
-                resource_obj.url = filename
-                resource_obj.url_type = 'upload'
-                Session.commit()
-                log.info(f"[AZURE BLOB JOB] Updated resource URL in DB: {filename}")
-            else:
-                log.warning(f"[AZURE BLOB JOB] Resource {resource_id} not found in database")
-                Session.rollback()
-                return False
-
-        except Exception as db_error:
-            log.error(f"[AZURE BLOB JOB] Error updating resource URL: {str(db_error)}", exc_info=True)
-            try:
-                Session.rollback()
-            except:
-                pass
-            return False
-
-        # Schedule cleanup of temp blob in separate thread
-        def cleanup_later():
-            """Wait for Azure copy to complete, then delete temp blob"""
-            log.info(f"[AZURE BLOB JOB] Starting cleanup monitor for temp blob: {temp_path}")
-
-            try:
-                # Check copy status every 2 seconds, max 60 seconds
-                for i in range(30):
-                    time.sleep(2)
-                    try:
-                        props = dest_blob.get_blob_properties()
-                        copy_status = props.copy.status
-
-                        if copy_status == 'success':
-                            log.info(f"[AZURE BLOB JOB] Copy completed after {(i+1)*2} seconds")
-
-                            # Delete temp blob
-                            try:
-                                source_blob.delete_blob()
-                                log.info(f"[AZURE BLOB JOB] Deleted temp blob: {temp_path}")
-                            except Exception as del_error:
-                                log.warning(f"[AZURE BLOB JOB] Could not delete temp blob: {del_error}")
-                            return True
-
-                        elif copy_status == 'failed':
-                            log.error(f"[AZURE BLOB JOB] Copy failed: {props.copy.status_description}")
-                            return False
-
-                    except Exception as status_error:
-                        log.warning(f"[AZURE BLOB JOB] Error checking copy status: {status_error}")
-                        return False
-
-                log.warning(f"[AZURE BLOB JOB] Copy timeout after 60s, temp blob may remain: {temp_path}")
-                return False
-
-            except Exception as cleanup_error:
-                log.error(f"[AZURE BLOB JOB] Cleanup error: {cleanup_error}", exc_info=True)
-                return False
-
-        # Launch cleanup in background thread
-        cleanup_thread = threading.Thread(
-            target=cleanup_later,
-            name=f"azure-cleanup-{resource_id}",
-            daemon=True
-        )
-        cleanup_thread.start()
-
-        log.info(f"[AZURE BLOB JOB] Blob move completed successfully for resource {resource_id}")
+        # Update resource URL immediately (don't wait for copy to complete)
+        Session = model.meta.Session
+        resource = Session.query(model.Resource).filter_by(id=resource_id).first()
+        if resource:
+            resource.url = filename
+            resource.url_type = 'upload'
+            Session.commit()
+            log.info(f"[AZURE BLOB JOB] Updated resource URL: {filename}")
+        
+        # Schedule cleanup in background (don't block)
+        import threading
+        def cleanup_temp():
+            import time
+            max_wait = 30
+            for i in range(max_wait):
+                time.sleep(1)
+                try:
+                    props = dest_blob.get_blob_properties()
+                    if props.copy.status == 'success':
+                        source_blob.delete_blob()
+                        log.info(f"[AZURE BLOB JOB] Temp blob deleted: {temp_path}")
+                        return
+                    elif props.copy.status == 'failed':
+                        log.error(f"[AZURE BLOB JOB] Copy failed")
+                        return
+                except:
+                    pass
+            log.warning(f"[AZURE BLOB JOB] Cleanup timeout")
+        
+        threading.Thread(target=cleanup_temp, daemon=True).start()
+        
+        log.info(f"[AZURE BLOB JOB] Completed successfully (async)")
         return True
 
     except Exception as e:
-        log.error(f"[AZURE BLOB JOB] Unexpected error: {str(e)}", exc_info=True)
+        log.error(f"[AZURE BLOB JOB] Error: {str(e)}", exc_info=True)
         return False
 
 
@@ -1796,25 +1023,3 @@ def extract_spatial_extent_job(job_data):
     Mantenida para compatibilidad hacia atrás.
     """
     return extract_comprehensive_metadata_job(job_data)
-
-
-class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
-    plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.ITemplateHelpers)
-    plugins.implements(plugins.IGroupForm, inherit=True)
-    plugins.implements(plugins.IActions)
-    plugins.implements(plugins.IValidators)
-
-    def about_template(self):
-        return "schemingdcat/group/about.html"
-
-
-class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
-    plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.ITemplateHelpers)
-    plugins.implements(plugins.IGroupForm, inherit=True)
-    plugins.implements(plugins.IActions)
-    plugins.implements(plugins.IValidators)
-
-    def about_template(self):
-        return "schemingdcat/organization/about.html"
