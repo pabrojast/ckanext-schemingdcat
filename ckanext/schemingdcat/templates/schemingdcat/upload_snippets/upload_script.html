@@ -266,27 +266,25 @@
   }
   
   // Function to update form submit buttons
-  function updateFormSubmitButtons(disable) {
+  // Can optionally target only a specific button
+  function updateFormSubmitButtons(disable, specificButton) {
     var forms = getUploadTargetForms();
     forms.forEach(function(form) {
-      // Find all submit buttons and "Add" buttons
-      var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
-      Array.prototype.forEach.call(submitButtons, function(button) {
+      if (specificButton) {
+        // Only update the specific button that was clicked
+        var button = specificButton;
         if (disable) {
           button.disabled = true;
           button.setAttribute('data-upload-disabled', 'true');
-          // Add visual feedback
           if (!button.querySelector('.upload-indicator')) {
             var originalText = button.innerHTML;
             button.setAttribute('data-original-text', originalText);
-            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Uploading...") }}';
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Saving...") }}';
           }
         } else {
-          // Only re-enable if it was disabled by upload
           if (button.getAttribute('data-upload-disabled') === 'true') {
             button.disabled = false;
             button.removeAttribute('data-upload-disabled');
-            // Restore original text
             var originalText = button.getAttribute('data-original-text');
             if (originalText) {
               button.innerHTML = originalText;
@@ -294,7 +292,34 @@
             }
           }
         }
-      });
+      } else {
+        // Update all submit buttons (for file upload scenario)
+        var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"]');
+        Array.prototype.forEach.call(submitButtons, function(button) {
+          if (disable) {
+            button.disabled = true;
+            button.setAttribute('data-upload-disabled', 'true');
+            // Add visual feedback
+            if (!button.querySelector('.upload-indicator')) {
+              var originalText = button.innerHTML;
+              button.setAttribute('data-original-text', originalText);
+              button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + '{{ _("Uploading...") }}';
+            }
+          } else {
+            // Only re-enable if it was disabled by upload
+            if (button.getAttribute('data-upload-disabled') === 'true') {
+              button.disabled = false;
+              button.removeAttribute('data-upload-disabled');
+              // Restore original text
+              var originalText = button.getAttribute('data-original-text');
+              if (originalText) {
+                button.innerHTML = originalText;
+                button.removeAttribute('data-original-text');
+              }
+            }
+          }
+        });
+      }
     });
   }
   
@@ -682,10 +707,21 @@
             // Submit via AJAX to prevent HARAKIRI
             var formData = new FormData(form);
 
+            // Find which submit button was clicked
+            var submitButton = e.submitter || document.activeElement;
+            if (!submitButton || submitButton.form !== form) {
+              // Fallback: find first submit button
+              submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+            }
+            
+            // Disable only the clicked button, not all buttons
+            if (submitButton) {
+              console.log('[Form Interceptor] Disabling button:', submitButton.name || submitButton.textContent);
+              updateFormSubmitButtons(true, submitButton);
+            }
+
             // Add the 'save' field if not present (required by CKAN backend)
             if (!formData.has('save')) {
-              // Try to find which submit button was clicked
-              var submitButton = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
               if (submitButton && submitButton.name) {
                 formData.append(submitButton.name, submitButton.value || '');
               } else {
