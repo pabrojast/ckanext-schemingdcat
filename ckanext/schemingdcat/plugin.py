@@ -454,43 +454,18 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
             container_client = svc_client.get_container_client(storage.container_name)
             
-            # Copy blob to final location (this is non-blocking server-side copy)
+            # Copy blob to final location - Azure handles this server-side (fast)
             source_blob = container_client.get_blob_client(temp_path)
             dest_blob = container_client.get_blob_client(final_path)
             
-            # Start async copy (returns immediately)
-            dest_blob.start_copy_from_url(source_blob.url)
+            # Start async copy - returns immediately
+            copy_result = dest_blob.start_copy_from_url(source_blob.url)
             
             log.info(f"✅ [AZURE UPLOAD] Copy initiated from {temp_path} to {final_path}")
+            log.info(f"Copy ID: {copy_result.get('copy_id', 'unknown')}")
             
-            # Check copy status (with timeout to avoid infinite wait)
-            import time
-            max_wait = 30  # seconds
-            waited = 0
-            while waited < max_wait:
-                try:
-                    props = dest_blob.get_blob_properties()
-                    if props.copy.status == 'success':
-                        log.info(f"✅ [AZURE UPLOAD] Copy completed successfully")
-                        break
-                    elif props.copy.status == 'failed':
-                        log.error(f"❌ [AZURE UPLOAD] Copy failed: {props.copy.status_description}")
-                        return
-                    # Status is 'pending', wait a bit
-                    time.sleep(0.5)
-                    waited += 0.5
-                except Exception as e:
-                    log.warning(f"Could not check copy status: {e}")
-                    break
-            
-            # Delete temp blob (best effort, don't fail if it doesn't work)
-            try:
-                source_blob.delete_blob()
-                log.info(f"✅ [AZURE UPLOAD] Deleted temporary blob: {temp_path}")
-            except Exception as e:
-                log.warning(f"Could not delete temp blob {temp_path}: {e}")
-            
-            # Update resource URL in database
+            # Update resource URL in database immediately
+            # The file is accessible at both temp and final location during copy
             try:
                 import ckan.model as model
                 resource_obj = model.Resource.get(resource_id)
@@ -502,7 +477,37 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             except Exception as e:
                 log.error(f"❌ [AZURE UPLOAD] Error updating resource URL: {str(e)}")
             
-            log.info(f"✅ [AZURE UPLOAD] Blob move completed for resource {resource_id}")
+            # Schedule cleanup of temp blob in a separate thread (don't block)
+            import threading
+            def cleanup_later():
+                import time
+                # Wait for copy to complete (check every 2 seconds, max 60 seconds total)
+                for i in range(30):  # 30 * 2 = 60 seconds max
+                    try:
+                        time.sleep(2)
+                        props = dest_blob.get_blob_properties()
+                        if props.copy.status == 'success':
+                            log.info(f"✅ [AZURE UPLOAD] Copy completed after {(i+1)*2} seconds")
+                            # Delete temp blob
+                            try:
+                                source_blob.delete_blob()
+                                log.info(f"✅ [AZURE UPLOAD] Deleted temp blob: {temp_path}")
+                            except Exception as e:
+                                log.warning(f"Could not delete temp blob: {e}")
+                            return
+                        elif props.copy.status == 'failed':
+                            log.error(f"❌ [AZURE UPLOAD] Copy failed: {props.copy.status_description}")
+                            return
+                    except Exception as e:
+                        log.warning(f"Error checking copy status: {e}")
+                        return
+                log.warning(f"⚠️ [AZURE UPLOAD] Copy timeout after 60s, temp blob may remain: {temp_path}")
+            
+            cleanup_thread = threading.Thread(target=cleanup_later, name=f"cleanup-{resource_id}")
+            cleanup_thread.daemon = True
+            cleanup_thread.start()
+            
+            log.info(f"✅ [AZURE UPLOAD] Blob move initiated for resource {resource_id}")
             
         except Exception as e:
             log.error(f"❌ [AZURE UPLOAD] Error in async blob move: {str(e)}", exc_info=True)
