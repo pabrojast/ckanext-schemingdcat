@@ -189,6 +189,12 @@
 
     // File input change - only handle if CloudStorage is not active
     fileInput.addEventListener('change', function(e) {
+      // Check if CloudStorage just processed this
+      if (fileInput.hasAttribute('data-cloudstorage-processing')) {
+        console.log('[schemingdcat-upload] CloudStorage is processing, skipping');
+        return;
+      }
+      
       // If CloudStorage is active, let it handle everything
       if (isCloudStorageEnabled || (window.cloudStorageUploads && Object.keys(window.cloudStorageUploads).length > 0)) {
         console.log('[schemingdcat-upload] CloudStorage is handling this upload');
@@ -198,11 +204,14 @@
           var fileName = files[0].name;
           var ext = fileName.split('.').pop().toLowerCase();
           
-          // Auto-fill name field
-          autoFillNameField(fileName, true);
-          
-          // Auto-fill format and other fields
-          autoFillFormatFields(ext);
+          // Add a small delay to avoid race conditions with CloudStorage
+          setTimeout(function() {
+            // Auto-fill name field
+            autoFillNameField(fileName, true);
+            
+            // Auto-fill format and other fields
+            autoFillFormatFields(ext);
+          }, 100);
         }
         return; // Exit early, let CloudStorage handle the rest
       }
@@ -456,11 +465,25 @@
       
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
+        // Set the files but don't trigger change immediately if CloudStorage is active
         fileInput.files = files;
         
-        // Trigger change event - let the change handler decide what to do
-        var event = new Event('change', { bubbles: true });
-        fileInput.dispatchEvent(event);
+        if (isCloudStorageEnabled) {
+          // For CloudStorage, just set the files and let it detect the change naturally
+          console.log('[schemingdcat-upload] CloudStorage will handle dropped file');
+          
+          // Do field auto-population after a delay
+          setTimeout(function() {
+            var fileName = files[0].name;
+            var ext = fileName.split('.').pop().toLowerCase();
+            autoFillNameField(fileName, true);
+            autoFillFormatFields(ext);
+          }, 100);
+        } else {
+          // For non-CloudStorage, trigger change event
+          var event = new Event('change', { bubbles: true });
+          fileInput.dispatchEvent(event);
+        }
       }
     });
 
