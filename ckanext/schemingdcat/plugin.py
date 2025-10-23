@@ -25,7 +25,6 @@ import json
 
 log = logging.getLogger(__name__)
 
-
 class SchemingDCATPlugin(
     plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
 ):
@@ -183,11 +182,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     # IUploader implementation - integrate cloudstorage
     def get_resource_uploader(self, data_dict):
         """Use cloudstorage ResourceCloudStorage for resource uploads"""
-        return storage.ResourceCloudStorage(data_dict)
-
-    def get_uploader(self, upload_to, old_filename=None):
-        """For non-resource uploads, use default uploader"""
-        return None
+        # Pass Azure info to the uploader if present
+        uploader = storage.ResourceCloudStorage(data_dict)
+        
+        # If this is an Azure direct upload, pass the info to the uploader
+        if data_dict.get('azure_upload') == 'true' or data_dict.get('_azure_pending'):
+            # Set resource dict so uploader knows this is Azure direct upload
+            uploader.resource = data_dict
+            log.info(f"🔷 [UPLOADER] Configured for Azure direct upload")
+        
+        return uploader
 
     def get_actions(self):
         # Only return schemingdcat-specific actions
@@ -325,31 +329,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def before_create(self, context, resource):
         """
         Hook que se ejecuta ANTES de crear un recurso.
-        IMPORTANTE: Este hook debe ser RÁPIDO y NO BLOQUEAR.
-        Solo marca el recurso para procesamiento posterior.
+        Simplified to avoid conflicts with cloudstorage.
         """
-        # Check if this is an Azure direct upload - just mark it, don't process
-        if resource.get('azure_upload') == 'true' and resource.get('azure_blob_path'):
-            blob_path = resource['azure_blob_path']
-            filename = blob_path.split('/')[-1] if blob_path else 'unknown'
-            
-            log.info(f"🔷 [AZURE UPLOAD] Marking resource for Azure processing: {filename}")
-            
-            # Just set minimal required fields for resource creation
-            # The actual blob operations will happen in after_create
-            resource['url'] = filename  # Set filename as URL temporarily
-            resource['url_type'] = 'upload'
-            
-            # Store Azure info for later processing (will be handled async)
-            resource['_azure_pending'] = True
-            resource['_azure_blob_path'] = blob_path
-            resource['_azure_filename'] = filename
-            
-            # Clean up fields that shouldn't be saved to DB
-            resource.pop('azure_upload', None)
-            resource.pop('azure_blob_path', None)
-            
-            log.info(f"✅ [AZURE UPLOAD] Resource marked for async processing: {filename}")
+        # Let cloudstorage handle Azure uploads entirely
+        # We only need to mark resources for post-processing
+        
+        # Check if this is an upload (not a link)
+        if resource.get('upload') or resource.get('url_type') == 'upload':
+            # Mark for metadata extraction after creation
+            resource['_needs_metadata_extraction'] = True
+            log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction")
         
         return resource
 
@@ -359,162 +348,75 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Hook que se ejecuta después de crear un recurso.
 
         CRITICAL: This hook MUST RETURN IMMEDIATELY without blocking!
-        All background processing is done via job queue or threading.
+        All background processing is done via job queue.
         """
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Check if this needs Azure blob processing
-        is_azure_pending = resource.get('_azure_pending', False)
-        
+        # Skip if not marked for extraction
+        if not resource.get('_needs_metadata_extraction'):
+            log.info(f"⏭️ [HOOK] Resource {resource_id} doesn't need metadata extraction")
+            return resource
+
         # Check if job queue is available
         try:
             from ckan.lib import jobs
             job_queue_available = True
-            log.info("✅ Job queue is available")
         except ImportError:
             job_queue_available = False
-            log.warning("⚠️ Job queue not available, will use threading fallback")
+            log.warning("Job queue not available, using threading fallback")
 
-        # Process based on availability
         if job_queue_available:
+            # Queue metadata extraction job
             try:
-                # 1. Queue Azure blob move if needed (HIGH PRIORITY)
-                if is_azure_pending and resource.get('_azure_blob_path'):
-                    azure_job_data = {
-                        'resource_id': resource.get('id'),
-                        'temp_path': resource.get('_azure_blob_path'),
-                        'filename': resource.get('_azure_filename', 'unknown'),
-                    }
-                    
-                    # Try to use priority queue if available
-                    try:
-                        jobs.enqueue(
-                            move_azure_blob_job,
-                            [azure_job_data],
-                            title=f"Move Azure blob for resource {resource_id[:8]}",
-                            queue='priority'
-                        )
-                        log.info(f"✅ Queued Azure blob move job in PRIORITY queue")
-                    except:
-                        # Fallback to default queue
-                        jobs.enqueue(
-                            move_azure_blob_job,
-                            [azure_job_data],
-                            title=f"Move Azure blob for resource {resource_id[:8]}"
-                        )
-                        log.info(f"✅ Queued Azure blob move job in DEFAULT queue")
-
-                # 2. Queue metadata extraction (LOWER PRIORITY)
-                # Only if resource has a valid URL/format
-                if resource.get('url') and resource.get('format'):
-                    metadata_job_data = {
-                        'resource_id': resource.get('id'),
-                        'resource_url': resource.get('url'),
-                        'resource_format': resource.get('format'),
-                        'package_id': resource.get('package_id'),
-                    }
-                    
-                    # Add delay for Azure uploads to ensure file is ready
-                    if is_azure_pending:
-                        import datetime
-                        run_at = datetime.datetime.now() + datetime.timedelta(seconds=5)
-                        try:
-                            jobs.enqueue_at(
-                                run_at,
-                                extract_comprehensive_metadata_job,
-                                [metadata_job_data],
-                                title=f"Extract metadata for resource {resource_id[:8]}"
-                            )
-                            log.info(f"✅ Scheduled metadata extraction job for 5 seconds later")
-                        except:
-                            # Fallback to immediate queue
-                            jobs.enqueue(
-                                extract_comprehensive_metadata_job,
-                                [metadata_job_data],
-                                title=f"Extract metadata for resource {resource_id[:8]}"
-                            )
-                            log.info(f"✅ Queued metadata extraction job immediately")
-                    else:
-                        jobs.enqueue(
-                            extract_comprehensive_metadata_job,
-                            [metadata_job_data],
-                            title=f"Extract metadata for resource {resource_id[:8]}"
-                        )
-                        log.info(f"✅ Queued metadata extraction job")
+                metadata_job_data = {
+                    'resource_id': resource.get('id'),
+                    'resource_url': resource.get('url'),
+                    'resource_format': resource.get('format'),
+                    'package_id': resource.get('package_id'),
+                }
+                jobs.enqueue(
+                    extract_comprehensive_metadata_job,
+                    [metadata_job_data],
+                    title=f"Extract metadata for resource {resource_id[:8]}",
+                    queue='default'
+                )
+                log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
 
             except Exception as queue_error:
-                log.error(f"⚠️ Could not queue jobs: {queue_error}")
-                # Use threading fallback
-                self._fallback_async_processing(resource, is_azure_pending)
+                log.error(f"⚠️ [HOOK] Could not queue job: {queue_error}")
+                # Fall back to threading
+                self._fallback_metadata_extraction(resource)
         else:
-            # No job queue available - use threading
-            self._fallback_async_processing(resource, is_azure_pending)
+            # Use threading fallback
+            self._fallback_metadata_extraction(resource)
 
-        # RETURN IMMEDIATELY
-        log.info(f"✅ [HOOK] after_create returning immediately for resource {resource_id}")
+        # RETURN IMMEDIATELY - don't wait for jobs
         return resource
 
-    def _fallback_async_processing(self, resource, is_azure_pending):
-        """
-        Fallback async processing using threading when job queue is not available.
-        
-        Args:
-            resource: The resource dict
-            is_azure_pending: Boolean indicating if Azure blob move is needed
-        """
+    def _fallback_metadata_extraction(self, resource):
+        """Fallback metadata extraction using threading when job queue is not available."""
         import threading
-        import time
         
-        resource_id = resource.get('id', 'unknown')
-        
-        def process_async():
+        def extract_async():
             try:
-                log.info(f"🔄 [THREAD] Starting async processing for resource {resource_id}")
-                
-                # Process Azure blob first if needed
-                if is_azure_pending and resource.get('_azure_blob_path'):
-                    try:
-                        azure_data = {
-                            'resource_id': resource.get('id'),
-                            'temp_path': resource.get('_azure_blob_path'),
-                            'filename': resource.get('_azure_filename', 'unknown'),
-                        }
-                        log.info(f"🔄 [THREAD] Processing Azure blob move")
-                        move_azure_blob_job(azure_data)
-                        
-                        # Wait a bit for Azure to complete
-                        time.sleep(3)
-                    except Exception as azure_error:
-                        log.error(f"❌ [THREAD] Azure blob move failed: {azure_error}")
-                
-                # Process metadata extraction
-                if resource.get('url') and resource.get('format'):
-                    try:
-                        metadata_data = {
-                            'resource_id': resource.get('id'),
-                            'resource_url': resource.get('url'),
-                            'resource_format': resource.get('format'),
-                            'package_id': resource.get('package_id'),
-                        }
-                        log.info(f"🔄 [THREAD] Processing metadata extraction")
-                        extract_comprehensive_metadata_job(metadata_data)
-                    except Exception as metadata_error:
-                        log.error(f"❌ [THREAD] Metadata extraction failed: {metadata_error}")
-                
-                log.info(f"✅ [THREAD] Async processing completed for resource {resource_id}")
-                
+                metadata_data = {
+                    'resource_id': resource.get('id'),
+                    'resource_url': resource.get('url'),
+                    'resource_format': resource.get('format'),
+                    'package_id': resource.get('package_id'),
+                }
+                extract_comprehensive_metadata_job(metadata_data)
             except Exception as e:
-                log.error(f"❌ [THREAD] Error in fallback async processing: {e}", exc_info=True)
+                log.error(f"Error in fallback metadata extraction: {e}", exc_info=True)
         
-        # Start the thread
         thread = threading.Thread(
-            target=process_async,
-            name=f"resource-async-{resource_id[:8]}",
+            target=extract_async,
+            name=f"metadata-{resource.get('id', 'unknown')[:8]}",
             daemon=True
         )
         thread.start()
-        log.info(f"✅ Started fallback thread for resource {resource_id}")
+        log.info(f"Started fallback threading for metadata extraction")
 
 class SchemingDCATGroupsPlugin(SchemingGroupsPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -536,144 +438,6 @@ class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
 
     def about_template(self):
         return "schemingdcat/organization/about.html"
-
-
-def move_azure_blob_job(job_data):
-    """
-    Job function to move Azure blob from temporary location to final resource location.
-    Optimized for fast execution to prevent timeouts.
-    """
-    import logging
-    log = logging.getLogger(__name__)
-
-    try:
-        resource_id = job_data.get('resource_id')
-        temp_path = job_data.get('temp_path')
-        filename = job_data.get('filename')
-
-        if not all([resource_id, temp_path, filename]):
-            log.error(f"[AZURE BLOB JOB] Missing required fields in job_data: {job_data}")
-            return False
-
-        log.info(f"[AZURE BLOB JOB] Starting blob move for resource {resource_id}")
-        log.info(f"[AZURE BLOB JOB] Temp path: {temp_path}")
-        log.info(f"[AZURE BLOB JOB] Target filename: {filename}")
-
-        # Import required modules
-        import ckan.model as model
-        from ckanext.cloudstorage.storage import ResourceCloudStorage
-        
-        try:
-            from azure.storage.blob import BlobServiceClient
-        except ImportError:
-            log.error("[AZURE BLOB JOB] Azure storage library not available")
-            return False
-
-        # Check Azure configuration
-        try:
-            storage = ResourceCloudStorage({})
-            if not hasattr(storage, 'can_use_advanced_azure') or not storage.can_use_advanced_azure:
-                log.warning("[AZURE BLOB JOB] Azure advanced features not available")
-                # Just update the URL anyway - the file might already be there
-                Session = model.meta.Session
-                resource = Session.query(model.Resource).filter_by(id=resource_id).first()
-                if resource:
-                    resource.url = filename
-                    resource.url_type = 'upload'
-                    Session.commit()
-                    log.info(f"[AZURE BLOB JOB] Updated resource URL (no Azure move): {filename}")
-                return True
-        except Exception as storage_error:
-            log.error(f"[AZURE BLOB JOB] Error initializing storage: {storage_error}")
-            return False
-
-        # Generate final path
-        final_path = storage.path_from_filename(resource_id, filename)
-        log.info(f"[AZURE BLOB JOB] Final blob path: {final_path}")
-        
-        try:
-            # Connect to Azure
-            svc_client = BlobServiceClient.from_connection_string(storage.connection_link)
-            container_client = svc_client.get_container_client(storage.container_name)
-            
-            source_blob = container_client.get_blob_client(temp_path)
-            dest_blob = container_client.get_blob_client(final_path)
-            
-            # Check if source exists
-            if not source_blob.exists():
-                log.warning(f"[AZURE BLOB JOB] Source blob doesn't exist: {temp_path}")
-                # Update URL anyway - might be a timing issue
-                Session = model.meta.Session
-                resource = Session.query(model.Resource).filter_by(id=resource_id).first()
-                if resource:
-                    resource.url = filename
-                    resource.url_type = 'upload'
-                    Session.commit()
-                return True
-            
-            # Start server-side copy (fast, non-blocking)
-            copy_result = dest_blob.start_copy_from_url(source_blob.url)
-            copy_id = copy_result.get('copy_id', 'unknown')
-            
-            log.info(f"[AZURE BLOB JOB] Server-side copy started: {copy_id}")
-        except Exception as azure_error:
-            log.error(f"[AZURE BLOB JOB] Azure operation failed: {azure_error}")
-            # Continue to update URL anyway
-        
-        # Update resource URL immediately (don't wait for copy to complete)
-        try:
-            Session = model.meta.Session
-            resource = Session.query(model.Resource).filter_by(id=resource_id).first()
-            if resource:
-                resource.url = filename
-                resource.url_type = 'upload'
-                Session.commit()
-                log.info(f"[AZURE BLOB JOB] Updated resource URL: {filename}")
-            else:
-                log.error(f"[AZURE BLOB JOB] Resource {resource_id} not found in database")
-                return False
-        except Exception as db_error:
-            log.error(f"[AZURE BLOB JOB] Database update failed: {db_error}")
-            try:
-                Session.rollback()
-            except:
-                pass
-            return False
-        
-        # Schedule cleanup in background (don't block)
-        try:
-            import threading
-            def cleanup_temp():
-                import time
-                max_wait = 30
-                for i in range(max_wait):
-                    time.sleep(1)
-                    try:
-                        props = dest_blob.get_blob_properties()
-                        if props.copy.status == 'success':
-                            try:
-                                source_blob.delete_blob()
-                                log.info(f"[AZURE BLOB JOB] Temp blob deleted: {temp_path}")
-                            except:
-                                pass  # Ignore deletion errors
-                            return
-                        elif props.copy.status in ['failed', 'aborted']:
-                            log.error(f"[AZURE BLOB JOB] Copy failed with status: {props.copy.status}")
-                            return
-                    except:
-                        pass  # Ignore status check errors
-                log.info(f"[AZURE BLOB JOB] Cleanup check timeout - temp blob may remain")
-            
-            threading.Thread(target=cleanup_temp, daemon=True, name="azure-cleanup").start()
-        except:
-            pass  # Cleanup is optional
-        
-        log.info(f"[AZURE BLOB JOB] Completed successfully")
-        return True
-
-    except Exception as e:
-        log.error(f"[AZURE BLOB JOB] Unexpected error: {str(e)}", exc_info=True)
-        return False
 
 
 def extract_comprehensive_metadata_job(job_data):

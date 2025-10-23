@@ -21,6 +21,18 @@
 
     if (!fileInput || !dropzone) return;
 
+    // Check if CloudStorage is handling uploads
+    var isCloudStorageEnabled = (typeof window.use_azure_direct_upload !== 'undefined' && window.use_azure_direct_upload) ||
+                                (typeof window.cloudStorageActive !== 'undefined' && window.cloudStorageActive);
+    
+    if (isCloudStorageEnabled) {
+      console.log('[schemingdcat-upload] CloudStorage is enabled, running in compatibility mode');
+      // Hide our UI elements that conflict with CloudStorage
+      if (filePreview) {
+        filePreview.style.display = 'none';
+      }
+    }
+
     // Setup format field listener for spatial processing
     setupFormatFieldListener();
     
@@ -175,8 +187,26 @@
       }
     }
 
-    // File input change
+    // File input change - only handle if CloudStorage is not active
     fileInput.addEventListener('change', function(e) {
+      // If CloudStorage is active, let it handle everything
+      if (isCloudStorageEnabled || (window.cloudStorageUploads && Object.keys(window.cloudStorageUploads).length > 0)) {
+        console.log('[schemingdcat-upload] CloudStorage is handling this upload');
+        // Only do field auto-population, not file display
+        var files = e.target.files;
+        if (files && files.length > 0) {
+          var fileName = files[0].name;
+          var ext = fileName.split('.').pop().toLowerCase();
+          
+          // Auto-fill name field
+          autoFillNameField(fileName, true);
+          
+          // Auto-fill format and other fields
+          autoFillFormatFields(ext);
+        }
+        return; // Exit early, let CloudStorage handle the rest
+      }
+      
       // Prevent duplicate processing
       if (fileInput.hasAttribute('data-processing')) {
         console.log('[schemingdcat-upload] File input already processing, skipping');
@@ -185,16 +215,6 @@
       
       // Mark as processing to prevent duplicates
       fileInput.setAttribute('data-processing', 'true');
-      
-      // Skip if cloudstorage is handling the upload
-      if (cloudStorageActive && window.cloudStorageUploads) {
-        console.log('[schemingdcat-upload] CloudStorage handling upload - skipping duplicate processing');
-        // Remove processing flag after a short delay
-        setTimeout(function() {
-          fileInput.removeAttribute('data-processing');
-        }, 100);
-        return;
-      }
       
       var files = e.target.files;
       if (files && files.length > 0) {
@@ -226,7 +246,103 @@
       }
     });
     
+    function autoFillFormatFields(ext) {
+      // Auto-fill format field if exists
+      var formatFields = document.querySelectorAll('input[name*="format"]');
+      var formatField = null;
+      formatFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+          formatField = field;
+        }
+      });
+      
+      if (formatField) {
+        var extUpper = ext.toUpperCase();
+        
+        // Format mapping
+        var formatMap = {
+          'CSV': 'CSV',
+          'XLS': 'XLS', 
+          'XLSX': 'XLS',
+          'JSON': 'JSON',
+          'GEOJSON': 'GeoJSON',
+          'XML': 'XML',
+          'RDF': 'RDF',
+          'PDF': 'PDF',
+          'DOC': 'DOC',
+          'DOCX': 'DOC',
+          'PPT': 'PPT',
+          'PPTX': 'PPT',
+          'TXT': 'TXT',
+          'ZIP': 'ZIP',
+          'TAR': 'TAR',
+          'GZ': 'GZ',
+          'MP4': 'MP4',
+          'AVI': 'AVI',
+          'MOV': 'MOV',
+          'SHP': 'SHP',
+          'KML': 'KML',
+          'KMZ': 'KMZ',
+          'GML': 'GML',
+          'GPKG': 'GPKG',
+          'SLD': 'SLD'
+        };
+        
+        formatField.value = formatMap[extUpper] || extUpper;
+        formatField.setAttribute('data-auto-filled', 'true');
+        var event = new Event('change', { bubbles: true });
+        formatField.dispatchEvent(event);
+      }
+      
+      // Auto-fill mimetype field if exists
+      var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+      var mimetypeField = null;
+      mimetypeFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
+          mimetypeField = field;
+        }
+      });
+      
+      if (mimetypeField) {
+        getMimeTypeForExtension(ext, function(mimeType) {
+          if (mimeType) {
+            mimetypeField.value = mimeType;
+            mimetypeField.setAttribute('data-auto-filled', 'true');
+            var event = new Event('change', { bubbles: true });
+            mimetypeField.dispatchEvent(event);
+          }
+        });
+      }
+      
+      // Auto-fill encoding field if exists
+      var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+      var encodingField = null;
+      encodingFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
+          encodingField = field;
+        }
+      });
+      
+      if (encodingField) {
+        var currentFormat = formatField ? formatField.value : '';
+        getCharsetForFormat(ext, currentFormat, function(charset) {
+          if (charset) {
+            encodingField.value = charset;
+            encodingField.setAttribute('data-auto-filled', 'true');
+            var event = new Event('change', { bubbles: true });
+            encodingField.dispatchEvent(event);
+          }
+        });
+      }
+    }
+    
     function processNewFile(file) {
+      // Don't process if CloudStorage is active
+      if (isCloudStorageEnabled) {
+        console.log('[schemingdcat-upload] CloudStorage is active, skipping file processing');
+        return;
+      }
+      
       // Check if already processing this file
       var currentFileName = wrapper.getAttribute('data-current-file');
       if (currentFileName === file.name && filePreview.style.display !== 'none') {
@@ -281,106 +397,14 @@
       
       displayFile(file);
 
-      // NOTE: Upload registration is now handled by XHR hook (lines 446-574)
-      // when the actual form submission happens, not when file is selected.
-      // This prevents premature button blocking.
-      
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
       
       // Auto-fill name field (force update to overwrite previous values)
       autoFillNameField(fileName, true);
       
-      // Auto-fill format field if exists
-      var formatFields = document.querySelectorAll('input[name*="format"]');
-      var formatField = null;
-      formatFields.forEach(function(field) {
-        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-          formatField = field;
-        }
-      });
-      
-      if (formatField) {
-        var extUpper = ext.toUpperCase();
-        
-        // Format mapping
-        var formatMap = {
-          'CSV': 'CSV',
-          'XLS': 'XLS', 
-          'XLSX': 'XLS',
-          'JSON': 'JSON',
-          'GEOJSON': 'GeoJSON',
-          'XML': 'XML',
-          'RDF': 'RDF',
-          'PDF': 'PDF',
-          'DOC': 'DOC',
-          'DOCX': 'DOC',
-          'PPT': 'PPT',
-          'PPTX': 'PPT',
-          'TXT': 'TXT',
-          'ZIP': 'ZIP',
-          'TAR': 'TAR',
-          'GZ': 'GZ',
-          'MP4': 'MP4',
-          'AVI': 'AVI',
-          'MOV': 'MOV',
-          'SHP': 'SHP',
-          'KML': 'KML',
-          'KMZ': 'KMZ',
-          'GML': 'GML',
-          'GPKG': 'GPKG',
-          'SLD': 'SLD'
-        };
-        
-        formatField.value = formatMap[extUpper] || extUpper;
-        formatField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
-        // Trigger change event
-        var event = new Event('change', { bubbles: true });
-        formatField.dispatchEvent(event);
-      }
-      
-      // Auto-fill mimetype field if exists
-      var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
-      var mimetypeField = null;
-      mimetypeFields.forEach(function(field) {
-        if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
-          mimetypeField = field;
-        }
-      });
-      
-      if (mimetypeField) {
-        getMimeTypeForExtension(ext, function(mimeType) {
-          if (mimeType) {
-            mimetypeField.value = mimeType;
-            mimetypeField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
-            // Trigger change event
-            var event = new Event('change', { bubbles: true });
-            mimetypeField.dispatchEvent(event);
-          }
-        });
-      }
-      
-      // Auto-fill encoding field if exists
-      var encodingFields = document.querySelectorAll('input[name*="encoding"]');
-      var encodingField = null;
-      encodingFields.forEach(function(field) {
-        if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
-          encodingField = field;
-        }
-      });
-      
-      if (encodingField) {
-        var currentFormat = formatField ? formatField.value : '';
-        getCharsetForFormat(ext, currentFormat, function(charset) {
-          if (charset) {
-            encodingField.value = charset;
-            encodingField.setAttribute('data-auto-filled', 'true'); // Mark as auto-filled
-            // Trigger change event
-            var event = new Event('change', { bubbles: true });
-            encodingField.dispatchEvent(event);
-          }
-        });
-      }
+      // Auto-fill format and other fields
+      autoFillFormatFields(ext);
       
       // Extract spatial extent from geospatial files
       // Note: Para archivos ZIP que pueden contener shapefiles, la extracción se realizará
@@ -392,6 +416,13 @@
       }
       
       // Set up format field change listener for spatial processing
+      var formatFields = document.querySelectorAll('input[name*="format"]');
+      var formatField = null;
+      formatFields.forEach(function(field) {
+        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
+          formatField = field;
+        }
+      });
       if (formatField) {
         setupSpatialProcessingOnFormatChange(formatField);
       }
@@ -425,48 +456,11 @@
       
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
-        // Prevent duplicate processing
-        if (fileInput.hasAttribute('data-processing')) {
-          console.log('[schemingdcat-upload] File input already processing, skipping drop');
-          return;
-        }
-        
         fileInput.files = files;
         
-        // Skip duplicate processing if cloudstorage is active
-        if (cloudStorageActive && window.cloudStorageUploads) {
-          console.log('[schemingdcat-upload] CloudStorage will handle dropped file');
-          // Just trigger change event for cloudstorage
-          var event = new Event('change', { bubbles: true });
-          fileInput.dispatchEvent(event);
-          return;
-        }
-        
-        // Mark as processing
-        fileInput.setAttribute('data-processing', 'true');
-        
-        // Clear any previous file/upload before showing the new one
-        if (filePreview.style.display !== 'none') {
-          clearFile();
-          // Small pause for user to see the transition
-          setTimeout(function() {
-            processNewFile(files[0]);
-            // Trigger change event for other modules
-            var event = new Event('change', { bubbles: true });
-            fileInput.dispatchEvent(event);
-            // Remove processing flag
-            fileInput.removeAttribute('data-processing');
-          }, 100);
-        } else {
-          processNewFile(files[0]);
-          // Trigger change event for other modules
-          var event = new Event('change', { bubbles: true });
-          fileInput.dispatchEvent(event);
-          // Remove processing flag
-          setTimeout(function() {
-            fileInput.removeAttribute('data-processing');
-          }, 100);
-        }
+        // Trigger change event - let the change handler decide what to do
+        var event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
       }
     });
 
@@ -475,12 +469,6 @@
       var isBrowseBtn = e.target.closest('.browse-button');
       var isRemoveBtn = e.target.closest('.remove-file');
       var isPreviewArea = filePreview.contains(e.target);
-      
-      // Also check if already processing
-      if (fileInput.hasAttribute('data-processing')) {
-        console.log('[schemingdcat-upload] File input already processing, skipping click');
-        return;
-      }
       
       if (!isBrowseBtn && !isRemoveBtn && !isPreviewArea) {
         // Open file selector
@@ -598,6 +586,12 @@
     }
 
     function displayFile(file) {
+      // Don't display if CloudStorage is active
+      if (isCloudStorageEnabled) {
+        console.log('[schemingdcat-upload] CloudStorage is active, skipping file display');
+        return;
+      }
+      
       var fileName = filePreview.querySelector('.file-name');
       var fileSize = filePreview.querySelector('.file-size');
       var fileIcon = filePreview.querySelector('.file-icon');
@@ -616,20 +610,16 @@
       dropzoneContent.style.display = 'none';
       filePreview.style.display = 'block';
       
-      // Show progress animation - only if CloudStorage is not handling it
-      if (progressBar && !cloudStorageActive) {
+      // Don't show progress if CloudStorage is active
+      if (progressBar && !isCloudStorageEnabled) {
         progressBar.style.display = 'block';
         var progressFill = progressBar.querySelector('.progress-fill');
         if (progressFill) {
-          // Start at 0% and let real progress (CloudStorage or XHR hook) drive updates
           progressFill.style.width = '0%';
         }
         if (progressText) {
           progressText.textContent = 'Uploading...';
         }
-      } else if (progressBar && cloudStorageActive) {
-        // Hide our progress bar if CloudStorage is active
-        progressBar.style.display = 'none';
       }
       
       // Check clear checkbox if exists
@@ -637,10 +627,6 @@
       if (clearCheckbox) {
         clearCheckbox.checked = true;
       }
-
-      // NOTE: Progress is now handled by global XHR hook (lines 386-574)
-      // No need to synchronize with CloudStorage - XHR hook updates all progress bars in real-time
-      // This eliminates the race condition between simulated and real progress
     }
 
     function clearFile() {
