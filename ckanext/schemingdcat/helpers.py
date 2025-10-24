@@ -47,6 +47,58 @@ all_helpers = {}
 prettify_cache = {}
 DEFAULT_LANG = None
 
+
+def _get_action_context(ignore_auth=False):
+    """
+    Build a CKAN action context that honours the current user and optionally
+    skips authorization checks.
+    """
+    user_name = ''
+    flask_globals = getattr(p.toolkit, 'g', None)
+    if flask_globals is not None:
+        user_name = getattr(flask_globals, 'user', '') or ''
+        if not user_name:
+            user_obj = getattr(flask_globals, 'userobj', None)
+            if user_obj is not None:
+                user_name = getattr(user_obj, 'name', '') or ''
+    if not user_name:
+        user_name = getattr(c, 'user', '') or ''
+
+    context = {
+        'model': model,
+        'session': model.Session,
+        'user': user_name or ''
+    }
+    if ignore_auth:
+        context['ignore_auth'] = True
+    return context
+
+
+def _safe_call_action(action_name, data_dict=None, allow_ignore_auth=True):
+    """
+    Execute a CKAN action ensuring we first try with the current user's context
+    and, if required, fall back to ignore_auth for read-only operations.
+    """
+    action = p.toolkit.get_action(action_name)
+    payload = data_dict or {}
+    attempts = [False]
+    if allow_ignore_auth:
+        attempts.append(True)
+
+    last_error = None
+    for ignore_auth in attempts:
+        try:
+            return action(_get_action_context(ignore_auth=ignore_auth), payload)
+        except p.toolkit.NotAuthorized as err:
+            last_error = err
+        except p.toolkit.ObjectNotFound:
+            log.debug('Action %s could not find the requested object', action_name)
+            return None
+
+    if last_error:
+        log.debug('Action %s not authorized for user %s', action_name, getattr(c, 'user', ''))
+    return None
+
 @lru_cache(maxsize=None)
 def get_scheming_dataset_schemas():
     """
@@ -1357,15 +1409,23 @@ def get_memberstates():
     Get the list of member states groups.
     
     Returns:
-        list: List of group names, or ['Not available'] if the group doesn't exist
+        list: List of group names. Empty list if the group does not exist or cannot be read.
     """
-    try:
-        memberstates = p.toolkit.get_action('group_show')(
-            data_dict={'id': 'member-states', 'include_groups': True, 'all_fields': True}
-        )
-        return [item['name'] for item in memberstates["groups"]]
-    except (p.toolkit.ObjectNotFound, KeyError):
-        return ['Not available']
+    data_dict = {
+        'id': 'member-states',
+        'include_groups': True,
+        'all_fields': True
+    }
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    if not memberstates:
+        return []
+
+    groups = memberstates.get('groups', []) or []
+    return [
+        item['name']
+        for item in groups
+        if item.get('state', 'active') == 'active' and item.get('name')
+    ]
 
 @helper
 def schemingdcat_get_current_user():
@@ -1394,30 +1454,27 @@ def get_initiatives():
     Get the list of initiative groups by excluding member states groups.
     
     Returns:
-        list: List of initiative group names, or ['Not available'] if there's an error
+        list: List of initiative group names. Empty list if no initiatives are available.
     """
-    try:
-        # Get all groups
-        groups = p.toolkit.get_action('group_list')(
-            data_dict={'include_dataset_count': True}
-        )
-        
-        # Get member states groups to exclude
-        memberstates = p.toolkit.get_action('group_show')(
-            data_dict={'id': 'member-states', 'include_groups': True}
-        )
-        
-        # Create list of groups to exclude (member states and the main member-states group)
-        exclude_groups = [item['name'] for item in memberstates["groups"]]
-        exclude_groups.append('member-states')
-        
-        # Get the difference between all groups and excluded groups
-        initiatives = list(set(groups) - set(exclude_groups))
-        
-        return initiatives
-        
-    except (p.toolkit.ObjectNotFound, KeyError):
-        return ['Not available']
+    memberstate_names = set(get_memberstates())
+    memberstate_names.add('member-states')
+
+    available_groups = ckan_helpers.groups_available()
+    if available_groups:
+        initiatives = [
+            group.name
+            for group in available_groups
+            if getattr(group, 'name', None) not in memberstate_names
+        ]
+        if initiatives:
+            return initiatives
+
+    groups = _safe_call_action('group_list', data_dict={'all_fields': False}) or []
+    return [
+        group_name
+        for group_name in groups
+        if group_name not in memberstate_names
+    ]
 
 @helper
 def schemingdcat_spatial_extent_available():
