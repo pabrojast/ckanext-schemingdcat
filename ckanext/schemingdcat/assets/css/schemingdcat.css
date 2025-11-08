@@ -1692,3 +1692,41 @@ input.loading[name="spatial_extent"] {
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
 }
+
+/* Multi-select tokens for group picker */
+.group-multiselect .group-token-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.group-multiselect .group-token {
+  background: #eef5ff;
+  border: 1px solid #d0dfee;
+  border-radius: 12px;
+  color: #1c3b5f;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.group-multiselect .group-token-remove {
+  border: 0;
+  background: transparent;
+  color: #1c3b5f;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 6px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.group-multiselect .group-token-remove:hover {
+  color: #c7254e;
+}
+
+.group-multiselect .group-token-list .text-muted {
+  font-style: italic;
+}

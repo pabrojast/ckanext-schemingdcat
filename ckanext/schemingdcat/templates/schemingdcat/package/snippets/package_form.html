@@ -29,6 +29,7 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-authors-add-button' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-group-multiselect' %}
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
@@ -143,6 +144,7 @@
       {%- endif -%}
     {%- endif -%}
   {%- endfor -%}
+  <div id="groups-hidden-inputs" style="display:none;"></div>
   {# Añadir indicador de carga #}
   <div id="form-loading" class="text-center" style="padding: 20px;">
     <i class="fa fa-spinner fa-spin fa-2x"></i>

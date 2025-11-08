@@ -1,18 +1,41 @@
-{% set iniciativas = h.get_initiatives() %}
+{% set initiative_names = h.get_initiatives() %}
 {% set existing_groups = data.groups if data.groups else [] %}
-{% set disponibles = h.groups_available() %}
+{% set available_groups = h.groups_available() %}
+{% set selected_initiative_ids = [] %}
 
+{% for group in existing_groups %}
+  {% if group.name in initiative_names %}
+    {% do selected_initiative_ids.append(group.id) %}
+  {% endif %}
+{% endfor %}
 
-<label class="checkbox" for="field-group-1">Initiative:</label>
-<select id="field-group-1" name="groups__1__id" class="form-control form-select">
-    <option value=""></option>
-    {% for group in disponibles %}
-        {% if group.name in iniciativas %}
-            {% set selected_org = False %}
-            {% if existing_groups|length > 1 %}
-                {% set selected_org = existing_groups[1].id == group.id %}
-            {% endif %}
-            <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
-        {% endif %}
+<div class="form-group group-multiselect"
+     data-module="schemingdcat-group-multiselect"
+     data-group-type="initiative"
+     data-group-order="1"
+     data-hidden-container="#groups-hidden-inputs">
+  <label class="control-label" for="initiative-multiselect">
+    {{ h.scheming_language_text(field.label) }}
+  </label>
+  <select id="initiative-multiselect"
+          class="form-control group-multiselect-select"
+          multiple
+          data-group-multiselect>
+    {% for group in available_groups %}
+      {% if group.name in initiative_names %}
+        <option value="{{ group.id }}"
+                data-group-name="{{ group.name }}"
+                {% if group.id in selected_initiative_ids %}selected{% endif %}>
+          {{ group.title }}
+        </option>
+      {% endif %}
     {% endfor %}
-</select>
+  </select>
+  {% snippet 'scheming/form_snippets/help_text.html', field=field %}
+  <p class="help-block small text-muted">
+    {{ _('Add every Initiative that applies. Use Ctrl/Cmd for multiple selection.') }}
+  </p>
+  <div class="group-token-list"
+       data-empty-text="{{ _('No Initiative selected yet.') }}">
+  </div>
+</div>

@@ -85,6 +85,14 @@ schemingdcat-authors-add-button:
   contents:
     - js/modules/schemingdcat-authors-add-button.js
 
+schemingdcat-group-multiselect:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_group_multiselect.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-group-multiselect.js
+
 schemingdcat-publisher-uri:
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:

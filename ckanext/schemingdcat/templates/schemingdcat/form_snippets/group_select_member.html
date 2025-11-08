@@ -1,18 +1,41 @@
-{% set grupos = h.get_memberstates() %}
+{% set member_state_names = h.get_memberstates() %}
 {% set existing_groups = data.groups if data.groups else [] %}
-{% set disponibles = h.groups_available() %}
+{% set available_groups = h.groups_available() %}
+{% set selected_member_ids = [] %}
 
+{% for group in existing_groups %}
+  {% if group.name in member_state_names %}
+    {% do selected_member_ids.append(group.id) %}
+  {% endif %}
+{% endfor %}
 
-<label class="checkbox" for="field-group-0">Member State:</label>
-<select id="field-group-0" name="groups__0__id" class="form-control form-select">
-    <option value=""></option>
-    {% for group in disponibles %}
-        {% set selected_org = False %}
-            {% if group.name in grupos %}
-			      {% if existing_groups|length > 0 %}
-						{% set selected_org = existing_groups[0].id == group.id %}
-				  {% endif %}
-                <option value="{{ group.id }}" {% if selected_org %} selected {% endif %}>{{ group.title }}</option>
-            {% endif %}
+<div class="form-group group-multiselect"
+     data-module="schemingdcat-group-multiselect"
+     data-group-type="member"
+     data-group-order="0"
+     data-hidden-container="#groups-hidden-inputs">
+  <label class="control-label" for="member-states-multiselect">
+    {{ h.scheming_language_text(field.label) }}
+  </label>
+  <select id="member-states-multiselect"
+          class="form-control group-multiselect-select"
+          multiple
+          data-group-multiselect>
+    {% for group in available_groups %}
+      {% if group.name in member_state_names %}
+        <option value="{{ group.id }}"
+                data-group-name="{{ group.name }}"
+                {% if group.id in selected_member_ids %}selected{% endif %}>
+          {{ group.title }}
+        </option>
+      {% endif %}
     {% endfor %}
-</select>
+  </select>
+  {% snippet 'scheming/form_snippets/help_text.html', field=field %}
+  <p class="help-block small text-muted">
+    {{ _('Select all applicable Member States. Hold Ctrl/Cmd to pick more than one. Admins see every option; other users only see the groups available to them.') }}
+  </p>
+  <div class="group-token-list"
+       data-empty-text="{{ _('No Member State selected yet.') }}">
+  </div>
+</div>
