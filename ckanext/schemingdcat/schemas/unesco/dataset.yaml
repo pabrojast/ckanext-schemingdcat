@@ -64,9 +64,9 @@ schema_form_groups:
     fa_icon: fa-server
   - form_group_id: author
     label:
-      en: Author information
-      es: Información del autor
-      fr: Informations sur l'auteur
+      en: Author information (Legacy)
+      es: Información del autor (Legado)
+      fr: Informations sur l'auteur (Hérité)
     fa_icon: fa-pencil-square-o
 
   - form_group_id: standards
@@ -1251,15 +1251,15 @@ dataset_fields:
 # Enhanced Authors with ORCID and Affiliations (O)
 - field_name: authors
   label:
-    en: Authors
-    es: Autores
-    fr: Auteurs
+    en: DOI Author Information
+    es: Información DOI de autores
+    fr: Informations DOI sur les auteurs
   display_property: dct:creator
   help_text:
-    en: "List of authors who created or contributed to this dataset. Support for ORCID identifiers and institutional affiliations."
-    es: "Lista de autores que crearon o contribuyeron a este conjunto de datos. Soporte para identificadores ORCID y afiliaciones institucionales."
-    fr: "Liste des auteurs qui ont créé ou contribué à cet ensemble de données. Support pour les identifiants ORCID et les affiliations institutionnelles."
-  form_group_id: author
+    en: "Author metadata used for DOI registration (names, ORCID identifiers, affiliations and contact emails)."
+    es: "Metadatos de autores utilizados para el registro del DOI (nombres, identificadores ORCID, afiliaciones y correos de contacto)."
+    fr: "Métadonnées des auteurs utilisées pour l'enregistrement du DOI (noms, identifiants ORCID, affiliations et courriels de contact)."
+  form_group_id: publisher
   repeating_subfields:
     - field_name: name
       label:

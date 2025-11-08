@@ -77,6 +77,14 @@ schemingdcat-toggle-optional:
   contents:
     - js/modules/schemingdcat-toggle-optional.js
 
+schemingdcat-authors-add-button:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_authors_add_button.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-authors-add-button.js
+
 schemingdcat-publisher-uri:
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:
@@ -124,4 +132,3 @@ schemingdcat-resource-auto-fields:
       - base/main
   contents:
     - js/modules/schemingdcat-resource-auto-fields.js
-
