@@ -999,6 +999,10 @@ dataset_fields:
   display_property: vcard:hasEmail
   display_snippet: email.html
   form_placeholder: joseblanco@example.com
+  help_text:
+    en: "Email for the metadata contact point. This address is shown publicly on the dataset page; use a generic mailbox if sensitive."
+    es: "Correo del punto de contacto de metadatos. Esta dirección se muestra públicamente en la página del conjunto de datos; use un buzón genérico si es sensible."
+    fr: "Courriel du point de contact des métadonnées. Cette adresse est affichée publiquement sur la page du jeu de données; utilisez une boîte générique si nécessaire."
   form_group_id: contact
 
 # Metadata point of contact Web (R)
@@ -1070,6 +1074,10 @@ dataset_fields:
   preset: schemingdcat_valid_email
   display_property: foaf:mbox
   form_placeholder: joseblanco@example.com
+  help_text:
+    en: "Public email for the publisher. It will appear on the dataset page; prefer an institutional or shared inbox."
+    es: "Correo público del publicador. Se mostrará en la página del conjunto de datos; prefiera un buzón institucional o compartido."
+    fr: "Courriel public de l'éditeur. Il apparaîtra sur la page du jeu de données; privilégiez une boîte institutionnelle ou partagée."
   form_group_id: publisher
   form_attrs:
     data-module: "autofill-responsible-party"
@@ -1310,9 +1318,9 @@ dataset_fields:
       form_placeholder: "jose.blanco@example.com"
       preset: schemingdcat_valid_email
       help_text:
-        en: "Contact email for the author"
-        es: "Correo de contacto del autor"
-        fr: "Courriel de contact de l'auteur"
+        en: "Contact email for the author. This information is published on the dataset page."
+        es: "Correo de contacto del autor. Esta información se publica en la página del conjunto de datos."
+        fr: "Courriel de contact de l'auteur. Cette information est publiée sur la page du jeu de données."
 
 # Author Identifier (O) - Legacy field for backward compatibility
 - field_name: author_uri
@@ -1339,9 +1347,9 @@ dataset_fields:
   display_property: vcard:hasEmail
   form_placeholder: joseblanco@example.com
   help_text:
-    en: "Legacy field for backward compatibility. Use email field in 'Authors' section above for new datasets."
-    es: "Campo heredado para retrocompatibilidad. Use el campo email en la sección 'Autores' de arriba para nuevos conjuntos de datos."
-    fr: "Champ hérité pour la rétrocompatibilité. Utilisez le champ email dans la section 'Auteurs' ci-dessus pour les nouveaux ensembles de données."
+    en: "Legacy field for backward compatibility. Use email field in 'Authors' section above for new datasets. Any value entered here is publicly visible."
+    es: "Campo heredado para retrocompatibilidad. Use el campo email en la sección 'Autores' de arriba para nuevos conjuntos de datos. Cualquier valor ingresado aquí será visible públicamente."
+    fr: "Champ hérité pour la rétrocompatibilité. Utilisez le champ email dans la section 'Auteurs' ci-dessus pour les nouveaux ensembles de données. Toute valeur saisie ici est visible publiquement."
   form_group_id: author
   form_attrs:
     data-module: "autofill-responsible-party"

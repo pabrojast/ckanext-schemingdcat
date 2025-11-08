@@ -3,6 +3,7 @@
 {%- set schema = h.schemingdcat_get_dataset_schema(dataset_type) -%}
 
 {% block primary_content_inner %}
+  {% asset 'ckanext-schemingdcat/schemingdcat-email-protect' %}
   {{ super() }}
   {% block package_description %}
     <div class="dataset-badges">

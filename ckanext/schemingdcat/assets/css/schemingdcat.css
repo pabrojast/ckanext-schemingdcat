@@ -1730,3 +1730,39 @@ input.loading[name="spatial_extent"] {
 .group-multiselect .group-token-list .text-muted {
   font-style: italic;
 }
+
+.email-protect {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.email-protect .email-mask {
+  font-weight: 600;
+  color: #1a3c6c;
+}
+
+.email-protect .email-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.email-protect .email-action {
+  border: 0;
+  background: none;
+  color: #1c75bc;
+  padding: 0;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.email-protect .email-action:hover,
+.email-protect .email-action:focus {
+  color: #0f4c81;
+}
+
+.email-protect .email-status {
+  font-size: 12px;
+}

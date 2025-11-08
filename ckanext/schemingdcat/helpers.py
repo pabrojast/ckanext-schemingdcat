@@ -115,6 +115,43 @@ def schemingdcat_decode_json(json_text):
 
 
 @helper
+def schemingdcat_obfuscate_email(email):
+    """
+    Prepare obfuscated email data to keep addresses out of the plain markup.
+
+    Args:
+        email (str): Email address to obfuscate.
+
+    Returns:
+        dict: Keys:
+            local_rev (str)   -> reversed local part (before @)
+            domain_rev (str)  -> reversed domain part (after @)
+            masked (str)      -> partially masked human-readable placeholder
+        or {} if the email is invalid.
+    """
+    if not email or '@' not in email:
+        return {}
+
+    if not isinstance(email, str):
+        email = str(email)
+
+    local, domain = email.split('@', 1)
+    local = local.strip()
+    domain = domain.strip()
+
+    if not local or not domain:
+        return {}
+
+    masked = u"{0}***@{1}".format(local[0], domain) if local else "***@" + domain
+
+    return {
+        'local_rev': local[::-1],
+        'domain_rev': domain[::-1],
+        'masked': masked
+    }
+
+
+@helper
 def schemingdcat_organization_name(org_id):
     """Return the name of the organization from its ID.
 

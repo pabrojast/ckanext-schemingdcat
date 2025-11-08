@@ -6,6 +6,27 @@
   {% endif %}
 {% endmacro %}
 
+{% macro protected_email_item(email_value) %}
+  {% set obfuscated = h.schemingdcat_obfuscate_email(email_value) %}
+  {% if obfuscated %}
+    <li class="nav-item email-protect" data-module="schemingdcat-email-protect"
+        data-email-local="{{ obfuscated.local_rev }}" data-email-domain="{{ obfuscated.domain_rev }}">
+      <i class="fa fa-envelope" aria-hidden="true"></i>
+      <span class="email-mask">{{ obfuscated.masked }}</span>
+      <div class="email-actions">
+        <button type="button" class="email-action" data-action="copy">
+          <i class="fa fa-clone" aria-hidden="true"></i> {{ _('Copy email') }}
+        </button>
+        <button type="button" class="email-action" data-action="compose">
+          <i class="fa fa-paper-plane" aria-hidden="true"></i> {{ _('Compose email') }}
+        </button>
+      </div>
+      <span class="email-status text-muted" role="status" aria-live="polite"></span>
+      <noscript><span class="text-warning small">{{ _('Enable JavaScript to view email address.') }}</span></noscript>
+    </li>
+  {% endif %}
+{% endmacro %}
+
 {% block contact_info %}
   {% if pkg_dict.contact_name %}
     {% set dataset_fields = h.schemingdcat_get_dataset_schema(dataset_type).dataset_fields %}
@@ -40,7 +61,7 @@
 
         <ul class="nav nav-simple">
           {% if pkg_dict.contact_email %}
-            {{ contact_item('fa fa-envelope', 'mailto:' + pkg_dict.contact_email, 26, pkg_dict.contact_email) }}
+            {{ protected_email_item(pkg_dict.contact_email) }}
           {% endif %}
           {% if pkg_dict.contact_url %}
             {{ contact_item('fa fa-external-link', pkg_dict.contact_url, 26, h.schemingdcat_prettify_url(pkg_dict.contact_url)) }}
