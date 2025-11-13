@@ -1,6 +1,7 @@
 from ckan.common import request
 import json
 import ckan.plugins as plugins
+import ckan.plugins.toolkit as toolkit
 import ckanext.schemingdcat.config as sdct_config
 import ckanext.schemingdcat.utils as utils
 
@@ -37,7 +38,7 @@ class PackageController():
     def delete(self, entity):
         pass
 
-    def before_search(self, search_params):
+    def before_dataset_search(self, search_params):
         """Modifies search parameters before executing a search.
 
         This method adjusts the 'fq' (filter query) parameter based on the 'facet.field' value in the search parameters. If 'facet.field' is a list, it iterates through each field, applying the '_facet_search_operator' to modify 'fq'. If 'facet.field' is a string, it directly applies the '_facet_search_operator'. If 'facet.field' is not present or is invalid, no modification is made.
@@ -68,10 +69,10 @@ class PackageController():
             log.error("[before_search] Error: %s", e)
         return search_params
 
-    def after_search(self, search_results, search_params):
+    def after_dataset_search(self, search_results, search_params):
         return search_results
 
-    def before_index(self, data_dict):
+    def before_dataset_index(self, data_dict):
         """Processes the data dictionary before indexing.
 
         Iterates through each facet defined in the system's facets dictionary. For each facet present in the data dictionary, it attempts to parse its value as JSON. If the value is a valid JSON string, it replaces the original string value with the parsed JSON object. If the value cannot be parsed as JSON (e.g., because it's not a valid JSON string), it leaves the value unchanged. Facets present in the data dictionary but not containing any data are removed.
@@ -117,13 +118,13 @@ class PackageController():
 
         return data_dict
 
-    def before_view(self, pkg_dict):
+    def before_dataset_view(self, pkg_dict):
         # Asegurarnos de que el modo del formulario esté disponible
         if 'form_mode' not in pkg_dict:
             pkg_dict['form_mode'] = 'basic'
         return pkg_dict
 
-    def after_create(self, context, data_dict):
+    def after_dataset_create(self, context, data_dict):
         """
         Hook que se ejecuta después de crear un dataset.
         """
@@ -133,16 +134,16 @@ class PackageController():
         
         return data_dict
 
-    def after_update(self, context, data_dict):
+    def after_dataset_update(self, context, data_dict):
         """
         Hook que se ejecuta después de actualizar un dataset.
         """
         return data_dict
 
-    def after_delete(self, context, data_dict):
+    def after_dataset_delete(self, context, data_dict):
         return data_dict
 
-    def after_show(self, context, data_dict):
+    def after_dataset_show(self, context, data_dict):
         return data_dict
 
     def update_facet_titles(self, facet_titles):
@@ -190,3 +191,15 @@ class PackageController():
             new_fq = fq
 
         return new_fq
+
+
+if not toolkit.check_ckan_version(min_version='2.10.0'):
+    # Assign legacy hook names when running on CKAN < 2.10
+    PackageController.before_search = PackageController.before_dataset_search
+    PackageController.after_search = PackageController.after_dataset_search
+    PackageController.before_index = PackageController.before_dataset_index
+    PackageController.before_view = PackageController.before_dataset_view
+    PackageController.after_create = PackageController.after_dataset_create
+    PackageController.after_update = PackageController.after_dataset_update
+    PackageController.after_delete = PackageController.after_dataset_delete
+    PackageController.after_show = PackageController.after_dataset_show

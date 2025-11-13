@@ -193,6 +193,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         return uploader
 
+    def get_uploader(self, upload_to, old_filename=None):
+        """Fallback to CKAN's default uploader for non-resource uploads.
+
+        CKAN 2.10 calls this method for user/group images or other assets.
+        Returning None keeps the core uploader behaviour while our custom
+        resource uploader continues to handle dataset resources.
+        """
+        return None
+
     def get_actions(self):
         # Only return schemingdcat-specific actions
         # cloudstorage actions are provided by the cloudstorage plugin
