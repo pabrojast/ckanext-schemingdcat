@@ -1,4 +1,4 @@
-from ckan.common import json, c, request, is_flask_request
+from ckan.common import json, c, request
 from ckan.lib import helpers as ckan_helpers
 import ckan.logic as logic
 from ckan import model
@@ -69,6 +69,71 @@ def helper(fn):
     """
     all_helpers[fn.__name__] = fn
     return fn
+
+
+def _get_request_params():
+    """Return a request params-like object compatible with CKAN 2.9 and 2.10."""
+    try:
+        req = request
+    except RuntimeError:
+        return {}
+
+    for attr in ("params", "values", "args"):
+        params = getattr(req, attr, None)
+        if params is not None:
+            return params
+    return {}
+
+
+def _get_params_items(params):
+    """Return request params items, preferring multi-value semantics when available."""
+    items_method = getattr(params, "items", None)
+    if not callable(items_method):
+        return []
+    try:
+        return items_method(multi=True)
+    except TypeError:
+        return items_method()
+
+
+def _get_param_list(params, name):
+    """Return list-style access to request params."""
+    getlist = getattr(params, "getlist", None)
+    if callable(getlist):
+        return getlist(name)
+    getter = getattr(params, "get", None)
+    if callable(getter):
+        value = getter(name)
+    else:
+        value = None
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
+@helper
+def schemingdcat_request_params():
+    """Expose a params-like object safe across CKAN versions."""
+    return _get_request_params()
+
+
+@helper
+def schemingdcat_request_param(name, default=None):
+    """Return a request parameter value with cross-version support."""
+    params = _get_request_params()
+    getter = getattr(params, "get", None)
+    if callable(getter):
+        return getter(name, default)
+    return default
+
+
+@helper
+def schemingdcat_request_param_list(name):
+    """Return a list of values for a given request parameter."""
+    params = _get_request_params()
+    return _get_param_list(params, name)
 
 
 @helper
@@ -231,6 +296,12 @@ def schemingdcat_get_facet_items_dict(
         and isinstance(search_facets, dict)
         and search_facets.get(facet, {}).get("items")
     ):
+        params = _get_request_params()
+        params_items = _get_params_items(params)
+        order_lst = _get_param_list(params, "_%s_sort" % facet)
+        if order_lst:
+            order = order_lst[0]
+
         for facet_item in search_facets.get(facet)["items"]:
             if scheming_choices:
                 facet_item["label"] = scheming_choices_label(
@@ -242,22 +313,13 @@ def schemingdcat_get_facet_items_dict(
             if not len(facet_item["name"].strip()):
                 continue
 
-            params_items = (
-                request.params.items(multi=True)
-                if is_flask_request()
-                else request.params.items()
-            )
-
             if not (facet, facet_item["name"]) in params_items:
                 items.append(dict(active=False, **facet_item))
             elif not exclude_active:
                 items.append(dict(active=True, **facet_item))
 
             #    log.debug("params: {0}:{1}".format(
-            #    facet,request.params.getlist("_%s_sort" % facet)))
-            order_lst = request.params.getlist("_%s_sort" % facet)
-            if len(order_lst):
-                order = order_lst[0]
+            #    facet,_get_param_list(params, "_%s_sort" % facet)))
         #     Sort descendingly by count and ascendingly by case-sensitive display name
         #    items.sort(key=lambda it: (-it['count'], it['display_name'].lower()))
         sorts = {
@@ -299,7 +361,8 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
     """
     old_order = None
     order_param = "_%s_sort" % facet_name
-    order_lst = request.params.getlist(order_param)
+    params = _get_request_params()
+    order_lst = _get_param_list(params, order_param)
     if not extras:
         extras = {}
 
@@ -317,11 +380,7 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
 
     new_order = order_mapping.get(order_concept, {}).get(old_order)
 
-    params_items = (
-        request.params.items(multi=True)
-        if is_flask_request()
-        else request.params.items()
-    )
+    params_items = _get_params_items(params)
     params_nopage = [(k, v) for k, v in params_items if k != order_param]
 
     if new_order:

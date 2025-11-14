@@ -166,9 +166,10 @@ class PackageController():
         try:
             facet_operator = self.default_facet_operator
             # Determine the facet operator based on request parameters
-            if request.params.get(FACET_OPERATOR_PARAM_NAME) == 'OR':
+            request_value = _get_request_param_value(FACET_OPERATOR_PARAM_NAME)
+            if request_value == 'OR':
                 facet_operator = 'OR'
-            elif request.params.get(FACET_OPERATOR_PARAM_NAME) == 'AND':
+            elif request_value == 'AND':
                 facet_operator = 'AND'
 
             if facet_operator == 'OR' and facet_field:
@@ -191,6 +192,20 @@ class PackageController():
             new_fq = fq
 
         return new_fq
+
+
+def _get_request_param_value(name, default=None):
+    """Return a request param value that works on both CKAN 2.9 and 2.10."""
+    try:
+        req = request
+    except RuntimeError:
+        return default
+
+    for attr in ("params", "values", "args"):
+        params = getattr(req, attr, None)
+        if params is not None and hasattr(params, "get"):
+            return params.get(name, default)
+    return default
 
 
 if not toolkit.check_ckan_version(min_version='2.10.0'):

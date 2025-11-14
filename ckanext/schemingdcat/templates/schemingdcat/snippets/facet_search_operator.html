@@ -44,7 +44,7 @@
         </h2>
         {% endblock %}
         {% block facet_operator_items %}
-        {% set facet_operator = request.params.get('_facet_operator',  h.schemingdcat_default_facet_search_operator()) %}
+        {% set facet_operator = h.schemingdcat_request_param('_facet_operator',  h.schemingdcat_default_facet_search_operator()) %}
         <nav>
           <ul class="unstyled nav nav-simple nav-facet">
           <li class="nav-item container__filter__type__search">
