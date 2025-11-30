@@ -201,7 +201,8 @@ def _get_request_param_value(name, default=None):
     except RuntimeError:
         return default
 
-    for attr in ("params", "values", "args"):
+    # Prefer 'args' (CKAN 2.10+) to avoid deprecation warnings, fallback to 'params' for 2.9
+    for attr in ("args", "values", "params"):
         params = getattr(req, attr, None)
         if params is not None and hasattr(params, "get"):
             return params.get(name, default)

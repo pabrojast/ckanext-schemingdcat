@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
