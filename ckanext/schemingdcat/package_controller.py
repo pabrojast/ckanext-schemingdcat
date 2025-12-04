@@ -85,6 +85,9 @@ class PackageController():
         Returns:
             dict: The processed data dictionary with JSON strings parsed into objects where applicable and empty facets removed.
         """
+        # Add debug logging to verify this method is being called
+        dataset_id = data_dict.get('id', 'unknown')
+        log.info(f"[before_dataset_index] Processing dataset {dataset_id} - SchemingDCAT controller active")
         # Process facets
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
@@ -124,6 +127,21 @@ class PackageController():
             
             # Fields that might have multilingual versions
             multilingual_base_fields = ['title', 'notes', 'description']
+            
+            # Log all keys in data_dict to detect problematic fields
+            all_keys = list(data_dict.keys())
+            multilingual_keys = [k for k in all_keys if any(k.endswith(f'_{lang}') for lang in languages)]
+            if multilingual_keys:
+                log.info(f"[before_dataset_index] Found multilingual keys in {dataset_id}: {multilingual_keys}")
+            
+            # Also check for any keys that might contain language codes as values
+            problematic_fields = []
+            for key, value in data_dict.items():
+                if isinstance(value, dict) and any(lang_code in value for lang_code in languages):
+                    problematic_fields.append(f"{key}: {list(value.keys())}")
+            
+            if problematic_fields:
+                log.warning(f"[before_dataset_index] Found potentially problematic fields in {dataset_id}: {problematic_fields}")
             
             # Process multilingual fields to ensure they're properly formatted
             for base_field in multilingual_base_fields:
