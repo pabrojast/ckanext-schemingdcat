@@ -117,40 +117,55 @@ class PackageController():
                         del data_dict[field_name]
 
         # Handle multilingual fields that may cause atomic update issues
-        # Languages supported in the schema
-        languages = ['en', 'es', 'fr', 'ar']
-        
-        # Fields that might have multilingual versions
-        multilingual_base_fields = ['title', 'notes', 'description']
-        
-        # Process multilingual fields to ensure they're properly formatted
-        for base_field in multilingual_base_fields:
-            for lang in languages:
-                lang_field = f"{base_field}_{lang}"
-                if lang_field in data_dict:
-                    value = data_dict[lang_field]
-                    if isinstance(value, dict):
-                        # If the value is a dict (which might cause atomic update issues), 
-                        # extract the actual value or convert to string
-                        if 'value' in value:
-                            data_dict[lang_field] = str(value['value'])
-                            log.debug(f"[before_index] Extracted value from dict for {lang_field}")
-                        elif isinstance(value, dict) and len(value) == 1:
-                            # If it's a single-key dict, use the value
-                            key = list(value.keys())[0]
-                            if key in languages:
-                                # This is the problematic case - remove or fix
-                                log.warning(f"[before_index] Removing problematic multilingual field {lang_field} with language key {key}")
-                                del data_dict[lang_field]
-                            else:
-                                data_dict[lang_field] = str(value[key])
-                        else:
-                            # Convert complex dict to string
-                            data_dict[lang_field] = json.dumps(value)
-                            log.debug(f"[before_index] Converted dict to JSON string for {lang_field}")
-                    elif value == '' or value is None:
-                        # Remove empty multilingual fields to avoid Solr errors
-                        del data_dict[lang_field]
+        # Only process if we detect potential fluent-related data issues
+        try:
+            # Languages supported in the schema
+            languages = ['en', 'es', 'fr', 'ar']
+            
+            # Fields that might have multilingual versions
+            multilingual_base_fields = ['title', 'notes', 'description']
+            
+            # Process multilingual fields to ensure they're properly formatted
+            for base_field in multilingual_base_fields:
+                for lang in languages:
+                    lang_field = f"{base_field}_{lang}"
+                    if lang_field in data_dict:
+                        value = data_dict[lang_field]
+                        
+                        # Only process if the value might cause issues
+                        if isinstance(value, dict):
+                            try:
+                                # If the value is a dict (which might cause atomic update issues), 
+                                # extract the actual value or convert to string
+                                if 'value' in value:
+                                    data_dict[lang_field] = str(value['value'])
+                                    log.debug(f"[before_index] Extracted value from dict for {lang_field}")
+                                elif len(value) == 1:
+                                    # If it's a single-key dict, check if it's problematic
+                                    key = list(value.keys())[0]
+                                    if key in languages:
+                                        # This is the problematic case - set to empty string instead of deleting
+                                        log.warning(f"[before_index] Converting problematic multilingual field {lang_field} with language key {key} to empty string")
+                                        data_dict[lang_field] = ""
+                                    else:
+                                        data_dict[lang_field] = str(value[key])
+                                else:
+                                    # Convert complex dict to JSON string as fallback
+                                    data_dict[lang_field] = json.dumps(value)
+                                    log.debug(f"[before_index] Converted complex dict to JSON string for {lang_field}")
+                            except Exception as e:
+                                # If anything goes wrong, convert to string safely
+                                log.warning(f"[before_index] Error processing {lang_field}, converting to string: {e}")
+                                data_dict[lang_field] = str(value)
+                        
+                        # Only remove if explicitly empty (safer than before)
+                        elif value is None:
+                            data_dict[lang_field] = ""
+                            
+        except Exception as e:
+            # If the entire multilingual processing fails, log but don't break indexing
+            log.error(f"[before_index] Error in multilingual field processing: {e}")
+            # Continue without the multilingual processing
 
         return data_dict
 
