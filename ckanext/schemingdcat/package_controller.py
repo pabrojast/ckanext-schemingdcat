@@ -116,6 +116,42 @@ class PackageController():
                         # If serialization fails, remove the field from indexing to avoid Solr errors
                         del data_dict[field_name]
 
+        # Handle multilingual fields that may cause atomic update issues
+        # Languages supported in the schema
+        languages = ['en', 'es', 'fr', 'ar']
+        
+        # Fields that might have multilingual versions
+        multilingual_base_fields = ['title', 'notes', 'description']
+        
+        # Process multilingual fields to ensure they're properly formatted
+        for base_field in multilingual_base_fields:
+            for lang in languages:
+                lang_field = f"{base_field}_{lang}"
+                if lang_field in data_dict:
+                    value = data_dict[lang_field]
+                    if isinstance(value, dict):
+                        # If the value is a dict (which might cause atomic update issues), 
+                        # extract the actual value or convert to string
+                        if 'value' in value:
+                            data_dict[lang_field] = str(value['value'])
+                            log.debug(f"[before_index] Extracted value from dict for {lang_field}")
+                        elif isinstance(value, dict) and len(value) == 1:
+                            # If it's a single-key dict, use the value
+                            key = list(value.keys())[0]
+                            if key in languages:
+                                # This is the problematic case - remove or fix
+                                log.warning(f"[before_index] Removing problematic multilingual field {lang_field} with language key {key}")
+                                del data_dict[lang_field]
+                            else:
+                                data_dict[lang_field] = str(value[key])
+                        else:
+                            # Convert complex dict to string
+                            data_dict[lang_field] = json.dumps(value)
+                            log.debug(f"[before_index] Converted dict to JSON string for {lang_field}")
+                    elif value == '' or value is None:
+                        # Remove empty multilingual fields to avoid Solr errors
+                        del data_dict[lang_field]
+
         return data_dict
 
     def before_dataset_view(self, pkg_dict):
