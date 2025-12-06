@@ -134,51 +134,46 @@ class PackageController():
             if multilingual_keys:
                 log.info(f"[before_dataset_index] Found multilingual keys in {dataset_id}: {multilingual_keys}")
             
-            # Also check for any keys that might contain language codes as values
+            # Check for and fix multilingual fields that cause atomic update issues
             problematic_fields = []
+            multilingual_translated_fields = ['title_translated', 'notes_translated', 'provenance', 'purpose', 'version_notes']
+            
             for key, value in data_dict.items():
                 if isinstance(value, dict) and any(lang_code in value for lang_code in languages):
                     problematic_fields.append(f"{key}: {list(value.keys())}")
+                    
+                    # Fix the problematic field by converting multilingual dict to JSON string
+                    if key in multilingual_translated_fields:
+                        try:
+                            # Convert the multilingual dict to JSON string for Solr indexing
+                            data_dict[key] = json.dumps(value)
+                            log.info(f"[before_dataset_index] Converted multilingual field {key} to JSON string")
+                        except (TypeError, ValueError) as e:
+                            log.warning(f"[before_dataset_index] Could not serialize {key} to JSON: {e}")
+                            # Fallback: use the first available language value or empty string
+                            if 'en' in value:
+                                data_dict[key] = str(value['en'])
+                            elif value:
+                                data_dict[key] = str(list(value.values())[0])
+                            else:
+                                data_dict[key] = ""
+                    else:
+                        # For other problematic fields, try to extract the most appropriate value
+                        try:
+                            if 'en' in value:
+                                data_dict[key] = str(value['en'])
+                            elif value:
+                                data_dict[key] = str(list(value.values())[0])
+                            else:
+                                data_dict[key] = ""
+                            log.info(f"[before_dataset_index] Fixed problematic field {key}")
+                        except Exception as e:
+                            log.warning(f"[before_dataset_index] Error fixing field {key}: {e}")
+                            data_dict[key] = ""
             
             if problematic_fields:
                 log.warning(f"[before_dataset_index] Found potentially problematic fields in {dataset_id}: {problematic_fields}")
             
-            # Process multilingual fields to ensure they're properly formatted
-            for base_field in multilingual_base_fields:
-                for lang in languages:
-                    lang_field = f"{base_field}_{lang}"
-                    if lang_field in data_dict:
-                        value = data_dict[lang_field]
-                        
-                        # Only process if the value might cause issues
-                        if isinstance(value, dict):
-                            try:
-                                # If the value is a dict (which might cause atomic update issues), 
-                                # extract the actual value or convert to string
-                                if 'value' in value:
-                                    data_dict[lang_field] = str(value['value'])
-                                    log.debug(f"[before_index] Extracted value from dict for {lang_field}")
-                                elif len(value) == 1:
-                                    # If it's a single-key dict, check if it's problematic
-                                    key = list(value.keys())[0]
-                                    if key in languages:
-                                        # This is the problematic case - set to empty string instead of deleting
-                                        log.warning(f"[before_index] Converting problematic multilingual field {lang_field} with language key {key} to empty string")
-                                        data_dict[lang_field] = ""
-                                    else:
-                                        data_dict[lang_field] = str(value[key])
-                                else:
-                                    # Convert complex dict to JSON string as fallback
-                                    data_dict[lang_field] = json.dumps(value)
-                                    log.debug(f"[before_index] Converted complex dict to JSON string for {lang_field}")
-                            except Exception as e:
-                                # If anything goes wrong, convert to string safely
-                                log.warning(f"[before_index] Error processing {lang_field}, converting to string: {e}")
-                                data_dict[lang_field] = str(value)
-                        
-                        # Only remove if explicitly empty (safer than before)
-                        elif value is None:
-                            data_dict[lang_field] = ""
                             
         except Exception as e:
             # If the entire multilingual processing fails, log but don't break indexing
