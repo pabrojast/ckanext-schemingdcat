@@ -53,3 +53,6 @@ ckanext/schemingdcat/i18n/tools/output/*
 ckanext/schemingdcat/i18n/tools/input/*
 ckanext/schemingdcat/i18n/tools/input/input.yaml
 ckanext/schemingdcat/public/images/icons/spatial_uri/country/eur - copia.svgZone.Identifier
+
+*.whl
+*ckan-2.10.0.tar.gz
