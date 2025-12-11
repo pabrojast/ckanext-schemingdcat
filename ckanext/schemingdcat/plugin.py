@@ -193,6 +193,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         return uploader
 
+    def get_uploader(self, upload_to, old_filename=None):
+        """
+        Return uploader for non-resource uploads (group images, etc).
+        
+        We don't provide misc-file storage, so return None to use default Uploader.
+        This is consistent with cloudstorage plugin behavior.
+        """
+        return None
+
     def get_actions(self):
         # Only return schemingdcat-specific actions
         # cloudstorage actions are provided by the cloudstorage plugin
