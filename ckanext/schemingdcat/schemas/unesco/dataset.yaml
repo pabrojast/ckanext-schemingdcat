@@ -525,6 +525,7 @@ dataset_fields:
     es: Temáticas (DCAT-AP)
     fr: Thèmes (DCAT-AP)
   preset: multiple_choice_icon
+  icons_dir: theme_eu
   display_property: dcat:theme
   select_size: 10
   required: True
@@ -1877,6 +1878,7 @@ dataset_fields:
     fr: Thèmes INSPIRE
   display_property: dcat:theme
   preset: multiple_choice_icon
+  icons_dir: theme
   select_size: 10
   help_text:
     en: '<a href="http://inspire.ec.europa.eu/theme" target="_blank" rel="noopener">Themes</a> (INSPIRE)'
@@ -2096,6 +2098,7 @@ dataset_fields:
     es: Identificador geográfico
     fr: Identifiant géographique
   preset: multiple_choice_icon
+  icons_dir: spatial_uri
   display_property: dcat:theme
   select_size: 10
   sorted_choices: True
