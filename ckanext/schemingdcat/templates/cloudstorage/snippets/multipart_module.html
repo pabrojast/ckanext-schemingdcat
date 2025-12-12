@@ -296,10 +296,9 @@
                     console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                 }
 
-                // If it's an existing resource, update it
-                if (resourceId && resourceId.trim()) {
-                    updateResourceAfterUpload(resourceId, file.name);
-                }
+                // ALWAYS update the URL field with the filename (for both new and existing resources)
+                // This is critical for the backend to know what file was uploaded
+                updateResourceUrlField(file.name);
 
                 // IMPORTANT: Unregister upload immediately to enable Save button
                 if (typeof unregisterUpload === 'function' && fileId) {
@@ -328,16 +327,25 @@
             });
         }
 
+        function updateResourceUrlField(filename) {
+            // Update the URL field with the filename
+            // This is required for CKAN to know a file was uploaded
+            var urlInput = document.querySelector('input[name="url"]');
+            if (urlInput) {
+                urlInput.value = filename;
+                urlInput.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('[schemingdcat-cloudstorage] Updated URL field with filename:', filename);
+            } else {
+                console.warn('[schemingdcat-cloudstorage] URL input field not found');
+            }
+        }
+
         function updateResourceAfterUpload(resourceId, filename) {
             // Update the resource metadata to point to the uploaded file
             console.log('[schemingdcat-cloudstorage] Updating resource metadata for:', resourceId);
             
             // The URL field should be updated
-            var urlInput = document.querySelector('input[name="url"]');
-            if (urlInput && !urlInput.value) {
-                // Set filename - CKAN's cloudstorage will handle the actual URL
-                urlInput.value = filename;
-            }
+            updateResourceUrlField(filename);
         }
 
         function uploadToAzure(file, uploadUrl, contentType, progressElements, fileId) {
