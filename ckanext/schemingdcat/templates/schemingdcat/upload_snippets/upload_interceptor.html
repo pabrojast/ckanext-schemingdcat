@@ -15,7 +15,19 @@
 
     // Wait for DOM to be ready
     function installInterceptor() {
-      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+      // Find forms that may have file uploads
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+      
+      // Also check for forms containing file upload inputs
+      if (forms.length === 0) {
+        var fileInputs = document.querySelectorAll('input[type="file"][name="upload"]');
+        var formSet = new Set();
+        fileInputs.forEach(function(input) {
+          var form = input.closest('form');
+          if (form) formSet.add(form);
+        });
+        forms = Array.from(formSet);
+      }
 
       forms.forEach(function(form) {
         if (form.getAttribute('data-ajax-interceptor')) return; // Already installed

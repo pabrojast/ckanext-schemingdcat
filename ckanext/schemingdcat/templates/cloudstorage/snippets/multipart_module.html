@@ -409,7 +409,15 @@
         // Handle form submission for resources with Azure uploads
         // IMPORTANT: This handler runs BEFORE the Form Interceptor (capture phase)
         function setupFormSubmitHandler() {
-            var form = document.querySelector('form.dataset-form, form#resource-edit, form.dataset-resource-form');
+            // Try multiple selectors to find the resource form
+            var form = document.querySelector('form.dataset-form, form#resource-edit, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+            if (!form) {
+                // Try to find any form that contains a file upload input
+                var fileInput = document.querySelector('input[type="file"][name="upload"]');
+                if (fileInput) {
+                    form = fileInput.closest('form');
+                }
+            }
             if (!form) {
                 console.log('[schemingdcat-cloudstorage] No resource form found');
                 return;
