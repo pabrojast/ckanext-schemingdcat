@@ -26,6 +26,25 @@
     margin-top: 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     transition: all 0.3s ease;
+    /* Ensure visibility within dropzone */
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Fix for progress container inside dropzone */
+.schemingdcat-upload-wrapper .upload-dropzone .cloudstorage-progress-container,
+.schemingdcat-upload-wrapper .cloudstorage-progress-container {
+    margin: 15px auto;
+    max-width: calc(100% - 30px);
+}
+
+/* Ensure the cloudstorage indicator doesn't get cut off */
+.schemingdcat-upload-wrapper .cloudstorage-indicator {
+    margin: 10px 15px;
+    position: relative;
+    z-index: 5;
 }
 
 .cloudstorage-progress-container.uploading {
