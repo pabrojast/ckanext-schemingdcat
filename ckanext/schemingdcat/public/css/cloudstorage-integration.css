@@ -97,6 +97,7 @@
     background: linear-gradient(45deg, #0078d4, #106ebe, #005a9e);
     background-size: 40px 40px;
     animation: azure-progress 2s linear infinite;
+    height: 100%;
 }
 
 @keyframes azure-progress {
