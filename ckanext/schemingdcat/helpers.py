@@ -1501,9 +1501,9 @@ def get_initiatives():
     available_groups = ckan_helpers.groups_available()
     if available_groups:
         initiatives = [
-            group.name
+            group['name'] if isinstance(group, dict) else group.name
             for group in available_groups
-            if getattr(group, 'name', None) not in memberstate_names
+            if (group.get('name') if isinstance(group, dict) else getattr(group, 'name', None)) not in memberstate_names
         ]
         if initiatives:
             return initiatives
