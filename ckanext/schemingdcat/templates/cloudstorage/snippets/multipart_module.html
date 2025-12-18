@@ -296,10 +296,9 @@
                     console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                 }
 
-                // If it's an existing resource, update it
-                if (resourceId && resourceId.trim()) {
-                    updateResourceAfterUpload(resourceId, file.name);
-                }
+                // ALWAYS update the URL field with the filename (for both new and existing resources)
+                // This is critical for the backend to know what file was uploaded
+                updateResourceUrlField(file.name);
 
                 // IMPORTANT: Unregister upload immediately to enable Save button
                 if (typeof unregisterUpload === 'function' && fileId) {
@@ -328,16 +327,25 @@
             });
         }
 
+        function updateResourceUrlField(filename) {
+            // Update the URL field with the filename
+            // This is required for CKAN to know a file was uploaded
+            var urlInput = document.querySelector('input[name="url"]');
+            if (urlInput) {
+                urlInput.value = filename;
+                urlInput.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('[schemingdcat-cloudstorage] Updated URL field with filename:', filename);
+            } else {
+                console.warn('[schemingdcat-cloudstorage] URL input field not found');
+            }
+        }
+
         function updateResourceAfterUpload(resourceId, filename) {
             // Update the resource metadata to point to the uploaded file
             console.log('[schemingdcat-cloudstorage] Updating resource metadata for:', resourceId);
             
             // The URL field should be updated
-            var urlInput = document.querySelector('input[name="url"]');
-            if (urlInput && !urlInput.value) {
-                // Set filename - CKAN's cloudstorage will handle the actual URL
-                urlInput.value = filename;
-            }
+            updateResourceUrlField(filename);
         }
 
         function uploadToAzure(file, uploadUrl, contentType, progressElements, fileId) {
@@ -399,8 +407,17 @@
         }
         
         // Handle form submission for resources with Azure uploads
+        // IMPORTANT: This handler runs BEFORE the Form Interceptor (capture phase)
         function setupFormSubmitHandler() {
-            var form = document.querySelector('form.dataset-form, form#resource-edit');
+            // Try multiple selectors to find the resource form
+            var form = document.querySelector('form.dataset-form, form#resource-edit, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+            if (!form) {
+                // Try to find any form that contains a file upload input
+                var fileInput = document.querySelector('input[type="file"][name="upload"]');
+                if (fileInput) {
+                    form = fileInput.closest('form');
+                }
+            }
             if (!form) {
                 console.log('[schemingdcat-cloudstorage] No resource form found');
                 return;
@@ -414,6 +431,7 @@
 
             console.log('[schemingdcat-cloudstorage] Setting up form submit handler for Azure uploads');
 
+            // Use capture phase (true) to run BEFORE other submit handlers
             form.addEventListener('submit', function(e) {
                 // Check if there are any completed Azure uploads
                 var hasAzureUpload = false;
@@ -438,36 +456,50 @@
 
                 console.log('[schemingdcat-cloudstorage] Found completed Azure upload:', azureUpload.blobPath);
 
-                // Clear the file input so the file isn't uploaded again
-                var fileInput = document.querySelector('input[type="file"][name="upload"]');
-                if (fileInput && fileInput.files.length > 0) {
-                    console.log('[schemingdcat-cloudstorage] Clearing file input to prevent duplicate upload');
-                    
-                    // Create a hidden input with the blob path
+                // Add hidden fields FIRST (before clearing file input)
+                if (!form.querySelector('input[name="azure_blob_path"]')) {
                     var blobPathInput = document.createElement('input');
                     blobPathInput.type = 'hidden';
                     blobPathInput.name = 'azure_blob_path';
                     blobPathInput.value = azureUpload.blobPath;
                     form.appendChild(blobPathInput);
-                    
-                    // Also add a flag to indicate this is an Azure upload
+                    console.log('[schemingdcat-cloudstorage] Added azure_blob_path:', azureUpload.blobPath);
+                }
+                
+                if (!form.querySelector('input[name="azure_upload"]')) {
                     var azureFlagInput = document.createElement('input');
                     azureFlagInput.type = 'hidden';
                     azureFlagInput.name = 'azure_upload';
                     azureFlagInput.value = 'true';
                     form.appendChild(azureFlagInput);
-                    
-                    // Clear the file input by cloning it
-                    var newFileInput = fileInput.cloneNode(true);
-                    newFileInput.value = '';
-                    fileInput.parentNode.replaceChild(newFileInput, fileInput);
-                    
-                    console.log('[schemingdcat-cloudstorage] Added azure_blob_path:', azureUpload.blobPath);
                 }
 
-                // Allow form submission
+                // Clear the file input so the file isn't uploaded again
+                var fileInput = form.querySelector('input[type="file"][name="upload"]');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    console.log('[schemingdcat-cloudstorage] Clearing file input to prevent duplicate upload');
+                    
+                    // Use DataTransfer to properly clear the files (modern browsers)
+                    try {
+                        var dt = new DataTransfer();
+                        fileInput.files = dt.files;
+                        console.log('[schemingdcat-cloudstorage] File input cleared using DataTransfer');
+                    } catch (err) {
+                        // Fallback: clone and replace the input
+                        console.log('[schemingdcat-cloudstorage] DataTransfer not supported, using clone method');
+                        var newFileInput = fileInput.cloneNode(true);
+                        try { newFileInput.value = ''; } catch (e) {}
+                        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                    }
+                }
+
+                // Mark form as processed by CloudStorage
+                form.dataset.azureUploadProcessed = 'true';
+
+                // Allow form submission (no file to upload now)
+                console.log('[schemingdcat-cloudstorage] Form ready for submission (metadata only)');
                 return true;
-            });
+            }, true); // CAPTURE PHASE - runs before bubbling handlers
         }
         
         // Function to initialize cloudstorage when jQuery is available

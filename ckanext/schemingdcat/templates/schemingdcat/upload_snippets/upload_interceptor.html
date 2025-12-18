@@ -15,7 +15,19 @@
 
     // Wait for DOM to be ready
     function installInterceptor() {
-      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+      // Find forms that may have file uploads
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+      
+      // Also check for forms containing file upload inputs
+      if (forms.length === 0) {
+        var fileInputs = document.querySelectorAll('input[type="file"][name="upload"]');
+        var formSet = new Set();
+        fileInputs.forEach(function(input) {
+          var form = input.closest('form');
+          if (form) formSet.add(form);
+        });
+        forms = Array.from(formSet);
+      }
 
       forms.forEach(function(form) {
         if (form.getAttribute('data-ajax-interceptor')) return; // Already installed
@@ -25,6 +37,76 @@
 
         form.addEventListener('submit', function(e) {
           var fileInput = form.querySelector('input[type="file"][name="upload"]');
+
+          // =====================================================================
+          // CHECK FOR COMPLETED AZURE UPLOAD - Skip file re-upload if already done
+          // =====================================================================
+          var hasCompletedAzureUpload = false;
+          var azureUploadInfo = null;
+          
+          if (window.cloudStorageUploads) {
+            for (var uploadId in window.cloudStorageUploads) {
+              var upload = window.cloudStorageUploads[uploadId];
+              if (upload && upload.status === 'completed' && upload.blobPath) {
+                hasCompletedAzureUpload = true;
+                azureUploadInfo = upload;
+                console.log('[Form Interceptor] Found completed Azure upload:', upload.blobPath);
+                break;
+              }
+            }
+          }
+
+          // If Azure upload is complete, clear file input and add blob path as hidden field
+          if (hasCompletedAzureUpload && azureUploadInfo) {
+            console.log('[Form Interceptor] Azure upload already completed - submitting metadata only');
+            
+            // Helper function to clear beforeunload
+            var clearWarning = function(context) {
+              if (typeof clearBeforeUnloadWarning === 'function') {
+                clearBeforeUnloadWarning(context);
+              } else if (window.__schemingdcat_clearBeforeUnloadWarning__) {
+                window.__schemingdcat_clearBeforeUnloadWarning__(context);
+              } else {
+                window.onbeforeunload = null;
+              }
+            };
+            
+            // Add hidden fields for Azure blob path if not already present
+            if (!form.querySelector('input[name="azure_blob_path"]')) {
+              var blobPathInput = document.createElement('input');
+              blobPathInput.type = 'hidden';
+              blobPathInput.name = 'azure_blob_path';
+              blobPathInput.value = azureUploadInfo.blobPath;
+              form.appendChild(blobPathInput);
+            }
+            
+            if (!form.querySelector('input[name="azure_upload"]')) {
+              var azureFlagInput = document.createElement('input');
+              azureFlagInput.type = 'hidden';
+              azureFlagInput.name = 'azure_upload';
+              azureFlagInput.value = 'true';
+              form.appendChild(azureFlagInput);
+            }
+            
+            // Clear the file input to prevent re-upload
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+              console.log('[Form Interceptor] Clearing file input to prevent duplicate upload');
+              try {
+                var dt = new DataTransfer();
+                var newFileInput = fileInput.cloneNode(true);
+                newFileInput.files = dt.files;
+                fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                fileInput = newFileInput;
+              } catch (err) {
+                try { fileInput.value = ''; } catch (e) {}
+              }
+            }
+            
+            // Clear beforeunload and allow normal form submission
+            clearWarning('azure upload complete');
+            console.log('[Form Interceptor] Allowing normal form submission (metadata only)');
+            return true;
+          }
 
           // Only intercept if there's a file being uploaded
           if (fileInput && fileInput.files && fileInput.files.length > 0) {
@@ -186,8 +268,13 @@
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
                 console.error('[Form Interceptor] Response:', xhr.responseText);
 
+                // Check if this was an Azure upload - don't retry if file is already in Azure
+                var wasAzureUpload = form.querySelector('input[name="azure_upload"]') || 
+                                     form.querySelector('input[name="azure_blob_path"]');
+
                 // Handle retryable errors (502, 504 - server timeout/gateway errors)
-                if ((xhr.status === 502 || xhr.status === 504) && retryCount < maxRetries) {
+                // BUT don't retry for Azure uploads - the file is already there, backend is just slow
+                if ((xhr.status === 502 || xhr.status === 504) && retryCount < maxRetries && !wasAzureUpload) {
                   retryCount++;
                   console.warn('[Form Interceptor] Retrying form submission (' + retryCount + '/' + maxRetries + ') after ' + retryDelay + 'ms');
 
@@ -207,6 +294,24 @@
                     }
                     xhr.send(formData);
                   }, retryDelay);
+                  return;
+                }
+                
+                // For Azure uploads with 502/504, show a more helpful message and reload
+                if ((xhr.status === 502 || xhr.status === 504) && wasAzureUpload) {
+                  console.log('[Form Interceptor] Azure upload completed but backend timeout - file is safe');
+                  
+                  // Clean up
+                  window.__schemingdcat_active_uploads__ = {};
+                  if (typeof updateFormSubmitButtons === 'function') {
+                    updateFormSubmitButtons(false);
+                  }
+                  
+                  alert('File uploaded successfully to cloud storage!\n\nThe server is still processing the metadata. Please wait a moment and refresh the page to see your resource.');
+                  
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 2000);
                   return;
                 }
 

@@ -199,6 +199,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         CKAN 2.10 calls this method for user/group images or other assets.
         Returning None keeps the core uploader behaviour while our custom
         resource uploader continues to handle dataset resources.
+        This is consistent with cloudstorage plugin behavior.
         """
         return None
 
