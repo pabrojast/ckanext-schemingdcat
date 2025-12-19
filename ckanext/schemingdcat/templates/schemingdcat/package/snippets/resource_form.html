@@ -52,7 +52,7 @@
 
   {# --- BATCH UPLOAD SECTION (for new resources only) --- #}
   {%- if not data.get('id') and pkg_name -%}
-    {%- set show_batch_upload = h.asbool(h.config.get('ckanext.schemingdcat.batch_upload_enabled', 'true')) -%}
+    {%- set show_batch_upload = h.asbool(h.schemingdcat_get_config_value('ckanext.schemingdcat.batch_upload_enabled', 'true')) -%}
     {%- if show_batch_upload -%}
       <div class="batch-upload-toggle-section mb-4">
         <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-batch-upload">

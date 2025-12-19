@@ -124,6 +124,24 @@ def helper(fn):
 
 
 @helper
+def schemingdcat_get_config_value(key, default=None):
+    """
+    Get a configuration value from CKAN config.
+    
+    This is a helper function to safely access CKAN configuration values
+    from templates.
+    
+    Args:
+        key (str): The configuration key to retrieve.
+        default: The default value if the key is not found.
+    
+    Returns:
+        The configuration value or the default value.
+    """
+    return p.toolkit.config.get(key, default)
+
+
+@helper
 def schemingdcat_get_schema_names():
     """
     Get the names of all the schemas defined for the Scheming DCAT extension.
