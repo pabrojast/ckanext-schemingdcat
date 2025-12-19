@@ -22,7 +22,7 @@
     <div class="download-links pull-right">
         <div class="btn-group">
             <a class="btn btn-primary" href="{{ h.url_for('api.action', ver=3, logic_function='package_show', _external=True, id=pkg.name) }}" target="_blank"><i class="fa fa-download"></i> {{ _('Download') }}</a>
-            <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-toggle="dropdown">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
