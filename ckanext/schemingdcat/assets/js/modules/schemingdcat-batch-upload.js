@@ -92,7 +92,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       
       // Test Azure endpoint with a dummy request
       $.ajax({
-        url: '/schemingdcat/api/get-azure-upload-url',
+        url: '/api/get-azure-upload-url',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ filename: 'test.txt' }),
@@ -426,7 +426,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       
       // Step 1: Get Azure SAS URL
       $.ajax({
-        url: '/schemingdcat/api/get-azure-upload-url',
+        url: '/api/get-azure-upload-url',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -701,7 +701,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       formData.append('file', fileItem.file);
       
       $.ajax({
-        url: '/schemingdcat/api/extract-spatial-extent',
+        url: '/api/extract-spatial-extent',
         type: 'POST',
         data: formData,
         processData: false,
