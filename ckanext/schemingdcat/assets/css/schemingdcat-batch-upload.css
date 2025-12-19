@@ -136,6 +136,14 @@
   padding: 2px 6px;
 }
 
+.batch-file-item .file-original {
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .batch-file-item .file-progress {
   margin-top: 8px;
 }

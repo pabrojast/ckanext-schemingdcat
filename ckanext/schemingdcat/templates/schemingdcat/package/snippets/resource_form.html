@@ -63,14 +63,48 @@
         </div>
       </div>
       <script>
-        document.getElementById('toggle-batch-upload').addEventListener('click', function() {
-          var container = document.getElementById('batch-upload-container');
-          var isHidden = container.style.display === 'none';
-          container.style.display = isHidden ? 'block' : 'none';
-          this.innerHTML = isHidden 
-            ? '<i class="fa fa-file-o"></i> {{ _("Upload single file") }}'
-            : '<i class="fa fa-files-o"></i> {{ _("Upload multiple files at once") }}';
-        });
+        (function() {
+          var toggleBtn = document.getElementById('toggle-batch-upload');
+          var batchContainer = document.getElementById('batch-upload-container');
+          
+          // Find the single file form fields to hide/show
+          function getSingleFormFields() {
+            var form = toggleBtn.closest('form');
+            if (!form) return [];
+            
+            // Get all form groups except batch upload section and the toggle button section
+            var allGroups = form.querySelectorAll('.form-group, .card2, .upload-section, .schemingdcat-upload-wrapper');
+            var batchSection = toggleBtn.closest('.batch-upload-toggle-section');
+            
+            return Array.prototype.filter.call(allGroups, function(el) {
+              return !batchSection.contains(el) && !batchContainer.contains(el);
+            });
+          }
+          
+          toggleBtn.addEventListener('click', function() {
+            var isHidden = batchContainer.style.display === 'none';
+            batchContainer.style.display = isHidden ? 'block' : 'none';
+            
+            // Toggle single form fields visibility
+            var singleFormFields = getSingleFormFields();
+            singleFormFields.forEach(function(field) {
+              field.style.display = isHidden ? 'none' : '';
+            });
+            
+            // Also hide/show the submit button when in batch mode
+            var form = toggleBtn.closest('form');
+            if (form) {
+              var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+              if (submitBtn) {
+                submitBtn.style.display = isHidden ? 'none' : '';
+              }
+            }
+            
+            this.innerHTML = isHidden 
+              ? '<i class="fa fa-file-o"></i> {{ _("Upload single file") }}'
+              : '<i class="fa fa-files-o"></i> {{ _("Upload multiple files at once") }}';
+          });
+        })();
       </script>
       <hr class="mb-4">
     {%- endif -%}

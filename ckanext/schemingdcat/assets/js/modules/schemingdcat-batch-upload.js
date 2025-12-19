@@ -259,8 +259,12 @@ ckan.module('schemingdcat-batch-upload', function ($) {
         resourceId: null,
         metadata: null,
         azureUrl: null,
-        blobPath: null
+        blobPath: null,
+        resourceName: null // Will be set during render
       };
+      
+      // Pre-calculate resource name
+      fileItem.resourceName = this._getResourceName(file.name);
       
       this.fileQueue.push(fileItem);
       this._renderFileItem(fileItem);
@@ -278,6 +282,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       var ext = fileItem.name.split('.').pop().toUpperCase();
       var iconClass = this._getFileIcon(fileItem.name);
       var sizeFormatted = this._formatFileSize(fileItem.size);
+      var resourceName = fileItem.resourceName || this._getResourceName(fileItem.name);
       
       var html = `
         <div class="batch-file-item" data-file-id="${fileItem.id}">
@@ -285,10 +290,11 @@ ckan.module('schemingdcat-batch-upload', function ($) {
             <i class="fa ${iconClass}"></i>
           </div>
           <div class="file-info">
-            <div class="file-name">${this._escapeHtml(fileItem.name)}</div>
+            <div class="file-name" title="${this._escapeHtml(fileItem.name)}">${this._escapeHtml(resourceName)}</div>
             <div class="file-meta">
               <span class="file-size">${sizeFormatted}</span>
               <span class="file-format badge">${ext}</span>
+              <span class="file-original text-muted small">(${this._escapeHtml(fileItem.name)})</span>
             </div>
             <div class="file-progress" style="display: none;">
               <div class="progress progress-sm">
@@ -524,22 +530,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       // Construct the blob URL (without SAS token)
       var blobUrl = fileItem.azureUrl.split('?')[0];
       
-      var resourceData = {
-        package_id: this.packageId,
-        name: this._getResourceName(fileItem.name),
-        format: this._getFileFormat(fileItem.name),
-        url: blobUrl,
-        url_type: 'upload'
-      };
-      
-      // Add extracted metadata if available
-      if (fileItem.metadata) {
-        Object.keys(fileItem.metadata).forEach(function(key) {
-          if (fileItem.metadata[key] !== null && fileItem.metadata[key] !== undefined) {
-            resourceData[key] = fileItem.metadata[key];
-          }
-        });
-      }
+      var resourceData = this._buildResourceData(fileItem, blobUrl);
       
       $.ajax({
         url: '/api/3/action/resource_create',
@@ -580,21 +571,19 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       $removeBtn.hide();
       $status.html('<i class="fa fa-spinner fa-spin"></i> ' + i18n.uploading);
       
+      // Build resource data using helper function
+      var resourceData = this._buildResourceData(fileItem, null);
+      
       // Prepare form data
       var formData = new FormData();
       formData.append('upload', fileItem.file);
-      formData.append('package_id', this.packageId);
-      formData.append('name', this._getResourceName(fileItem.name));
-      formData.append('format', this._getFileFormat(fileItem.name));
       
-      // Add extracted metadata if available
-      if (fileItem.metadata) {
-        Object.keys(fileItem.metadata).forEach(function(key) {
-          if (fileItem.metadata[key] !== null && fileItem.metadata[key] !== undefined) {
-            formData.append(key, fileItem.metadata[key]);
-          }
-        });
-      }
+      // Add all resource data to form
+      Object.keys(resourceData).forEach(function(key) {
+        if (resourceData[key] !== null && resourceData[key] !== undefined) {
+          formData.append(key, resourceData[key]);
+        }
+      });
       
       // Upload via CKAN API
       $.ajax({
@@ -701,7 +690,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       formData.append('file', fileItem.file);
       
       $.ajax({
-        url: '/api/extract-spatial-extent',
+        url: '/schemingdcat/api/extract-spatial-extent',
         type: 'POST',
         data: formData,
         processData: false,
@@ -727,7 +716,14 @@ ckan.module('schemingdcat-batch-upload', function ($) {
 
     _getResourceName: function(filename) {
       // Remove extension and clean up name
-      return filename.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+      var name = filename.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').trim();
+      
+      // Ensure we always return a valid name
+      if (!name || name.length === 0) {
+        name = 'Resource ' + new Date().toISOString().slice(0, 10);
+      }
+      
+      return name;
     },
 
     _getFileFormat: function(filename) {
@@ -739,6 +735,42 @@ ckan.module('schemingdcat-batch-upload', function ($) {
         'TIFF': 'GeoTIFF'
       };
       return formatMap[ext] || ext;
+    },
+
+    _getTodayDate: function() {
+      return new Date().toISOString().slice(0, 10);
+    },
+
+    _buildResourceData: function(fileItem, blobUrl) {
+      // Use pre-calculated resourceName if available, otherwise generate it
+      var resourceName = fileItem.resourceName || this._getResourceName(fileItem.name);
+      
+      var resourceData = {
+        package_id: this.packageId,
+        name: resourceName,
+        format: this._getFileFormat(fileItem.name)
+      };
+      
+      // Add URL if provided (for Azure upload)
+      if (blobUrl) {
+        resourceData.url = blobUrl;
+        resourceData.url_type = 'upload';
+      }
+      
+      // Add created date
+      resourceData.created = this._getTodayDate();
+      
+      // Add extracted metadata if available
+      if (fileItem.metadata) {
+        Object.keys(fileItem.metadata).forEach(function(key) {
+          if (fileItem.metadata[key] !== null && fileItem.metadata[key] !== undefined) {
+            resourceData[key] = fileItem.metadata[key];
+          }
+        });
+      }
+      
+      console.log('[schemingdcat-batch-upload] Resource data:', resourceData);
+      return resourceData;
     },
 
     _getFileIcon: function(filename) {
