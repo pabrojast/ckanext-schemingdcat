@@ -50,6 +50,32 @@
   {% asset 'ckanext-schemingdcat/schemingdcat-resource-auto-fields' %}
   <div data-module="schemingdcat-resource-auto-fields"></div>
 
+  {# --- BATCH UPLOAD SECTION (for new resources only) --- #}
+  {%- if not data.get('id') and pkg_name -%}
+    {%- set show_batch_upload = h.asbool(h.config.get('ckanext.schemingdcat.batch_upload_enabled', 'true')) -%}
+    {%- if show_batch_upload -%}
+      <div class="batch-upload-toggle-section mb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-batch-upload">
+          <i class="fa fa-files-o"></i> {{ _('Upload multiple files at once') }}
+        </button>
+        <div id="batch-upload-container" style="display: none; margin-top: 15px;">
+          {% snippet 'schemingdcat/snippets/batch_upload.html', package_id=pkg_name %}
+        </div>
+      </div>
+      <script>
+        document.getElementById('toggle-batch-upload').addEventListener('click', function() {
+          var container = document.getElementById('batch-upload-container');
+          var isHidden = container.style.display === 'none';
+          container.style.display = isHidden ? 'block' : 'none';
+          this.innerHTML = isHidden 
+            ? '<i class="fa fa-file-o"></i> {{ _("Upload single file") }}'
+            : '<i class="fa fa-files-o"></i> {{ _("Upload multiple files at once") }}';
+        });
+      </script>
+      <hr class="mb-4">
+    {%- endif -%}
+  {%- endif -%}
+
   {%- if not dataset_type -%}
     <p>
     dataset_type not passed to template. your version of CKAN

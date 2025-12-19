@@ -23,6 +23,10 @@ slugify_pat = re.compile('[^a-zA-Z0-9]')
 field_mapping_extras_prefix = 'extras'
 field_mapping_extras_prefix_symbol = '_'
 
+# Batch upload configuration
+batch_upload_enabled = True
+batch_upload_max_file_size = 500 * 1024 * 1024  # 500MB default
+
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {
     'access_rights': 'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations',
