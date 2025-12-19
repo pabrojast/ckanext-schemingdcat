@@ -1516,6 +1516,61 @@ def get_initiatives():
     ]
 
 @helper
+def get_all_memberstates_groups():
+    """
+    Get all member state groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all member states.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    data_dict = {
+        'id': 'member-states',
+        'include_groups': True,
+        'all_fields': True
+    }
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    if not memberstates:
+        return []
+
+    groups = memberstates.get('groups', []) or []
+    return [
+        {
+            'id': item.get('id'),
+            'name': item.get('name'),
+            'title': item.get('title') or item.get('name')
+        }
+        for item in groups
+        if item.get('state', 'active') == 'active' and item.get('name')
+    ]
+
+@helper
+def get_all_initiatives_groups():
+    """
+    Get all initiative groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all initiatives.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    memberstate_names = set(get_memberstates())
+    memberstate_names.add('member-states')
+
+    # Get all groups with full details using ignore_auth
+    all_groups = _safe_call_action('group_list', data_dict={'all_fields': True}) or []
+    
+    return [
+        {
+            'id': group.get('id'),
+            'name': group.get('name'),
+            'title': group.get('title') or group.get('name')
+        }
+        for group in all_groups
+        if group.get('state', 'active') == 'active' 
+        and group.get('name') not in memberstate_names
+    ]
+
+@helper
 def schemingdcat_spatial_extent_available():
     """
     Check if spatial extent extraction is available.
