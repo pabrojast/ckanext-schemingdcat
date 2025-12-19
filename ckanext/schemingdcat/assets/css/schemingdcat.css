@@ -1866,9 +1866,7 @@ li.resource-item > a.heading,
 li.resource-item a.heading {
   grid-column: 2 !important;
   grid-row: 1 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
+  display: block !important;
   font-size: 15px !important;
   font-weight: 600 !important;
   color: #0069B4 !important;
@@ -1876,6 +1874,7 @@ li.resource-item a.heading {
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1.4 !important;
+  text-align: left !important;
 }
 
 .resource-item > a.heading:hover,
@@ -1888,7 +1887,8 @@ li.resource-item > a.heading:hover {
 /* Title text inside heading link */
 .resource-item a.heading span:not(.format-label),
 li.resource-item a.heading span:not(.format-label) {
-  flex: 1 !important;
+  display: block !important;
+  text-align: left !important;
 }
 
 /* Description paragraph - second column, second row */
@@ -1903,6 +1903,7 @@ li.resource-item .description {
   font-size: 13px !important;
   color: #666 !important;
   line-height: 1.5 !important;
+  text-align: left !important;
 }
 
 /* Explore/Download button group - third column, spans both rows */
