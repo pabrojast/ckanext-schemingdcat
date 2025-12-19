@@ -2017,20 +2017,23 @@ li.resource-item .dropdown-menu {
   right: 0 !important;
   left: auto !important;
   z-index: 1000 !important;
-  display: none !important;
   min-width: 160px !important;
   padding: 5px 0 !important;
-  margin: 2px 0 0 !important;
+  margin: 0 !important;
   background-color: #fff !important;
   border: 1px solid rgba(0,0,0,0.15) !important;
   border-radius: 4px !important;
   box-shadow: 0 6px 12px rgba(0,0,0,0.175) !important;
 }
 
+/* Show dropdown when open - Bootstrap 3 uses .open, Bootstrap 5 uses .show */
 .resource-item .dropdown.open .dropdown-menu,
 .resource-item .btn-group.open .dropdown-menu,
 .resource-item .dropdown-menu.show,
-li.resource-item .dropdown.open .dropdown-menu {
+.resource-item .btn-group .dropdown-menu.show,
+li.resource-item .dropdown.open .dropdown-menu,
+li.resource-item .dropdown-menu.show,
+.btn-group .dropdown-menu.show {
   display: block !important;
 }
 
