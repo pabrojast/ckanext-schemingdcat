@@ -1291,6 +1291,61 @@ def schemingdcat_get_dataset_schema(schema_type="dataset"):
     )   
 
 @helper
+def schemingdcat_detect_member_state(extent_geojson, min_overlap_percentage=50.0):
+    """
+    Detect the member state (country) that best contains the given spatial extent.
+    
+    This function compares the provided extent with country boundaries defined
+    in the schema's spatial_uri field choices.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to consider a match (default 50%)
+    
+    Returns:
+        str: The URI of the best matching country, or None if no suitable match found.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-3.5, 40.0], [-3.0, 40.0], [-3.0, 40.5], [-3.5, 40.5], [-3.5, 40.0]]]}
+        >>> uri = schemingdcat_detect_member_state(extent)
+        >>> # Returns: "http://publications.europa.eu/resource/authority/country/ESP"
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        return member_state_detector.detect_member_state(extent_geojson, min_overlap_percentage)
+    except Exception as e:
+        log.error(f"Error detecting member state: {e}")
+        return None
+
+@helper
+def schemingdcat_detect_member_states(extent_geojson, min_overlap_percentage=10.0):
+    """
+    Detect all member states (countries) that overlap with the given spatial extent.
+    
+    This function returns a list of all countries that have significant overlap
+    with the provided extent.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to include a country (default 10%)
+    
+    Returns:
+        list: List of country URIs that overlap with the extent, sorted by overlap percentage.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-7.5, 37.0], [4.0, 37.0], [4.0, 44.0], [-7.5, 44.0], [-7.5, 37.0]]]}
+        >>> uris = schemingdcat_detect_member_states(extent)
+        >>> # Returns: ["http://publications.europa.eu/resource/authority/country/ESP", 
+        >>> #          "http://publications.europa.eu/resource/authority/country/PRT", ...]
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        return member_state_detector.detect_member_states(extent_geojson, min_overlap_percentage)
+    except Exception as e:
+        log.error(f"Error detecting member states: {e}")
+        return []
+
+@helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
     """
     Return a list of schema metadata groups for this form.
