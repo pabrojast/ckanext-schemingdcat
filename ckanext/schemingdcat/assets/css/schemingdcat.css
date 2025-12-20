@@ -1828,41 +1828,48 @@ li.resource-item .resource-title-row {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Format label inside resource-title-row */
+/* Format label inside resource-title-row - FIXED SIZE 36x36px */
 .resource-item .resource-title-row .format-label,
 li.resource-item .resource-title-row .format-label {
-  flex: 0 0 auto !important;
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  min-width: 45px !important;
-  padding: 4px 8px !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
+  padding: 0 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   color: white !important;
   text-decoration: none !important;
   position: relative !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   margin: 0 !important;
   transform: none !important;
+  background-color: #28a745 !important;
+  background-image: none !important;
+  line-height: 1 !important;
 }
 
-/* Image inside format-label - control size */
+/* Image inside format-label - control size to 36x36 */
 .resource-item .resource-title-row .format-label img,
 li.resource-item .resource-title-row .format-label img,
 .resource-item .format-label img,
 li.resource-item .format-label img {
-  max-width: 45px !important;
-  max-height: 45px !important;
-  width: auto !important;
-  height: auto !important;
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  object-fit: contain !important;
   display: block !important;
   transform: none !important;
   margin: 0 !important;
