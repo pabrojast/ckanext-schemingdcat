@@ -1,0 +1,573 @@
+/**
+ * schemingdcat-doi-autofill.js
+ * 
+ * CKAN JavaScript module for DOI auto-fill functionality.
+ * Fetches metadata from DOI providers (DataCite, CrossRef, Zenodo)
+ * and populates form fields automatically.
+ * 
+ * @module schemingdcat-doi-autofill
+ */
+
+this.ckan.module('schemingdcat-doi-autofill', function($, _) {
+  'use strict';
+
+  // DOI validation regex
+  var DOI_PATTERN = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i;
+
+  // Common DOI URL prefixes to clean
+  var DOI_PREFIXES = [
+    'https://doi.org/',
+    'http://doi.org/',
+    'https://dx.doi.org/',
+    'http://dx.doi.org/',
+    'doi.org/',
+    'dx.doi.org/',
+    'doi:',
+    'DOI:'
+  ];
+
+  return {
+    /**
+     * Module options with defaults
+     */
+    options: {
+      fieldId: null,
+      fieldName: null,
+      fieldMapping: {},
+      debounceDelay: 500,
+      apiEndpoint: '/schemingdcat/api/doi/resolve',
+      validateEndpoint: '/schemingdcat/api/doi/validate'
+    },
+
+    /**
+     * Initialize the module
+     */
+    initialize: function() {
+      $.proxyAll(this, /_on/);
+
+      this.fieldId = this.options.fieldId;
+      this.fieldName = this.options.fieldName;
+      this.fieldMapping = this.options.fieldMapping || {};
+      this.resolvedData = null;
+
+      // Cache DOM elements
+      this.$input = this.el.find('.doi-input');
+      this.$fetchBtn = this.el.find('.doi-fetch-btn');
+      this.$loading = this.el.find('.doi-loading');
+      this.$error = this.el.find('.doi-error');
+      this.$errorMessage = this.$error.find('.error-message');
+      this.$preview = this.el.find('.doi-preview-panel');
+      this.$validFeedback = this.el.find('.doi-valid');
+      this.$invalidFeedback = this.el.find('.doi-invalid');
+      this.$validationFeedback = this.el.find('.doi-validation-feedback');
+
+      // Bind events
+      this.$input.on('input', this._onInputChange);
+      this.$input.on('keypress', this._onInputKeypress);
+      this.$fetchBtn.on('click', this._onFetchClick);
+      this.el.find('.doi-apply-btn').on('click', this._onApplyClick);
+      this.el.find('.doi-cancel-btn').on('click', this._onCancelClick);
+      this.el.find('.doi-error-close').on('click', this._onErrorClose);
+
+      // Set up debounced validation
+      this._debouncedValidate = this._debounce(this._validateDoi.bind(this), this.options.debounceDelay);
+
+      console.log('[DOI Autofill] Module initialized for field:', this.fieldName);
+    },
+
+    /**
+     * Clean DOI string from URL prefixes
+     * @param {string} doi - The DOI to clean
+     * @returns {string} Cleaned DOI
+     */
+    _cleanDoi: function(doi) {
+      if (!doi) return '';
+      
+      doi = doi.trim();
+      
+      for (var i = 0; i < DOI_PREFIXES.length; i++) {
+        var prefix = DOI_PREFIXES[i];
+        if (doi.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+          doi = doi.substring(prefix.length);
+          break;
+        }
+      }
+      
+      return doi.trim();
+    },
+
+    /**
+     * Validate DOI format locally
+     * @param {string} doi - The DOI to validate
+     * @returns {boolean} True if valid format
+     */
+    _isValidDoiFormat: function(doi) {
+      return DOI_PATTERN.test(this._cleanDoi(doi));
+    },
+
+    /**
+     * Handle input changes with debounced validation
+     */
+    _onInputChange: function() {
+      var value = this.$input.val().trim();
+      
+      if (!value) {
+        this._hideValidation();
+        return;
+      }
+      
+      this._debouncedValidate(value);
+    },
+
+    /**
+     * Handle Enter key press
+     */
+    _onInputKeypress: function(e) {
+      if (e.which === 13) {
+        e.preventDefault();
+        this._onFetchClick();
+      }
+    },
+
+    /**
+     * Validate DOI and show feedback
+     * @param {string} value - The DOI value to validate
+     */
+    _validateDoi: function(value) {
+      var isValid = this._isValidDoiFormat(value);
+      
+      this.$validationFeedback.show();
+      
+      if (isValid) {
+        this.$validFeedback.show();
+        this.$invalidFeedback.hide();
+      } else {
+        this.$validFeedback.hide();
+        this.$invalidFeedback.show();
+      }
+    },
+
+    /**
+     * Hide validation feedback
+     */
+    _hideValidation: function() {
+      this.$validationFeedback.hide();
+      this.$validFeedback.hide();
+      this.$invalidFeedback.hide();
+    },
+
+    /**
+     * Handle fetch button click
+     */
+    _onFetchClick: function() {
+      var doi = this.$input.val().trim();
+      
+      if (!doi) {
+        this._showError(this._('Please enter a DOI'));
+        return;
+      }
+      
+      if (!this._isValidDoiFormat(doi)) {
+        this._showError(this._('Invalid DOI format. Expected format: 10.xxxx/xxxxx'));
+        return;
+      }
+      
+      this._fetchDoiMetadata(doi);
+    },
+
+    /**
+     * Fetch metadata from DOI resolver API
+     * @param {string} doi - The DOI to resolve
+     */
+    _fetchDoiMetadata: function(doi) {
+      var self = this;
+      
+      this._showLoading();
+      this._hideError();
+      this._hidePreview();
+      
+      $.ajax({
+        url: this.options.apiEndpoint,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ doi: doi }),
+        timeout: 30000
+      })
+      .done(function(response) {
+        self._hideLoading();
+        
+        if (response.success && response.data) {
+          self.resolvedData = response.data;
+          self._showPreview(response.data);
+        } else {
+          self._showError(response.error || self._('Could not resolve DOI'));
+        }
+      })
+      .fail(function(xhr, status, error) {
+        self._hideLoading();
+        
+        var errorMessage = self._('Error fetching DOI metadata');
+        
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+          errorMessage = xhr.responseJSON.error;
+        } else if (status === 'timeout') {
+          errorMessage = self._('Request timed out. Please try again.');
+        }
+        
+        self._showError(errorMessage);
+      });
+    },
+
+    /**
+     * Show loading state
+     */
+    _showLoading: function() {
+      this.$loading.show();
+      this.$fetchBtn.prop('disabled', true).addClass('loading');
+      this.$fetchBtn.find('.fa').removeClass('fa-search').addClass('fa-spinner');
+    },
+
+    /**
+     * Hide loading state
+     */
+    _hideLoading: function() {
+      this.$loading.hide();
+      this.$fetchBtn.prop('disabled', false).removeClass('loading');
+      this.$fetchBtn.find('.fa').removeClass('fa-spinner').addClass('fa-search');
+    },
+
+    /**
+     * Show error message
+     * @param {string} message - Error message to display
+     */
+    _showError: function(message) {
+      this.$errorMessage.text(message);
+      this.$error.show();
+    },
+
+    /**
+     * Hide error message
+     */
+    _hideError: function() {
+      this.$error.hide();
+    },
+
+    /**
+     * Handle error close button
+     */
+    _onErrorClose: function() {
+      this._hideError();
+    },
+
+    /**
+     * Show metadata preview
+     * @param {Object} data - Resolved DOI metadata
+     */
+    _showPreview: function(data) {
+      // Set source badge
+      this.$preview.find('.doi-source').text(data.source || 'DOI');
+      
+      // Populate preview fields
+      this.$preview.find('.preview-title').text(data.title || '-');
+      this.$preview.find('.preview-year').text(data.publication_year || '-');
+      this.$preview.find('.preview-publisher').text(data.publisher || '-');
+      this.$preview.find('.preview-type').text(this._formatDocumentType(data.document_type) || '-');
+      
+      // Format authors
+      var authorsText = this._formatAuthors(data.authors);
+      this.$preview.find('.preview-authors').text(authorsText || '-');
+      
+      // Format abstract (truncate if too long)
+      var abstract = data.abstract || '';
+      if (abstract.length > 300) {
+        abstract = abstract.substring(0, 300) + '...';
+      }
+      this.$preview.find('.preview-abstract').text(abstract || '-');
+      
+      // Format keywords
+      var $keywords = this.$preview.find('.preview-keywords');
+      $keywords.empty();
+      
+      if (data.keywords && data.keywords.length > 0) {
+        data.keywords.slice(0, 10).forEach(function(keyword) {
+          $keywords.append(
+            $('<span class="keyword-tag">').text(keyword)
+          );
+        });
+        
+        if (data.keywords.length > 10) {
+          $keywords.append(
+            $('<span class="keyword-more">').text('+' + (data.keywords.length - 10) + ' more')
+          );
+        }
+      } else {
+        $keywords.text('-');
+      }
+      
+      this.$preview.show();
+    },
+
+    /**
+     * Hide preview panel
+     */
+    _hidePreview: function() {
+      this.$preview.hide();
+      this.resolvedData = null;
+    },
+
+    /**
+     * Format authors list for display
+     * @param {Array} authors - Array of author objects
+     * @returns {string} Formatted author string
+     */
+    _formatAuthors: function(authors) {
+      if (!authors || authors.length === 0) return '';
+      
+      return authors.map(function(author) {
+        if (author.name) return author.name;
+        
+        var parts = [];
+        if (author.family_name) parts.push(author.family_name);
+        if (author.given_name) parts.push(author.given_name);
+        
+        return parts.join(', ');
+      }).join('; ');
+    },
+
+    /**
+     * Format document type for display
+     * @param {string} type - Document type code
+     * @returns {string} Human-readable type
+     */
+    _formatDocumentType: function(type) {
+      var typeMap = {
+        'scientific_paper': this._('Scientific Paper'),
+        'technical_report': this._('Technical Report'),
+        'book': this._('Book'),
+        'book_chapter': this._('Book Chapter'),
+        'conference_paper': this._('Conference Paper'),
+        'thesis': this._('Thesis/Dissertation'),
+        'preprint': this._('Preprint'),
+        'dataset_documentation': this._('Dataset Documentation'),
+        'software_documentation': this._('Software Documentation'),
+        'policy_brief': this._('Policy Brief'),
+        'poster': this._('Poster'),
+        'presentation': this._('Presentation'),
+        'other': this._('Other')
+      };
+      
+      return typeMap[type] || type;
+    },
+
+    /**
+     * Handle apply button click
+     */
+    _onApplyClick: function() {
+      if (!this.resolvedData) {
+        console.warn('[DOI Autofill] No resolved data to apply');
+        return;
+      }
+      
+      var overwrite = this.el.find('.doi-overwrite-option').is(':checked');
+      this._applyMetadata(this.resolvedData, overwrite);
+      this._hidePreview();
+      
+      // Show success message
+      this._showSuccess(this._('Metadata applied successfully'));
+    },
+
+    /**
+     * Handle cancel button click
+     */
+    _onCancelClick: function() {
+      this._hidePreview();
+    },
+
+    /**
+     * Apply resolved metadata to form fields
+     * @param {Object} data - Resolved DOI metadata
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _applyMetadata: function(data, overwrite) {
+      var self = this;
+      
+      // Default field mapping
+      var defaultMapping = {
+        'title': ['title_translated', 'title'],
+        'abstract': ['notes_translated', 'notes', 'description'],
+        'publication_year': ['publication_year', 'issued'],
+        'publisher': ['publisher', 'publisher_name'],
+        'document_type': ['document_type', 'dcat_type'],
+        'keywords': ['tag_string', 'tags', 'keywords'],
+        'license': ['license_id', 'license'],
+        'authors': ['authors', 'author', 'contact_name']
+      };
+      
+      // Merge with custom mapping
+      var mapping = $.extend({}, defaultMapping, this.fieldMapping);
+      
+      // Apply each field
+      Object.keys(mapping).forEach(function(sourceField) {
+        var targetFields = mapping[sourceField];
+        if (!Array.isArray(targetFields)) {
+          targetFields = [targetFields];
+        }
+        
+        var value = data[sourceField];
+        if (value === undefined || value === null || value === '') return;
+        
+        targetFields.forEach(function(targetField) {
+          self._setFieldValue(targetField, value, sourceField, overwrite);
+        });
+      });
+      
+      console.log('[DOI Autofill] Metadata applied to form');
+    },
+
+    /**
+     * Set a form field value
+     * @param {string} fieldName - Target field name
+     * @param {*} value - Value to set
+     * @param {string} sourceField - Source field name (for special handling)
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _setFieldValue: function(fieldName, value, sourceField, overwrite) {
+      var $field = $('[name="' + fieldName + '"]');
+      
+      if ($field.length === 0) {
+        // Try with translated suffix for fluent fields
+        $field = $('[name="' + fieldName + '-en"]');
+        
+        if ($field.length === 0) {
+          console.log('[DOI Autofill] Field not found:', fieldName);
+          return;
+        }
+      }
+      
+      // Check if field already has value
+      if (!overwrite && $field.val() && $field.val().trim() !== '') {
+        console.log('[DOI Autofill] Skipping field with existing value:', fieldName);
+        return;
+      }
+      
+      // Handle different field types
+      if (sourceField === 'title' || sourceField === 'abstract') {
+        // For fluent text fields, we may need to set multiple language inputs
+        this._setFluentFieldValue(fieldName, value);
+      } else if (sourceField === 'keywords') {
+        // Keywords need special handling
+        this._setKeywordsValue(fieldName, value);
+      } else if (sourceField === 'authors') {
+        // Authors need special handling
+        this._setAuthorsValue(fieldName, value);
+      } else {
+        // Simple value
+        $field.val(value).trigger('change');
+      }
+      
+      console.log('[DOI Autofill] Set field', fieldName, '=', value);
+    },
+
+    /**
+     * Set value for fluent (multilingual) text fields
+     * @param {string} fieldName - Base field name
+     * @param {*} value - Value (string or object with translations)
+     */
+    _setFluentFieldValue: function(fieldName, value) {
+      if (typeof value === 'string') {
+        // Set English field if available
+        var $enField = $('[name="' + fieldName + '-en"]');
+        if ($enField.length > 0) {
+          $enField.val(value).trigger('change');
+        }
+        
+        // Also try the base field
+        var $baseField = $('[name="' + fieldName + '"]');
+        if ($baseField.length > 0 && $baseField.attr('type') !== 'hidden') {
+          $baseField.val(value).trigger('change');
+        }
+      } else if (typeof value === 'object') {
+        // Value has translations
+        Object.keys(value).forEach(function(lang) {
+          var $langField = $('[name="' + fieldName + '-' + lang + '"]');
+          if ($langField.length > 0) {
+            $langField.val(value[lang]).trigger('change');
+          }
+        });
+      }
+    },
+
+    /**
+     * Set keywords/tags value
+     * @param {string} fieldName - Field name
+     * @param {Array} keywords - Array of keywords
+     */
+    _setKeywordsValue: function(fieldName, keywords) {
+      if (!Array.isArray(keywords)) return;
+      
+      var $field = $('[name="' + fieldName + '"]');
+      if ($field.length === 0) return;
+      
+      // Join keywords as comma-separated string
+      var value = keywords.join(', ');
+      $field.val(value).trigger('change');
+    },
+
+    /**
+     * Set authors value
+     * @param {string} fieldName - Field name
+     * @param {Array} authors - Array of author objects
+     */
+    _setAuthorsValue: function(fieldName, authors) {
+      if (!Array.isArray(authors) || authors.length === 0) return;
+      
+      var $field = $('[name="' + fieldName + '"]');
+      if ($field.length === 0) return;
+      
+      // Format authors as string
+      var value = authors.map(function(author) {
+        return author.name || (author.family_name + ', ' + author.given_name);
+      }).join('; ');
+      
+      $field.val(value).trigger('change');
+    },
+
+    /**
+     * Show success message
+     * @param {string} message - Success message
+     */
+    _showSuccess: function(message) {
+      // Use CKAN flash message if available
+      if (window.ckan && window.ckan.notify) {
+        window.ckan.notify(message, 'success');
+      } else {
+        // Fallback: show temporary success alert
+        var $success = $('<div class="alert alert-success doi-success">')
+          .html('<i class="fa fa-check-circle"></i> ' + message)
+          .insertAfter(this.$input.closest('.doi-input-group'));
+        
+        setTimeout(function() {
+          $success.fadeOut(function() { $(this).remove(); });
+        }, 3000);
+      }
+    },
+
+    /**
+     * Debounce utility function
+     * @param {Function} func - Function to debounce
+     * @param {number} wait - Wait time in milliseconds
+     * @returns {Function} Debounced function
+     */
+    _debounce: function(func, wait) {
+      var timeout;
+      return function() {
+        var context = this;
+        var args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+  };
+});

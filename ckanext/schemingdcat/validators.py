@@ -946,6 +946,46 @@ def schemingdcat_valid_email(field, schema):
 
     return validator
 
+@validator
+def schemingdcat_valid_doi(value):
+    """
+    Validates if the provided string is a valid DOI format.
+    
+    DOI format: 10.xxxx/xxxxx where xxxx is the registrant code
+    and xxxxx is the suffix.
+    
+    Also accepts:
+    - Full URL: https://doi.org/10.1234/example
+    - dx.doi.org URL: http://dx.doi.org/10.1234/example
+    - doi: prefix: doi:10.1234/example
+    
+    Args:
+        value: The value to validate
+        
+    Returns:
+        The cleaned DOI string if valid
+        
+    Raises:
+        Invalid: If the DOI format is invalid
+    """
+    if value is missing or value is None or value == '':
+        return value
+    
+    value = value.strip()
+    
+    # Import DOI validation functions
+    from ckanext.schemingdcat.lib.doi_resolver import validate_doi, clean_doi
+    
+    # Clean the DOI
+    cleaned = clean_doi(value)
+    
+    # Validate format
+    if not validate_doi(cleaned):
+        raise Invalid(_('Invalid DOI format. Expected format: 10.xxxx/xxxxx'))
+    
+    return cleaned
+
+
 @scheming_validator
 @validator
 def orcid_validator(field, schema):
