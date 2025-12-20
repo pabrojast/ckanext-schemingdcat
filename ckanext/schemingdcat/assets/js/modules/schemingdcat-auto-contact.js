@@ -10,13 +10,24 @@ ckan.module('auto-contact', function ($) {
         // En modo edición, no autorellenamos nada
         if (!isEditMode) {
           // Obtener los datos del usuario del campo oculto
-          const userData = JSON.parse($('#current-user-data').val());
-          if (userData) {
-            this._fillContactFields(userData);
+          var $userDataField = $('#current-user-data');
+          var userDataValue = $userDataField.length ? $userDataField.val() : null;
+          
+          // Solo intentar parsear si hay un valor válido
+          if (userDataValue && userDataValue !== 'undefined' && userDataValue.trim() !== '') {
+            var userData = JSON.parse(userDataValue);
+            if (userData) {
+              this._fillContactFields(userData);
+            }
           }
         }
       } catch (e) {
-        console.warn('No se pudo obtener información del usuario actual:', e);
+        // Solo mostrar warning si hay un error real de parseo, no si simplemente no hay datos
+        if (e instanceof SyntaxError) {
+          console.debug('Auto-contact: No user data available for auto-fill');
+        } else {
+          console.warn('Auto-contact error:', e);
+        }
       }
     },
 
