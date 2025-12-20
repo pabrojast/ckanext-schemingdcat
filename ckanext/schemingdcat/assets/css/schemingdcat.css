@@ -1841,6 +1841,7 @@ li.resource-item .resource-title-row .format-label {
   align-items: center !important;
   justify-content: center !important;
   min-width: 50px !important;
+  max-width: 60px !important;
   padding: 4px 8px !important;
   font-size: 10px !important;
   font-weight: 600 !important;
@@ -1848,6 +1849,26 @@ li.resource-item .resource-title-row .format-label {
   border-radius: 4px !important;
   color: white !important;
   text-decoration: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+  /* CRITICAL: Reset negative margins that cause overlay */
+  margin: 0 !important;
+  transform: none !important;
+}
+
+/* Image inside format-label - control size */
+.resource-item .resource-title-row .format-label img,
+li.resource-item .resource-title-row .format-label img,
+.resource-item .format-label img,
+li.resource-item .format-label img {
+  max-width: 40px !important;
+  max-height: 40px !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+  /* Reset any transforms or margins */
+  transform: none !important;
+  margin: 0 !important;
 }
 
 /* Heading link inside resource-title-row */
