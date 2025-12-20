@@ -1833,42 +1833,28 @@ li.resource-item .resource-title-row {
   padding: 0 !important;
 }
 
-/* Format label inside resource-title-row - FIXED SIZE 36x36px */
+/* Format label inside resource-title-row */
 .resource-item .resource-title-row .format-label,
 li.resource-item .resource-title-row .format-label {
-  flex: 0 0 36px !important;
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  max-width: 36px !important;
+  flex: 0 0 auto !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0 !important;
-  font-size: 9px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  border-radius: 6px !important;
-  color: white !important;
-  text-decoration: none !important;
-  position: relative !important;
-  overflow: hidden !important;
+  /* Reset problematic properties but keep sprite background */
   margin: 0 !important;
   transform: none !important;
-  background-color: #28a745 !important;
-  background-image: none !important;
-  line-height: 1 !important;
+  position: relative !important;
 }
 
-/* Image inside format-label - control size to 36x36 */
+/* Image inside format-label - control size */
 .resource-item .resource-title-row .format-label img,
 li.resource-item .resource-title-row .format-label img,
 .resource-item .format-label img,
 li.resource-item .format-label img {
-  width: 36px !important;
-  height: 36px !important;
-  max-width: 36px !important;
-  max-height: 36px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  width: auto !important;
+  height: auto !important;
   object-fit: contain !important;
   display: block !important;
   transform: none !important;
