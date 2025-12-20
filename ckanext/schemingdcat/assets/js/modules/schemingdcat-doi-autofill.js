@@ -35,8 +35,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       fieldName: null,
       fieldMapping: {},
       debounceDelay: 500,
-      apiEndpoint: '/schemingdcat/api/doi/resolve',
-      validateEndpoint: '/schemingdcat/api/doi/validate'
+      apiEndpoint: '/api/doi/resolve',
+      validateEndpoint: '/api/doi/validate'
     },
 
     /**
@@ -182,6 +182,9 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
     _fetchDoiMetadata: function(doi) {
       var self = this;
       
+      console.log('[DOI Autofill] Fetching metadata for DOI:', doi);
+      console.log('[DOI Autofill] API endpoint:', this.options.apiEndpoint);
+      
       this._showLoading();
       this._hideError();
       this._hidePreview();
@@ -194,6 +197,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         timeout: 30000
       })
       .done(function(response) {
+        console.log('[DOI Autofill] Response received:', response);
         self._hideLoading();
         
         if (response.success && response.data) {
@@ -204,6 +208,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         }
       })
       .fail(function(xhr, status, error) {
+        console.error('[DOI Autofill] Request failed:', status, error);
+        console.error('[DOI Autofill] XHR response:', xhr.responseText);
         self._hideLoading();
         
         var errorMessage = self._('Error fetching DOI metadata');
@@ -212,6 +218,10 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
           errorMessage = xhr.responseJSON.error;
         } else if (status === 'timeout') {
           errorMessage = self._('Request timed out. Please try again.');
+        } else if (xhr.status === 404) {
+          errorMessage = self._('DOI API endpoint not found. Please contact administrator.');
+        } else if (xhr.status === 0) {
+          errorMessage = self._('Network error. Please check your connection.');
         }
         
         self._showError(errorMessage);

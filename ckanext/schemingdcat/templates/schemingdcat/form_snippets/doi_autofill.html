@@ -22,11 +22,17 @@
 #}
 {% import 'macros/form.html' as form %}
 
+{# Load the DOI autofill JavaScript module #}
+{% asset 'ckanext-schemingdcat/schemingdcat-doi-autofill' %}
+
 {%- set field_id = field.field_name ~ '-field' -%}
 {%- set current_value = data.get(field.field_name, '') -%}
 {%- set field_mapping = field.get('field_mapping', {}) -%}
 
-<div class="doi-autofill-wrapper" 
+{# Get placeholder text for current language #}
+{%- set placeholder_text = h.scheming_language_text(field.form_placeholder) or _('e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example') -%}
+
+<div class="doi-autofill-wrapper"
      data-module="schemingdcat-doi-autofill"
      data-module-field-id="{{ field_id }}"
      data-module-field-name="{{ field.field_name }}"
@@ -41,7 +47,7 @@
              id="{{ field_id }}"
              name="{{ field.field_name }}"
              value="{{ current_value }}"
-             placeholder="{{ field.form_placeholder or _('e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example') }}"
+             placeholder="{{ placeholder_text }}"
              class="form-control doi-input"
              autocomplete="off">
       <span class="input-group-btn">
