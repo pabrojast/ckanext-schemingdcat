@@ -283,38 +283,44 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       var iconClass = this._getFileIcon(fileItem.name);
       var sizeFormatted = this._formatFileSize(fileItem.size);
       var resourceName = fileItem.resourceName || this._getResourceName(fileItem.name);
+      var originalName = fileItem.name;
       
-      var html = `
-        <div class="batch-file-item" data-file-id="${fileItem.id}">
-          <div class="file-icon">
-            <i class="fa ${iconClass}"></i>
-          </div>
-          <div class="file-info">
-            <div class="file-name" title="${this._escapeHtml(fileItem.name)}">${this._escapeHtml(resourceName)}</div>
-            <div class="file-meta">
-              <span class="file-size">${sizeFormatted}</span>
-              <span class="file-format badge">${ext}</span>
-              <span class="file-original text-muted small">(${this._escapeHtml(fileItem.name)})</span>
-            </div>
-            <div class="file-progress" style="display: none;">
-              <div class="progress progress-sm">
-                <div class="progress-bar" style="width: 0%"></div>
-              </div>
-            </div>
-            <div class="file-status"></div>
-          </div>
-          <div class="file-actions">
-            <button type="button" class="btn btn-sm btn-danger file-remove" title="${i18n.remove}">
-              <i class="fa fa-times"></i>
-            </button>
-          </div>
-        </div>
-      `;
+      // Debug logging
+      console.log('[schemingdcat-batch-upload] Rendering file:', {
+        originalName: originalName,
+        resourceName: resourceName,
+        ext: ext
+      });
       
-      var $item = $(html);
+      // Build HTML using DOM methods to avoid escaping issues
+      var $item = $('<div class="batch-file-item"></div>').attr('data-file-id', fileItem.id);
+      
+      var $icon = $('<div class="file-icon"></div>').append($('<i class="fa"></i>').addClass(iconClass));
+      
+      var $info = $('<div class="file-info"></div>');
+      var $fileName = $('<div class="file-name"></div>').text(resourceName).attr('title', originalName);
+      var $fileMeta = $('<div class="file-meta"></div>');
+      $fileMeta.append($('<span class="file-size"></span>').text(sizeFormatted));
+      $fileMeta.append($('<span class="file-format badge"></span>').text(ext));
+      $fileMeta.append($('<span class="file-original text-muted small"></span>').text('(' + originalName + ')'));
+      
+      var $progress = $('<div class="file-progress" style="display: none;"></div>');
+      $progress.append('<div class="progress progress-sm"><div class="progress-bar" style="width: 0%"></div></div>');
+      
+      var $status = $('<div class="file-status"></div>');
+      
+      $info.append($fileName).append($fileMeta).append($progress).append($status);
+      
+      var $actions = $('<div class="file-actions"></div>');
+      var $removeBtn = $('<button type="button" class="btn btn-sm btn-danger file-remove"></button>')
+        .attr('title', i18n.remove)
+        .append('<i class="fa fa-times"></i>');
+      $actions.append($removeBtn);
+      
+      $item.append($icon).append($info).append($actions);
       
       // Bind remove button
-      $item.find('.file-remove').on('click', function() {
+      $removeBtn.on('click', function() {
         self._removeFileFromQueue(fileItem.id);
       });
       
@@ -669,7 +675,9 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       // Reload page after delay if all successful
       if (errors === 0 && completed > 0) {
         setTimeout(function() {
-          window.location.reload();
+          // Redirect to dataset page instead of reloading
+          var datasetUrl = '/dataset/' + self.packageId;
+          window.location.href = datasetUrl;
         }, 2000);
       }
     },
