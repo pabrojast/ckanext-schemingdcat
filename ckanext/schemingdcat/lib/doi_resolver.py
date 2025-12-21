@@ -391,6 +391,9 @@ def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
             })
     
     return files
+
+
+def fetch_from_zenodo(doi: str) -> Optional[Dict[str, Any]]:
     """
     Fetch metadata from Zenodo API.
     
