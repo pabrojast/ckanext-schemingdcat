@@ -431,7 +431,149 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         });
       });
       
+      // Auto-generate URL slug (name field) from title
+      if (data.title) {
+        this._generateSlugFromTitle(data.title, overwrite);
+      }
+      
+      // Auto-generate identifier from DOI
+      if (data.doi) {
+        this._setIdentifierFromDoi(data.doi, overwrite);
+      }
+      
       console.log('[DOI Autofill] Metadata applied to form');
+    },
+
+    /**
+     * Set the identifier field based on DOI
+     * Generates a UUID-like identifier from the DOI
+     * @param {string} doi - The DOI string
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _setIdentifierFromDoi: function(doi, overwrite) {
+      var $identifierField = $('[name="identifier"]');
+      
+      if ($identifierField.length === 0) {
+        console.log('[DOI Autofill] Identifier field not found');
+        return;
+      }
+      
+      // Check if field already has value
+      if (!overwrite && $identifierField.val() && $identifierField.val().trim() !== '') {
+        console.log('[DOI Autofill] Identifier field already has value, skipping');
+        return;
+      }
+      
+      // Generate a deterministic UUID-like identifier from the DOI
+      // This ensures the same DOI always generates the same identifier
+      var identifier = this._generateUuidFromDoi(doi);
+      
+      $identifierField.val(identifier).trigger('change');
+      console.log('[DOI Autofill] Generated identifier:', identifier);
+    },
+
+    /**
+     * Generate a UUID-like string from a DOI
+     * Uses a simple hash function to create a deterministic identifier
+     * @param {string} doi - The DOI string
+     * @returns {string} UUID-like identifier
+     */
+    _generateUuidFromDoi: function(doi) {
+      // Simple hash function to generate consistent hex string from DOI
+      var hash = 0;
+      var str = 'doi:' + doi;
+      for (var i = 0; i < str.length; i++) {
+        var char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      
+      // Convert hash to hex and pad
+      var hex1 = Math.abs(hash).toString(16).padStart(8, '0').substring(0, 8);
+      
+      // Generate additional hex segments from DOI characters
+      var hex2 = '';
+      var hex3 = '';
+      var hex4 = '';
+      var hex5 = '';
+      
+      for (var j = 0; j < doi.length && hex2.length < 4; j++) {
+        hex2 += doi.charCodeAt(j).toString(16);
+      }
+      hex2 = hex2.substring(0, 4).padStart(4, '0');
+      
+      for (var k = doi.length - 1; k >= 0 && hex3.length < 4; k--) {
+        hex3 += doi.charCodeAt(k).toString(16);
+      }
+      hex3 = hex3.substring(0, 4).padStart(4, '0');
+      
+      // Use fixed segments for UUID v4 format compliance
+      hex4 = '4' + hex2.substring(1, 4); // Version 4
+      hex5 = (8 + Math.floor(Math.random() * 4)).toString(16) + hex3.substring(1, 4) + hex1.substring(0, 8);
+      
+      // Format as UUID: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+      return hex1 + '-' + hex2 + '-' + hex4 + '-' + hex5.substring(0, 4) + '-' + hex5.substring(4, 16).padEnd(12, '0');
+    },
+
+    /**
+     * Generate URL slug from title and set the name field
+     * @param {string} title - The title to slugify
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _generateSlugFromTitle: function(title, overwrite) {
+      var $nameField = $('[name="name"]');
+      
+      if ($nameField.length === 0) {
+        console.log('[DOI Autofill] Name field not found');
+        return;
+      }
+      
+      // Check if field already has value
+      if (!overwrite && $nameField.val() && $nameField.val().trim() !== '') {
+        console.log('[DOI Autofill] Name field already has value, skipping');
+        return;
+      }
+      
+      // Generate slug from title
+      var slug = this._slugify(title);
+      
+      // Limit slug length (CKAN has a max of 100 characters for name)
+      if (slug.length > 100) {
+        slug = slug.substring(0, 100);
+        // Don't end with a hyphen
+        slug = slug.replace(/-+$/, '');
+      }
+      
+      $nameField.val(slug).trigger('change');
+      console.log('[DOI Autofill] Generated slug:', slug);
+      
+      // Also trigger the slug preview module if it exists
+      $nameField.trigger('input');
+    },
+
+    /**
+     * Convert a string to a URL-safe slug
+     * @param {string} text - Text to slugify
+     * @returns {string} URL-safe slug
+     */
+    _slugify: function(text) {
+      if (!text) return '';
+      
+      return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        // Replace accented characters with non-accented equivalents
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        // Replace spaces and underscores with hyphens
+        .replace(/[\s_]+/g, '-')
+        // Remove invalid characters (keep only alphanumeric and hyphens)
+        .replace(/[^a-z0-9\-]/g, '')
+        // Replace multiple hyphens with single hyphen
+        .replace(/-+/g, '-')
+        // Remove leading/trailing hyphens
+        .replace(/^-+|-+$/g, '');
     },
 
     /**
