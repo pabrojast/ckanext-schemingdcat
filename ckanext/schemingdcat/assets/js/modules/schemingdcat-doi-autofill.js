@@ -475,30 +475,40 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
 
     /**
      * Set the identifier field based on DOI
-     * Generates a UUID-like identifier from the DOI
+     * Generates a UUID-like identifier from the DOI and sets alternate_identifier
      * @param {string} doi - The DOI string
      * @param {boolean} overwrite - Whether to overwrite existing values
      */
     _setIdentifierFromDoi: function(doi, overwrite) {
+      var self = this;
+      
+      // Set the main identifier field (UUID generated from DOI)
       var $identifierField = $('[name="identifier"]');
       
-      if ($identifierField.length === 0) {
+      if ($identifierField.length > 0) {
+        // Check if field already has value
+        if (overwrite || !$identifierField.val() || $identifierField.val().trim() === '') {
+          // Generate a deterministic UUID-like identifier from the DOI
+          var identifier = this._generateUuidFromDoi(doi);
+          $identifierField.val(identifier).trigger('change').trigger('input');
+          console.log('[DOI Autofill] Generated identifier:', identifier);
+        } else {
+          console.log('[DOI Autofill] Identifier field already has value, skipping');
+        }
+      } else {
         console.log('[DOI Autofill] Identifier field not found');
-        return;
       }
       
-      // Check if field already has value
-      if (!overwrite && $identifierField.val() && $identifierField.val().trim() !== '') {
-        console.log('[DOI Autofill] Identifier field already has value, skipping');
-        return;
+      // Also set the alternate_identifier field with the DOI URL
+      var doiUrl = 'https://doi.org/' + doi;
+      var $alternateIdField = $('[name="alternate_identifier"]');
+      
+      if ($alternateIdField.length > 0) {
+        if (overwrite || !$alternateIdField.val() || $alternateIdField.val().trim() === '') {
+          $alternateIdField.val(doiUrl).trigger('change');
+          console.log('[DOI Autofill] Set alternate_identifier:', doiUrl);
+        }
       }
-      
-      // Generate a deterministic UUID-like identifier from the DOI
-      // This ensures the same DOI always generates the same identifier
-      var identifier = this._generateUuidFromDoi(doi);
-      
-      $identifierField.val(identifier).trigger('change');
-      console.log('[DOI Autofill] Generated identifier:', identifier);
     },
 
     /**
