@@ -108,49 +108,146 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     },
 
     /**
-     * Show notification about available DOI files
+     * Show notification about available DOI files with tabs for single/multiple selection
      * @param {Object} doiData - DOI resource data
      */
     showDoiFilesNotification: function(doiData) {
       var self = this;
       var files = doiData.files;
+      var packageId = this.getPackageId();
       
-      // Create notification panel
+      // Create notification panel with tabs
       var $notification = $('<div>', {
-        class: 'doi-files-notification alert alert-info',
-        html: '<div class="doi-files-header">' +
-              '<i class="fa fa-link"></i> ' +
-              '<strong>Links found from DOI</strong>' +
-              '<button type="button" class="close doi-files-dismiss">&times;</button>' +
-              '</div>' +
-              '<p class="doi-files-description">The following links were found for this document. Click to use:</p>' +
-              '<div class="doi-files-list"></div>'
+        class: 'doi-files-notification panel panel-info'
       });
       
-      var $filesList = $notification.find('.doi-files-list');
+      // Panel header
+      var $header = $('<div>', {
+        class: 'panel-heading doi-files-header',
+        html: '<h4 class="panel-title">' +
+              '<i class="fa fa-link"></i> ' +
+              'Links found from DOI (' + files.length + ' available)' +
+              '</h4>' +
+              '<button type="button" class="close doi-files-dismiss" aria-label="Close">&times;</button>'
+      });
       
-      // Add each file as a clickable option
+      // Panel body with tabs
+      var $body = $('<div>', { class: 'panel-body' });
+      
+      // Tab navigation
+      var $tabNav = $('<ul>', {
+        class: 'nav nav-tabs doi-tabs',
+        role: 'tablist',
+        html: '<li role="presentation" class="active">' +
+              '<a href="#doi-tab-single" aria-controls="doi-tab-single" role="tab" data-toggle="tab">' +
+              '<i class="fa fa-file-o"></i> Add single resource</a></li>' +
+              '<li role="presentation">' +
+              '<a href="#doi-tab-multiple" aria-controls="doi-tab-multiple" role="tab" data-toggle="tab">' +
+              '<i class="fa fa-files-o"></i> Add multiple resources</a></li>'
+      });
+      
+      // Tab content
+      var $tabContent = $('<div>', { class: 'tab-content doi-tab-content' });
+      
+      // Single resource tab
+      var $singleTab = $('<div>', {
+        role: 'tabpanel',
+        class: 'tab-pane active',
+        id: 'doi-tab-single',
+        html: '<p class="help-block"><i class="fa fa-info-circle"></i> ' +
+              'Select one link to use for this resource. The form below will be filled with the selected link.</p>' +
+              '<div class="doi-files-list doi-files-single"></div>'
+      });
+      
+      // Multiple resources tab
+      var $multiTab = $('<div>', {
+        role: 'tabpanel',
+        class: 'tab-pane',
+        id: 'doi-tab-multiple',
+        html: '<p class="help-block"><i class="fa fa-info-circle"></i> ' +
+              'Select multiple links to create separate resources for each. Resources will be created directly.</p>' +
+              '<div class="doi-files-selection">' +
+              '<label class="doi-select-all-label"><input type="checkbox" class="doi-select-all"> Select all</label>' +
+              '</div>' +
+              '<div class="doi-files-list doi-files-multi"></div>' +
+              '<div class="doi-multi-actions">' +
+              '<button type="button" class="btn btn-primary doi-add-selected" disabled>' +
+              '<i class="fa fa-plus-circle"></i> Add selected as resources (<span class="selected-count">0</span>)</button>' +
+              '</div>' +
+              '<div class="doi-multi-progress" style="display: none;">' +
+              '<div class="progress"><div class="progress-bar progress-bar-striped active" style="width: 0%"></div></div>' +
+              '<p class="doi-progress-status"></p>' +
+              '</div>'
+      });
+      
+      // Populate single file list
+      var $singleList = $singleTab.find('.doi-files-single');
       files.forEach(function(file, index) {
         if (!file.url) return;
         
         var displayName = file.filename || file.description || 'Resource ' + (index + 1);
-        var formatBadge = file.format ? '<span class="badge">' + file.format + '</span>' : '';
+        var formatBadge = file.format ? '<span class="badge badge-format">' + self.escapeHtml(file.format) + '</span>' : '';
         
-        var $fileOption = $('<div>', {
-          class: 'doi-file-option',
-          html: '<button type="button" class="btn btn-sm btn-default doi-file-use">' +
-                '<i class="fa fa-plus-circle"></i> Use this link' +
-                '</button>' +
-                '<span class="doi-file-name">' + displayName + '</span> ' +
-                formatBadge +
-                '<br><small class="text-muted doi-file-url">' + file.url + '</small>',
-          'data-url': file.url,
-          'data-filename': file.filename || '',
-          'data-format': file.format || ''
+        var $fileOption = $('<div>', { class: 'doi-file-option' });
+        $fileOption.attr('data-url', file.url);
+        $fileOption.attr('data-filename', file.filename || '');
+        $fileOption.attr('data-format', file.format || '');
+        $fileOption.attr('data-description', file.description || '');
+        
+        var $useBtn = $('<button>', {
+          type: 'button',
+          class: 'btn btn-sm btn-default doi-file-use',
+          html: '<i class="fa fa-plus-circle"></i> Use'
         });
         
-        $filesList.append($fileOption);
+        var $fileName = $('<span>', { class: 'doi-file-name' }).text(displayName);
+        var $fileUrl = $('<small>', { class: 'text-muted doi-file-url' }).text(file.url);
+        
+        $fileOption.append($useBtn).append(' ').append($fileName).append(' ');
+        if (formatBadge) $fileOption.append($(formatBadge));
+        $fileOption.append('<br>').append($fileUrl);
+        
+        $singleList.append($fileOption);
       });
+      
+      // Populate multiple file list with checkboxes
+      var $multiList = $multiTab.find('.doi-files-multi');
+      files.forEach(function(file, index) {
+        if (!file.url) return;
+        
+        var displayName = file.filename || file.description || 'Resource ' + (index + 1);
+        var formatBadge = file.format ? '<span class="badge badge-format">' + self.escapeHtml(file.format) + '</span>' : '';
+        var fileId = 'doi-file-' + index;
+        
+        var $fileOption = $('<div>', { class: 'doi-file-option doi-file-checkbox' });
+        $fileOption.attr('data-url', file.url);
+        $fileOption.attr('data-filename', file.filename || '');
+        $fileOption.attr('data-format', file.format || '');
+        $fileOption.attr('data-description', file.description || displayName);
+        
+        var $checkbox = $('<input>', {
+          type: 'checkbox',
+          class: 'doi-file-check',
+          id: fileId,
+          value: index
+        });
+        
+        var $label = $('<label>', { for: fileId, class: 'doi-file-label' });
+        var $fileName = $('<span>', { class: 'doi-file-name' }).text(displayName);
+        var $fileUrl = $('<small>', { class: 'text-muted doi-file-url' }).text(file.url);
+        
+        $label.append($fileName).append(' ');
+        if (formatBadge) $label.append($(formatBadge));
+        $label.append('<br>').append($fileUrl);
+        
+        $fileOption.append($checkbox).append(' ').append($label);
+        $multiList.append($fileOption);
+      });
+      
+      // Assemble panel
+      $tabContent.append($singleTab).append($multiTab);
+      $body.append($tabNav).append($tabContent);
+      $notification.append($header).append($body);
       
       // Insert notification at top of form
       var $formContent = this.form.find('.form-group').first().parent();
@@ -160,7 +257,17 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         this.form.prepend($notification);
       }
       
-      // Handle file selection
+      // Bind tab functionality (for environments without Bootstrap JS)
+      $tabNav.on('click', 'a[data-toggle="tab"]', function(e) {
+        e.preventDefault();
+        var target = $(this).attr('href');
+        $tabNav.find('li').removeClass('active');
+        $(this).parent().addClass('active');
+        $tabContent.find('.tab-pane').removeClass('active');
+        $(target).addClass('active');
+      });
+      
+      // Handle single file selection
       $notification.on('click', '.doi-file-use', function(e) {
         e.preventDefault();
         var $option = $(this).closest('.doi-file-option');
@@ -175,14 +282,344 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         $(this).prop('disabled', true).html('<i class="fa fa-check"></i> Applied');
       });
       
+      // Handle checkbox changes for multiple selection
+      $notification.on('change', '.doi-file-check', function() {
+        self.updateMultiSelectCount($notification);
+      });
+      
+      // Handle select all
+      $notification.on('change', '.doi-select-all', function() {
+        var isChecked = $(this).is(':checked');
+        $notification.find('.doi-file-check').prop('checked', isChecked);
+        self.updateMultiSelectCount($notification);
+      });
+      
+      // Handle add selected button
+      $notification.on('click', '.doi-add-selected', function(e) {
+        e.preventDefault();
+        self.addSelectedDoiResources($notification, packageId, doiData);
+      });
+      
       // Handle dismiss
       $notification.on('click', '.doi-files-dismiss', function() {
         $notification.slideUp(200, function() {
           $(this).remove();
         });
-        // Clear stored data
         sessionStorage.removeItem('doi_resource_files');
       });
+      
+      // Add styles
+      this.addDoiNotificationStyles();
+    },
+    
+    /**
+     * Escape HTML to prevent XSS
+     */
+    escapeHtml: function(text) {
+      if (!text) return '';
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    },
+    
+    /**
+     * Get package ID from URL or form
+     */
+    getPackageId: function() {
+      // Try from URL
+      var path = window.location.pathname;
+      var match = path.match(/\/dataset\/([^\/]+)/);
+      if (match) return match[1];
+      
+      // Try from form action
+      if (this.form.length) {
+        var action = this.form.attr('action') || '';
+        match = action.match(/\/dataset\/([^\/]+)/);
+        if (match) return match[1];
+      }
+      
+      return null;
+    },
+    
+    /**
+     * Update count of selected files for multi-select
+     */
+    updateMultiSelectCount: function($notification) {
+      var count = $notification.find('.doi-file-check:checked').length;
+      $notification.find('.selected-count').text(count);
+      $notification.find('.doi-add-selected').prop('disabled', count === 0);
+    },
+    
+    /**
+     * Add selected DOI files as separate resources
+     */
+    addSelectedDoiResources: function($notification, packageId, doiData) {
+      var self = this;
+      var $selectedItems = $notification.find('.doi-file-check:checked').closest('.doi-file-option');
+      
+      if ($selectedItems.length === 0) {
+        console.log('[schemingdcat-resource-auto-fields] No files selected');
+        return;
+      }
+      
+      if (!packageId) {
+        console.error('[schemingdcat-resource-auto-fields] No package ID found');
+        alert('Error: Could not determine the dataset. Please try again.');
+        return;
+      }
+      
+      // Collect selected files data
+      var selectedFiles = [];
+      $selectedItems.each(function() {
+        var $item = $(this);
+        selectedFiles.push({
+          url: $item.data('url'),
+          filename: $item.data('filename') || '',
+          format: $item.data('format') || '',
+          description: $item.data('description') || ''
+        });
+      });
+      
+      console.log('[schemingdcat-resource-auto-fields] Adding', selectedFiles.length, 'resources');
+      
+      // Show progress
+      var $progress = $notification.find('.doi-multi-progress');
+      var $progressBar = $progress.find('.progress-bar');
+      var $progressStatus = $progress.find('.doi-progress-status');
+      var $addBtn = $notification.find('.doi-add-selected');
+      
+      $addBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating resources...');
+      $progress.show();
+      
+      // Create resources sequentially
+      var completed = 0;
+      var errors = [];
+      
+      function createNextResource(index) {
+        if (index >= selectedFiles.length) {
+          // All done
+          self.onMultiResourcesComplete($notification, completed, errors, packageId);
+          return;
+        }
+        
+        var file = selectedFiles[index];
+        var percent = Math.round((index / selectedFiles.length) * 100);
+        $progressBar.css('width', percent + '%');
+        $progressStatus.text('Creating resource ' + (index + 1) + ' of ' + selectedFiles.length + ': ' + (file.filename || file.description || 'Resource'));
+        
+        self.createResourceFromDoiFile(packageId, file, doiData, function(success, result) {
+          if (success) {
+            completed++;
+            // Mark as created
+            $selectedItems.eq(index).addClass('used created')
+              .find('.doi-file-check').prop('disabled', true);
+          } else {
+            errors.push({ file: file, error: result });
+          }
+          
+          // Continue with next
+          setTimeout(function() {
+            createNextResource(index + 1);
+          }, 300);
+        });
+      }
+      
+      createNextResource(0);
+    },
+    
+    /**
+     * Create a single resource from DOI file data
+     */
+    createResourceFromDoiFile: function(packageId, file, doiData, callback) {
+      // Generate resource name from filename or description
+      var resourceName = file.filename 
+        ? file.filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+        : (file.description || 'DOI Resource');
+      
+      // Ensure name is not empty
+      if (!resourceName || resourceName.trim() === '') {
+        resourceName = 'DOI Resource ' + new Date().toISOString().slice(0, 10);
+      }
+      
+      var resourceData = {
+        package_id: packageId,
+        url: file.url,
+        name: resourceName,
+        format: file.format ? file.format.toUpperCase() : '',
+        description: 'Added from DOI: ' + (doiData.doi || '')
+      };
+      
+      console.log('[schemingdcat-resource-auto-fields] Creating resource:', resourceData);
+      
+      $.ajax({
+        url: '/api/3/action/resource_create',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(resourceData),
+        success: function(response) {
+          if (response.success) {
+            console.log('[schemingdcat-resource-auto-fields] Resource created:', response.result.id);
+            callback(true, response.result);
+          } else {
+            console.error('[schemingdcat-resource-auto-fields] Resource creation failed:', response.error);
+            callback(false, response.error);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('[schemingdcat-resource-auto-fields] Resource creation error:', error);
+          var errorMsg = error;
+          try {
+            var response = JSON.parse(xhr.responseText);
+            errorMsg = response.error && response.error.message ? response.error.message : error;
+          } catch(e) {}
+          callback(false, errorMsg);
+        }
+      });
+    },
+    
+    /**
+     * Handle completion of multi-resource creation
+     */
+    onMultiResourcesComplete: function($notification, completed, errors, packageId) {
+      var $progress = $notification.find('.doi-multi-progress');
+      var $progressBar = $progress.find('.progress-bar');
+      var $progressStatus = $progress.find('.doi-progress-status');
+      var $addBtn = $notification.find('.doi-add-selected');
+      
+      $progressBar.css('width', '100%').removeClass('active');
+      
+      if (errors.length === 0) {
+        $progressBar.addClass('progress-bar-success');
+        $progressStatus.html('<i class="fa fa-check-circle text-success"></i> ' + 
+          completed + ' resource(s) created successfully!');
+        $addBtn.html('<i class="fa fa-check"></i> Completed');
+        
+        // Clear stored DOI data
+        sessionStorage.removeItem('doi_resource_files');
+        
+        // Redirect to dataset page after delay
+        setTimeout(function() {
+          window.location.href = '/dataset/' + packageId;
+        }, 2000);
+      } else {
+        $progressBar.addClass('progress-bar-warning');
+        $progressStatus.html('<i class="fa fa-exclamation-triangle text-warning"></i> ' + 
+          completed + ' created, ' + errors.length + ' failed');
+        $addBtn.prop('disabled', false).html('<i class="fa fa-refresh"></i> Retry failed');
+      }
+    },
+    
+    /**
+     * Add CSS styles for DOI notification
+     */
+    addDoiNotificationStyles: function() {
+      if ($('#doi-notification-styles').length > 0) return;
+      
+      var styles = `
+        <style id="doi-notification-styles">
+          .doi-files-notification {
+            margin-bottom: 20px;
+            border: 1px solid #5bc0de;
+          }
+          .doi-files-notification .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #d9edf7;
+            border-color: #bce8f1;
+          }
+          .doi-files-notification .panel-title {
+            margin: 0;
+            font-size: 16px;
+          }
+          .doi-files-notification .panel-body {
+            padding: 0;
+          }
+          .doi-tabs {
+            margin: 0;
+            border-bottom: 1px solid #ddd;
+          }
+          .doi-tabs > li > a {
+            border-radius: 0;
+            margin-right: 0;
+          }
+          .doi-tab-content {
+            padding: 15px;
+          }
+          .doi-tab-content .help-block {
+            margin-bottom: 15px;
+            color: #737373;
+          }
+          .doi-files-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+          }
+          .doi-file-option {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+          }
+          .doi-file-option:last-child {
+            border-bottom: none;
+          }
+          .doi-file-option:hover {
+            background: #f9f9f9;
+          }
+          .doi-file-option.used {
+            background: #dff0d8;
+            opacity: 0.8;
+          }
+          .doi-file-option.created {
+            background: #d9edf7;
+          }
+          .doi-file-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          .doi-file-checkbox input[type="checkbox"] {
+            margin-top: 5px;
+          }
+          .doi-file-label {
+            flex: 1;
+            font-weight: normal;
+            cursor: pointer;
+          }
+          .doi-file-name {
+            font-weight: 500;
+          }
+          .doi-file-url {
+            word-break: break-all;
+            font-size: 0.85em;
+          }
+          .badge-format {
+            background: #337ab7;
+            font-size: 0.75em;
+            margin-left: 5px;
+          }
+          .doi-files-selection {
+            margin-bottom: 10px;
+          }
+          .doi-select-all-label {
+            font-weight: normal;
+            cursor: pointer;
+          }
+          .doi-multi-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+          }
+          .doi-multi-progress {
+            margin-top: 15px;
+          }
+          .doi-multi-progress .progress {
+            margin-bottom: 10px;
+          }
+        </style>
+      `;
+      $('head').append(styles);
     },
 
     /**
