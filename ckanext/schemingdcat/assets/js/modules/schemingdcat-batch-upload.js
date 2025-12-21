@@ -538,6 +538,13 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       
       var resourceData = this._buildResourceData(fileItem, blobUrl);
       
+      // CRITICAL: Add Azure-specific fields for ResourceCloudStorage to detect the direct upload
+      // and move the blob from temp path to final resources path
+      if (fileItem.blobPath) {
+        resourceData.azure_blob_path = fileItem.blobPath;
+        resourceData.azure_upload = true;
+      }
+      
       $.ajax({
         url: '/api/3/action/resource_create',
         type: 'POST',
