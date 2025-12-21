@@ -2299,3 +2299,58 @@ li.resource-item .dropdown-menu li a img.format_icon {
   border: none !important;
   background-color: transparent !important;
 }
+
+/* ===== TABLE COLLAPSIBLE ROWS FUNCTIONALITY ===== */
+/* Hide expandable rows by default when table is in "more" state */
+.table-toggle-more tr.toggle-more {
+  display: none !important;
+}
+
+/* Hide the "Show less" link when table is in "more" state */
+.table-toggle-more .toggle-show .show-less {
+  display: none !important;
+}
+
+/* Show the "Show more" link when table is in "more" state */
+.table-toggle-more .toggle-show .show-more {
+  display: inline !important;
+}
+
+/* Show all rows when table is in "less" state (expanded) */
+.table-toggle-less tr.toggle-more {
+  display: table-row !important;
+}
+
+/* Show the "Show less" link when table is in "less" state */
+.table-toggle-less .toggle-show .show-less {
+  display: inline !important;
+}
+
+/* Hide the "Show more" link when table is in "less" state */
+.table-toggle-less .toggle-show .show-more {
+  display: none !important;
+}
+
+/* Style the toggle row */
+.toggle-show td {
+  padding: 8px !important;
+  text-align: center !important;
+  border-top: 1px solid #ddd !important;
+}
+
+.toggle-show a {
+  color: #0069B4 !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+}
+
+.toggle-show a:hover {
+  text-decoration: underline !important;
+}
+
+/* Style for separator row */
+.toggle-separator td {
+  padding: 0px !important;
+  height: 1px !important;
+  border: none !important;
+}
