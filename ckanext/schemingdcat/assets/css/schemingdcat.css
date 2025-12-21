@@ -2170,3 +2170,132 @@ li.resource-item .dropdown-menu li a img.format_icon {
     margin-top: 10px !important;
   }
 }
+
+/* ===== FORMAT LABEL SPRITE ICONS ===== */
+/* Base sprite definition for format labels */
+.format-label {
+  background-image: url('../../../public/base/images/sprite-resource-icons.png') !important;
+  background-repeat: no-repeat !important;
+  display: inline-block !important;
+}
+
+/* CSV format icon */
+.format-label[data-format=csv],
+.format-label[data-format*=csv] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -720px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* JSON format icon */
+.format-label[data-format=json],
+.format-label[data-format*=json] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -820px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* XML format icon */
+.format-label[data-format=xml],
+.format-label[data-format*=xml] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -920px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* PDF format icon */
+.format-label[data-format=pdf],
+.format-label[data-format*=pdf] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1020px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* XLS/XLSX format icons */
+.format-label[data-format=xls],
+.format-label[data-format*=xls],
+.format-label[data-format=xlsx],
+.format-label[data-format*=xlsx] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1120px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* ZIP format icon */
+.format-label[data-format=zip],
+.format-label[data-format*=zip] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1220px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* SHP format icon */
+.format-label[data-format=shp],
+.format-label[data-format*=shp] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -2320px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* TIFF/TIF format icons */
+.format-label[data-format=tiff],
+.format-label[data-format*=tiff],
+.format-label[data-format=tif],
+.format-label[data-format*=tif] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -2420px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* API format icon */
+.format-label[data-format=api],
+.format-label[data-format*=api] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1320px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}

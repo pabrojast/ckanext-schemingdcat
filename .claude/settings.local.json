@@ -4,7 +4,12 @@
       "Bash(git commit:*)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "ask": []
