@@ -380,10 +380,39 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       
       var overwrite = this.el.find('.doi-overwrite-option').is(':checked');
       this._applyMetadata(this.resolvedData, overwrite);
+      
+      // Store files info for resource form
+      if (this.resolvedData.files && this.resolvedData.files.length > 0) {
+        this._storeFilesForResourceForm(this.resolvedData);
+      }
+      
       this._hidePreview();
       
       // Show success message
       this._showSuccess(this._('Metadata applied successfully'));
+    },
+
+    /**
+     * Store DOI files information for the resource form
+     * @param {Object} data - Resolved DOI metadata with files
+     */
+    _storeFilesForResourceForm: function(data) {
+      try {
+        var resourceData = {
+          doi: data.doi,
+          title: data.title,
+          source: data.source,
+          files: data.files || [],
+          url: data.url || '',
+          timestamp: new Date().toISOString()
+        };
+        
+        // Store in sessionStorage for the resource form to pick up
+        sessionStorage.setItem('doi_resource_files', JSON.stringify(resourceData));
+        console.log('[DOI Autofill] Stored', resourceData.files.length, 'files for resource form');
+      } catch (e) {
+        console.warn('[DOI Autofill] Could not store files in sessionStorage:', e);
+      }
     },
 
     /**

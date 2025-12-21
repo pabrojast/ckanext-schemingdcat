@@ -53,6 +53,9 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
           return;
         }
         
+        // Check for DOI resource files from previous step
+        self.checkDoiResourceFiles();
+        
         // Check if master section already exists
         if (self.form.find('.schemingdcat-master-section').length > 0) {
           console.log('[schemingdcat-resource-auto-fields] Master section already exists, skipping');
@@ -67,6 +70,179 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         self.setupAutoFieldCollapsing();
         self.monitorAutoFilledFields();
       }, 100);
+    },
+
+    /**
+     * Check for DOI resource files stored in sessionStorage
+     * and pre-fill the URL field if available
+     */
+    checkDoiResourceFiles: function() {
+      try {
+        var storedData = sessionStorage.getItem('doi_resource_files');
+        if (!storedData) {
+          return;
+        }
+        
+        var doiData = JSON.parse(storedData);
+        console.log('[schemingdcat-resource-auto-fields] Found DOI resource files:', doiData);
+        
+        // Check if data is recent (within last 30 minutes)
+        var timestamp = new Date(doiData.timestamp);
+        var now = new Date();
+        var ageMinutes = (now - timestamp) / (1000 * 60);
+        
+        if (ageMinutes > 30) {
+          console.log('[schemingdcat-resource-auto-fields] DOI data is too old, clearing');
+          sessionStorage.removeItem('doi_resource_files');
+          return;
+        }
+        
+        // Show notification about available DOI files
+        if (doiData.files && doiData.files.length > 0) {
+          this.showDoiFilesNotification(doiData);
+        }
+        
+      } catch (e) {
+        console.warn('[schemingdcat-resource-auto-fields] Error checking DOI files:', e);
+      }
+    },
+
+    /**
+     * Show notification about available DOI files
+     * @param {Object} doiData - DOI resource data
+     */
+    showDoiFilesNotification: function(doiData) {
+      var self = this;
+      var files = doiData.files;
+      
+      // Create notification panel
+      var $notification = $('<div>', {
+        class: 'doi-files-notification alert alert-info',
+        html: '<div class="doi-files-header">' +
+              '<i class="fa fa-link"></i> ' +
+              '<strong>Links found from DOI</strong>' +
+              '<button type="button" class="close doi-files-dismiss">&times;</button>' +
+              '</div>' +
+              '<p class="doi-files-description">The following links were found for this document. Click to use:</p>' +
+              '<div class="doi-files-list"></div>'
+      });
+      
+      var $filesList = $notification.find('.doi-files-list');
+      
+      // Add each file as a clickable option
+      files.forEach(function(file, index) {
+        if (!file.url) return;
+        
+        var displayName = file.filename || file.description || 'Resource ' + (index + 1);
+        var formatBadge = file.format ? '<span class="badge">' + file.format + '</span>' : '';
+        
+        var $fileOption = $('<div>', {
+          class: 'doi-file-option',
+          html: '<button type="button" class="btn btn-sm btn-default doi-file-use">' +
+                '<i class="fa fa-plus-circle"></i> Use this link' +
+                '</button>' +
+                '<span class="doi-file-name">' + displayName + '</span> ' +
+                formatBadge +
+                '<br><small class="text-muted doi-file-url">' + file.url + '</small>',
+          'data-url': file.url,
+          'data-filename': file.filename || '',
+          'data-format': file.format || ''
+        });
+        
+        $filesList.append($fileOption);
+      });
+      
+      // Insert notification at top of form
+      var $formContent = this.form.find('.form-group').first().parent();
+      if ($formContent.length) {
+        $formContent.prepend($notification);
+      } else {
+        this.form.prepend($notification);
+      }
+      
+      // Handle file selection
+      $notification.on('click', '.doi-file-use', function(e) {
+        e.preventDefault();
+        var $option = $(this).closest('.doi-file-option');
+        var url = $option.data('url');
+        var filename = $option.data('filename');
+        var format = $option.data('format');
+        
+        self.applyDoiFileToForm(url, filename, format);
+        
+        // Mark as used
+        $option.addClass('used');
+        $(this).prop('disabled', true).html('<i class="fa fa-check"></i> Applied');
+      });
+      
+      // Handle dismiss
+      $notification.on('click', '.doi-files-dismiss', function() {
+        $notification.slideUp(200, function() {
+          $(this).remove();
+        });
+        // Clear stored data
+        sessionStorage.removeItem('doi_resource_files');
+      });
+    },
+
+    /**
+     * Apply DOI file URL to the resource form
+     * @param {string} url - File URL
+     * @param {string} filename - Original filename
+     * @param {string} format - File format
+     */
+    applyDoiFileToForm: function(url, filename, format) {
+      // Find and fill URL field
+      var $urlField = this.form.find('input[name="url"]');
+      if ($urlField.length && (!$urlField.val() || $urlField.val().trim() === '')) {
+        $urlField.val(url).trigger('change');
+        console.log('[schemingdcat-resource-auto-fields] Set URL field:', url);
+      }
+      
+      // Try to set name/title field
+      if (filename) {
+        var $nameField = this.form.find('input[name="name"]');
+        if ($nameField.length && (!$nameField.val() || $nameField.val().trim() === '')) {
+          // Clean filename for display
+          var displayName = filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+          $nameField.val(displayName).trigger('change');
+        }
+      }
+      
+      // Try to set format field
+      if (format) {
+        var $formatField = this.form.find('select[name="format"], input[name="format"]');
+        if ($formatField.length) {
+          if ($formatField.is('select')) {
+            // Try to find matching option
+            var $option = $formatField.find('option[value="' + format + '"], option[value="' + format.toUpperCase() + '"], option[value="' + format.toLowerCase() + '"]');
+            if ($option.length) {
+              $formatField.val($option.val()).trigger('change');
+            }
+          } else {
+            $formatField.val(format.toUpperCase()).trigger('change');
+          }
+        }
+      }
+      
+      // Show success message
+      this.showDoiAppliedMessage();
+    },
+
+    /**
+     * Show success message when DOI file is applied
+     */
+    showDoiAppliedMessage: function() {
+      var $msg = $('<div>', {
+        class: 'alert alert-success doi-applied-message',
+        html: '<i class="fa fa-check-circle"></i> Link from DOI applied to resource'
+      });
+      
+      this.form.find('.doi-files-notification').after($msg);
+      
+      setTimeout(function() {
+        $msg.fadeOut(300, function() { $(this).remove(); });
+      }, 3000);
     },
 
     isResourceForm: function() {

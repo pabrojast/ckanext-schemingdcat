@@ -251,6 +251,13 @@ def fetch_from_datacite(doi: str) -> Optional[Dict[str, Any]]:
         'created_date': dates.get('created', ''),
         'issued_date': dates.get('issued', '') or str(pub_year) if pub_year else '',
         'url': attributes.get('url', ''),
+        # Add files/resources info - DataCite provides the landing page URL
+        'files': [{
+            'filename': '',
+            'url': attributes.get('url', ''),
+            'description': 'Document landing page',
+            'format': '',
+        }] if attributes.get('url') else [],
     }
 
 
@@ -342,10 +349,48 @@ def fetch_from_crossref(doi: str) -> Optional[Dict[str, Any]]:
         'url': message.get('URL', ''),
         'container_title': message.get('container-title', [''])[0] if message.get('container-title') else '',
         'issn': message.get('ISSN', [''])[0] if message.get('ISSN') else '',
+        # Add files/resources info - CrossRef provides links to the document
+        'files': _extract_crossref_links(message),
     }
 
 
-def fetch_from_zenodo(doi: str) -> Optional[Dict[str, Any]]:
+def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
+    """
+    Extract downloadable links from CrossRef message.
+    
+    Args:
+        message: CrossRef API message dict
+        
+    Returns:
+        List of file/link dicts
+    """
+    files = []
+    
+    # Primary URL
+    if message.get('URL'):
+        files.append({
+            'filename': '',
+            'url': message.get('URL'),
+            'description': 'Publisher page',
+            'format': 'HTML',
+        })
+    
+    # Check for PDF links
+    for link in message.get('link', []):
+        content_type = link.get('content-type', '')
+        url = link.get('URL', '')
+        
+        if url:
+            file_format = 'PDF' if 'pdf' in content_type.lower() else content_type.split('/')[-1].upper()
+            files.append({
+                'filename': '',
+                'url': url,
+                'description': f'Full text ({file_format})',
+                'format': file_format,
+                'content_type': content_type,
+            })
+    
+    return files
     """
     Fetch metadata from Zenodo API.
     
@@ -398,14 +443,20 @@ def fetch_from_zenodo(doi: str) -> Optional[Dict[str, Any]]:
     # Get license
     license_id = metadata.get('license', {}).get('id', '') if isinstance(metadata.get('license'), dict) else metadata.get('license', '')
     
-    # Get files info
+    # Get files info - normalize to consistent format
     files = []
     for file_info in data.get('files', []):
+        filename = file_info.get('key', '')
+        # Detect format from filename
+        file_format = filename.split('.')[-1].upper() if '.' in filename else ''
+        
         files.append({
-            'filename': file_info.get('key', ''),
+            'filename': filename,
+            'url': file_info.get('links', {}).get('self', ''),
+            'description': f'Zenodo file: {filename}',
+            'format': file_format,
             'size': file_info.get('size', 0),
             'checksum': file_info.get('checksum', ''),
-            'download_url': file_info.get('links', {}).get('self', ''),
         })
     
     return {

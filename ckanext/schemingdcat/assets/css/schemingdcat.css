@@ -1766,3 +1766,85 @@ input.loading[name="spatial_extent"] {
 .email-protect .email-status {
   font-size: 12px;
 }
+
+/* DOI Files Notification Styles */
+.doi-files-notification {
+  margin-bottom: 20px;
+  border: 1px solid #bce8f1;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #d9edf7;
+}
+
+.doi-files-notification .doi-files-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.doi-files-notification .doi-files-header strong {
+  flex: 1;
+  margin-left: 8px;
+  font-size: 1.1em;
+}
+
+.doi-files-notification .doi-files-header .close {
+  font-size: 1.3em;
+  opacity: 0.6;
+}
+
+.doi-files-notification .doi-files-header .close:hover {
+  opacity: 1;
+}
+
+.doi-files-notification .doi-files-description {
+  margin-bottom: 12px;
+  color: #31708f;
+}
+
+.doi-files-notification .doi-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doi-files-notification .doi-file-option {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #bce8f1;
+  transition: all 0.2s ease;
+}
+
+.doi-files-notification .doi-file-option:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-color: #31708f;
+}
+
+.doi-files-notification .doi-file-option.used {
+  background: #dff0d8;
+  border-color: #d6e9c6;
+}
+
+.doi-files-notification .doi-file-use {
+  margin-right: 10px;
+}
+
+.doi-files-notification .doi-file-name {
+  font-weight: 500;
+}
+
+.doi-files-notification .doi-file-url {
+  word-break: break-all;
+  display: block;
+  margin-top: 4px;
+}
+
+.doi-files-notification .badge {
+  margin-left: 8px;
+  font-size: 0.8em;
+}
+
+.doi-applied-message {
+  margin-top: 10px;
+}
