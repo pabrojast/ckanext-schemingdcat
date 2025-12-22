@@ -439,7 +439,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         'document_type': ['document_type', 'dcat_type'],
         'keywords': ['tag_string', 'tags', 'keywords'],
         'license': ['license_id', 'license'],
-        'authors': ['authors', 'author', 'contact_name']
+        // Keep authors away from contact fields so user contact auto-fill is preserved
+        'authors': ['authors', 'author']
       };
       
       // Merge with custom mapping
@@ -467,7 +468,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       
       // Auto-generate identifier from DOI
       if (data.doi) {
-        this._setIdentifierFromDoi(data.doi, overwrite);
+        this._setIdentifierFromDoi(data.doi, overwrite, data.title);
       }
       
       console.log('[DOI Autofill] Metadata applied to form');
@@ -479,8 +480,9 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
      * @param {string} doi - The DOI string
      * @param {boolean} overwrite - Whether to overwrite existing values
      */
-    _setIdentifierFromDoi: function(doi, overwrite) {
+     _setIdentifierFromDoi: function(doi, overwrite, title) {
       var self = this;
+      var isDocumentsForm = this.fieldName === 'document_doi';
       
       // Set the main identifier field (UUID generated from DOI)
       var $identifierField = $('[name="identifier"]');
@@ -488,8 +490,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       if ($identifierField.length > 0) {
         // Check if field already has value
         if (overwrite || !$identifierField.val() || $identifierField.val().trim() === '') {
-          // Generate a deterministic UUID-like identifier from the DOI
-          var identifier = this._generateUuidFromDoi(doi);
+          // For documents we want to keep a human friendly identifier (paper title)
+          var identifier = (isDocumentsForm && title ? title : this._generateUuidFromDoi(doi));
           $identifierField.val(identifier).trigger('change').trigger('input');
           console.log('[DOI Autofill] Generated identifier:', identifier);
         } else {
@@ -669,13 +671,13 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         // Set English field if available
         var $enField = $('[name="' + fieldName + '-en"]');
         if ($enField.length > 0) {
-          $enField.val(value).trigger('change');
+          $enField.val(value).trigger('change').trigger('input');
         }
         
         // Also try the base field
         var $baseField = $('[name="' + fieldName + '"]');
         if ($baseField.length > 0 && $baseField.attr('type') !== 'hidden') {
-          $baseField.val(value).trigger('change');
+          $baseField.val(value).trigger('change').trigger('input');
         }
       } else if (typeof value === 'object') {
         // Value has translations
