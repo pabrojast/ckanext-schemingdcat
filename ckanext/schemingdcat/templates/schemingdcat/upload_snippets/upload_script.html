@@ -742,6 +742,16 @@
         console.log('[Form Interceptor] Installing interceptor on form:', form.id || form.className);
 
         form.addEventListener('submit', function(e) {
+          // =====================================================================
+          // CHECK FOR BATCH MODE - Block form submission when batch upload is active
+          // =====================================================================
+          if (window.__schemingdcat_batch_mode_active__ || form.dataset.batchModeActive === 'true') {
+            console.log('[Form Interceptor] Batch mode active - blocking form submit');
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+          
           var fileInput = form.querySelector('input[type="file"][name="upload"]');
 
           // =====================================================================

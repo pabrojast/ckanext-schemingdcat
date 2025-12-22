@@ -433,6 +433,14 @@
 
             // Use capture phase (true) to run BEFORE other submit handlers
             form.addEventListener('submit', function(e) {
+                // Check for batch mode - block form submission when batch upload is active
+                if (window.__schemingdcat_batch_mode_active__ || form.dataset.batchModeActive === 'true') {
+                    console.log('[schemingdcat-cloudstorage] Batch mode active - blocking form submit');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
                 // Check if there are any completed Azure uploads
                 var hasAzureUpload = false;
                 var azureUpload = null;

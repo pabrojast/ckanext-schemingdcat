@@ -85,6 +85,9 @@
             var isHidden = batchContainer.style.display === 'none';
             batchContainer.style.display = isHidden ? 'block' : 'none';
             
+            // Set global flag for batch mode - used by Form Interceptor to block form submits
+            window.__schemingdcat_batch_mode_active__ = isHidden;
+            
             // Toggle single form fields visibility
             var singleFormFields = getSingleFormFields();
             singleFormFields.forEach(function(field) {
@@ -97,6 +100,12 @@
               var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
               if (submitBtn) {
                 submitBtn.style.display = isHidden ? 'none' : '';
+              }
+              // Disable the form submit in batch mode to prevent accidental submissions
+              if (isHidden) {
+                form.dataset.batchModeActive = 'true';
+              } else {
+                delete form.dataset.batchModeActive;
               }
             }
             

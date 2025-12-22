@@ -269,6 +269,9 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       this.fileQueue.push(fileItem);
       this._renderFileItem(fileItem);
       
+      // Set global flag to prevent form submission when batch mode has files
+      window.__schemingdcat_batch_mode_active__ = true;
+      
       // Extract metadata if enabled
       if (this.options.extractMetadata) {
         this._extractFileMetadata(fileItem);
@@ -357,6 +360,8 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       this.fileQueue = [];
       this.$filesContainer.empty();
       this._updateUI();
+      // Note: Don't clear the batch mode flag here - the user is still in batch mode
+      // They need to click the toggle button to exit batch mode
     },
 
     _uploadAllFiles: function() {
