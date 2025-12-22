@@ -529,9 +529,12 @@ ckan.module('schemingdcat-batch-upload', function ($) {
 
     /**
      * Create CKAN resource pointing to the Azure blob
+     * Includes retry with exponential backoff for transient errors
      */
-    _createResourceWithBlobUrl: function(fileItem, callback) {
+    _createResourceWithBlobUrl: function(fileItem, callback, retryCount) {
       var self = this;
+      retryCount = retryCount || 0;
+      var maxRetries = 3;
       
       // Construct the blob URL (without SAS token)
       var blobUrl = fileItem.azureUrl.split('?')[0];
@@ -555,12 +558,31 @@ ckan.module('schemingdcat-batch-upload', function ($) {
             callback(true, response.result);
           } else {
             console.error('[schemingdcat-batch-upload] Resource creation failed:', response.error);
-            callback(false, null);
+            // Check if we should retry
+            if (retryCount < maxRetries) {
+              var delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+              console.log('[schemingdcat-batch-upload] Retrying in ' + delay + 'ms (attempt ' + (retryCount + 1) + '/' + maxRetries + ')');
+              setTimeout(function() {
+                self._createResourceWithBlobUrl(fileItem, callback, retryCount + 1);
+              }, delay);
+            } else {
+              callback(false, null);
+            }
           }
         },
         error: function(xhr, status, error) {
-          console.error('[schemingdcat-batch-upload] Resource creation error:', error);
-          callback(false, null);
+          console.error('[schemingdcat-batch-upload] Resource creation error:', error, 'status:', xhr.status);
+          
+          // Retry on 5xx errors or network errors
+          if (retryCount < maxRetries && (xhr.status >= 500 || xhr.status === 0)) {
+            var delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+            console.log('[schemingdcat-batch-upload] Server error, retrying in ' + delay + 'ms (attempt ' + (retryCount + 1) + '/' + maxRetries + ')');
+            setTimeout(function() {
+              self._createResourceWithBlobUrl(fileItem, callback, retryCount + 1);
+            }, delay);
+          } else {
+            callback(false, null);
+          }
         }
       });
     },
