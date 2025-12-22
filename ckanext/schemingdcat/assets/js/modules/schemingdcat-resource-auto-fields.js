@@ -119,9 +119,20 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      */
     showDoiFilesNotification: function(doiData) {
       var self = this;
-      var files = doiData.files;
+      // Normalize files (infer names / formats from URL when missing)
+      var files = (doiData.files || []).map(function(file) {
+        var normalized = $.extend({}, file);
+        if (!normalized.format && normalized.url) {
+          normalized.format = self.getFormatFromUrl(normalized.url);
+        }
+        if (!normalized.filename && normalized.url) {
+          normalized.filename = self.getFilenameFromUrl(normalized.url);
+        }
+        return normalized;
+      });
       var packageId = this.getPackageId();
       var uniqueId = 'doi-' + Date.now();
+      var enableMultiMode = files.length > 1;
       
       // Add styles first
       this.addDoiNotificationStyles();
@@ -141,37 +152,41 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
             '<button type="button" class="btn btn-default doi-mode-btn active" data-mode="single">' +
               '<i class="fa fa-file-o"></i> Add single resource' +
             '</button>' +
-            '<button type="button" class="btn btn-default doi-mode-btn" data-mode="multiple">' +
-              '<i class="fa fa-files-o"></i> Add multiple resources' +
-            '</button>' +
+            (enableMultiMode ? (
+              '<button type="button" class="btn btn-default doi-mode-btn" data-mode="multiple">' +
+                '<i class="fa fa-files-o"></i> Add multiple resources' +
+              '</button>'
+            ) : '') +
           '</div>' +
           '<div class="doi-mode-content">' +
             '<div class="doi-mode-panel doi-single-panel active">' +
               '<p class="doi-help-text">' +
-                '<i class="fa fa-info-circle"></i> Click on a link to fill the form below with that resource.' +
+                '<i class="fa fa-info-circle"></i> Click on a link to fill the form below with that resource. You can still upload a local file using the standard upload field below.' +
               '</p>' +
               '<div class="doi-files-list" id="' + uniqueId + '-single-list"></div>' +
             '</div>' +
-            '<div class="doi-mode-panel doi-multi-panel">' +
-              '<p class="doi-help-text">' +
-                '<i class="fa fa-info-circle"></i> Select links to create multiple resources at once.' +
-              '</p>' +
-              '<div class="doi-select-all-wrapper">' +
-                '<label><input type="checkbox" class="doi-select-all"> Select all</label>' +
-              '</div>' +
-              '<div class="doi-files-list" id="' + uniqueId + '-multi-list"></div>' +
-              '<div class="doi-multi-actions">' +
-                '<button type="button" class="btn btn-primary doi-add-selected" disabled>' +
-                  '<i class="fa fa-plus-circle"></i> Add selected (<span class="selected-count">0</span>)' +
-                '</button>' +
-              '</div>' +
-              '<div class="doi-multi-progress" style="display: none;">' +
-                '<div class="progress">' +
-                  '<div class="progress-bar progress-bar-striped active" style="width: 0%"></div>' +
+            (enableMultiMode ? (
+              '<div class="doi-mode-panel doi-multi-panel">' +
+                '<p class="doi-help-text">' +
+                  '<i class="fa fa-info-circle"></i> Select links to create multiple resources at once (remote links from the DOI).' +
+                '</p>' +
+                '<div class="doi-select-all-wrapper">' +
+                  '<label><input type="checkbox" class="doi-select-all"> Select all</label>' +
                 '</div>' +
-                '<p class="doi-progress-status"></p>' +
-              '</div>' +
-            '</div>' +
+                '<div class="doi-files-list" id="' + uniqueId + '-multi-list"></div>' +
+                '<div class="doi-multi-actions">' +
+                  '<button type="button" class="btn btn-primary doi-add-selected" disabled>' +
+                    '<i class="fa fa-plus-circle"></i> Add selected (<span class="selected-count">0</span>)' +
+                  '</button>' +
+                '</div>' +
+                '<div class="doi-multi-progress" style="display: none;">' +
+                  '<div class="progress">' +
+                    '<div class="progress-bar progress-bar-striped active" style="width: 0%"></div>' +
+                  '</div>' +
+                  '<p class="doi-progress-status"></p>' +
+                '</div>' +
+              '</div>'
+            ) : '') +
           '</div>' +
         '</div>' +
       '</div>';
@@ -201,25 +216,27 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       });
       
       // Populate multiple file list
-      var $multiList = $notification.find('#' + uniqueId + '-multi-list');
-      files.forEach(function(file, index) {
-        if (!file.url) return;
-        
-        var displayName = self.getDisplayName(file, index);
-        var formatBadge = file.format ? '<span class="badge">' + self.escapeHtml(file.format) + '</span>' : '';
-        var checkId = uniqueId + '-check-' + index;
-        
-        var $item = $('<div class="doi-file-item doi-file-checkbox">' +
-          '<input type="checkbox" class="doi-file-check" id="' + checkId + '">' +
-          '<label for="' + checkId + '" class="doi-file-info">' +
-            '<div class="doi-file-name">' + self.escapeHtml(displayName) + ' ' + formatBadge + '</div>' +
-            '<div class="doi-file-url">' + self.escapeHtml(file.url) + '</div>' +
-          '</label>' +
-        '</div>');
-        
-        $item.data('file', file);
-        $multiList.append($item);
-      });
+      if (enableMultiMode) {
+        var $multiList = $notification.find('#' + uniqueId + '-multi-list');
+        files.forEach(function(file, index) {
+          if (!file.url) return;
+          
+          var displayName = self.getDisplayName(file, index);
+          var formatBadge = file.format ? '<span class="badge">' + self.escapeHtml(file.format) + '</span>' : '';
+          var checkId = uniqueId + '-check-' + index;
+          
+          var $item = $('<div class="doi-file-item doi-file-checkbox">' +
+            '<input type="checkbox" class="doi-file-check" id="' + checkId + '">' +
+            '<label for="' + checkId + '" class="doi-file-info">' +
+              '<div class="doi-file-name">' + self.escapeHtml(displayName) + ' ' + formatBadge + '</div>' +
+              '<div class="doi-file-url">' + self.escapeHtml(file.url) + '</div>' +
+            '</label>' +
+          '</div>');
+          
+          $item.data('file', file);
+          $multiList.append($item);
+        });
+      }
       
       // Find insertion point - look for Resource locator section or form start
       var $insertPoint = this.form.find('.card2').first();
@@ -292,7 +309,38 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       if (file.description && file.description !== 'Publisher page' && file.description !== 'Document landing page') {
         return file.description;
       }
+      if (file.url) {
+        return this.getFilenameFromUrl(file.url).replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      }
       return 'Resource ' + (index + 1);
+    },
+    
+    /**
+     * Infer filename from URL (without querystring)
+     */
+    getFilenameFromUrl: function(url) {
+      if (!url) return '';
+      try {
+        var cleanUrl = url.split('?')[0].split('#')[0];
+        var parts = cleanUrl.split('/');
+        return parts[parts.length - 1] || 'resource';
+      } catch (e) {
+        return 'resource';
+      }
+    },
+    
+    /**
+     * Infer format/extension from URL
+     */
+    getFormatFromUrl: function(url) {
+      if (!url) return '';
+      try {
+        var filename = this.getFilenameFromUrl(url);
+        if (filename.indexOf('.') === -1) return '';
+        return filename.split('.').pop().toUpperCase();
+      } catch (e) {
+        return '';
+      }
     },
     
     /**
@@ -416,8 +464,12 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       
       // Generate resource name from filename or description
       var resourceName = this.getDisplayName(file, 0);
+      var inferredFormat = file.format || this.getFormatFromUrl(file.url);
       
       // Ensure name is not empty
+      if (!resourceName || resourceName.trim() === '') {
+        resourceName = this.getFilenameFromUrl(file.url).replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      }
       if (!resourceName || resourceName.trim() === '') {
         resourceName = 'DOI Resource ' + new Date().toISOString().slice(0, 10);
       }
@@ -426,7 +478,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         package_id: packageId,
         url: file.url,
         name: resourceName,
-        format: file.format ? file.format.toUpperCase() : '',
+        format: inferredFormat ? inferredFormat.toUpperCase() : '',
         description: 'Added from DOI: ' + (doiData.doi || '')
       };
       
@@ -668,6 +720,13 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      * @param {string} format - File format
      */
     applyDoiFileToForm: function(url, filename, format) {
+      // Infer missing bits from URL to avoid "undefined" resources
+      if (!filename) {
+        filename = this.getFilenameFromUrl(url);
+      }
+      if (!format) {
+        format = this.getFormatFromUrl(url);
+      }
       // Find and fill URL field
       var $urlField = this.form.find('input[name="url"]');
       if ($urlField.length && (!$urlField.val() || $urlField.val().trim() === '')) {
