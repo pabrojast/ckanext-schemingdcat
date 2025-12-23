@@ -29,7 +29,7 @@
             {% endblock %}
         {% endif %}
           {% set package_identifier = pkg_dict.name or pkg_dict.id if pkg_dict else None %}
-          {% set current_url = h.full_current_url() if pkg_dict else h.url_for_static(h.current_url(), _external=True) %}
+          {% set current_url = h.url_for('dataset.read', id=package_identifier) if package_identifier else h.current_url() %}
           {% block permalink %}
             {% snippet "schemingdcat/snippets/permanent_url.html", url=current_url %}     
           {% endblock %}
