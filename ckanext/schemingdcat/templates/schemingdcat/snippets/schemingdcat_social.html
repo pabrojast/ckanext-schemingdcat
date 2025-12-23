@@ -28,17 +28,18 @@
                 {% endif %}
             {% endblock %}
         {% endif %}
-          {% set current_url = h.url_for_static(h.current_url(), _external=True) %}
+          {% set package_identifier = pkg_dict.name or pkg_dict.id if pkg_dict else None %}
+          {% set current_url = h.url_for('dataset.read', id=package_identifier, _external=True) if package_identifier else h.current_url() %}
           {% block permalink %}
             {% snippet "schemingdcat/snippets/permanent_url.html", url=current_url %}     
           {% endblock %}
           <li class="nav-item">
             <a href="https://twitter.com/share?url={{ current_url }}" target="_blank">
-              <i class="fa-brands fa-x-twitter"></i> Twitter
+              <i class="fa fa-twitter"></i> Twitter
             </a>
           </li>
           <li class="nav-item"><a href="https://www.facebook.com/sharer.php?u={{ current_url }}" target="_blank">
-            <i class="fa-brands fa-facebook"></i> Facebook</a>
+            <i class="fa fa-facebook"></i> Facebook</a>
           </li>
       </ul>
     {% endblock %}
