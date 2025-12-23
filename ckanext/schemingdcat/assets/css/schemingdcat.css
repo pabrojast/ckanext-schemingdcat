@@ -192,6 +192,20 @@
 .filters .module .sorting:hover .label {
 	color:var(--bs-body-color);	
 }
+
+/* Breadcrumbs: allow long names to wrap instead of truncating with ellipsis */
+.breadcrumb {
+  flex-wrap: wrap;
+}
+.breadcrumb > li {
+  max-width: none !important;
+  white-space: normal !important;
+}
+.breadcrumb > li > a {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
 	
 .filters .module .sorting .up {
 	top:3px;
