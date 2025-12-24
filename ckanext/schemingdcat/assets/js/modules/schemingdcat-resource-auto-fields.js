@@ -25,12 +25,14 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       showIndicator: true,
       masterSectionTitle: 'Automatically Generated Metadata',
       masterSectionDescription: 'This section will be populated with metadata automatically extracted after you upload your file. Once generated, you can expand this section to review and modify the information as needed.',
-      masterSectionIcon: 'fa-magic'
+      masterSectionIcon: 'fa-magic',
+      packageId: null
     },
 
     initialize: function () {
       var self = this;
       console.log('[schemingdcat-resource-auto-fields] Initializing module...');
+      this.cachedPackageId = this.options.packageId || null;
       
       // Check if already initialized to prevent duplicates
       if (this.el.data('auto-fields-initialized')) {
@@ -161,14 +163,14 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
           '<div class="doi-mode-content">' +
             '<div class="doi-mode-panel doi-single-panel active">' +
               '<p class="doi-help-text">' +
-                '<i class="fa fa-info-circle"></i> Click on a link to fill the form below with that resource. You can still upload a local file using the standard upload field below.' +
+                '<i class="fa fa-info-circle"></i> Pick a link to pre-fill this resource (URL, name, format). If you prefer to upload a local file, ignore these links and use the uploader below.' +
               '</p>' +
               '<div class="doi-files-list" id="' + uniqueId + '-single-list"></div>' +
             '</div>' +
             (enableMultiMode ? (
               '<div class="doi-mode-panel doi-multi-panel">' +
                 '<p class="doi-help-text">' +
-                  '<i class="fa fa-info-circle"></i> Select links to create multiple resources at once (remote links from the DOI).' +
+                  '<i class="fa fa-info-circle"></i> Select links to create multiple resources at once as remote links from the DOI. The upload field below is not used for this action.' +
                 '</p>' +
                 '<div class="doi-select-all-wrapper">' +
                   '<label><input type="checkbox" class="doi-select-all"> Select all</label>' +
@@ -185,6 +187,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
                   '</div>' +
                   '<p class="doi-progress-status"></p>' +
                 '</div>' +
+                '<div class="doi-multi-errors alert alert-danger" style="display: none;"></div>' +
               '</div>'
             ) : '') +
           '</div>' +
@@ -192,6 +195,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       '</div>';
       
       var $notification = $(html);
+      this.addUploadGuidance();
       
       // Populate single file list
       var $singleList = $notification.find('#' + uniqueId + '-single-list');
@@ -357,19 +361,61 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      * Get package ID from URL or form
      */
     getPackageId: function() {
+      if (this.cachedPackageId) {
+        return this.cachedPackageId;
+      }
+
+      var optionId = this.options.packageId || this.el.data('packageId');
+      if (optionId) {
+        this.cachedPackageId = optionId;
+        return optionId;
+      }
+      
+      // Try hidden fields commonly present in resource forms
+      var $pkgField = this.form.find('input[name="package_id"], input[name="pkg_name"], input[name="dataset_id"]').first();
+      if ($pkgField.length && $pkgField.val()) {
+        this.cachedPackageId = $pkgField.val();
+        return this.cachedPackageId;
+      }
+
       // Try from URL
-      var path = window.location.pathname;
-      var match = path.match(/\/dataset\/([^\/]+)/);
-      if (match) return match[1];
+      var fromUrl = this.extractPackageIdFromPath(window.location.pathname);
+      if (fromUrl) {
+        this.cachedPackageId = fromUrl;
+        return fromUrl;
+      }
       
       // Try from form action
       if (this.form.length) {
         var action = this.form.attr('action') || '';
-        match = action.match(/\/dataset\/([^\/]+)/);
-        if (match) return match[1];
+        var fromAction = this.extractPackageIdFromPath(action);
+        if (fromAction) {
+          this.cachedPackageId = fromAction;
+          return fromAction;
+        }
       }
       
       return null;
+    },
+
+    extractPackageIdFromPath: function(path) {
+      if (!path) return null;
+      try {
+        var clean = path.split('?')[0];
+        var parts = clean.split('/').filter(function(p) { return p; });
+        var datasetIndex = parts.indexOf('dataset');
+        if (datasetIndex === -1 || parts.length <= datasetIndex + 1) {
+          return null;
+        }
+        var candidate = decodeURIComponent(parts[datasetIndex + 1]);
+        if ((candidate === 'new_resource' || candidate === 'new_metadata') && parts.length > datasetIndex + 2) {
+          return decodeURIComponent(parts[datasetIndex + 2]);
+        }
+        return candidate;
+      } catch (e) {
+        console.warn('[schemingdcat-resource-auto-fields] Could not parse package ID from path', e);
+        return null;
+      }
     },
     
     /**
@@ -387,6 +433,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     addSelectedDoiResources: function($notification, packageId, doiData) {
       var self = this;
       var $selectedItems = $notification.find('.doi-file-check:checked').closest('.doi-file-item');
+      this.clearMultiErrors($notification);
       
       if ($selectedItems.length === 0) {
         console.log('[schemingdcat-resource-auto-fields] No files selected');
@@ -395,7 +442,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       
       if (!packageId) {
         console.error('[schemingdcat-resource-auto-fields] No package ID found');
-        alert('Error: Could not determine the dataset. Please try again.');
+        this.showMultiErrorMessage($notification, 'No dataset was detected. Please finish creating the dataset first or reload this page.');
         return;
       }
       
@@ -415,8 +462,12 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var $progressBar = $progress.find('.progress-bar');
       var $progressStatus = $progress.find('.doi-progress-status');
       var $addBtn = $notification.find('.doi-add-selected');
+      var $selectAll = $notification.find('.doi-select-all');
+      var $checks = $notification.find('.doi-file-check');
       
       $addBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating resources...');
+      $selectAll.prop('disabled', true);
+      $checks.prop('disabled', true);
       $progress.show();
       
       // Create resources sequentially
@@ -514,10 +565,12 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      * Handle completion of multi-resource creation
      */
     onMultiResourcesComplete: function($notification, completed, errors, packageId) {
+      var self = this;
       var $progress = $notification.find('.doi-multi-progress');
       var $progressBar = $progress.find('.progress-bar');
       var $progressStatus = $progress.find('.doi-progress-status');
       var $addBtn = $notification.find('.doi-add-selected');
+      var $selectAll = $notification.find('.doi-select-all');
       
       $progressBar.css('width', '100%').removeClass('active');
       
@@ -539,7 +592,52 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         $progressStatus.html('<i class="fa fa-exclamation-triangle text-warning"></i> ' + 
           completed + ' created, ' + errors.length + ' failed');
         $addBtn.prop('disabled', false).html('<i class="fa fa-refresh"></i> Retry failed');
+        $selectAll.prop('disabled', false);
+        $notification.find('.doi-file-item').not('.used').find('.doi-file-check').prop('disabled', false);
+        self.renderMultiErrors($notification, errors);
       }
+    },
+
+    clearMultiErrors: function($notification) {
+      var $errors = $notification.find('.doi-multi-errors');
+      if ($errors.length) {
+        $errors.hide().empty();
+      }
+    },
+
+    showMultiErrorMessage: function($notification, message) {
+      var $errors = $notification.find('.doi-multi-errors');
+      if ($errors.length) {
+        $errors.html('<i class="fa fa-exclamation-triangle"></i> ' + this.escapeHtml(message)).show();
+      } else {
+        alert(message);
+      }
+    },
+
+    renderMultiErrors: function($notification, errors) {
+      var $errors = $notification.find('.doi-multi-errors');
+      if (!$errors.length || !errors || errors.length === 0) {
+        return;
+      }
+      var self = this;
+      var items = errors.map(function(item) {
+        var label = 'Resource';
+        if (item.file) {
+          label = self.getDisplayName(item.file, 0) || item.file.url || 'Resource';
+        }
+        var errorText = item.error;
+        if (errorText === undefined || errorText === null) {
+          errorText = 'Unknown error';
+        } else if (typeof errorText !== 'string') {
+          try {
+            errorText = JSON.stringify(errorText);
+          } catch (e) {
+            errorText = String(errorText);
+          }
+        }
+        return '<li><strong>' + self.escapeHtml(label) + ':</strong> ' + self.escapeHtml(errorText) + '</li>';
+      }).join('');
+      $errors.html('<strong>Some resources could not be created:</strong><ul class="list-unstyled">' + items + '</ul>').show();
     },
     
     /**
@@ -556,6 +654,9 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
           'border-radius: 8px;' +
           'background: #fff;' +
           'box-shadow: 0 2px 8px rgba(0,0,0,0.1);' +
+        '}' +
+        '.doi-upload-note {' +
+          'margin-bottom: 10px;' +
         '}' +
         '.doi-notification-header {' +
           'display: flex;' +
@@ -708,9 +809,28 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
           'font-size: 13px;' +
           'color: #666;' +
         '}' +
+        '.doi-multi-errors {' +
+          'margin-top: 10px;' +
+        '}' +
         '</style>';
       
       $('head').append(styles);
+    },
+
+    /**
+     * Add a small note above the upload widget to clarify DOI behaviour
+     */
+    addUploadGuidance: function() {
+      var $wrapper = this.form.find('.schemingdcat-upload-wrapper').first();
+      if (!$wrapper.length || $wrapper.data('doi-guidance-added')) {
+        return;
+      }
+      var $note = $('<div>', {
+        class: 'alert alert-info doi-upload-note',
+        html: '<i class="fa fa-info-circle"></i> Resources added from DOI links use the URL only. Leave the upload box empty unless you want to upload a local file instead.'
+      });
+      $wrapper.prepend($note);
+      $wrapper.data('doi-guidance-added', true);
     },
 
     /**

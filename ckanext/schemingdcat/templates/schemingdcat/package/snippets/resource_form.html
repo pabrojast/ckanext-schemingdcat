@@ -48,7 +48,8 @@
   
   {# --- MÓDULO AUTO-FIELDS --- #}
   {% asset 'ckanext-schemingdcat/schemingdcat-resource-auto-fields' %}
-  <div data-module="schemingdcat-resource-auto-fields"></div>
+  <div data-module="schemingdcat-resource-auto-fields"
+       data-module-package-id="{{ pkg_name or data.get('package_id', '') }}"></div>
 
   {# --- BATCH UPLOAD SECTION (for new resources only) --- #}
   {%- if not data.get('id') and pkg_name -%}
