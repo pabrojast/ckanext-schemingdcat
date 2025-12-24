@@ -326,8 +326,18 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       if (!url) return '';
       try {
         var cleanUrl = url.split('?')[0].split('#')[0];
+        // Remove trailing slashes
+        cleanUrl = cleanUrl.replace(/\/+$/, '');
         var parts = cleanUrl.split('/');
-        return parts[parts.length - 1] || 'resource';
+        // Get the last non-empty segment
+        var filename = '';
+        for (var i = parts.length - 1; i >= 0; i--) {
+          if (parts[i] && parts[i].trim() !== '') {
+            filename = parts[i];
+            break;
+          }
+        }
+        return filename || 'resource';
       } catch (e) {
         return 'resource';
       }
@@ -487,7 +497,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         $progressBar.css('width', percent + '%');
         $progressStatus.text('Creating resource ' + (index + 1) + ' of ' + selectedFiles.length + ': ' + displayName);
         
-        self.createResourceFromDoiFile(packageId, file, doiData, function(success, result) {
+        self.createResourceFromDoiFile(packageId, file, doiData, index, function(success, result) {
           if (success) {
             completed++;
             // Mark as created
@@ -509,20 +519,27 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
     
     /**
      * Create a single resource from DOI file data
+     * @param {string} packageId - The dataset package ID
+     * @param {Object} file - File data object with url, filename, format, etc.
+     * @param {Object} doiData - Original DOI metadata
+     * @param {number} index - Index of the file in the selection (for unique naming)
+     * @param {Function} callback - Callback function(success, result)
      */
-    createResourceFromDoiFile: function(packageId, file, doiData, callback) {
+    createResourceFromDoiFile: function(packageId, file, doiData, index, callback) {
       var self = this;
       
       // Generate resource name from filename or description
-      var resourceName = this.getDisplayName(file, 0);
+      var resourceName = this.getDisplayName(file, index);
       var inferredFormat = file.format || this.getFormatFromUrl(file.url);
       
       // Ensure name is not empty
       if (!resourceName || resourceName.trim() === '') {
         resourceName = this.getFilenameFromUrl(file.url).replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
       }
-      if (!resourceName || resourceName.trim() === '') {
-        resourceName = 'DOI Resource ' + new Date().toISOString().slice(0, 10);
+      // If still empty or generic, create a unique name with index and format
+      if (!resourceName || resourceName.trim() === '' || resourceName === 'resource') {
+        var formatLabel = inferredFormat ? ' (' + inferredFormat + ')' : '';
+        resourceName = (doiData.title ? doiData.title.substring(0, 50) : 'DOI Resource') + formatLabel + ' - ' + (index + 1);
       }
       
       var resourceData = {
