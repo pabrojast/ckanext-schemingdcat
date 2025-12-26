@@ -263,10 +263,18 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       // Handle dismiss
       $notification.on('click', '.doi-files-dismiss', function(e) {
         e.preventDefault();
+        self.clearRedirectTimer($notification);
         $notification.slideUp(200, function() {
           $(this).remove();
         });
         sessionStorage.removeItem('doi_resource_files');
+      });
+
+      // Allow canceling redirect after multi-add
+      $notification.on('click', '.doi-stay-here', function(e) {
+        e.preventDefault();
+        self.clearRedirectTimer($notification);
+        $(this).replaceWith('<span class="text-muted">Staying on this form as requested.</span>');
       });
       
       console.log('[schemingdcat-resource-auto-fields] DOI notification created with', files.length, 'files');
@@ -418,6 +426,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var self = this;
       var $selectedItems = $notification.find('.doi-file-check:checked:not(:disabled)').closest('.doi-file-item');
       this.clearMultiErrors($notification);
+      this.clearRedirectTimer($notification);
       
       if ($selectedItems.length === 0) {
         console.log('[schemingdcat-resource-auto-fields] No files selected');
@@ -575,12 +584,20 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         $selectAll.prop('disabled', false).prop('checked', false);
         $notification.find('.doi-file-item').not('.used').find('.doi-file-check').prop('disabled', false).prop('checked', false);
         self.updateMultiSelectCount($notification);
+        var redirectSeconds = 3;
         $notification.find('.doi-multi-success').html(
-          '<i class="fa fa-check-circle"></i> ' + completed + ' resource(s) were created. You can continue using this form to upload a local file or apply another link.'
+          '<i class="fa fa-check-circle"></i> ' + completed + ' resource(s) were created. Redirecting to the dataset in ' + redirectSeconds + ' seconds. ' +
+          '<button type="button" class="btn btn-link btn-sm doi-stay-here">Stay here to upload a local file</button>'
         ).show();
         
         // Clear stored DOI data so future forms do not repeat the prompt
         sessionStorage.removeItem('doi_resource_files');
+
+        // Redirect unless user chooses to stay
+        var timer = setTimeout(function() {
+          window.location.href = '/dataset/' + packageId;
+        }, redirectSeconds * 1000);
+        $notification.data('doiRedirectTimer', timer);
       } else {
         $progressBar.addClass('progress-bar-warning');
         $progressStatus.html('<i class="fa fa-exclamation-triangle text-warning"></i> ' + 
@@ -603,6 +620,17 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       var $success = $notification.find('.doi-multi-success');
       if ($success.length) {
         $success.hide().empty();
+      }
+    },
+
+    /**
+     * Clear a pending redirect timer (if any)
+     */
+    clearRedirectTimer: function($notification) {
+      var timer = $notification && $notification.data('doiRedirectTimer');
+      if (timer) {
+        clearTimeout(timer);
+        $notification.removeData('doiRedirectTimer');
       }
     },
 
