@@ -689,6 +689,23 @@ def extract_comprehensive_metadata_job(job_data):
             
             # Debug: Log raw metadata to understand what's being extracted
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
+
+            # Detect member state (country) from spatial extent and set spatial_uri on the dataset if missing
+            detected_member_uri = None
+            try:
+                extent_geojson = metadata.get('spatial_extent')
+                if extent_geojson:
+                    if isinstance(extent_geojson, str):
+                        try:
+                            extent_geojson = json.loads(extent_geojson)
+                        except Exception:
+                            pass
+                    from ckanext.schemingdcat import helpers as sd_helpers
+                    detected_member_uri = sd_helpers.schemingdcat_detect_member_state(extent_geojson)
+                    if detected_member_uri:
+                        log.info(f"Detected member state for resource {resource_id}: {detected_member_uri}")
+            except Exception as e:
+                log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}")
             
             try:
                 # Ensure we have a valid database session and close any existing one
@@ -722,6 +739,25 @@ def extract_comprehensive_metadata_job(job_data):
                 }
                 
                 log.info(f"Created system context for resource update")
+
+                # If we detected a member state and the dataset has no spatial_uri, set it
+                if package_id and detected_member_uri:
+                    try:
+                        pkg = get_action('package_show')(context, {'id': package_id})
+                        current_spatial_uri = pkg.get('spatial_uri') or []
+                        if isinstance(current_spatial_uri, str):
+                            current_spatial_uri = [current_spatial_uri] if current_spatial_uri else []
+
+                        if not current_spatial_uri:
+                            log.info(f"Updating dataset {package_id} spatial_uri with detected member state {detected_member_uri}")
+                            get_action('package_patch')(context, {
+                                'id': package_id,
+                                'spatial_uri': [detected_member_uri]
+                            })
+                        else:
+                            log.info(f"Dataset {package_id} already has spatial_uri, skipping auto-set")
+                    except Exception as e:
+                        log.warning(f"Could not update dataset {package_id} with detected member state: {e}")
                 
                 # Prepare data for updating with all extracted metadata
                 resource_patch_data = {'id': resource_id}
