@@ -115,6 +115,11 @@
             var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
             // Clean up the name (remove special characters, etc.)
             var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+            var extension = '';
+            var extMatch = fileName.match(/\.([^.]+)$/);
+            if (extMatch && extMatch[1]) {
+                extension = extMatch[1].toUpperCase();
+            }
             
             // Find form fields to populate
             var form = inputElement.closest('form');
@@ -170,6 +175,52 @@
                     descField.dispatchEvent(new Event('input', { bubbles: true }));
                     
                     console.log('[schemingdcat-cloudstorage] Auto-populated description field');
+                }
+
+                // Try to auto-set format/extension if empty
+                if (extension) {
+                    var formatSelectors = [
+                        'select[name="format"]',
+                        'input[name="format"]',
+                        'select[name="resource_format"]',
+                        'input[name="resource_format"]'
+                    ];
+                    var formatField = null;
+                    for (var k = 0; k < formatSelectors.length; k++) {
+                        formatField = form.querySelector(formatSelectors[k]);
+                        if (formatField) break;
+                    }
+
+                    if (formatField) {
+                        var currentVal = (formatField.value || '').trim();
+                        if (!currentVal) {
+                            if (formatField.tagName.toLowerCase() === 'select') {
+                                var options = formatField.options;
+                                var selected = false;
+                                for (var idx = 0; idx < options.length; idx++) {
+                                    var optVal = (options[idx].value || '').toUpperCase();
+                                    if (optVal === extension) {
+                                        formatField.value = options[idx].value;
+                                        selected = true;
+                                        break;
+                                    }
+                                }
+                                if (!selected) {
+                                    // Fallback: set uppercase extension directly
+                                    formatField.value = extension;
+                                }
+                            } else {
+                                formatField.value = extension;
+                            }
+                            formatField.dispatchEvent(new Event('change', { bubbles: true }));
+                            formatField.dispatchEvent(new Event('input', { bubbles: true }));
+                            formatField.style.backgroundColor = '#d4edda';
+                            setTimeout(function() {
+                                formatField.style.backgroundColor = '';
+                            }, 2000);
+                            console.log('[schemingdcat-cloudstorage] Auto-populated format field:', extension);
+                        }
+                    }
                 }
             }
         }
@@ -292,7 +343,8 @@
             })
             .then(function() {
                 console.log('[schemingdcat-cloudstorage] Upload completed successfully');
-                updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', false);
+                // Mark as completed so spinner disappears
+                updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', true);
                 
                 // Mark upload as complete
                 if (window.cloudStorageUploads[fileId]) {
