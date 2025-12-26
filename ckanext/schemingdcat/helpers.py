@@ -1467,6 +1467,66 @@ def schemingdcat_detect_member_states(extent_geojson, min_overlap_percentage=10.
         log.error(f"Error detecting member states: {e}")
         return []
 
+
+@helper
+def schemingdcat_get_member_state_group_slug(member_state_uri: str):
+    """
+    Best-effort guess of the group slug that represents a member state,
+    based on the spatial_uri choices defined in the dataset schema.
+
+    It looks up the matching choice for the provided URI, then slugifies the
+    human label (preferring English, then Spanish, then French, then any).
+
+    Returns:
+        str or None: The guessed slug (eg. "ethiopia") or None if it cannot
+        be determined.
+    """
+    if not member_state_uri:
+        return None
+
+    try:
+        schema = schemingdcat_get_dataset_schema()
+        if not schema:
+            return None
+
+        spatial_field = next(
+            (f for f in schema.get('dataset_fields', []) if f.get('field_name') == 'spatial_uri'),
+            None
+        )
+        if not spatial_field:
+            return None
+
+        target_choice = None
+        for choice in spatial_field.get('choices', []):
+            if choice.get('value') == member_state_uri:
+                target_choice = choice
+                break
+
+        if not target_choice:
+            return None
+
+        label = target_choice.get('label', {})
+        # Prefer language order: en -> es -> fr -> any first value
+        if isinstance(label, dict):
+            candidate = label.get('en') or label.get('es') or label.get('fr')
+            if not candidate and label:
+                candidate = next(iter(label.values()))
+        else:
+            candidate = label
+
+        if not candidate:
+            return None
+
+        try:
+            from ckan.lib.munge import munge_title_to_name
+            return munge_title_to_name(candidate)
+        except Exception as e:
+            log.warning(f"Could not munge member state label '{candidate}' to slug: {e}")
+            return None
+    except Exception as e:
+        log.error(f"Error guessing member state group slug for {member_state_uri}: {e}")
+        return None
+
 @helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
     """

@@ -778,6 +778,8 @@ def extract_comprehensive_metadata_job(job_data):
                 except:
                     pass
                 
+                pkg = None
+
                 # Create fresh system context for updating the resource with proper setup
                 # Use a site user to bypass authorization issues with private datasets
                 try:
@@ -822,6 +824,43 @@ def extract_comprehensive_metadata_job(job_data):
                             log.info(f"Dataset {package_id} already has spatial_uri, skipping auto-set")
                     except Exception as e:
                         log.warning(f"Could not update dataset {package_id} with detected member state: {e}")
+
+                    # Also try to add the dataset to the corresponding member-state group
+                    try:
+                        from ckanext.schemingdcat import helpers as sd_helpers
+                        group_slug = sd_helpers.schemingdcat_get_member_state_group_slug(detected_member_uri)
+                        if group_slug:
+                            # Ensure group exists
+                            try:
+                                get_action('group_show')(context, {'id': group_slug})
+                            except Exception as e:
+                                log.warning(f"Member state group '{group_slug}' not found: {e}")
+                            else:
+                                if pkg is None:
+                                    pkg = get_action('package_show')(context, {'id': package_id})
+                                existing_group_names = []
+                                for g in pkg.get('groups', []):
+                                    name = g.get('name') or g.get('id')
+                                    if name:
+                                        existing_group_names.append(name)
+
+                                if group_slug not in existing_group_names:
+                                    new_groups = [{'name': name} for name in existing_group_names]
+                                    new_groups.append({'name': group_slug})
+                                    log.info(f"Adding dataset {package_id} to member state group '{group_slug}'")
+                                    try:
+                                        get_action('package_patch')(context, {
+                                            'id': package_id,
+                                            'groups': new_groups
+                                        })
+                                    except Exception as e:
+                                        log.warning(f"Could not add dataset {package_id} to group '{group_slug}': {e}")
+                                else:
+                                    log.info(f"Dataset {package_id} already in member state group '{group_slug}'")
+                        else:
+                            log.info(f"No group slug could be derived for member state {detected_member_uri}")
+                    except Exception as e:
+                        log.warning(f"Could not assign member state group for dataset {package_id}: {e}")
                 
                 # Prepare data for updating with all extracted metadata
                 resource_patch_data = {'id': resource_id}
