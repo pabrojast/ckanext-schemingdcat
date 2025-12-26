@@ -23,7 +23,7 @@
         
         <li>
           <div class="trash-dataset-badges">
-            {{ h.link_to(h.truncate(title, truncate_title), url) }}
+            {{ h.link_to(title|truncate(truncate_title), url) }}
             {% if entity.private %}
             <span class="dataset-private badge pull-left">
               <i class="fa fa-lock"></i>

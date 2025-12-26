@@ -83,7 +83,7 @@ If facet field has options, list in the form [dic{keys:'value', 'label'}], where
               {% set href = h.remove_url_param(name, item.name, extras=extras, alternative_url=alternative_url) if item.active else h.add_url_param(new_params={name: item.name}, extras=extras, alternative_url=alternative_url) %}
               {% set label = h.scheming_choices_label(scheming_choices,item.name) if scheming_choices else item.display_name %}
               {% set label = label_function(item) if label_function else label %}
-              {% set label_truncated = h.truncate(label, 22) if not label_function else label %}
+              {% set label_truncated = label|truncate(22) if not label_function else label %}
               {% set count = count_label(item['count']) if count_label else ('%d' % item['count']) %}
               {% set nav_item_class = 'nav-item ' %}
               {%  if icons_dir %}
