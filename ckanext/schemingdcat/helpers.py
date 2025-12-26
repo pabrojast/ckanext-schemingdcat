@@ -1527,6 +1527,111 @@ def schemingdcat_get_member_state_group_slug(member_state_uri: str):
         log.error(f"Error guessing member state group slug for {member_state_uri}: {e}")
         return None
 
+
+def _normalize_slug(text: str) -> Optional[str]:
+    """Helper to normalize arbitrary text into a CKAN-safe slug."""
+    if not text:
+        return None
+    try:
+        from ckan.lib.munge import munge_title_to_name
+        return munge_title_to_name(text)
+    except Exception:
+        return None
+
+
+@helper
+def schemingdcat_find_member_state_group(member_state_uri: str, context: Optional[dict] = None) -> Optional[str]:
+    """
+    Try to find the existing CKAN group slug that corresponds to the given member state URI.
+
+    Strategy:
+    1) Look up the slug derived from the schema choice label (via schemingdcat_get_member_state_group_slug)
+       and check if that group exists.
+    2) Inspect children of the 'member-states' group (if present) and try to match by:
+         - name equality
+         - slugified display_name/title equality
+    3) Fall back to a direct group_list search by the label text.
+    """
+    if not member_state_uri:
+        return None
+
+    ctx = context or {'ignore_auth': True}
+    try:
+        from ckan.plugins import toolkit
+    except Exception:
+        return None
+
+    # First attempt: derived slug from schema label
+    candidate_slug = schemingdcat_get_member_state_group_slug(member_state_uri)
+    if candidate_slug:
+        try:
+            toolkit.get_action('group_show')(ctx, {'id': candidate_slug})
+            log.debug(f"Member state group resolved via schema label: {candidate_slug}")
+            return candidate_slug
+        except Exception:
+            log.debug(f"Candidate member state group '{candidate_slug}' not found")
+
+    # Load member-states parent to limit the search scope
+    member_children = []
+    try:
+        parent = toolkit.get_action('group_show')(ctx, {'id': 'member-states', 'include_groups': True})
+        member_children = parent.get('groups', []) or []
+    except Exception as e:
+        log.debug(f"Could not load member-states group: {e}")
+
+    # Get label text to try matching against display_name/title
+    label_text = None
+    try:
+        schema = schemingdcat_get_dataset_schema()
+        spatial_field = next(
+            (f for f in schema.get('dataset_fields', []) if f.get('field_name') == 'spatial_uri'),
+            None
+        )
+        if spatial_field:
+            for choice in spatial_field.get('choices', []):
+                if choice.get('value') == member_state_uri:
+                    lbl = choice.get('label')
+                    if isinstance(lbl, dict):
+                        label_text = lbl.get('en') or lbl.get('es') or lbl.get('fr') or next(iter(lbl.values()), None)
+                    else:
+                        label_text = lbl
+                    break
+    except Exception as e:
+        log.debug(f"Could not read schema label for member state {member_state_uri}: {e}")
+
+    normalized_label = _normalize_slug(label_text) if label_text else None
+
+    # Try matching among children of member-states
+    for child in member_children:
+        name = child.get('name')
+        disp = child.get('display_name') or child.get('title')
+        disp_norm = _normalize_slug(disp) if disp else None
+        if candidate_slug and name == candidate_slug:
+            log.debug(f"Member state group matched child by candidate slug: {name}")
+            return name
+        if normalized_label and name == normalized_label:
+            log.debug(f"Member state group matched child by normalized label: {name}")
+            return name
+        if normalized_label and disp_norm and normalized_label == disp_norm:
+            log.debug(f"Member state group matched child by display_name/title: {name}")
+            return name
+
+    # Last fallback: search by label text
+    if label_text:
+        try:
+            matches = toolkit.get_action('group_list')(ctx, {'q': label_text, 'all_fields': True, 'limit': 20})
+            for g in matches or []:
+                name = g.get('name')
+                disp = g.get('display_name') or g.get('title')
+                disp_norm = _normalize_slug(disp) if disp else None
+                if normalized_label and (name == normalized_label or disp_norm == normalized_label):
+                    log.debug(f"Member state group matched via group_list search: {name}")
+                    return name
+        except Exception as e:
+            log.debug(f"group_list search failed for '{label_text}': {e}")
+
+    return None
+
 @helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
     """
