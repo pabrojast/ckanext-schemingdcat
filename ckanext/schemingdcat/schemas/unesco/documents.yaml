@@ -175,6 +175,20 @@ dataset_fields:
     fr: Résumé par défaut du document {document}.
   form_group_id: notes
 
+# Custom DOI (optional, keeps the fetched DOI URL or lets users enter one manually)
+- field_name: custom_doi
+  label:
+    en: Custom DOI
+    es: DOI personalizado
+    fr: DOI personnalisé
+  display_property: adms:identifier
+  form_placeholder: https://doi.org/10.63253/ilrsgq77
+  help_text:
+    en: "Keeps the document DOI URL. Auto-filled after fetching metadata, but you can edit it."
+    es: "Conserva la URL del DOI del documento. Se rellena al obtener metadatos, pero puede editarse."
+    fr: "Conserve l'URL du DOI du document. Renseigné après la récupération des métadonnées, mais modifiable."
+  form_group_id: identification
+
 
 # Document Type (R) - IHP-WINS specific
 - field_name: document_type

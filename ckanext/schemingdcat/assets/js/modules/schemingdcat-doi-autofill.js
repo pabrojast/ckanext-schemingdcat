@@ -469,6 +469,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       // Auto-generate identifier from DOI
       if (data.doi) {
         this._setIdentifierFromDoi(data.doi, overwrite, data.title);
+        this._setCustomDoi(data.doi, overwrite);
       }
       
       console.log('[DOI Autofill] Metadata applied to form');
@@ -511,6 +512,34 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
           console.log('[DOI Autofill] Set alternate_identifier:', doiUrl);
         }
       }
+    },
+
+    /**
+     * Fill a custom DOI field (if present) with a DOI URL so it can be stored or edited
+     * @param {string} doi - The DOI string
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _setCustomDoi: function(doi, overwrite) {
+      var $customDoiField = $('[name="custom_doi"]');
+      if ($customDoiField.length === 0) {
+        return;
+      }
+
+      var currentVal = ($customDoiField.val() || '').trim();
+      if (!overwrite && currentVal) {
+        console.log('[DOI Autofill] Custom DOI already set, skipping');
+        return;
+      }
+
+      var cleaned = this._cleanDoi(doi);
+      var doiUrl = cleaned;
+
+      if (!/^https?:\/\//i.test(cleaned)) {
+        doiUrl = 'https://doi.org/' + cleaned;
+      }
+
+      $customDoiField.val(doiUrl).trigger('change');
+      console.log('[DOI Autofill] Set custom DOI:', doiUrl);
     },
 
     /**
