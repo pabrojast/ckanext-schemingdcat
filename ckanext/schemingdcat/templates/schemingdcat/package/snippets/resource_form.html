@@ -48,7 +48,77 @@
   
   {# --- MÓDULO AUTO-FIELDS --- #}
   {% asset 'ckanext-schemingdcat/schemingdcat-resource-auto-fields' %}
-  <div data-module="schemingdcat-resource-auto-fields"></div>
+  <div data-module="schemingdcat-resource-auto-fields"
+       data-module-package-id="{{ pkg_name or data.get('package_id', '') }}"></div>
+
+  {# --- BATCH UPLOAD SECTION (for new resources only) --- #}
+  {%- if not data.get('id') and pkg_name -%}
+    {%- set show_batch_upload = h.asbool(h.schemingdcat_get_config_value('ckanext.schemingdcat.batch_upload_enabled', 'true')) -%}
+    {%- if show_batch_upload -%}
+      <div class="batch-upload-toggle-section mb-4">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-batch-upload">
+          <i class="fa fa-files-o"></i> {{ _('Upload multiple files at once') }}
+        </button>
+        <div id="batch-upload-container" style="display: none; margin-top: 15px;">
+          {% snippet 'schemingdcat/snippets/batch_upload.html', package_id=pkg_name %}
+        </div>
+      </div>
+      <script>
+        (function() {
+          var toggleBtn = document.getElementById('toggle-batch-upload');
+          var batchContainer = document.getElementById('batch-upload-container');
+          
+          // Find the single file form fields to hide/show
+          function getSingleFormFields() {
+            var form = toggleBtn.closest('form');
+            if (!form) return [];
+            
+            // Get all form groups except batch upload section and the toggle button section
+            var allGroups = form.querySelectorAll('.form-group, .card2, .upload-section, .schemingdcat-upload-wrapper');
+            var batchSection = toggleBtn.closest('.batch-upload-toggle-section');
+            
+            return Array.prototype.filter.call(allGroups, function(el) {
+              return !batchSection.contains(el) && !batchContainer.contains(el);
+            });
+          }
+          
+          toggleBtn.addEventListener('click', function() {
+            var isHidden = batchContainer.style.display === 'none';
+            batchContainer.style.display = isHidden ? 'block' : 'none';
+            
+            // Set global flag for batch mode - used by Form Interceptor to block form submits
+            window.__schemingdcat_batch_mode_active__ = isHidden;
+            
+            // Toggle single form fields visibility
+            var singleFormFields = getSingleFormFields();
+            singleFormFields.forEach(function(field) {
+              field.style.display = isHidden ? 'none' : '';
+            });
+            
+            // Also hide/show the submit button when in batch mode
+            var form = toggleBtn.closest('form');
+            if (form) {
+              var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+              if (submitBtn) {
+                submitBtn.style.display = isHidden ? 'none' : '';
+              }
+              // Disable the form submit in batch mode to prevent accidental submissions
+              if (isHidden) {
+                form.dataset.batchModeActive = 'true';
+              } else {
+                delete form.dataset.batchModeActive;
+              }
+            }
+            
+            this.innerHTML = isHidden 
+              ? '<i class="fa fa-file-o"></i> {{ _("Upload single file") }}'
+              : '<i class="fa fa-files-o"></i> {{ _("Upload multiple files at once") }}';
+          });
+        })();
+      </script>
+      <hr class="mb-4">
+    {%- endif -%}
+  {%- endif -%}
 
   {%- if not dataset_type -%}
     <p>

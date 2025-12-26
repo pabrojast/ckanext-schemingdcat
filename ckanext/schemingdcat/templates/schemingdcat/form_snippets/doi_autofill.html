@@ -1,0 +1,267 @@
+{#
+  DOI Auto-fill Form Snippet
+  
+  This snippet provides a DOI input field with auto-fill functionality.
+  When a valid DOI is entered and the "Fetch" button is clicked,
+  metadata is retrieved from DataCite/CrossRef/Zenodo and used to
+  populate other form fields.
+  
+  Usage in schema:
+    - field_name: document_doi
+      preset: schemingdcat_doi_autofill
+      
+  Field mapping configuration (optional):
+    field_mapping:
+      title: title_translated
+      abstract: notes_translated
+      authors: authors
+      publication_year: publication_year
+      publisher: publisher
+      keywords: tag_string
+      document_type: document_type
+#}
+{% import 'macros/form.html' as form %}
+
+{# Load the DOI autofill JavaScript module #}
+{% asset 'ckanext-schemingdcat/schemingdcat-doi-autofill' %}
+
+{%- set field_id = field.field_name ~ '-field' -%}
+{%- set current_value = data.get(field.field_name, '') -%}
+{%- set field_mapping = field.get('field_mapping', {}) -%}
+
+{# Get placeholder text for current language #}
+{%- set placeholder_text = h.scheming_language_text(field.form_placeholder) or _('e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example') -%}
+
+<div class="doi-autofill-wrapper"
+     data-module="schemingdcat-doi-autofill"
+     data-module-field-id="{{ field_id }}"
+     data-module-field-name="{{ field.field_name }}"
+     data-module-field-mapping='{{ field_mapping | tojson }}'>
+  
+  <div class="doi-input-group">
+    <div class="input-group">
+      <span class="input-group-addon">
+        <i class="fa fa-book"></i>
+      </span>
+      <input type="text"
+             id="{{ field_id }}"
+             name="{{ field.field_name }}"
+             value="{{ current_value }}"
+             placeholder="{{ placeholder_text }}"
+             class="form-control doi-input"
+             autocomplete="off">
+      <span class="input-group-btn">
+        <button type="button" 
+                class="btn btn-primary doi-fetch-btn"
+                title="{{ _('Fetch metadata from DOI') }}">
+          <i class="fa fa-search"></i>
+          <span class="btn-text">{{ _('Fetch') }}</span>
+        </button>
+      </span>
+    </div>
+    
+    <div class="doi-validation-feedback" style="display: none;">
+      <span class="doi-valid text-success" style="display: none;">
+        <i class="fa fa-check-circle"></i> {{ _('Valid DOI format') }}
+      </span>
+      <span class="doi-invalid text-danger" style="display: none;">
+        <i class="fa fa-times-circle"></i> {{ _('Invalid DOI format') }}
+      </span>
+    </div>
+  </div>
+  
+  <div class="doi-loading" style="display: none;">
+    <div class="loading-spinner">
+      <i class="fa fa-spinner fa-spin fa-2x"></i>
+      <p>{{ _('Fetching metadata from DOI providers...') }}</p>
+    </div>
+  </div>
+  
+  <div class="doi-error alert alert-danger" style="display: none;">
+    <i class="fa fa-exclamation-triangle"></i>
+    <span class="error-message"></span>
+    <button type="button" class="close doi-error-close">&times;</button>
+  </div>
+  
+  <div class="doi-preview-panel" style="display: none;">
+    <div class="panel panel-info">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <i class="fa fa-file-text-o"></i>
+          {{ _('Metadata Preview') }}
+          <span class="doi-source badge"></span>
+        </h4>
+      </div>
+      <div class="panel-body">
+        <div class="doi-preview-content">
+          <dl class="dl-horizontal">
+            <dt>{{ _('Title') }}</dt>
+            <dd class="preview-title"></dd>
+            
+            <dt>{{ _('Authors') }}</dt>
+            <dd class="preview-authors"></dd>
+            
+            <dt>{{ _('Year') }}</dt>
+            <dd class="preview-year"></dd>
+            
+            <dt>{{ _('Publisher') }}</dt>
+            <dd class="preview-publisher"></dd>
+            
+            <dt>{{ _('Type') }}</dt>
+            <dd class="preview-type"></dd>
+            
+            <dt>{{ _('Abstract') }}</dt>
+            <dd class="preview-abstract"></dd>
+            
+            <dt>{{ _('Keywords') }}</dt>
+            <dd class="preview-keywords"></dd>
+          </dl>
+        </div>
+        
+        <div class="doi-preview-options">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" class="doi-overwrite-option" checked>
+              {{ _('Overwrite existing values') }}
+            </label>
+          </div>
+        </div>
+        
+        <div class="doi-preview-actions">
+          <button type="button" class="btn btn-success doi-apply-btn">
+            <i class="fa fa-check"></i> {{ _('Apply Metadata') }}
+          </button>
+          <button type="button" class="btn btn-default doi-cancel-btn">
+            <i class="fa fa-times"></i> {{ _('Cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
+</div>
+
+<style>
+.doi-autofill-wrapper {
+  margin-bottom: 15px;
+}
+
+.doi-input-group {
+  margin-bottom: 10px;
+}
+
+.doi-input-group .input-group {
+  width: 100%;
+}
+
+.doi-validation-feedback {
+  margin-top: 5px;
+  font-size: 0.9em;
+}
+
+.doi-loading {
+  text-align: center;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.doi-loading .loading-spinner {
+  color: #337ab7;
+}
+
+.doi-loading .loading-spinner p {
+  margin-top: 10px;
+  color: #666;
+}
+
+.doi-error {
+  position: relative;
+  padding-right: 35px;
+}
+
+.doi-error .close {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.doi-preview-panel {
+  margin-top: 15px;
+}
+
+.doi-preview-panel .panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doi-preview-panel .panel-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doi-preview-content {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.doi-preview-content dt {
+  width: 120px;
+  font-weight: 600;
+}
+
+.doi-preview-content dd {
+  margin-left: 140px;
+  margin-bottom: 8px;
+}
+
+.doi-preview-content .preview-abstract {
+  max-height: 100px;
+  overflow-y: auto;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.doi-preview-content .preview-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.doi-preview-content .preview-keywords .keyword-tag {
+  background: #e7f3ff;
+  color: #337ab7;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.doi-preview-options {
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  margin-top: 10px;
+}
+
+.doi-preview-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  margin-top: 10px;
+}
+
+.doi-fetch-btn.loading .fa {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

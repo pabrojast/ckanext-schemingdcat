@@ -266,4 +266,18 @@ input[type="file"][name="upload"]:focus {
         color: black !important;
         box-shadow: none !important;
     }
-} 
+} /* Completed upload visual states */
+.cloudstorage-progress-container.upload-finished {
+  border-color: #5cb85c !important;
+  box-shadow: 0 0 0 1px rgba(92, 184, 92, 0.15);
+}
+.cloudstorage-progress-container.upload-finished .cloudstorage-progress-status {
+  color: #3c763d;
+}
+.progress-bar.upload-finished-bar {
+  background: linear-gradient(90deg, #5cb85c 0%, #4cae4c 100%) !important;
+}
+.cloudstorage-progress-container.upload-faded {
+  opacity: 0.35;
+  transition: opacity 0.6s ease;
+}

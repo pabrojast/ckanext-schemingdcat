@@ -156,3 +156,24 @@ schemingdcat-resource-auto-fields:
       - base/main
   contents:
     - js/modules/schemingdcat-resource-auto-fields.js
+
+schemingdcat-batch-upload:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_batch_upload.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-batch-upload.js
+
+schemingdcat-batch-upload-css:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_batch_upload.css
+  contents:
+    - css/schemingdcat-batch-upload.css
+
+schemingdcat-doi-autofill:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_doi_autofill.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-doi-autofill.js

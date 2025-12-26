@@ -190,6 +190,24 @@ def schemingdcat_request_param_list(name):
 
 
 @helper
+def schemingdcat_get_config_value(key, default=None):
+    """
+    Get a configuration value from CKAN config.
+    
+    This is a helper function to safely access CKAN configuration values
+    from templates.
+    
+    Args:
+        key (str): The configuration key to retrieve.
+        default: The default value if the key is not found.
+    
+    Returns:
+        The configuration value or the default value.
+    """
+    return p.toolkit.config.get(key, default)
+
+
+@helper
 def schemingdcat_get_schema_names():
     """
     Get the names of all the schemas defined for the Scheming DCAT extension.
@@ -1135,6 +1153,50 @@ def schemingdcat_extract_lang_text(text, current_lang):
     return lang_text
 
 @helper
+def schemingdcat_dataset_type_label(dataset_type, plural=False):
+    """
+    Build a display label for a dataset type without adding an extra trailing
+    "s" when the type name is already plural.
+    """
+    if not dataset_type:
+        return ""
+
+    normalized = dataset_type.strip().lower()
+    base_label = dataset_type.strip().replace("_", " ").replace("-", " ").title()
+
+    overrides = {
+        "dataset": {
+            "singular": p.toolkit._("Dataset"),
+            "plural": p.toolkit._("Datasets"),
+        },
+        "document": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "documents": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "doc": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "software": {
+            "singular": p.toolkit._("Software"),
+            "plural": p.toolkit._("Software"),
+        },
+    }
+
+    if normalized in overrides:
+        return overrides[normalized]["plural" if plural else "singular"]
+
+    if plural and normalized.endswith("s"):
+        return p.toolkit._(base_label)
+    if plural:
+        return p.toolkit._(base_label + "s")
+    return p.toolkit._(base_label)
+
+@helper
 def dataset_display_name(package_or_package_dict):
     """
     Returns the localized value of the dataset name by extracting the correct translation.
@@ -1349,6 +1411,61 @@ def schemingdcat_get_dataset_schema(schema_type="dataset"):
     return logic.get_action("scheming_dataset_schema_show")(
         {}, {"type": schema_type}
     )   
+
+@helper
+def schemingdcat_detect_member_state(extent_geojson, min_overlap_percentage=50.0):
+    """
+    Detect the member state (country) that best contains the given spatial extent.
+    
+    This function compares the provided extent with country boundaries defined
+    in the schema's spatial_uri field choices.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to consider a match (default 50%)
+    
+    Returns:
+        str: The URI of the best matching country, or None if no suitable match found.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-3.5, 40.0], [-3.0, 40.0], [-3.0, 40.5], [-3.5, 40.5], [-3.5, 40.0]]]}
+        >>> uri = schemingdcat_detect_member_state(extent)
+        >>> # Returns: "http://publications.europa.eu/resource/authority/country/ESP"
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        return member_state_detector.detect_member_state(extent_geojson, min_overlap_percentage)
+    except Exception as e:
+        log.error(f"Error detecting member state: {e}")
+        return None
+
+@helper
+def schemingdcat_detect_member_states(extent_geojson, min_overlap_percentage=10.0):
+    """
+    Detect all member states (countries) that overlap with the given spatial extent.
+    
+    This function returns a list of all countries that have significant overlap
+    with the provided extent.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to include a country (default 10%)
+    
+    Returns:
+        list: List of country URIs that overlap with the extent, sorted by overlap percentage.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-7.5, 37.0], [4.0, 37.0], [4.0, 44.0], [-7.5, 44.0], [-7.5, 37.0]]]}
+        >>> uris = schemingdcat_detect_member_states(extent)
+        >>> # Returns: ["http://publications.europa.eu/resource/authority/country/ESP", 
+        >>> #          "http://publications.europa.eu/resource/authority/country/PRT", ...]
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        return member_state_detector.detect_member_states(extent_geojson, min_overlap_percentage)
+    except Exception as e:
+        log.error(f"Error detecting member states: {e}")
+        return []
 
 @helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
@@ -1573,6 +1690,61 @@ def get_initiatives():
         group_name
         for group_name in groups
         if group_name not in memberstate_names
+    ]
+
+@helper
+def get_all_memberstates_groups():
+    """
+    Get all member state groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all member states.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    data_dict = {
+        'id': 'member-states',
+        'include_groups': True,
+        'all_fields': True
+    }
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    if not memberstates:
+        return []
+
+    groups = memberstates.get('groups', []) or []
+    return [
+        {
+            'id': item.get('id'),
+            'name': item.get('name'),
+            'title': item.get('title') or item.get('name')
+        }
+        for item in groups
+        if item.get('state', 'active') == 'active' and item.get('name')
+    ]
+
+@helper
+def get_all_initiatives_groups():
+    """
+    Get all initiative groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all initiatives.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    memberstate_names = set(get_memberstates())
+    memberstate_names.add('member-states')
+
+    # Get all groups with full details using ignore_auth
+    all_groups = _safe_call_action('group_list', data_dict={'all_fields': True}) or []
+    
+    return [
+        {
+            'id': group.get('id'),
+            'name': group.get('name'),
+            'title': group.get('title') or group.get('name')
+        }
+        for group in all_groups
+        if group.get('state', 'active') == 'active' 
+        and group.get('name') not in memberstate_names
     ]
 
 @helper

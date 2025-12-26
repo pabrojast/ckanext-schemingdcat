@@ -1,0 +1,75 @@
+{#
+  DOI Display Snippet
+  
+  Displays a DOI as a clickable link to doi.org with proper formatting.
+  Shows the DOI icon and formats the link for easy recognition.
+  
+  Usage in schema:
+    display_snippet: schemingdcat/display_snippets/doi_link.html
+#}
+
+{% if data.get(field.field_name) %}
+  {%- set doi_value = data.get(field.field_name) -%}
+  {%- set doi_url = 'https://doi.org/' ~ doi_value -%}
+  
+  <span class="doi-display">
+    <i class="fa fa-book" title="{{ _('Digital Object Identifier') }}"></i>
+    <a href="{{ doi_url }}" 
+       target="_blank" 
+       rel="noopener noreferrer"
+       class="doi-link"
+       title="{{ _('Open DOI in new tab') }}">
+      {{ doi_value }}
+    </a>
+    <button type="button" 
+            class="btn btn-xs btn-default doi-copy-btn"
+            data-doi="{{ doi_value }}"
+            title="{{ _('Copy DOI to clipboard') }}">
+      <i class="fa fa-copy"></i>
+    </button>
+  </span>
+  
+  <script>
+    (function() {
+      document.querySelectorAll('.doi-copy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var doi = this.getAttribute('data-doi');
+          navigator.clipboard.writeText(doi).then(function() {
+            var icon = btn.querySelector('i');
+            icon.className = 'fa fa-check';
+            setTimeout(function() {
+              icon.className = 'fa fa-copy';
+            }, 2000);
+          });
+        });
+      });
+    })();
+  </script>
+  
+  <style>
+    .doi-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .doi-display .fa-book {
+      color: #f68212;
+    }
+    
+    .doi-link {
+      font-family: monospace;
+      font-size: 0.95em;
+    }
+    
+    .doi-copy-btn {
+      padding: 2px 6px;
+    }
+    
+    .doi-copy-btn .fa-check {
+      color: #5cb85c;
+    }
+  </style>
+{% else %}
+  <span class="text-muted">-</span>
+{% endif %}

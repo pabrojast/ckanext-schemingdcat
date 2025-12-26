@@ -92,12 +92,19 @@
                 
                 // Update container classes based on progress
                 if (percent >= 100 && isCompleted) {
-                    progressElements.container.className = 'cloudstorage-progress-container completed';
-                    progressElements.bar.className = 'progress-bar bg-success';
+                    progressElements.container.className = 'cloudstorage-progress-container completed upload-finished';
+                    progressElements.bar.className = 'progress-bar bg-success upload-finished-bar';
                     
                     // Add success icon
                     progressElements.info.innerHTML = '<strong><i class="fa fa-check-circle text-success"></i> ' + 
                                                     progressElements.info.textContent.replace(/^.*\s/, '') + '</strong>';
+                    
+                    // Fade out gently so the user sees it finished
+                    setTimeout(function() {
+                        if (progressElements && progressElements.container) {
+                            progressElements.container.classList.add('upload-faded');
+                        }
+                    }, 1200);
                 }
             }
         }
@@ -311,6 +318,27 @@
                 console.log('[schemingdcat-cloudstorage] Clearing beforeunload warning after successful upload');
                 window.onbeforeunload = null;
                 window._originalBeforeUnload = null;
+
+                // Visually finalize: hide spinner, show success tick, and fade out progress bar after a short delay
+                setTimeout(function() {
+                    try {
+                        // Replace progress bar with a compact success state
+                        if (progressElements && progressElements.container) {
+                            progressElements.container.classList.add('upload-finished');
+                        }
+                        if (progressElements && progressElements.bar) {
+                            progressElements.bar.classList.add('upload-finished-bar');
+                        }
+                        // Optional fade-out after completion
+                        setTimeout(function() {
+                            if (progressElements && progressElements.container) {
+                                progressElements.container.classList.add('upload-faded');
+                            }
+                        }, 800);
+                    } catch (e) {
+                        console.log('[schemingdcat-cloudstorage] UI finalize skipped:', e);
+                    }
+                }, 150);
             })
             .catch(function(error) {
                 console.error('[schemingdcat-cloudstorage] Upload error:', error);
@@ -433,6 +461,14 @@
 
             // Use capture phase (true) to run BEFORE other submit handlers
             form.addEventListener('submit', function(e) {
+                // Check for batch mode - block form submission when batch upload is active
+                if (window.__schemingdcat_batch_mode_active__ || form.dataset.batchModeActive === 'true') {
+                    console.log('[schemingdcat-cloudstorage] Batch mode active - blocking form submit');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
                 // Check if there are any completed Azure uploads
                 var hasAzureUpload = false;
                 var azureUpload = null;

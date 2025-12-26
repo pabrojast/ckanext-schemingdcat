@@ -2424,3 +2424,187 @@ li.resource-item .dropdown-menu li a img.format_icon {
   height: 1px !important;
   border: none !important;
 }
+
+/* DOI Files Notification Styles */
+.doi-files-notification {
+  margin: 15px 0;
+  border: 2px solid #5bc0de;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.doi-files-notification .doi-upload-note {
+  margin-bottom: 10px;
+}
+
+.doi-files-notification .doi-notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #5bc0de 0%, #46b8da 100%);
+  border-radius: 6px 6px 0 0;
+  color: #fff;
+}
+
+.doi-files-notification .doi-notification-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.doi-files-notification .doi-notification-title i {
+  margin-right: 8px;
+}
+
+.doi-files-notification .doi-notification-header .btn-link {
+  color: #fff;
+  opacity: 0.8;
+  padding: 0;
+  font-size: 18px;
+}
+
+.doi-files-notification .doi-notification-header .btn-link:hover {
+  opacity: 1;
+}
+
+.doi-files-notification .doi-notification-body {
+  padding: 15px;
+}
+
+.doi-files-notification .doi-help-text {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.doi-files-notification .doi-help-text i {
+  color: #5bc0de;
+  margin-right: 5px;
+}
+
+.doi-files-notification .doi-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.doi-files-notification .doi-select-all-wrapper {
+  margin: 0;
+  font-weight: 600;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.doi-files-notification .doi-files-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.doi-files-notification .doi-file-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.doi-files-notification .doi-file-item:last-child {
+  border-bottom: none;
+}
+
+.doi-files-notification .doi-file-item:hover {
+  background: #f5f9fc;
+}
+
+.doi-files-notification .doi-file-item.used {
+  background: #d4edda;
+}
+
+.doi-files-notification .doi-file-item.created {
+  background: #cce5ff;
+}
+
+.doi-files-notification .doi-file-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doi-files-notification .doi-file-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  cursor: pointer;
+}
+
+.doi-files-notification .doi-file-check-label input {
+  margin: 0;
+}
+
+.doi-files-notification .doi-file-name .badge {
+  margin-left: 8px;
+  font-weight: normal;
+  background: #337ab7;
+}
+
+.doi-files-notification .doi-file-url {
+  font-size: 12px;
+  color: #888;
+  word-break: break-all;
+}
+
+.doi-files-notification .doi-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.doi-files-notification .doi-inline-actions .btn-link {
+  padding: 0;
+}
+
+.doi-files-notification .doi-inline-hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.doi-files-notification .doi-multi-progress {
+  margin-top: 15px;
+}
+
+.doi-files-notification .doi-multi-progress .progress {
+  margin-bottom: 10px;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.doi-files-notification .doi-progress-status {
+  font-size: 13px;
+  color: #666;
+}
+
+.doi-files-notification .doi-multi-errors,
+.doi-files-notification .doi-multi-success {
+  margin-top: 10px;
+}
+
+.doi-applied-message {
+  margin-top: 10px;
+}

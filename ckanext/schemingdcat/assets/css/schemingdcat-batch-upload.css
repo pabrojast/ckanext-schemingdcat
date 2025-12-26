@@ -1,0 +1,208 @@
+/* Batch Upload Styles */
+
+.batch-upload-container {
+  margin: 20px 0;
+}
+
+/* Dropzone styles */
+.batch-dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.batch-dropzone:hover,
+.batch-dropzone.dragover {
+  border-color: #0d6efd;
+  background: #f0f7ff;
+}
+
+.batch-dropzone .dropzone-icon {
+  color: #6c757d;
+  margin-bottom: 15px;
+}
+
+.batch-dropzone h4 {
+  margin: 0 0 10px;
+  color: #333;
+}
+
+.batch-dropzone .drop-hint {
+  color: #6c757d;
+  margin: 5px 0;
+}
+
+.batch-dropzone .text-muted {
+  font-size: 0.85em;
+}
+
+/* File list styles */
+.batch-file-list {
+  margin-top: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.batch-file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.batch-file-header .file-count {
+  font-weight: 600;
+  color: #495057;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Individual file item */
+.batch-file-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.batch-file-item:last-child {
+  border-bottom: none;
+}
+
+.batch-file-item:hover {
+  background: #f8f9fa;
+}
+
+.batch-file-item.uploading {
+  background: #fff3cd;
+}
+
+.batch-file-item.complete {
+  background: #d4edda;
+}
+
+.batch-file-item.error {
+  background: #f8d7da;
+}
+
+.batch-file-item .file-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9ecef;
+  border-radius: 6px;
+  margin-right: 15px;
+  color: #6c757d;
+  font-size: 1.2em;
+}
+
+.batch-file-item .file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.batch-file-item .file-name {
+  font-weight: 500;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.batch-file-item .file-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85em;
+  color: #6c757d;
+}
+
+.batch-file-item .file-format {
+  font-size: 0.75em;
+  padding: 2px 6px;
+}
+
+.batch-file-item .file-original {
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-file-item .file-progress {
+  margin-top: 8px;
+}
+
+.batch-file-item .progress-sm {
+  height: 4px;
+  margin: 0;
+  border-radius: 2px;
+}
+
+.batch-file-item .file-status {
+  font-size: 0.85em;
+  margin-top: 4px;
+}
+
+.batch-file-item .file-actions {
+  margin-left: 15px;
+}
+
+/* Progress container */
+.batch-upload-progress {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.batch-upload-progress .progress {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.batch-upload-progress .progress-text {
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
+.batch-upload-progress .upload-status {
+  text-align: center;
+  margin: 0;
+  color: #495057;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .batch-file-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .batch-file-item {
+    flex-wrap: wrap;
+  }
+  
+  .batch-file-item .file-actions {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+    text-align: right;
+  }
+}

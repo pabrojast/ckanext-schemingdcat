@@ -19,6 +19,7 @@ from ckanext.schemingdcat.faceted import Faceted
 from ckanext.schemingdcat.utils import init_config
 from ckanext.schemingdcat.package_controller import PackageController
 from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
+import os
 
 import logging
 import json
@@ -349,6 +350,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # Mark for metadata extraction after creation
             resource['_needs_metadata_extraction'] = True
             log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction")
+        else:
+            # Also mark if the declared format/URL looks like a spatial or document we can parse
+            if self._should_extract_metadata(resource):
+                resource['_needs_metadata_extraction'] = True
+                log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction based on format/URL")
         
         return resource
 
@@ -363,8 +369,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Skip if not marked for extraction
-        if not resource.get('_needs_metadata_extraction'):
+        needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
+
+        # Skip if not marked and heuristics say no extraction needed
+        if not needs_extraction:
             log.info(f"⏭️ [HOOK] Resource {resource_id} doesn't need metadata extraction")
             return resource
 
@@ -385,13 +393,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'resource_format': resource.get('format'),
                     'package_id': resource.get('package_id'),
                 }
-                jobs.enqueue(
+                job = jobs.enqueue(
                     extract_comprehensive_metadata_job,
                     [metadata_job_data],
                     title=f"Extract metadata for resource {resource_id[:8]}",
                     queue='default'
                 )
                 log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
+                # Watchdog: if no worker picks it up, run fallback after a delay
+                self._start_job_watchdog(job, resource)
 
             except Exception as queue_error:
                 log.error(f"⚠️ [HOOK] Could not queue job: {queue_error}")
@@ -403,6 +413,63 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         # RETURN IMMEDIATELY - don't wait for jobs
         return resource
+
+    def _start_job_watchdog(self, job, resource, delay_seconds=60):
+        """
+        If the job stays queued (no worker), trigger fallback extraction after a delay.
+        This avoids uploads appearing stuck when no job workers are running.
+        """
+        try:
+            import threading
+            import time
+            from ckan.lib import jobs
+
+            def watcher():
+                try:
+                    time.sleep(delay_seconds)
+                    # Re-fetch job state
+                    j = jobs.get(job.id) if job else None
+                    state = getattr(j, 'state', None) or getattr(j, 'status', None)
+                    if state in (None, 'queued', 'failed'):
+                        log.warning(f"⏱️ [WATCHDOG] Metadata job {job.id if job else 'unknown'} still {state or 'unknown'} after {delay_seconds}s. Running fallback.")
+                        self._fallback_metadata_extraction(resource)
+                    else:
+                        log.info(f"⏱️ [WATCHDOG] Metadata job {job.id} state={state}, no fallback needed.")
+                except Exception as e:
+                    log.debug(f"Watchdog could not check job status: {e}")
+
+            t = threading.Thread(target=watcher, name=f"metadata-watchdog-{resource.get('id', 'unknown')[:8]}", daemon=True)
+            t.start()
+        except Exception as e:
+            log.debug(f"Could not start job watchdog: {e}")
+
+    def _should_extract_metadata(self, resource):
+        """
+        Heuristic to decide if a resource likely needs metadata extraction.
+        This avoids relying solely on transient flags that are lost after creation.
+        """
+        url_type = (resource.get('url_type') or '').lower()
+        if url_type == 'upload':
+            return True
+
+        fmt = (resource.get('format') or '').lower()
+        url = resource.get('url') or ''
+        url_ext = ''
+        if url:
+            clean_url = url.split('?')[0].split('#')[0]
+            url_ext = os.path.splitext(clean_url)[1].lower().lstrip('.')
+
+        candidate_formats = {
+            'zip', 'shp', 'tif', 'tiff', 'geotiff', 'kml', 'geojson', 'json',
+            'gpkg', 'csv', 'xls', 'xlsx', 'pdf'
+        }
+
+        if fmt in candidate_formats:
+            return True
+        if url_ext in candidate_formats:
+            return True
+
+        return False
 
     def _fallback_metadata_extraction(self, resource):
         """Fallback metadata extraction using threading when job queue is not available."""
@@ -654,6 +721,23 @@ def extract_comprehensive_metadata_job(job_data):
             
             # Debug: Log raw metadata to understand what's being extracted
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
+
+            # Detect member state (country) from spatial extent and set spatial_uri on the dataset if missing
+            detected_member_uri = None
+            try:
+                extent_geojson = metadata.get('spatial_extent')
+                if extent_geojson:
+                    if isinstance(extent_geojson, str):
+                        try:
+                            extent_geojson = json.loads(extent_geojson)
+                        except Exception:
+                            pass
+                    from ckanext.schemingdcat import helpers as sd_helpers
+                    detected_member_uri = sd_helpers.schemingdcat_detect_member_state(extent_geojson)
+                    if detected_member_uri:
+                        log.info(f"Detected member state for resource {resource_id}: {detected_member_uri}")
+            except Exception as e:
+                log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}")
             
             try:
                 # Ensure we have a valid database session and close any existing one
@@ -687,6 +771,25 @@ def extract_comprehensive_metadata_job(job_data):
                 }
                 
                 log.info(f"Created system context for resource update")
+
+                # If we detected a member state and the dataset has no spatial_uri, set it
+                if package_id and detected_member_uri:
+                    try:
+                        pkg = get_action('package_show')(context, {'id': package_id})
+                        current_spatial_uri = pkg.get('spatial_uri') or []
+                        if isinstance(current_spatial_uri, str):
+                            current_spatial_uri = [current_spatial_uri] if current_spatial_uri else []
+
+                        if not current_spatial_uri:
+                            log.info(f"Updating dataset {package_id} spatial_uri with detected member state {detected_member_uri}")
+                            get_action('package_patch')(context, {
+                                'id': package_id,
+                                'spatial_uri': [detected_member_uri]
+                            })
+                        else:
+                            log.info(f"Dataset {package_id} already has spatial_uri, skipping auto-set")
+                    except Exception as e:
+                        log.warning(f"Could not update dataset {package_id} with detected member state: {e}")
                 
                 # Prepare data for updating with all extracted metadata
                 resource_patch_data = {'id': resource_id}

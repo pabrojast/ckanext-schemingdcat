@@ -1,0 +1,63 @@
+{#
+  Batch Upload Snippet
+  
+  Include this snippet to enable batch upload of multiple files
+  to create multiple resources at once.
+  
+  Parameters:
+    package_id: The ID or name of the dataset
+    max_file_size: Maximum file size in bytes (optional, default 500MB)
+    auto_upload: Whether to start upload automatically (optional, default false)
+#}
+
+{% asset 'ckanext-schemingdcat/schemingdcat-batch-upload' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-batch-upload-css' %}
+
+<div class="batch-upload-section">
+  <div class="batch-upload-header">
+    <h3>
+      <i class="fa fa-cloud-upload"></i>
+      {{ _('Batch Upload Resources') }}
+    </h3>
+    <p class="text-muted">
+      {{ _('Upload multiple files at once. Each file will be created as a separate resource.') }}
+    </p>
+  </div>
+  
+  <div id="batch-upload-widget"
+       data-module="schemingdcat-batch-upload"
+       data-module-package-id="{{ package_id }}"
+       {% if max_file_size %}data-module-max-file-size="{{ max_file_size }}"{% endif %}
+       {% if auto_upload %}data-module-auto-upload="{{ auto_upload }}"{% endif %}>
+  </div>
+</div>
+
+<style>
+.batch-upload-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.batch-upload-header {
+  margin-bottom: 15px;
+}
+
+.batch-upload-header h3 {
+  margin: 0 0 5px;
+  font-size: 1.25rem;
+  color: #212529;
+}
+
+.batch-upload-header h3 i {
+  margin-right: 8px;
+  color: #0d6efd;
+}
+
+.batch-upload-header p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+</style>

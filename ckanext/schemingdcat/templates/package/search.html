@@ -1,0 +1,10 @@
+{% ckan_extends %}
+
+{% set dataset_label_singular = h.schemingdcat_dataset_type_label(dataset_type) or _(dataset_type.title()) %}
+{% set dataset_label_plural = h.schemingdcat_dataset_type_label(dataset_type, plural=True) or _(dataset_type.title() + 's') %}
+
+{% block subtitle %}{{ dataset_label_singular }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{{ h.nav_link(dataset_label_plural, named_route='%s.search' % dataset_type, highlight_actions='new index') }}</li>
+{% endblock %}

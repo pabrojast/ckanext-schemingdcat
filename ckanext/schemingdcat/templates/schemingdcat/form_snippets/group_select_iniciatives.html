@@ -1,12 +1,13 @@
-{% set initiative_names = h.get_initiatives() %}
 {% set existing_groups = data.groups if data.groups else [] %}
-{% set available_groups = h.groups_available() %}
+{% set all_initiative_groups = h.get_all_initiatives_groups() %}
 {% set selected_initiative_ids = [] %}
 
 {% for group in existing_groups %}
-  {% if group.name in initiative_names %}
-    {% do selected_initiative_ids.append(group.id) %}
-  {% endif %}
+  {% for init_group in all_initiative_groups %}
+    {% if group.name == init_group.name %}
+      {% do selected_initiative_ids.append(init_group.id) %}
+    {% endif %}
+  {% endfor %}
 {% endfor %}
 
 <div class="form-group group-multiselect"
@@ -21,14 +22,12 @@
           class="form-control group-multiselect-select"
           multiple
           data-group-multiselect>
-    {% for group in available_groups %}
-      {% if group.name in initiative_names %}
-        <option value="{{ group.id }}"
-                data-group-name="{{ group.name }}"
-                {% if group.id in selected_initiative_ids %}selected{% endif %}>
-          {{ group.title }}
-        </option>
-      {% endif %}
+    {% for group in all_initiative_groups %}
+      <option value="{{ group.id }}"
+              data-group-name="{{ group.name }}"
+              {% if group.id in selected_initiative_ids %}selected{% endif %}>
+        {{ group.title }}
+      </option>
     {% endfor %}
   </select>
   {% snippet 'scheming/form_snippets/help_text.html', field=field %}

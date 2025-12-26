@@ -45,14 +45,15 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% if pkg.get('custom_doi') or pkg.get('doi') %}
+      {% set document_doi = pkg.get('document_doi') %}
+      {% if pkg.get('custom_doi') or pkg.get('doi') or document_doi %}
       <tr class="toggle-not">
         <th scope="row" class="dataset-label">{{ _('DOI') }}</th>
         <td class="dataset-details">
           {% if pkg.get('custom_doi') %}
             {% set doi_link = pkg['custom_doi'] %}
             <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
-          {% else %}
+          {% elif pkg.get('doi') %}
             {% set doi_link = 'https://doi.org/' + pkg['doi'] %}
             <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
             {% if not pkg['doi_status'] %}
@@ -60,6 +61,9 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
               <i class="fa fa-lock"></i> {{ _('Private DOI') }}
             </span>
             {% endif %}
+          {% elif document_doi %}
+            {% set doi_link = 'https://doi.org/' + document_doi %}
+            <a href="{{ doi_link }}" target="_blank">{{ doi_link }}</a>
           {% endif %}
         </td>
       </tr>
@@ -291,4 +295,3 @@ _ = metadata_fields.update({field.field_name: field}) %} {% endfor %}
 
   {% endblock %} {% endif %} {# md #} {% endwith %} {# md #}
 </section>
-
