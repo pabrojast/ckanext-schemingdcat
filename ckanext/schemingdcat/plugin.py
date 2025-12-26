@@ -392,13 +392,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'resource_format': resource.get('format'),
                     'package_id': resource.get('package_id'),
                 }
-                jobs.enqueue(
+                job = jobs.enqueue(
                     extract_comprehensive_metadata_job,
                     [metadata_job_data],
                     title=f"Extract metadata for resource {resource_id[:8]}",
                     queue='default'
                 )
                 log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
+                # Watchdog: if no worker picks it up, run fallback after a delay
+                self._start_job_watchdog(job, resource)
 
             except Exception as queue_error:
                 log.error(f"⚠️ [HOOK] Could not queue job: {queue_error}")
@@ -410,6 +412,35 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         # RETURN IMMEDIATELY - don't wait for jobs
         return resource
+
+    def _start_job_watchdog(self, job, resource, delay_seconds=60):
+        """
+        If the job stays queued (no worker), trigger fallback extraction after a delay.
+        This avoids uploads appearing stuck when no job workers are running.
+        """
+        try:
+            import threading
+            import time
+            from ckan.lib import jobs
+
+            def watcher():
+                try:
+                    time.sleep(delay_seconds)
+                    # Re-fetch job state
+                    j = jobs.get(job.id) if job else None
+                    state = getattr(j, 'state', None) or getattr(j, 'status', None)
+                    if state in (None, 'queued', 'failed'):
+                        log.warning(f"⏱️ [WATCHDOG] Metadata job {job.id if job else 'unknown'} still {state or 'unknown'} after {delay_seconds}s. Running fallback.")
+                        self._fallback_metadata_extraction(resource)
+                    else:
+                        log.info(f"⏱️ [WATCHDOG] Metadata job {job.id} state={state}, no fallback needed.")
+                except Exception as e:
+                    log.debug(f"Watchdog could not check job status: {e}")
+
+            t = threading.Thread(target=watcher, name=f"metadata-watchdog-{resource.get('id', 'unknown')[:8]}", daemon=True)
+            t.start()
+        except Exception as e:
+            log.debug(f"Could not start job watchdog: {e}")
 
     def _should_extract_metadata(self, resource):
         """
