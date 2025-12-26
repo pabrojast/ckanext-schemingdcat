@@ -19,6 +19,7 @@ from ckanext.schemingdcat.faceted import Faceted
 from ckanext.schemingdcat.utils import init_config
 from ckanext.schemingdcat.package_controller import PackageController
 from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
+import os
 
 import logging
 import json
@@ -348,6 +349,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # Mark for metadata extraction after creation
             resource['_needs_metadata_extraction'] = True
             log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction")
+        else:
+            # Also mark if the declared format/URL looks like a spatial or document we can parse
+            if self._should_extract_metadata(resource):
+                resource['_needs_metadata_extraction'] = True
+                log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction based on format/URL")
         
         return resource
 
@@ -362,8 +368,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Skip if not marked for extraction
-        if not resource.get('_needs_metadata_extraction'):
+        needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
+
+        # Skip if not marked and heuristics say no extraction needed
+        if not needs_extraction:
             log.info(f"⏭️ [HOOK] Resource {resource_id} doesn't need metadata extraction")
             return resource
 
@@ -402,6 +410,34 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         # RETURN IMMEDIATELY - don't wait for jobs
         return resource
+
+    def _should_extract_metadata(self, resource):
+        """
+        Heuristic to decide if a resource likely needs metadata extraction.
+        This avoids relying solely on transient flags that are lost after creation.
+        """
+        url_type = (resource.get('url_type') or '').lower()
+        if url_type == 'upload':
+            return True
+
+        fmt = (resource.get('format') or '').lower()
+        url = resource.get('url') or ''
+        url_ext = ''
+        if url:
+            clean_url = url.split('?')[0].split('#')[0]
+            url_ext = os.path.splitext(clean_url)[1].lower().lstrip('.')
+
+        candidate_formats = {
+            'zip', 'shp', 'tif', 'tiff', 'geotiff', 'kml', 'geojson', 'json',
+            'gpkg', 'csv', 'xls', 'xlsx', 'pdf'
+        }
+
+        if fmt in candidate_formats:
+            return True
+        if url_ext in candidate_formats:
+            return True
+
+        return False
 
     def _fallback_metadata_extraction(self, resource):
         """Fallback metadata extraction using threading when job queue is not available."""
