@@ -207,11 +207,41 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def get_actions(self):
         # Only return schemingdcat-specific actions
         # cloudstorage actions are provided by the cloudstorage plugin
-        return {
+        actions = {
             "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,
             "scheming_dataset_schema_list": scheming_logic.scheming_dataset_schema_list,
             "scheming_dataset_schema_show": scheming_logic.scheming_dataset_schema_show,
         }
+        # Wrap resource_create/resource_update to ensure metadata extraction is triggered even if IResourceController hooks are skipped
+        actions.update({
+            "resource_create": self.resource_create,
+            "resource_update": self.resource_update,
+        })
+        return actions
+
+    @toolkit.chained_action
+    def resource_create(self, next_action, context, data_dict):
+        """
+        Chained action to ensure metadata extraction triggers even if IResourceController is skipped.
+        """
+        result = next_action(context, data_dict)
+        try:
+            self._trigger_metadata_extraction(result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not trigger metadata extraction after resource_create: {e}")
+        return result
+
+    @toolkit.chained_action
+    def resource_update(self, next_action, context, data_dict):
+        """
+        Chained action for updates; triggers extraction if a new upload/format warrants it.
+        """
+        result = next_action(context, data_dict)
+        try:
+            self._trigger_metadata_extraction(result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not trigger metadata extraction after resource_update: {e}")
+        return result
 
     # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
     def get_auth_functions(self):
@@ -369,12 +399,21 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         resource_id = resource.get('id', 'unknown')
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
+        self._trigger_metadata_extraction(resource)
+
+        # RETURN IMMEDIATELY - don't wait for jobs
+        return resource
+
+    def _trigger_metadata_extraction(self, resource):
+        """
+        Centralized trigger for metadata extraction that can be called from hooks or chained actions.
+        """
+        resource_id = resource.get('id', 'unknown')
         needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
 
-        # Skip if not marked and heuristics say no extraction needed
         if not needs_extraction:
-            log.info(f"⏭️ [HOOK] Resource {resource_id} doesn't need metadata extraction")
-            return resource
+            log.info(f"⏭️ [TRIGGER] Resource {resource_id} doesn't need metadata extraction")
+            return
 
         # Check if job queue is available
         try:
@@ -385,7 +424,6 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning("Job queue not available, using threading fallback")
 
         if job_queue_available:
-            # Queue metadata extraction job
             try:
                 metadata_job_data = {
                     'resource_id': resource.get('id'),
@@ -399,20 +437,14 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     title=f"Extract metadata for resource {resource_id[:8]}",
                     queue='default'
                 )
-                log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
+                log.info(f"✅ [TRIGGER] Queued metadata extraction job for resource {resource_id}")
                 # Watchdog: if no worker picks it up, run fallback after a delay
                 self._start_job_watchdog(job, resource)
-
             except Exception as queue_error:
-                log.error(f"⚠️ [HOOK] Could not queue job: {queue_error}")
-                # Fall back to threading
+                log.error(f"⚠️ [TRIGGER] Could not queue job: {queue_error}")
                 self._fallback_metadata_extraction(resource)
         else:
-            # Use threading fallback
             self._fallback_metadata_extraction(resource)
-
-        # RETURN IMMEDIATELY - don't wait for jobs
-        return resource
 
     def _start_job_watchdog(self, job, resource, delay_seconds=60):
         """
