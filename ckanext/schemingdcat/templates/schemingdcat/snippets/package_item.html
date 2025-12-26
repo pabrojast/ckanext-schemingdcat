@@ -27,7 +27,10 @@
   {% set truncate = truncate or 180 %}
   {% set truncate_title = truncate_title or 80 %}
   {% set title = h.dataset_display_name(package) %}
-  {% set notes = h.markdown_extract(h.dataset_display_field_value(package, 'notes'), extract_length=truncate) %}
+  {% set notes_raw = h.dataset_display_field_value(package, 'notes') or '' %}
+  {% set notes_preview = h.markdown_extract(notes_raw, extract_length=truncate)|trim %}
+  {% set notes_full = h.render_markdown(notes_raw) %}
+  {% set show_more = notes_raw|length > truncate %}
   
   {% block package_item %}
   <li class="{{ item_class or 'dataset-item' }}">
@@ -64,8 +67,18 @@
                 {% endif %}
               {% endblock %}
               {% block notes %}
-                {% if notes %}
-                  <div>{{ notes|urlize }}</div>
+                {% if notes_preview %}
+                  <div class="dataset-notes" data-module="schemingdcat-dataset-notes" data-more-label="{{ _('Read more') }}" data-less-label="{{ _('Show less') }}">
+                    <div class="dataset-notes__preview">{{ notes_preview|urlize }}</div>
+                    <div class="dataset-notes__full">
+                      {{ notes_full }}
+                    </div>
+                    {% if show_more %}
+                      <button type="button" class="dataset-notes__toggle" aria-expanded="false">
+                        {{ _('Read more') }}
+                      </button>
+                    {% endif %}
+                  </div>
                 {% else %}
                   <p class="empty">{{ _("This dataset has no description") }}</p>
                 {% endif %}

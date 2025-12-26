@@ -2314,6 +2314,62 @@ li.resource-item .dropdown-menu li a img.format_icon {
   background-color: transparent !important;
 }
 
+/* Dataset list notes with inline read-more toggle */
+.dataset-notes {
+  position: relative;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dataset-notes__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.dataset-notes__full {
+  display: none;
+  margin-top: 6px;
+}
+
+.dataset-notes__full p {
+  margin: 0 0 6px 0;
+}
+
+.dataset-notes__full p:last-child {
+  margin-bottom: 0;
+}
+
+.dataset-notes--expanded .dataset-notes__preview {
+  display: none;
+}
+
+.dataset-notes--expanded .dataset-notes__full {
+  display: block;
+}
+
+.dataset-notes__toggle {
+  background: none;
+  border: none;
+  padding: 4px 0 0 0;
+  color: #005a9e;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dataset-notes__toggle:hover,
+.dataset-notes__toggle:focus {
+  text-decoration: underline;
+}
+
+.dataset-notes__toggle:focus {
+  outline: 2px solid #005a9e;
+  outline-offset: 2px;
+}
+
 /* ===== TABLE COLLAPSIBLE ROWS FUNCTIONALITY ===== */
 /* Hide expandable rows by default when table is in "more" state */
 .table-toggle-more tr.toggle-more {
