@@ -704,7 +704,7 @@ img.item_image {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 12px;
+  padding: 16px 0 18px;
   margin-top: 16px;
   flex-wrap: wrap;
 }
