@@ -189,6 +189,22 @@ dataset_fields:
     fr: "Conserve l'URL du DOI du document. Renseigné après la récupération des métadonnées, mais modifiable."
   form_group_id: identification
 
+# Custom Citation (optional, overrides auto citation with DOI authors/title)
+- field_name: custom_citation
+  label:
+    en: Custom Citation
+    es: Citación personalizada
+    fr: Citation personnalisée
+  form_placeholder:
+    en: "Lastname, F.; Second, A. (2025). Title. [Document]. Publisher. https://doi.org/..."
+    es: "Apellido, N.; Segundo, A. (2025). Título. [Documento]. Editorial. https://doi.org/..."
+    fr: "Nom, P.; Second, A. (2025). Titre. [Document]. Éditeur. https://doi.org/..."
+  help_text:
+    en: "If set, this citation will be shown instead of the auto-generated one. Filled automatically when fetching metadata from DOI."
+    es: "Si se completa, esta citación se mostrará en lugar de la generada automáticamente. Se rellena al obtener metadatos desde el DOI."
+    fr: "Si renseignée, cette citation sera affichée à la place de celle générée automatiquement. Renseignée lors de la récupération des métadonnées du DOI."
+  form_group_id: identification
+
 
 # Document Type (R) - IHP-WINS specific
 - field_name: document_type

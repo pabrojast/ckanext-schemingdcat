@@ -470,6 +470,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       if (data.doi) {
         this._setIdentifierFromDoi(data.doi, overwrite, data.title);
         this._setCustomDoi(data.doi, overwrite);
+        this._setCustomCitation(data, overwrite);
       }
       
       console.log('[DOI Autofill] Metadata applied to form');
@@ -540,6 +541,64 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
 
       $customDoiField.val(doiUrl).trigger('change');
       console.log('[DOI Autofill] Set custom DOI:', doiUrl);
+    },
+
+    /**
+     * Build and set a custom citation using DOI metadata (authors, year, title, publisher, DOI)
+     * @param {Object} data - DOI metadata
+     * @param {boolean} overwrite - Whether to overwrite existing values
+     */
+    _setCustomCitation: function(data, overwrite) {
+      var $citationField = $('[name="custom_citation"]');
+      if ($citationField.length === 0) {
+        return;
+      }
+
+      var currentVal = ($citationField.val() || '').trim();
+      if (!overwrite && currentVal) {
+        console.log('[DOI Autofill] Custom citation already set, skipping');
+        return;
+      }
+
+      var authors = [];
+      if (Array.isArray(data.authors)) {
+        authors = data.authors.map(function(author) {
+          if (author.name) return author.name;
+          var parts = [];
+          if (author.family_name) parts.push(author.family_name);
+          if (author.given_name) parts.push(author.given_name);
+          return parts.join(', ');
+        }).filter(Boolean);
+      }
+
+      var year = data.publication_year || '';
+      var title = data.title || '';
+      var publisher = data.publisher || data.publisher_name || '';
+      var doiUrl = data.doi ? ('https://doi.org/' + data.doi) : '';
+
+      var pieces = [];
+      if (authors.length) {
+        pieces.push(authors.join('; '));
+      }
+      if (year) {
+        pieces.push('(' + year + ').');
+      }
+      if (title) {
+        pieces.push(title + '.');
+      }
+      pieces.push('[Document].');
+      if (publisher) {
+        pieces.push(publisher + '.');
+      }
+      if (doiUrl) {
+        pieces.push(doiUrl);
+      }
+
+      var citation = pieces.join(' ').replace(/\s+/g, ' ').trim();
+      if (citation) {
+        $citationField.val(citation).trigger('change');
+        console.log('[DOI Autofill] Set custom citation:', citation);
+      }
     },
 
     /**
