@@ -697,6 +697,24 @@ img.item_image {
   overflow:hidden;
 }
 
+/* Dataset form actions: add breathing room and align buttons */
+.dataset-form .form-actions,
+.package-form .form-actions,
+.form-horizontal .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.dataset-form .form-actions .btn,
+.package-form .form-actions .btn,
+.form-horizontal .form-actions .btn {
+  min-width: 110px;
+}
+
 .slug-preview {
   font-size: 14px;
   line-height: 1;
