@@ -1093,6 +1093,50 @@ def schemingdcat_extract_lang_text(text, current_lang):
     return lang_text
 
 @helper
+def schemingdcat_dataset_type_label(dataset_type, plural=False):
+    """
+    Build a display label for a dataset type without adding an extra trailing
+    "s" when the type name is already plural.
+    """
+    if not dataset_type:
+        return ""
+
+    normalized = dataset_type.strip().lower()
+    base_label = dataset_type.strip().replace("_", " ").replace("-", " ").title()
+
+    overrides = {
+        "dataset": {
+            "singular": p.toolkit._("Dataset"),
+            "plural": p.toolkit._("Datasets"),
+        },
+        "document": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "documents": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "doc": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "software": {
+            "singular": p.toolkit._("Software"),
+            "plural": p.toolkit._("Software"),
+        },
+    }
+
+    if normalized in overrides:
+        return overrides[normalized]["plural" if plural else "singular"]
+
+    if plural and normalized.endswith("s"):
+        return p.toolkit._(base_label)
+    if plural:
+        return p.toolkit._(base_label + "s")
+    return p.toolkit._(base_label)
+
+@helper
 def dataset_display_name(package_or_package_dict):
     """
     Returns the localized value of the dataset name by extracting the correct translation.
