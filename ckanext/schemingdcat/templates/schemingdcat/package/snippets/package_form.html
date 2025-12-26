@@ -31,6 +31,11 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-authors-add-button' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-group-multiselect' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-doi-autofill' %}
+
+{# Hidden user data to auto-fill contact fields on all form layouts #}
+<input type="hidden" id="current-user-data"
+       value="{{ h.dump_json(h.schemingdcat_get_current_user()) }}"
+       data-module="auto-contact" />
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
@@ -43,13 +48,6 @@
     <ol class="stages stage-1">
 
       
-
-
-      {# Añadimos el campo oculto con los datos del usuario #}
-      <input type="hidden" id="current-user-data" 
-             value="{{ h.dump_json(h.schemingdcat_get_current_user()) }}"
-             data-module="auto-contact" />
-
       {%- for p in pages -%}
         <li class="{{
           'first ' if loop.first else ''}}{{
