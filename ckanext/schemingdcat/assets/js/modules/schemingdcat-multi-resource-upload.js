@@ -92,7 +92,10 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       var ext = file.name.split('.').pop().toUpperCase();
       var map = { 'XLSX': 'XLS', 'GEOJSON': 'GeoJSON' };
       var format = map[ext] || ext;
-      $wrapper.find('input[name$="format"], input[name$="format__"]').first().val(format);
+      var $format = $wrapper.find('input[name$="format"], input[name$="format__"], select[name$="format"], select[name$="format__"]').first();
+      if ($format.length) {
+        $format.val(format).trigger('change');
+      }
 
       // Fecha (created) si existe y está vacía
       var $created = $wrapper.find('input[name$="created"], input[name$="created__"]').first();

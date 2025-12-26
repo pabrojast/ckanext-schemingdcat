@@ -102,10 +102,9 @@
             }
             
             // Clear format field if it was auto-filled
-            var formatFields = document.querySelectorAll('input[name*="format"]');
+            var formatFields = form.querySelectorAll('input[name$="format"], select[name$="format"]');
             formatFields.forEach(function(field) {
-              if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
-                  field.hasAttribute('data-auto-filled')) {
+              if (field.hasAttribute('data-auto-filled')) {
                 field.value = '';
                 field.removeAttribute('data-auto-filled');
                 field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -113,10 +112,9 @@
             });
             
             // Clear mimetype field if it was auto-filled
-            var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
+            var mimetypeFields = form.querySelectorAll('input[name$="mimetype"], select[name$="mimetype"]');
             mimetypeFields.forEach(function(field) {
-              if ((field.name.indexOf('resources') !== -1 || field.name === 'mimetype') && 
-                  field.hasAttribute('data-auto-filled')) {
+              if (field.hasAttribute('data-auto-filled')) {
                 field.value = '';
                 field.removeAttribute('data-auto-filled');
                 field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -124,10 +122,9 @@
             });
             
             // Clear encoding field if it was auto-filled
-            var encodingFields = document.querySelectorAll('input[name*="encoding"]');
+            var encodingFields = form.querySelectorAll('input[name$="encoding"], select[name$="encoding"]');
             encodingFields.forEach(function(field) {
-              if ((field.name.indexOf('resources') !== -1 || field.name === 'encoding') && 
-                  field.hasAttribute('data-auto-filled')) {
+              if (field.hasAttribute('data-auto-filled')) {
                 field.value = '';
                 field.removeAttribute('data-auto-filled');
                 field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -179,13 +176,8 @@
                 var extUpper = ext.toUpperCase();
                 
                 // Auto-fill format field
-                var formatFields = document.querySelectorAll('input[name*="format"]');
-                var formatField = null;
-                formatFields.forEach(function(field) {
-                  if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-                    formatField = field;
-                  }
-                });
+                var form = wrapper.closest('form') || document;
+                var formatField = form.querySelector('input[name$="format"], select[name$="format"]');
                 
                 if (formatField && !formatField.value) {
                   // Format mapping
@@ -224,13 +216,7 @@
                 }
                 
                 // Auto-fill mimetype field
-                var mimetypeFields = document.querySelectorAll('input[name*="mimetype"]');
-                var mimetypeField = null;
-                mimetypeFields.forEach(function(field) {
-                  if (field.name.indexOf('resources') !== -1 || field.name === 'mimetype') {
-                    mimetypeField = field;
-                  }
-                });
+                var mimetypeField = form.querySelector('input[name$="mimetype"], select[name$="mimetype"]');
                 
                 if (mimetypeField && !mimetypeField.value) {
                   getMimeTypeForExtension(ext, function(mimeType) {
@@ -244,13 +230,7 @@
                 }
                 
                 // Auto-fill encoding field
-                var encodingFields = document.querySelectorAll('input[name*="encoding"]');
-                var encodingField = null;
-                encodingFields.forEach(function(field) {
-                  if (field.name.indexOf('resources') !== -1 || field.name === 'encoding') {
-                    encodingField = field;
-                  }
-                });
+                var encodingField = form.querySelector('input[name$="encoding"], select[name$="encoding"]');
                 
                 if (encodingField && !encodingField.value) {
                   var currentFormat = formatField ? formatField.value : '';

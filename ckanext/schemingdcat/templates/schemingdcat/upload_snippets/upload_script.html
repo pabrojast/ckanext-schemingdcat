@@ -1226,10 +1226,9 @@
         }
         
         // Clear format field if it was auto-filled
-        var formatFields = document.querySelectorAll('input[name*="format"]');
+        var formatFields = form.querySelectorAll('input[name$="format"], select[name$="format"]');
         formatFields.forEach(function(field) {
-          if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
-              field.hasAttribute('data-auto-filled')) {
+          if (field.hasAttribute('data-auto-filled')) {
             field.value = '';
             field.removeAttribute('data-auto-filled');
             field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1346,18 +1345,13 @@
       
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
+      var form = wrapper.closest('form') || document;
       
       // Auto-fill name field (force update to overwrite previous values)
       autoFillNameField(fileName, true);
       
       // Auto-fill format field if exists
-      var formatFields = document.querySelectorAll('input[name*="format"]');
-      var formatField = null;
-      formatFields.forEach(function(field) {
-        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-          formatField = field;
-        }
-      });
+      var formatField = form.querySelector('input[name$="format"], select[name$="format"]');
       
       if (formatField) {
         var extUpper = ext.toUpperCase();
@@ -1544,20 +1538,15 @@
           // Extract extension from URL
           var urlParts = url.split('?')[0].split('.');
           if (urlParts.length > 1) {
-            var ext = urlParts[urlParts.length - 1].toLowerCase();
-            var extUpper = ext.toUpperCase();
-            
-            // Auto-fill format field
-            var formatFields = document.querySelectorAll('input[name*="format"]');
-            var formatField = null;
-            formatFields.forEach(function(field) {
-              if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-                formatField = field;
-              }
-            });
-            
-            if (formatField && !formatField.value) {
-              // Format mapping
+              var ext = urlParts[urlParts.length - 1].toLowerCase();
+              var extUpper = ext.toUpperCase();
+                
+                // Auto-fill format field
+                var form = wrapper.closest('form') || document;
+                var formatField = form.querySelector('input[name$="format"], select[name$="format"]');
+                
+                if (formatField && !formatField.value) {
+                  // Format mapping
               var formatMap = {
                 'CSV': 'CSV',
                 'XLS': 'XLS', 
@@ -1898,31 +1887,29 @@
   // Function to setup format field listener for spatial processing
   function setupFormatFieldListener() {
     // Find format fields
-    var formatFields = document.querySelectorAll('input[name*="format"]');
+    var formatFields = document.querySelectorAll('input[name$="format"], select[name$="format"]');
     formatFields.forEach(function(formatField) {
-      if (formatField.name.indexOf('resources') !== -1 || formatField.name === 'format') {
-        formatField.addEventListener('change', function(e) {
-          var format = e.target.value.toUpperCase();
+      formatField.addEventListener('change', function(e) {
+        var format = (e.target.value || '').toUpperCase();
+        
+        // If format is changed to SHP, try to process any existing URL for spatial extent
+        if (format === 'SHP' || format === 'SHAPEFILE') {
+          // Look for URL field
+          var urlFields = document.querySelectorAll('input[name*="url"]');
+          var resourceUrl = null;
           
-          // If format is changed to SHP, try to process any existing URL for spatial extent
-          if (format === 'SHP' || format === 'SHAPEFILE') {
-            // Look for URL field
-            var urlFields = document.querySelectorAll('input[name*="url"]');
-            var resourceUrl = null;
-            
-            urlFields.forEach(function(urlField) {
-              if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
-                resourceUrl = urlField.value;
-              }
-            });
-            
-            if (resourceUrl && resourceUrl.trim()) {
-              console.log('Format changed to SHP, processing resource:', resourceUrl);
-              extractSpatialExtentFromResource(resourceUrl, format);
+          urlFields.forEach(function(urlField) {
+            if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
+              resourceUrl = urlField.value;
             }
+          });
+          
+          if (resourceUrl && resourceUrl.trim()) {
+            console.log('Format changed to SHP, processing resource:', resourceUrl);
+            extractSpatialExtentFromResource(resourceUrl, format);
           }
-        });
-      }
+        }
+      });
     });
   }
 
@@ -2238,7 +2225,7 @@
     console.log('Setting up spatial extent processing...');
     
     // Setup format field listener for spatial processing
-    var formatField = document.querySelector('select[name*="format"], input[name*="format"]');
+    var formatField = document.querySelector('select[name$="format"], input[name$="format"]');
     if (formatField) {
       console.log('Found format field, setting up spatial processing listener');
       setupSpatialProcessingOnFormatChange(formatField);
@@ -2251,7 +2238,7 @@
       mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
           if (node.nodeType === 1) { // Element node
-            var formatField = node.querySelector ? node.querySelector('select[name*="format"], input[name*="format"]') : null;
+            var formatField = node.querySelector ? node.querySelector('select[name$="format"], input[name$="format"]') : null;
             if (formatField) {
               console.log('Found new format field, setting up spatial processing listener');
               setupSpatialProcessingOnFormatChange(formatField);
