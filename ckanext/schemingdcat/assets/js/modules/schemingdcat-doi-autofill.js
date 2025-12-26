@@ -730,19 +730,17 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
      * @param {string} message - Success message
      */
     _showSuccess: function(message) {
-      // Use CKAN flash message if available
-      if (window.ckan && window.ckan.notify) {
-        window.ckan.notify(message, 'success');
-      } else {
-        // Fallback: show temporary success alert
-        var $success = $('<div class="alert alert-success doi-success">')
-          .html('<i class="fa fa-check-circle"></i> ' + message)
-          .insertAfter(this.$input.closest('.doi-input-group'));
-        
-        setTimeout(function() {
-          $success.fadeOut(function() { $(this).remove(); });
-        }, 3000);
-      }
+      // Always show inline success alert to avoid theme mis-styling flash messages
+      this.el.find('.doi-success').remove();
+      this._hideError();
+
+      var $success = $('<div class="alert alert-success doi-success">')
+        .html('<i class="fa fa-check-circle"></i> ' + message)
+        .insertAfter(this.$input.closest('.doi-input-group'));
+      
+      setTimeout(function() {
+        $success.fadeOut(function() { $(this).remove(); });
+      }, 3000);
     },
 
     /**
