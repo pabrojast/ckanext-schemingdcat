@@ -807,10 +807,24 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       
       // Format authors as string
       var value = authors.map(function(author) {
-        return author.name || (author.family_name + ', ' + author.given_name);
+        if (author.name) return author.name;
+        var parts = [];
+        if (author.family_name) parts.push(author.family_name);
+        if (author.given_name) parts.push(author.given_name);
+        return parts.join(', ');
       }).join('; ');
       
       $field.val(value).trigger('change');
+
+      // Also store structured authors JSON if a dedicated field exists
+      var $jsonField = $('[name="authors_json"]');
+      if ($jsonField.length > 0) {
+        try {
+          $jsonField.val(JSON.stringify(authors)).trigger('change');
+        } catch (e) {
+          console.warn('[DOI Autofill] Could not serialize authors JSON', e);
+        }
+      }
     },
 
     /**

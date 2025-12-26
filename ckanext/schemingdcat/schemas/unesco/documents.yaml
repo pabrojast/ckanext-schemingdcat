@@ -425,6 +425,20 @@ dataset_fields:
     fr: "Liste des auteurs du document, séparés par des points-virgules. Format: Nom, Prénom"
   form_group_id: identification
 
+# Authors (JSON, auto) - keeps structured authors fetched from DOI for search/integration
+- field_name: authors_json
+  label:
+    en: Authors (structured)
+    es: Autores (estructurado)
+    fr: Auteurs (structuré)
+  display_property: dct:creator
+  form_placeholder: '[{"name":"Doe, Jane","orcid":"0000-0000-0000-0000"}]'
+  help_text:
+    en: "Auto-filled from DOI with full author objects (name, given/family, ORCID, affiliation)."
+    es: "Se rellena automáticamente desde el DOI con objetos de autores (nombre, nombre/apellido, ORCID, afiliación)."
+    fr: "Renseigné automatiquement depuis le DOI avec les objets auteurs (nom, prénom/nom, ORCID, affiliation)."
+  form_group_id: identification
+
 # Non-spatial Dataset (Hidden field, based on dcat_type)
 - field_name: dataset_scope
   label:
