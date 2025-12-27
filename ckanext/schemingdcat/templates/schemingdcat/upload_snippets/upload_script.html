@@ -255,6 +255,16 @@
     });
   }
 
+  // Helper to get CSRF token from hidden input or cookie
+  function getCsrfToken() {
+    var input = document.querySelector('input[name="csrf_token"]');
+    if (input && input.value) {
+      return input.value;
+    }
+    var match = document.cookie.match(/csrf_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
   // Function to check if any uploads are active
   function hasActiveUploads() {
     for (var key in window.__schemingdcat_active_uploads__) {
@@ -1948,11 +1958,13 @@
     // Create FormData to send the file
       var formData = new FormData();
       formData.append('file', file);
+    var csrfToken = getCsrfToken();
       
     // Make request to extract spatial extent
     fetch('/api/extract-spatial-extent', {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
     })
     .then(function(response) {
       return response.json();
@@ -2063,11 +2075,14 @@
       console.debug('Max retries reached for spatial extent status check');
       return;
     }
+
+    var csrfToken = getCsrfToken();
     
     fetch('/api/spatial-extent-status/' + resourceId, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || ''
       }
     })
     .then(function(response) {
