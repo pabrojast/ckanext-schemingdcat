@@ -18,7 +18,7 @@ ckan.module('toggle-optional', function ($) {
       // Crear el botón toggle con ícono
       var $toggleBtn = $('<button>', {
         class: 'btn btn-default',
-        style: 'margin-bottom: 20px; maring-top: 20px;',
+        style: 'margin-bottom: 20px; margin-top: 20px;',
         html: '<i class="fa fa-cog"></i> Show Advanced & Metadata fields'
       });
       
