@@ -12,6 +12,7 @@ from pathlib import Path
 from functools import lru_cache
 import datetime
 import typing
+from typing import Optional
 from urllib.parse import urlparse
 from urllib.error import URLError
 
