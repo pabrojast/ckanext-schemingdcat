@@ -1,11 +1,11 @@
 {% set existing_groups = data.groups if data.groups else [] %}
 {% set all_initiative_groups = h.get_all_initiatives_groups() %}
-{% set selected_initiative_ids = [] %}
+{% set selected_initiative_names = [] %}
 
 {% for group in existing_groups %}
   {% for init_group in all_initiative_groups %}
     {% if group.name == init_group.name %}
-      {% do selected_initiative_ids.append(init_group.id) %}
+      {% do selected_initiative_names.append(init_group.name) %}
     {% endif %}
   {% endfor %}
 {% endfor %}
@@ -23,9 +23,9 @@
           multiple
           data-group-multiselect>
     {% for group in all_initiative_groups %}
-      <option value="{{ group.id }}"
+      <option value="{{ group.name }}"
               data-group-name="{{ group.name }}"
-              {% if group.id in selected_initiative_ids %}selected{% endif %}>
+              {% if group.name in selected_initiative_names %}selected{% endif %}>
         {{ group.title }}
       </option>
     {% endfor %}

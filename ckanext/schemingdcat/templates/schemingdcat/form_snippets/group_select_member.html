@@ -1,11 +1,11 @@
 {% set existing_groups = data.groups if data.groups else [] %}
 {% set all_memberstate_groups = h.get_all_memberstates_groups() %}
-{% set selected_member_ids = [] %}
+{% set selected_member_names = [] %}
 
 {% for group in existing_groups %}
   {% for ms_group in all_memberstate_groups %}
     {% if group.name == ms_group.name %}
-      {% do selected_member_ids.append(ms_group.id) %}
+      {% do selected_member_names.append(ms_group.name) %}
     {% endif %}
   {% endfor %}
 {% endfor %}
@@ -23,9 +23,9 @@
           multiple
           data-group-multiselect>
     {% for group in all_memberstate_groups %}
-      <option value="{{ group.id }}"
+      <option value="{{ group.name }}"
               data-group-name="{{ group.name }}"
-              {% if group.id in selected_member_ids %}selected{% endif %}>
+              {% if group.name in selected_member_names %}selected{% endif %}>
         {{ group.title }}
       </option>
     {% endfor %}

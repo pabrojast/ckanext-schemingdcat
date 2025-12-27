@@ -37,6 +37,7 @@ class SchemingDCATPlugin(
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IClick)
+    plugins.implements(plugins.IPackageController, inherit=True)
 
     # IConfigurer
     def update_config(self, config_):
@@ -138,6 +139,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     # Add cloudstorage support
     plugins.implements(plugins.IUploader)
     plugins.implements(plugins.IResourceController, inherit=True)
+    plugins.implements(plugins.IPackageController, inherit=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -193,6 +195,80 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.info(f"🔷 [UPLOADER] Configured for Azure direct upload")
         
         return uploader
+
+    # --- Package lifecycle helpers: ensure member-state/initiative groups are captured ---
+    def _ensure_memberstate_groups(self, context, data_dict):
+        """
+        Make sure selected member states (via group multiselect or spatial_uri)
+        end up in the dataset's groups list before create/update.
+        """
+        try:
+            from ckanext.schemingdcat import helpers as sd_helpers
+        except Exception:
+            return data_dict
+
+        group_names = []
+
+        existing_groups = data_dict.get('groups') or []
+        if isinstance(existing_groups, dict):
+            existing_groups = [existing_groups]
+        for g in existing_groups:
+            if not isinstance(g, dict):
+                continue
+            name = g.get('name') or g.get('id')
+            if name:
+                group_names.append(name)
+
+        for key, value in list(data_dict.items()):
+            key_name = key
+            if isinstance(key, tuple) and key:
+                key_name = key[-1]
+            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                if value:
+                    group_names.append(value)
+
+        spatial_val = data_dict.get('spatial_uri')
+        spatial_list = []
+        if spatial_val:
+            if isinstance(spatial_val, str):
+                try:
+                    parsed = json.loads(spatial_val)
+                    spatial_list = parsed if isinstance(parsed, list) else [parsed]
+                except Exception:
+                    spatial_list = [spatial_val]
+            elif isinstance(spatial_val, list):
+                spatial_list = spatial_val
+            else:
+                spatial_list = [spatial_val]
+
+        for uri in spatial_list:
+            if not uri:
+                continue
+            try:
+                group_slug = sd_helpers.schemingdcat_find_member_state_group(uri, context)
+                if group_slug:
+                    group_names.append(group_slug)
+            except Exception as e:
+                log.debug(f"Could not resolve member state group for {uri}: {e}")
+
+        seen = set()
+        unique_group_names = []
+        for name in group_names:
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            unique_group_names.append(name)
+
+        if unique_group_names:
+            data_dict['groups'] = [{'name': n} for n in unique_group_names]
+
+        return data_dict
+
+    def before_dataset_create(self, context, data_dict):
+        return self._ensure_memberstate_groups(context, data_dict)
+
+    def before_dataset_update(self, context, data_dict):
+        return self._ensure_memberstate_groups(context, data_dict)
 
     def get_uploader(self, upload_to, old_filename=None):
         """Fallback to CKAN's default uploader for non-resource uploads.
