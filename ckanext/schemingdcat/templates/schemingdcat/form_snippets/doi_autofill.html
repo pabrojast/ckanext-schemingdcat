@@ -38,6 +38,11 @@
      data-module-field-name="{{ field.field_name }}"
      data-module-field-mapping='{{ field_mapping | tojson }}'>
   
+  <div class="doi-heading">
+    <i class="fa fa-book"></i>
+    <span>{{ _('Document DOI (auto-fill)') }}</span>
+  </div>
+  
   <div class="doi-input-group">
     <div class="input-group">
       <span class="input-group-addon">
@@ -145,6 +150,15 @@
 <style>
 .doi-autofill-wrapper {
   margin-bottom: 15px;
+}
+
+.doi-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #003164;
+  margin-bottom: 6px;
 }
 
 .doi-input-group {
