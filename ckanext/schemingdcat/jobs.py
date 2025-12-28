@@ -250,10 +250,7 @@ def extract_comprehensive_metadata_job(job_data):
             
         # Create analyzer instance
         try:
-            analyzer = FileAnalyzer(
-                resource_id=resource_id,
-                skip_spatial=skip_spatial
-            )
+            analyzer = FileAnalyzer()
             _job_log('info', f"FileAnalyzer created successfully for resource {resource_id}", log)
         except Exception as e:
             _job_log('error', f"Error creating FileAnalyzer: {e}", log)
