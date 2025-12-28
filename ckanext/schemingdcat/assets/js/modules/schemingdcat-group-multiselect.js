@@ -3,23 +3,34 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
 
   var instances = [];
   var $hiddenContainer = null;
+  var initialized = false;
+
+  function cleanupStaleInstances() {
+    // Remove instances whose DOM elements no longer exist in the document
+    instances = instances.filter(function (instance) {
+      return instance.$el && instance.$el.closest('body').length > 0;
+    });
+  }
 
   function ensureHiddenContainer(selector) {
-    if ($hiddenContainer && $hiddenContainer.length) {
+    // Always re-check the DOM to handle page reloads/navigation
+    var $existing = $(selector);
+    if ($existing.length) {
+      $hiddenContainer = $existing;
       return $hiddenContainer;
     }
 
-    $hiddenContainer = $(selector);
-
-    if (!$hiddenContainer.length) {
-      $hiddenContainer = $('<div>', { id: 'groups-hidden-inputs', css: { display: 'none' } });
-      $('form').first().append($hiddenContainer);
-    }
+    // Create new container if not found
+    $hiddenContainer = $('<div>', { id: 'groups-hidden-inputs', css: { display: 'none' } });
+    $('form').first().append($hiddenContainer);
 
     return $hiddenContainer;
   }
 
   function rebuildHiddenInputs() {
+    // Clean up stale instances first
+    cleanupStaleInstances();
+
     if (!$hiddenContainer || !$hiddenContainer.length) {
       return;
     }
@@ -33,14 +44,20 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
     var index = 0;
 
     orderedInstances.forEach(function (instance) {
+      // Skip if the instance's select element is no longer in DOM
+      if (!instance.$select || !instance.$select.closest('body').length) {
+        return;
+      }
       var values = instance.getSelected();
       values.forEach(function (value) {
-        $('<input>', {
-          type: 'hidden',
-          name: 'groups__' + index + '__id',
-          value: value
-        }).appendTo($hiddenContainer);
-        index += 1;
+        if (value) {
+          $('<input>', {
+            type: 'hidden',
+            name: 'groups__' + index + '__id',
+            value: value
+          }).appendTo($hiddenContainer);
+          index += 1;
+        }
       });
     });
   }
@@ -52,6 +69,19 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
       this.$tokens = this.$el.find('.group-token-list');
       this.order = parseInt(this.$el.data('groupOrder'), 10) || 0;
       this.type = this.$el.data('groupType') || 'member';
+      this.instanceId = this.$el.attr('id') || this.type + '-' + this.order;
+
+      // Clean up stale instances from previous page loads
+      cleanupStaleInstances();
+
+      // Prevent duplicate registration of the same element
+      var isDuplicate = instances.some(function (inst) {
+        return inst.$el && inst.$el.is(this.$el);
+      }.bind(this));
+
+      if (isDuplicate) {
+        return;
+      }
 
       var containerSelector = this.$el.data('hiddenContainer') || '#groups-hidden-inputs';
       ensureHiddenContainer(containerSelector);
@@ -60,12 +90,12 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
 
       var self = this;
 
-      this.$select.on('change', function () {
+      this.$select.on('change.groupMultiselect', function () {
         self.renderTokens();
         rebuildHiddenInputs();
       });
 
-      this.$tokens.on('click', '[data-remove-value]', function (event) {
+      this.$tokens.on('click.groupMultiselect', '[data-remove-value]', function (event) {
         event.preventDefault();
         var value = $(this).data('removeValue');
         self.$select.find('option[value="' + value + '"]').prop('selected', false);
@@ -77,6 +107,14 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
     },
 
     teardown: function () {
+      // Unbind namespaced events
+      if (this.$select) {
+        this.$select.off('.groupMultiselect');
+      }
+      if (this.$tokens) {
+        this.$tokens.off('.groupMultiselect');
+      }
+
       var index = instances.indexOf(this);
       if (index !== -1) {
         instances.splice(index, 1);

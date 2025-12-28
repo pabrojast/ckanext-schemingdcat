@@ -2,12 +2,17 @@
 {% set all_initiative_groups = h.get_all_initiatives_groups() %}
 {% set selected_initiative_names = [] %}
 
+{# Build a set of identifiers from existing groups (can be name or id) #}
+{% set existing_identifiers = [] %}
 {% for group in existing_groups %}
-  {% for init_group in all_initiative_groups %}
-    {% if group.name == init_group.name %}
-      {% do selected_initiative_names.append(init_group.name) %}
-    {% endif %}
-  {% endfor %}
+  {% if group.name %}{% do existing_identifiers.append(group.name) %}{% endif %}
+  {% if group.id %}{% do existing_identifiers.append(group.id) %}{% endif %}
+{% endfor %}
+
+{% for init_group in all_initiative_groups %}
+  {% if init_group.name in existing_identifiers or init_group.id in existing_identifiers %}
+    {% do selected_initiative_names.append(init_group.name) %}
+  {% endif %}
 {% endfor %}
 
 <div class="form-group group-multiselect"
