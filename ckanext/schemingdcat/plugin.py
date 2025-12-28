@@ -150,6 +150,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         super().__init__(*args, **kwargs)
         log.info("🚀 [PLUGIN INIT] SchemingDCATDatasetsPlugin initialized with IResourceController")
         log.info("🚀 [PLUGIN INIT] Spatial extent extraction will be processed after resource creation/update")
+        # Debug print to stderr for worker visibility
+        import sys
+        print(f"[PLUGIN INIT] SchemingDCATDatasetsPlugin.__init__ called", file=sys.stderr)
+        sys.stderr.flush()
 
     def update_config(self, config_):
         # Call parent update_config first
@@ -1220,3 +1224,13 @@ def extract_spatial_extent_job(job_data):
 # Debug: Confirm job function is defined and accessible
 print(f"[SCHEMINGDCAT PLUGIN] Job function defined: extract_comprehensive_metadata_job = {extract_comprehensive_metadata_job}", file=sys.stderr)
 sys.stderr.flush()
+
+
+# Simple test job to verify RQ worker is functioning
+def test_simple_job(data):
+    """A minimal test job to verify the worker executes jobs correctly."""
+    import sys
+    print(f"[TEST JOB] ========= TEST JOB EXECUTED =========", file=sys.stderr)
+    print(f"[TEST JOB] Data received: {data}", file=sys.stderr)
+    sys.stderr.flush()
+    return True
