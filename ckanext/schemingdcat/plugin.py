@@ -23,8 +23,13 @@ import os
 
 import logging
 import json
+import sys
 
 log = logging.getLogger(__name__)
+
+# Debug: Print when module is imported (to diagnose RQ worker issues)
+print(f"[SCHEMINGDCAT PLUGIN] Module imported successfully", file=sys.stderr)
+sys.stderr.flush()
 
 class SchemingDCATPlugin(
     plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
@@ -1210,3 +1215,8 @@ def extract_spatial_extent_job(job_data):
     Mantenida para compatibilidad hacia atrás.
     """
     return extract_comprehensive_metadata_job(job_data)
+
+
+# Debug: Confirm job function is defined and accessible
+print(f"[SCHEMINGDCAT PLUGIN] Job function defined: extract_comprehensive_metadata_job = {extract_comprehensive_metadata_job}", file=sys.stderr)
+sys.stderr.flush()
