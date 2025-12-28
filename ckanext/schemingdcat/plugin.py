@@ -634,24 +634,82 @@ def extract_comprehensive_metadata_job(job_data):
     Args:
         job_data: Diccionario con resource_id, resource_url, resource_format, package_id
     """
-    import json
+    # IMMEDIATE print to stderr - before any imports to ensure we see something
+    import sys
+    print(f"\n\n[METADATA JOB] ========= FUNCTION CALLED =========", file=sys.stderr)
+    print(f"[METADATA JOB] Job data: {job_data}", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Early imports for logging - these should always work
     import logging
+    import os
+    import traceback
+    
+    # Helper function to log to both logger and stderr for debugging
+    def job_log(level, msg):
+        """Log to both logger and stderr to ensure visibility in workers."""
+        try:
+            if level == 'info':
+                log.info(msg)
+            elif level == 'error':
+                log.error(msg)
+            elif level == 'warning':
+                log.warning(msg)
+            elif level == 'debug':
+                log.debug(msg)
+        except:
+            pass
+        # Always also print to stderr for worker visibility
+        print(f"[METADATA JOB] [{level.upper()}] {msg}", file=sys.stderr)
+        sys.stderr.flush()
+    
+    # Configure logging immediately
+    log = logging.getLogger(__name__)
+    
+    # Ensure logging is configured for the worker
+    if not log.handlers and not logging.root.handlers:
+        # No handlers configured, add a basic stderr handler
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter('[%(name)s] %(levelname)s: %(message)s'))
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+    
+    # Force flush to ensure logs are written
+    try:
+        for handler in logging.root.handlers:
+            handler.flush()
+    except:
+        pass
+    
+    try:
+        job_log('info', "========= STARTING COMPREHENSIVE METADATA JOB =========")
+        job_log('info', f"Job data received: {job_data}")
+        job_log('info', f"Python version: {sys.version}")
+        job_log('info', f"Working directory: {os.getcwd()}")
+        
+        # Force flush again after initial log
+        for handler in logging.root.handlers:
+            try:
+                handler.flush()
+            except:
+                pass
+        
+    except Exception as early_log_error:
+        # If even logging fails, print to stderr
+        print(f"[METADATA JOB] Early logging error: {early_log_error}", file=sys.stderr)
+        print(f"[METADATA JOB] Job data: {job_data}", file=sys.stderr)
+        sys.stderr.flush()
+    
+    # Import additional modules
+    import json
     import tempfile
     import urllib.request
-    import os
-    import sys
-    
-    # Configure logging for the worker with more detail
-    log = logging.getLogger(__name__)
-    log.info(f"========= STARTING COMPREHENSIVE METADATA JOB =========")
-    log.info(f"Job data received: {job_data}")
-    log.info(f"Python version: {sys.version}")
-    log.info(f"Working directory: {os.getcwd()}")
     
     try:
         # Get job data with validation
         if not isinstance(job_data, dict):
-            log.error(f"Invalid job_data type: {type(job_data)}, expected dict")
+            job_log('error', f"Invalid job_data type: {type(job_data)}, expected dict")
             return False
             
         resource_id = job_data.get('resource_id')
@@ -661,13 +719,13 @@ def extract_comprehensive_metadata_job(job_data):
         skip_spatial = bool(job_data.get('skip_spatial'))
         
         if not resource_id:
-            log.error("No resource_id in job_data")
+            job_log('error', "No resource_id in job_data")
             return False
             
-        log.info(f"Processing comprehensive metadata job for resource {resource_id}")
-        log.info(f"Resource URL: {resource_url}")
-        log.info(f"Resource format: {resource_format}")
-        log.info(f"Package ID: {package_id}")
+        job_log('info', f"Processing comprehensive metadata job for resource {resource_id}")
+        job_log('info', f"Resource URL: {resource_url}")
+        job_log('info', f"Resource format: {resource_format}")
+        job_log('info', f"Package ID: {package_id}")
         
         # CKAN imports inside try block to handle import errors
         try:
@@ -695,21 +753,21 @@ def extract_comprehensive_metadata_job(job_data):
                         for action_name, action_func in actions.items():
                             if action_name not in toolkit._actions:
                                 toolkit._actions[action_name] = action_func
-                                log.info(f"Registered action {action_name} from {plugin_name}")
+                                job_log('info', f"Registered action {action_name} from {plugin_name}")
                 except Exception as plugin_error:
-                    log.warning(f"Could not load actions from {plugin_name}: {plugin_error}")
+                    job_log('warning', f"Could not load actions from {plugin_name}: {plugin_error}")
             
-            log.info("CKAN modules imported successfully")
+            job_log('info', "CKAN modules imported successfully")
         except ImportError as e:
-            log.error(f"Could not import CKAN modules: {e}")
+            job_log('error', f"Could not import CKAN modules: {e}")
             return False
         
         # Import analyzer
         try:
             from ckanext.schemingdcat.spatial_extent import FileAnalyzer
-            log.info("FileAnalyzer imported successfully")
+            job_log('info', "FileAnalyzer imported successfully")
         except ImportError as e:
-            log.error(f"Could not import FileAnalyzer: {e}")
+            job_log('error', f"Could not import FileAnalyzer: {e}")
             return False
         
         # Analyze file comprehensively
@@ -717,32 +775,32 @@ def extract_comprehensive_metadata_job(job_data):
         
         try:
             analyzer = FileAnalyzer()
-            log.info(f"FileAnalyzer created successfully for resource {resource_id}")
+            job_log('info', f"FileAnalyzer created successfully for resource {resource_id}")
             
             # Check if file is local or remote
             if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
                 # Local file
-                log.info(f"Analyzing local file: {resource_url}")
+                job_log('info', f"Analyzing local file: {resource_url}")
                 
                 # Check if file exists
                 if os.path.exists(resource_url):
-                    log.info(f"Local file exists, analyzing: {resource_url}")
+                    job_log('info', f"Local file exists, analyzing: {resource_url}")
                     metadata = analyzer.analyze_file(resource_url, trust_extension=True)
-                    log.info(f"Local file analysis completed, extracted {len(metadata)} metadata fields")
+                    job_log('info', f"Local file analysis completed, extracted {len(metadata)} metadata fields")
                 else:
-                    log.warning(f"Local file does not exist: {resource_url}")
+                    job_log('warning', f"Local file does not exist: {resource_url}")
                     metadata = {}
                     
             else:
                 # Remote file - download temporarily for analysis
-                log.info(f"Analyzing remote file: {resource_url}")
+                job_log('info', f"Analyzing remote file: {resource_url}")
                 metadata = {}
                 
                 if resource_url:
                     ext = resource_format.lower() if resource_format else 'unknown'
                     suffix = f".{ext}" if ext and ext != 'unknown' else ""
                     
-                    log.info(f"Creating temporary file with suffix: {suffix}")
+                    job_log('info', f"Creating temporary file with suffix: {suffix}")
                     
                     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
                         try:
@@ -750,7 +808,7 @@ def extract_comprehensive_metadata_job(job_data):
                             req = urllib.request.Request(resource_url)
                             req.add_header('User-Agent', 'CKAN-SchemingDCAT-FileAnalyzer/1.0')
                             
-                            log.info(f"Starting download from: {resource_url}")
+                            job_log('info', f"Starting download from: {resource_url}")
                             
                             import time
                             max_attempts = 3
@@ -802,12 +860,12 @@ def extract_comprehensive_metadata_job(job_data):
                                     backoff *= 2
 
                             if last_error is not None:
-                                log.error(f"All download attempts failed: {last_error}")
+                                job_log('error', f"All download attempts failed: {last_error}")
                             
                         except urllib.error.URLError as e:
-                            log.error(f"URL error downloading file: {e}")
+                            job_log('error', f"URL error downloading file: {e}")
                         except Exception as e:
-                            log.error(f"Error downloading file for analysis: {e}")
+                            job_log('error', f"Error downloading file for analysis: {e}")
                         finally:
                             # Clean up temporary file
                             try:
@@ -817,15 +875,16 @@ def extract_comprehensive_metadata_job(job_data):
                             except Exception as cleanup_error:
                                 log.warning(f"Could not clean up temporary file {tmp_file.name}: {cleanup_error}")
                 else:
-                    log.warning("No resource URL provided for analysis")
+                    job_log('warning', "No resource URL provided for analysis")
                 
         except Exception as e:
+            job_log('error', f"Error extracting comprehensive metadata: {e}")
             log.error(f"Error extracting comprehensive metadata: {e}", exc_info=True)
             return False
         
         if metadata:
-            log.info(f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
-            log.info(f"Metadata fields extracted: {list(metadata.keys())}")
+            job_log('info', f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
+            job_log('info', f"Metadata fields extracted: {list(metadata.keys())}")
             
             # Debug: Log raw metadata to understand what's being extracted
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
@@ -834,27 +893,28 @@ def extract_comprehensive_metadata_job(job_data):
             detected_member_uri = None
             try:
                 extent_geojson = metadata.get('spatial_extent')
-                log.info(f"Attempting member state detection for resource {resource_id}, extent available: {extent_geojson is not None}")
+                job_log('info', f"Attempting member state detection for resource {resource_id}, extent available: {extent_geojson is not None}")
                 if extent_geojson:
                     if isinstance(extent_geojson, str):
                         try:
                             extent_geojson = json.loads(extent_geojson)
                         except Exception as parse_err:
-                            log.warning(f"Could not parse spatial_extent as JSON: {parse_err}")
+                            job_log('warning', f"Could not parse spatial_extent as JSON: {parse_err}")
                             pass
                     
-                    log.info(f"Extent GeoJSON type: {extent_geojson.get('type') if isinstance(extent_geojson, dict) else type(extent_geojson)}")
+                    job_log('info', f"Extent GeoJSON type: {extent_geojson.get('type') if isinstance(extent_geojson, dict) else type(extent_geojson)}")
                     
                     from ckanext.schemingdcat import helpers as sd_helpers
                     detected_member_uri = sd_helpers.schemingdcat_detect_member_state(extent_geojson)
                     
                     if detected_member_uri:
-                        log.info(f"Detected member state for resource {resource_id}: {detected_member_uri}")
+                        job_log('info', f"Detected member state for resource {resource_id}: {detected_member_uri}")
                     else:
-                        log.info(f"No member state detected for resource {resource_id} (detection returned None)")
+                        job_log('info', f"No member state detected for resource {resource_id} (detection returned None)")
                 else:
-                    log.info(f"No spatial_extent in metadata for resource {resource_id}, skipping member state detection")
+                    job_log('info', f"No spatial_extent in metadata for resource {resource_id}, skipping member state detection")
             except Exception as e:
+                job_log('warning', f"Could not detect member state from extent for resource {resource_id}: {e}")
                 log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}", exc_info=True)
             
             try:
@@ -1117,9 +1177,13 @@ def extract_comprehensive_metadata_job(job_data):
             return True  # Not an error, just no metadata found
             
     except Exception as e:
-        log.error(f"General error in comprehensive metadata extraction job for resource {job_data.get('resource_id', 'unknown')}: {str(e)}", exc_info=True)
-        # Don't re-raise to avoid crashing the worker
+        error_msg = f"General error in comprehensive metadata extraction job for resource {job_data.get('resource_id', 'unknown')}: {str(e)}"
+        log.error(error_msg, exc_info=True)
+        # Also print to stderr to ensure visibility
         import traceback
+        print(f"[METADATA JOB ERROR] {error_msg}", file=sys.stderr)
+        print(f"[METADATA JOB ERROR] Traceback:\n{traceback.format_exc()}", file=sys.stderr)
+        sys.stderr.flush()
         log.debug(f"Full traceback: {traceback.format_exc()}")
         return False
     
@@ -1131,7 +1195,10 @@ def extract_comprehensive_metadata_job(job_data):
         except:
             pass
         
+        # Final completion log - also to stderr for visibility
         log.info(f"========= COMPLETED COMPREHENSIVE METADATA JOB =========")
+        print(f"[METADATA JOB] ========= COMPLETED COMPREHENSIVE METADATA JOB =========", file=sys.stderr)
+        sys.stderr.flush()
     
     return True
 
