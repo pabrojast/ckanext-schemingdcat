@@ -834,18 +834,28 @@ def extract_comprehensive_metadata_job(job_data):
             detected_member_uri = None
             try:
                 extent_geojson = metadata.get('spatial_extent')
+                log.info(f"Attempting member state detection for resource {resource_id}, extent available: {extent_geojson is not None}")
                 if extent_geojson:
                     if isinstance(extent_geojson, str):
                         try:
                             extent_geojson = json.loads(extent_geojson)
-                        except Exception:
+                        except Exception as parse_err:
+                            log.warning(f"Could not parse spatial_extent as JSON: {parse_err}")
                             pass
+                    
+                    log.info(f"Extent GeoJSON type: {extent_geojson.get('type') if isinstance(extent_geojson, dict) else type(extent_geojson)}")
+                    
                     from ckanext.schemingdcat import helpers as sd_helpers
                     detected_member_uri = sd_helpers.schemingdcat_detect_member_state(extent_geojson)
+                    
                     if detected_member_uri:
                         log.info(f"Detected member state for resource {resource_id}: {detected_member_uri}")
+                    else:
+                        log.info(f"No member state detected for resource {resource_id} (detection returned None)")
+                else:
+                    log.info(f"No spatial_extent in metadata for resource {resource_id}, skipping member state detection")
             except Exception as e:
-                log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}")
+                log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}", exc_info=True)
             
             try:
                 # Ensure we have a valid database session and close any existing one

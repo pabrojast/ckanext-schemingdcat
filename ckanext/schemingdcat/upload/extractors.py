@@ -375,6 +375,11 @@ class MemberStateDetector:
     def __init__(self):
         self._country_choices = None
     
+    def reset_cache(self):
+        """Reset the country choices cache to force reload from schema."""
+        self._country_choices = None
+        log.info("[MemberStateDetector] Cache reset, will reload country choices on next use")
+    
     def _get_country_choices(self) -> list:
         """Get country choices from the dataset schema with their spatial extents."""
         if self._country_choices is not None:
@@ -384,9 +389,26 @@ class MemberStateDetector:
         
         try:
             from ckanext.schemingdcat import helpers
-            schema_data = helpers.schemingdcat_get_dataset_schema()
+            log.info("[MemberStateDetector] Attempting to load schema...")
+            
+            try:
+                schema_data = helpers.schemingdcat_get_dataset_schema()
+            except Exception as schema_err:
+                log.error(f"[MemberStateDetector] Error calling schemingdcat_get_dataset_schema: {schema_err}")
+                # Try to get schema directly using action
+                try:
+                    import ckan.plugins.toolkit as toolkit
+                    schema_data = toolkit.get_action("scheming_dataset_schema_show")({}, {"type": "dataset"})
+                    log.info("[MemberStateDetector] Loaded schema using direct action call")
+                except Exception as direct_err:
+                    log.error(f"[MemberStateDetector] Direct action call also failed: {direct_err}")
+                    return self._country_choices
+            
             if not schema_data:
+                log.info("[MemberStateDetector] No schema data available (returned None/empty)")
                 return self._country_choices
+            
+            log.info(f"[MemberStateDetector] Schema loaded, has {len(schema_data.get('dataset_fields', []))} fields")
             
             spatial_uri_field = next(
                 (f for f in schema_data.get('dataset_fields', []) 
@@ -394,24 +416,43 @@ class MemberStateDetector:
                 None
             )
             
-            if spatial_uri_field and 'choices' in spatial_uri_field:
-                for choice in spatial_uri_field['choices']:
-                    if 'spatial' in choice and 'value' in choice:
-                        try:
-                            import json
-                            spatial_geom = json.loads(choice['spatial'])
+            if not spatial_uri_field:
+                log.info("[MemberStateDetector] No spatial_uri field found in schema")
+                return self._country_choices
+            
+            if 'choices' not in spatial_uri_field:
+                log.info("[MemberStateDetector] No choices in spatial_uri field")
+                return self._country_choices
+            
+            choices_with_spatial = 0
+            choices_without_spatial = 0
+            
+            for choice in spatial_uri_field['choices']:
+                if 'spatial' in choice and 'value' in choice:
+                    try:
+                        import json
+                        spatial_geom = json.loads(choice['spatial'])
+                        bounds = self._get_bounds_from_geojson(spatial_geom)
+                        if bounds:
                             self._country_choices.append({
                                 'value': choice['value'],
                                 'label': choice.get('label', {}),
                                 'spatial': spatial_geom,
-                                'bounds': self._get_bounds_from_geojson(spatial_geom)
+                                'bounds': bounds
                             })
-                        except (json.JSONDecodeError, TypeError) as e:
-                            log.debug(f"Error parsing spatial for {choice.get('value')}: {e}")
-                            continue
+                            choices_with_spatial += 1
+                        else:
+                            log.debug(f"[MemberStateDetector] Could not get bounds for {choice.get('value')}")
+                    except (json.JSONDecodeError, TypeError) as e:
+                        log.debug(f"[MemberStateDetector] Error parsing spatial for {choice.get('value')}: {e}")
+                        continue
+                else:
+                    choices_without_spatial += 1
+            
+            log.info(f"[MemberStateDetector] Loaded {choices_with_spatial} countries with spatial data, {choices_without_spatial} without")
                             
         except Exception as e:
-            log.error(f"Error loading country choices from schema: {e}")
+            log.error(f"[MemberStateDetector] Error loading country choices from schema: {e}")
         
         return self._country_choices
     
@@ -500,20 +541,27 @@ class MemberStateDetector:
             The URI of the best matching country, or None if no suitable match found.
         """
         if not extent_geojson:
+            log.info("[MemberStateDetector] No extent_geojson provided")
             return None
         
         extent_bounds = self._get_bounds_from_geojson(extent_geojson)
         if not extent_bounds:
+            log.info("[MemberStateDetector] Could not extract bounds from extent_geojson")
             return None
+        
+        log.info(f"[MemberStateDetector] Extent bounds: {extent_bounds}")
         
         country_choices = self._get_country_choices()
         if not country_choices:
-            log.debug("No country choices available from schema")
+            log.info("[MemberStateDetector] No country choices available from schema")
             return None
+        
+        log.info(f"[MemberStateDetector] Loaded {len(country_choices)} country choices from schema")
         
         best_match = None
         best_overlap = 0.0
         fully_contained_matches = []
+        overlapping_countries = []
         
         for country in country_choices:
             country_bounds = country.get('bounds')
@@ -523,11 +571,16 @@ class MemberStateDetector:
             # Check if extent is fully contained within country
             if self._bounds_contains(country_bounds, extent_bounds):
                 fully_contained_matches.append(country)
+                log.info(f"[MemberStateDetector] Extent fully contained in: {country.get('value')}")
             elif self._bounds_overlap(country_bounds, extent_bounds):
                 overlap = self._calculate_overlap_percentage(extent_bounds, country_bounds)
+                overlapping_countries.append({'value': country.get('value'), 'overlap': overlap})
                 if overlap > best_overlap:
                     best_overlap = overlap
                     best_match = country
+        
+        if overlapping_countries:
+            log.info(f"[MemberStateDetector] Overlapping countries: {overlapping_countries[:5]}")
         
         # Prefer fully contained matches, pick the smallest (most specific) country
         if fully_contained_matches:
@@ -540,16 +593,16 @@ class MemberStateDetector:
             
             fully_contained_matches.sort(key=get_area)
             result = fully_contained_matches[0]['value']
-            log.debug(f"Extent fully contained in country: {result}")
+            log.info(f"[MemberStateDetector] Result: Extent fully contained in country: {result}")
             return result
         
         # Fall back to best overlap if above threshold
         if best_match and best_overlap >= min_overlap_percentage:
             result = best_match['value']
-            log.debug(f"Best matching country with {best_overlap:.1f}% overlap: {result}")
+            log.info(f"[MemberStateDetector] Result: Best matching country with {best_overlap:.1f}% overlap: {result}")
             return result
         
-        log.debug(f"No suitable country match found (best overlap: {best_overlap:.1f}%)")
+        log.info(f"[MemberStateDetector] No suitable country match found (best overlap: {best_overlap:.1f}%, threshold: {min_overlap_percentage}%)")
         return None
     
     def detect_member_states(self, extent_geojson: Dict[str, Any], 

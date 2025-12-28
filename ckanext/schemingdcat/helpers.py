@@ -1435,9 +1435,13 @@ def schemingdcat_detect_member_state(extent_geojson, min_overlap_percentage=50.0
     """
     try:
         from ckanext.schemingdcat.upload import member_state_detector
-        return member_state_detector.detect_member_state(extent_geojson, min_overlap_percentage)
+        # Reset cache to ensure fresh data in worker processes
+        member_state_detector.reset_cache()
+        result = member_state_detector.detect_member_state(extent_geojson, min_overlap_percentage)
+        log.info(f"[schemingdcat_detect_member_state] Detection result: {result}")
+        return result
     except Exception as e:
-        log.error(f"Error detecting member state: {e}")
+        log.error(f"Error detecting member state: {e}", exc_info=True)
         return None
 
 @helper
