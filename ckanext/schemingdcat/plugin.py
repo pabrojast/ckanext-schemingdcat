@@ -492,6 +492,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def _trigger_metadata_extraction(self, resource):
         """
         Centralized trigger for metadata extraction that can be called from hooks or chained actions.
+        
+        Note: RQ background worker in CKAN 2.10 has known issues with job execution.
+        We use threading-based extraction directly which is more reliable.
         """
         resource_id = resource.get('id', 'unknown')
         needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
@@ -500,39 +503,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.info(f"⏭️ [TRIGGER] Resource {resource_id} doesn't need metadata extraction")
             return
 
-        # Check if job queue is available
-        try:
-            from ckan.lib import jobs
-            job_queue_available = True
-        except ImportError:
-            job_queue_available = False
-            log.warning("Job queue not available, using threading fallback")
-
-        if job_queue_available:
-            try:
-                # Import from dedicated jobs module for clean RQ serialization
-                from ckanext.schemingdcat.jobs import extract_comprehensive_metadata_job as job_func
-                
-                metadata_job_data = {
-                    'resource_id': resource.get('id'),
-                    'resource_url': resource.get('url'),
-                    'resource_format': resource.get('format'),
-                    'package_id': resource.get('package_id'),
-                }
-                job = jobs.enqueue(
-                    job_func,
-                    [metadata_job_data],
-                    title=f"Extract metadata for resource {resource_id[:8]}",
-                    queue='default'
-                )
-                log.info(f"✅ [TRIGGER] Queued metadata extraction job for resource {resource_id}")
-                # Watchdog: if no worker picks it up, run fallback after a delay
-                self._start_job_watchdog(job, resource)
-            except Exception as queue_error:
-                log.error(f"⚠️ [TRIGGER] Could not queue job: {queue_error}")
-                self._fallback_metadata_extraction(resource)
-        else:
-            self._fallback_metadata_extraction(resource)
+        # Use threading-based extraction directly (more reliable than RQ in CKAN 2.10)
+        # RQ worker has known issues where jobs complete without executing the function
+        log.info(f"🚀 [TRIGGER] Starting metadata extraction for resource {resource_id}")
+        self._fallback_metadata_extraction(resource)
 
     def _start_job_watchdog(self, job, resource, delay_seconds=60):
         """
