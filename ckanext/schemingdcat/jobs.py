@@ -128,7 +128,7 @@ def _job_log(level, msg, log_ref=None):
     sys.stderr.flush()
 
 
-def _add_member_state_to_package(package_id, member_state_uri, context, log_ref):
+def _add_member_state_to_package(package_id, member_state_uri, context, log_ref, spatial_extent=None):
     """
     Add a member state (country group) to a package based on the detected spatial extent.
     
@@ -137,23 +137,33 @@ def _add_member_state_to_package(package_id, member_state_uri, context, log_ref)
         member_state_uri: The URI of the detected member state (e.g., 'http://publications.europa.eu/resource/authority/country/ZWE')
         context: CKAN context for API calls
         log_ref: Logger reference
+        spatial_extent: Optional GeoJSON geometry to set as the package's spatial field
     """
     # Delegate to the plural version with a single-item list
-    return _add_member_states_to_package(package_id, [member_state_uri], context, log_ref)
+    return _add_member_states_to_package(package_id, [member_state_uri], context, log_ref, spatial_extent=spatial_extent)
 
 
-def _add_member_states_to_package(package_id, member_state_uris, context, log_ref):
+def _add_member_states_to_package(package_id, member_state_uris, context, log_ref, spatial_extent=None):
     """
     Add multiple member states (country groups) to a package based on the detected spatial extent.
+    Also updates the package's spatial (bounding box) and spatial_uri fields if they are empty
+    and the configuration option schemingdcat.spatial.auto_fill_dataset is enabled (default: True).
     
     Args:
         package_id: The ID of the package to update
         member_state_uris: List of URIs of detected member states
         context: CKAN context for API calls
         log_ref: Logger reference
+        spatial_extent: Optional GeoJSON geometry to set as the package's spatial field
     """
     from ckan.logic import get_action
     import ckan.model as model
+    import ckan.plugins.toolkit as toolkit
+    
+    # Check if spatial auto-fill is enabled (default: True)
+    auto_fill_spatial = toolkit.asbool(
+        toolkit.config.get('schemingdcat.spatial.auto_fill_dataset', True)
+    )
     
     if not member_state_uris:
         return False
@@ -214,7 +224,7 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
             _job_log('warning', f"No groups could be resolved from member state URIs", log_ref)
             return False
         
-        # Get current package to check existing groups
+        # Get current package to check existing groups and spatial fields
         package_show_action = get_action('package_show')
         package_data = package_show_action(context, {'id': package_id})
         
@@ -224,25 +234,55 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
         # Filter out groups that already exist
         new_group_names = [g for g in resolved_groups if g not in existing_group_names]
         
-        if not new_group_names:
-            _job_log('info', f"Package {package_id} already has all detected groups", log_ref)
+        # Prepare patch data
+        patch_data = {'id': package_id}
+        has_updates = False
+        
+        # Add new groups if any
+        if new_group_names:
+            all_groups = list(existing_groups)
+            for group_name in new_group_names:
+                all_groups.append({'name': group_name})
+            patch_data['groups'] = [{'name': g.get('name')} for g in all_groups]
+            has_updates = True
+            _job_log('info', f"Will add {len(new_group_names)} groups to package {package_id}: {new_group_names}", log_ref)
+        
+        # Update spatial field (bounding box) if auto-fill is enabled, field is empty, and we have extent data
+        current_spatial = package_data.get('spatial', '')
+        if auto_fill_spatial and spatial_extent and not current_spatial:
+            # Convert to string if it's a dict
+            if isinstance(spatial_extent, dict):
+                spatial_str = json.dumps(spatial_extent)
+            else:
+                spatial_str = str(spatial_extent)
+            patch_data['spatial'] = spatial_str
+            has_updates = True
+            _job_log('info', f"Will set spatial field for package {package_id}", log_ref)
+        elif current_spatial:
+            _job_log('info', f"Package {package_id} already has spatial field set, not overwriting", log_ref)
+        elif not auto_fill_spatial:
+            _job_log('info', f"Spatial auto-fill is disabled (schemingdcat.spatial.auto_fill_dataset=False)", log_ref)
+        
+        # Update spatial_uri field if auto-fill is enabled, field is empty, and we have detected member states
+        # Use the first (best matching) member state URI
+        current_spatial_uri = package_data.get('spatial_uri', '')
+        if auto_fill_spatial and member_state_uris and not current_spatial_uri:
+            patch_data['spatial_uri'] = member_state_uris[0]
+            has_updates = True
+            _job_log('info', f"Will set spatial_uri field for package {package_id}: {member_state_uris[0]}", log_ref)
+        elif current_spatial_uri:
+            _job_log('info', f"Package {package_id} already has spatial_uri field set, not overwriting", log_ref)
+        
+        # Only update if there are changes to make
+        if not has_updates:
+            _job_log('info', f"No updates needed for package {package_id}", log_ref)
             return True
         
-        # Add the new groups while preserving existing ones
-        all_groups = list(existing_groups)
-        for group_name in new_group_names:
-            all_groups.append({'name': group_name})
-        
-        # Update the package with the new groups
+        # Update the package
         package_patch_action = get_action('package_patch')
-        patch_data = {
-            'id': package_id,
-            'groups': [{'name': g.get('name')} for g in all_groups]
-        }
-        
-        _job_log('info', f"Adding {len(new_group_names)} groups to package {package_id}: {new_group_names}", log_ref)
+        _job_log('info', f"Patching package {package_id} with fields: {list(patch_data.keys())}", log_ref)
         package_patch_action(context, patch_data)
-        _job_log('info', f"Successfully added member states to package {package_id}", log_ref)
+        _job_log('info', f"Successfully updated package {package_id} with member states and spatial info", log_ref)
         
         return True
         
@@ -637,7 +677,14 @@ def extract_comprehensive_metadata_job(job_data):
                         if detected_member_uris and package_id:
                             try:
                                 _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
-                                _add_member_states_to_package(package_id, detected_member_uris, context, log)
+                                # Pass the spatial_extent to also update the package's spatial field
+                                extent_for_package = metadata.get('spatial_extent')
+                                if isinstance(extent_for_package, str):
+                                    try:
+                                        extent_for_package = json.loads(extent_for_package)
+                                    except:
+                                        pass
+                                _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
                             except Exception as group_error:
                                 _job_log('warning', f"Could not add member states to package: {group_error}", log)
                         
@@ -651,7 +698,14 @@ def extract_comprehensive_metadata_job(job_data):
                     if detected_member_uris and package_id:
                         try:
                             _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
-                            _add_member_states_to_package(package_id, detected_member_uris, context, log)
+                            # Pass the spatial_extent to also update the package's spatial field
+                            extent_for_package = metadata.get('spatial_extent')
+                            if isinstance(extent_for_package, str):
+                                try:
+                                    extent_for_package = json.loads(extent_for_package)
+                                except:
+                                    pass
+                            _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
                         except Exception as group_error:
                             _job_log('warning', f"Could not add member states to package: {group_error}", log)
                     return True

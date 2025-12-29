@@ -27,6 +27,11 @@ field_mapping_extras_prefix_symbol = '_'
 batch_upload_enabled = True
 batch_upload_max_file_size = 500 * 1024 * 1024  # 500MB default
 
+# Spatial auto-fill configuration
+# When True, the dataset's spatial and spatial_uri fields are automatically 
+# populated from the first resource's extracted spatial extent
+spatial_auto_fill_dataset = True
+
 # Default DCAT metadata configuration
 OGC2CKAN_HARVESTER_MD_CONFIG = {
     'access_rights': 'http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations',
