@@ -425,19 +425,50 @@ dataset_fields:
     fr: "Liste des auteurs du document, séparés par des points-virgules. Format: Nom, Prénom"
   form_group_id: identification
 
-# Authors (JSON, auto) - keeps structured authors fetched from DOI for search/integration
+# Authors (structured) - keeps structured authors fetched from DOI with repeating subfields UI
 - field_name: authors_json
   label:
     en: Authors (structured)
     es: Autores (estructurado)
     fr: Auteurs (structuré)
   display_property: dct:creator
-  form_placeholder: '[{"name":"Doe, Jane","orcid":"0000-0000-0000-0000"}]'
   help_text:
     en: "Auto-filled from DOI with full author objects (name, given/family, ORCID, affiliation)."
     es: "Se rellena automáticamente desde el DOI con objetos de autores (nombre, nombre/apellido, ORCID, afiliación)."
     fr: "Renseigné automatiquement depuis le DOI avec les objets auteurs (nom, prénom/nom, ORCID, affiliation)."
   form_group_id: identification
+  repeating_subfields:
+    - field_name: name
+      label:
+        en: Author Name
+        es: Nombre del Autor
+        fr: Nom de l'Auteur
+      form_placeholder: "Dr. José Blanco"
+      help_text:
+        en: "Full name of the author (including titles if appropriate)"
+        es: "Nombre completo del autor (incluyendo títulos si es apropiado)"
+        fr: "Nom complet de l'auteur (y compris les titres le cas échéant)"
+    - field_name: orcid
+      label:
+        en: ORCID ID
+        es: ID ORCID
+        fr: ID ORCID
+      form_placeholder: "0000-0000-0000-0000"
+      help_text:
+        en: "ORCID identifier (format: 0000-0000-0000-0000). Visit <a href='https://orcid.org' target='_blank'>orcid.org</a> to get your ORCID ID."
+        es: "Identificador ORCID (formato: 0000-0000-0000-0000). Visite <a href='https://orcid.org' target='_blank'>orcid.org</a> para obtener su ID ORCID."
+        fr: "Identifiant ORCID (format: 0000-0000-0000-0000). Visitez <a href='https://orcid.org' target='_blank'>orcid.org</a> pour obtenir votre ID ORCID."
+      help_allow_html: True
+    - field_name: affiliation
+      label:
+        en: Affiliation
+        es: Afiliación
+        fr: Affiliation
+      form_placeholder: "University of Example, Department of Science"
+      help_text:
+        en: "Institutional affiliation of the author"
+        es: "Afiliación institucional del autor"
+        fr: "Affiliation institutionnelle de l'auteur"
 
 # Non-spatial Dataset (Hidden field, based on dcat_type)
 - field_name: dataset_scope

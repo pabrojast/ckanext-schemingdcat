@@ -816,15 +816,129 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       
       $field.val(value).trigger('change');
 
-      // Also store structured authors JSON if a dedicated field exists
-      var $jsonField = $('[name="authors_json"]');
-      if ($jsonField.length > 0) {
-        try {
-          $jsonField.val(JSON.stringify(authors)).trigger('change');
-        } catch (e) {
-          console.warn('[DOI Autofill] Could not serialize authors JSON', e);
+      // Populate structured authors in repeating_subfields (authors_json)
+      this._setAuthorsRepeatingSubfields(authors);
+    },
+
+    /**
+     * Populate authors_json repeating subfields with DOI author data
+     * @param {Array} authors - Array of author objects from DOI
+     */
+    _setAuthorsRepeatingSubfields: function(authors) {
+      if (!Array.isArray(authors) || authors.length === 0) return;
+      
+      var self = this;
+      
+      // Find the authors_json container (repeating subfields group)
+      var $container = $('.scheming-repeating-subfields-group[data-field-name="authors_json"]');
+      if ($container.length === 0) {
+        // Try alternate selector
+        $container = $('[data-module="scheming-repeating-subfields"][data-field-name="authors_json"]').closest('.scheming-repeating-subfields-group');
+      }
+      if ($container.length === 0) {
+        // Try finding by input name pattern
+        var $existingInput = $('[name^="authors_json__"]').first();
+        if ($existingInput.length > 0) {
+          $container = $existingInput.closest('.scheming-repeating-subfields-group, .form-group');
         }
       }
+      
+      if ($container.length === 0) {
+        console.log('[DOI Autofill] authors_json repeating subfields container not found');
+        return;
+      }
+      
+      // Find add button for the repeating subfields
+      var $addButton = $container.find('[data-module="scheming-repeating-subfields-add"], .scheming-repeating-add, button:contains("Add")').first();
+      
+      // Get existing subfield rows
+      var $existingRows = $container.find('.scheming-repeating-subfields-row, .scheming-subfield-row');
+      var existingCount = $existingRows.length;
+      
+      // Process each author from DOI
+      authors.forEach(function(author, index) {
+        var authorName = author.name || '';
+        if (!authorName && (author.family_name || author.given_name)) {
+          var parts = [];
+          if (author.family_name) parts.push(author.family_name);
+          if (author.given_name) parts.push(author.given_name);
+          authorName = parts.join(', ');
+        }
+        
+        var orcid = author.orcid || '';
+        // Clean ORCID - remove URL prefix if present
+        if (orcid && orcid.indexOf('http') === 0) {
+          orcid = orcid.replace(/^https?:\/\/orcid\.org\//, '');
+        }
+        
+        var affiliation = author.affiliation || '';
+        
+        // Check if we need to add a new row
+        if (index >= existingCount) {
+          // Click add button to create new row
+          if ($addButton.length > 0) {
+            $addButton.trigger('click');
+          }
+        }
+        
+        // Wait a moment for the DOM to update, then fill the fields
+        setTimeout(function() {
+          // Find input fields for this author by index
+          // Pattern: authors_json__<index-or-uuid>__<subfield>
+          var $nameInput = self._findRepeatingSubfieldInput('authors_json', index, 'name');
+          var $orcidInput = self._findRepeatingSubfieldInput('authors_json', index, 'orcid');
+          var $affiliationInput = self._findRepeatingSubfieldInput('authors_json', index, 'affiliation');
+          
+          if ($nameInput.length > 0 && authorName) {
+            $nameInput.val(authorName).trigger('change').trigger('input');
+          }
+          if ($orcidInput.length > 0 && orcid) {
+            $orcidInput.val(orcid).trigger('change').trigger('input');
+          }
+          if ($affiliationInput.length > 0 && affiliation) {
+            $affiliationInput.val(affiliation).trigger('change').trigger('input');
+          }
+          
+          console.log('[DOI Autofill] Set author', index, ':', authorName, orcid, affiliation);
+        }, 100 * (index + 1));
+      });
+    },
+    
+    /**
+     * Find a repeating subfield input by field name, row index, and subfield name
+     * @param {string} fieldName - Base field name (e.g., 'authors_json')
+     * @param {number} rowIndex - Row index
+     * @param {string} subfieldName - Subfield name (e.g., 'name', 'orcid')
+     * @returns {jQuery} The input element
+     */
+    _findRepeatingSubfieldInput: function(fieldName, rowIndex, subfieldName) {
+      // Try different naming patterns used by scheming repeating subfields
+      
+      // Pattern 1: fieldname__index__subfield
+      var $input = $('[name="' + fieldName + '__' + rowIndex + '__' + subfieldName + '"]');
+      if ($input.length > 0) return $input;
+      
+      // Pattern 2: Find by data attributes or container structure
+      var $container = $('.scheming-repeating-subfields-group[data-field-name="' + fieldName + '"]');
+      if ($container.length > 0) {
+        var $rows = $container.find('.scheming-repeating-subfields-row, .scheming-subfield-row');
+        if ($rows.length > rowIndex) {
+          $input = $rows.eq(rowIndex).find('[name$="__' + subfieldName + '"]');
+          if ($input.length > 0) return $input;
+          
+          // Try with data-subfield attribute
+          $input = $rows.eq(rowIndex).find('[data-subfield="' + subfieldName + '"]');
+          if ($input.length > 0) return $input;
+        }
+      }
+      
+      // Pattern 3: Find all matching inputs and pick by index
+      var $allInputs = $('[name^="' + fieldName + '__"][name$="__' + subfieldName + '"]');
+      if ($allInputs.length > rowIndex) {
+        return $allInputs.eq(rowIndex);
+      }
+      
+      return $();
     },
 
     /**
