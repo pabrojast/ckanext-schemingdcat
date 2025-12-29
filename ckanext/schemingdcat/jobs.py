@@ -18,6 +18,85 @@ import urllib.error
 log = logging.getLogger(__name__)
 
 
+def _get_authenticated_download_url(resource_id, resource_url, log_ref=None):
+    """
+    Get an authenticated download URL for a resource.
+    
+    For cloud storage (Azure/AWS), generates a secure URL with SAS token.
+    For local storage or as fallback, returns None (caller should use API token).
+    
+    Args:
+        resource_id: The resource ID
+        resource_url: The original resource URL
+        log_ref: Logger reference
+        
+    Returns:
+        tuple: (authenticated_url, api_key) - one will be None
+    """
+    if log_ref is None:
+        log_ref = log
+        
+    try:
+        # Try to use cloud storage secure URL
+        try:
+            from ckanext.cloudstorage.storage import ResourceCloudStorage
+            import ckan.model as model
+            from ckan.logic import get_action
+            
+            # Get resource details
+            admin_user = model.Session.query(model.User).filter_by(sysadmin=True).first()
+            context = {
+                'model': model,
+                'session': model.Session,
+                'user': admin_user.name if admin_user else 'default',
+                'ignore_auth': True
+            }
+            
+            resource = get_action('resource_show')(context, {'id': resource_id})
+            
+            # Check if this is a cloud storage resource (has url pointing to cloud or url_type is upload)
+            if resource.get('url_type') == 'upload' or '/download/' in resource.get('url', ''):
+                # Get filename from URL
+                filename = resource.get('url', '').rsplit('/', 1)[-1] if resource.get('url') else None
+                
+                if filename:
+                    # Create storage instance and get secure URL
+                    storage = ResourceCloudStorage({})
+                    
+                    if storage.can_use_advanced_azure or storage.can_use_advanced_aws:
+                        secure_url = storage.url_for_secure_download(resource_id, filename)
+                        if secure_url:
+                            _job_log('info', f"Got secure cloud storage URL for resource {resource_id}", log_ref)
+                            return (secure_url, None)
+                            
+        except ImportError:
+            _job_log('debug', "CloudStorage not available, will use API token fallback", log_ref)
+        except Exception as e:
+            _job_log('debug', f"Could not get cloud storage URL: {e}", log_ref)
+        
+        # Fallback: Get API token for authenticated download
+        try:
+            import ckan.model as model
+            from ckan.logic import get_action
+            
+            # Get a sysadmin user for API access
+            admin_user = model.Session.query(model.User).filter_by(sysadmin=True).first()
+            if admin_user:
+                # Try to get existing API token or use the user's apikey
+                api_key = admin_user.apikey
+                if api_key:
+                    _job_log('info', f"Using API key for authenticated download of resource {resource_id}", log_ref)
+                    return (None, api_key)
+                    
+        except Exception as e:
+            _job_log('debug', f"Could not get API key: {e}", log_ref)
+            
+    except Exception as e:
+        _job_log('warning', f"Error getting authenticated download URL: {e}", log_ref)
+    
+    return (None, None)
+
+
 def _job_log(level, msg, log_ref=None):
     """Log to both logger and stderr to ensure visibility in workers."""
     if log_ref is None:
@@ -272,9 +351,24 @@ def extract_comprehensive_metadata_job(job_data):
                 
                 _job_log('info', f"Creating temporary file with suffix: {suffix}", log)
                 
+                # Get authenticated download URL for private resources
+                download_url = resource_url
+                auth_header = None
+                
+                try:
+                    secure_url, api_key = _get_authenticated_download_url(resource_id, resource_url, log)
+                    if secure_url:
+                        download_url = secure_url
+                        _job_log('info', f"Using secure cloud storage URL for download", log)
+                    elif api_key:
+                        auth_header = api_key
+                        _job_log('info', f"Using API key authentication for download", log)
+                except Exception as auth_error:
+                    _job_log('warning', f"Could not get authenticated URL, trying public access: {auth_error}", log)
+                
                 with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
                     try:
-                        _job_log('info', f"Starting download from: {resource_url}", log)
+                        _job_log('info', f"Starting download from: {download_url[:100]}...", log)
                         
                         # Download with retries
                         max_retries = 3
@@ -283,13 +377,14 @@ def extract_comprehensive_metadata_job(job_data):
                         
                         for attempt in range(max_retries):
                             try:
-                                req = urllib.request.Request(
-                                    resource_url,
-                                    headers={
-                                        'User-Agent': 'CKAN SchemingDCAT Metadata Extractor/1.0',
-                                        'Accept': '*/*'
-                                    }
-                                )
+                                headers = {
+                                    'User-Agent': 'CKAN SchemingDCAT Metadata Extractor/1.0',
+                                    'Accept': '*/*'
+                                }
+                                if auth_header:
+                                    headers['Authorization'] = auth_header
+                                    
+                                req = urllib.request.Request(download_url, headers=headers)
                                 with urllib.request.urlopen(req, timeout=300) as response:
                                     chunk_size = 8192
                                     total_size = 0
