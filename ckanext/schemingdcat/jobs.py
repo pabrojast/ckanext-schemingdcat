@@ -138,55 +138,80 @@ def _add_member_state_to_package(package_id, member_state_uri, context, log_ref)
         context: CKAN context for API calls
         log_ref: Logger reference
     """
+    # Delegate to the plural version with a single-item list
+    return _add_member_states_to_package(package_id, [member_state_uri], context, log_ref)
+
+
+def _add_member_states_to_package(package_id, member_state_uris, context, log_ref):
+    """
+    Add multiple member states (country groups) to a package based on the detected spatial extent.
+    
+    Args:
+        package_id: The ID of the package to update
+        member_state_uris: List of URIs of detected member states
+        context: CKAN context for API calls
+        log_ref: Logger reference
+    """
     from ckan.logic import get_action
     import ckan.model as model
     
+    if not member_state_uris:
+        return False
+    
     try:
-        _job_log('info', f"Looking up group for member state URI: {member_state_uri}", log_ref)
-        
-        # Use the helper function that knows how to find groups for member state URIs
         from ckanext.schemingdcat import helpers as sd_helpers
         
-        # Try to get the group name using the dedicated helper
-        member_state_name = None
-        try:
-            member_state_name = sd_helpers.schemingdcat_find_member_state_group(member_state_uri, context)
+        # Resolve all URIs to group names
+        resolved_groups = []
+        for member_state_uri in member_state_uris:
+            _job_log('info', f"Looking up group for member state URI: {member_state_uri}", log_ref)
+            
+            member_state_name = None
+            
+            # Try to get the group name using the dedicated helper
+            try:
+                member_state_name = sd_helpers.schemingdcat_find_member_state_group(member_state_uri, context)
+                if member_state_name:
+                    _job_log('info', f"Found group name via helper: {member_state_name}", log_ref)
+            except Exception as helper_error:
+                _job_log('warning', f"Helper schemingdcat_find_member_state_group failed: {helper_error}", log_ref)
+            
+            # Fallback: try to get slug from URI and search groups
+            if not member_state_name:
+                try:
+                    candidate_slug = sd_helpers.schemingdcat_get_member_state_group_slug(member_state_uri)
+                    if candidate_slug:
+                        _job_log('info', f"Got candidate slug from helper: {candidate_slug}", log_ref)
+                        # Verify the group exists
+                        try:
+                            group_show_action = get_action('group_show')
+                            group_data = group_show_action(context, {'id': candidate_slug})
+                            member_state_name = group_data.get('name')
+                            _job_log('info', f"Verified group exists: {member_state_name}", log_ref)
+                        except Exception:
+                            _job_log('warning', f"Group with slug '{candidate_slug}' not found", log_ref)
+                except Exception as slug_error:
+                    _job_log('warning', f"Could not get slug from helper: {slug_error}", log_ref)
+            
+            # Last resort: extract country code from URI and search by name
+            if not member_state_name:
+                country_code = member_state_uri.rstrip('/').split('/')[-1].lower()
+                _job_log('info', f"Trying to find group by country code: {country_code}", log_ref)
+                try:
+                    group_show_action = get_action('group_show')
+                    group_data = group_show_action(context, {'id': country_code})
+                    member_state_name = group_data.get('name')
+                    _job_log('info', f"Found group by country code: {member_state_name}", log_ref)
+                except Exception:
+                    _job_log('warning', f"Group with code '{country_code}' not found", log_ref)
+            
             if member_state_name:
-                _job_log('info', f"Found group name via helper: {member_state_name}", log_ref)
-        except Exception as helper_error:
-            _job_log('warning', f"Helper schemingdcat_find_member_state_group failed: {helper_error}", log_ref)
+                resolved_groups.append(member_state_name)
+            else:
+                _job_log('warning', f"No group found for member state URI: {member_state_uri}", log_ref)
         
-        # Fallback: try to get slug from URI and search groups
-        if not member_state_name:
-            try:
-                candidate_slug = sd_helpers.schemingdcat_get_member_state_group_slug(member_state_uri)
-                if candidate_slug:
-                    _job_log('info', f"Got candidate slug from helper: {candidate_slug}", log_ref)
-                    # Verify the group exists
-                    try:
-                        group_show_action = get_action('group_show')
-                        group_data = group_show_action(context, {'id': candidate_slug})
-                        member_state_name = group_data.get('name')
-                        _job_log('info', f"Verified group exists: {member_state_name}", log_ref)
-                    except Exception:
-                        _job_log('warning', f"Group with slug '{candidate_slug}' not found", log_ref)
-            except Exception as slug_error:
-                _job_log('warning', f"Could not get slug from helper: {slug_error}", log_ref)
-        
-        # Last resort: extract country code from URI and search by name
-        if not member_state_name:
-            country_code = member_state_uri.rstrip('/').split('/')[-1].lower()
-            _job_log('info', f"Trying to find group by country code: {country_code}", log_ref)
-            try:
-                group_show_action = get_action('group_show')
-                group_data = group_show_action(context, {'id': country_code})
-                member_state_name = group_data.get('name')
-                _job_log('info', f"Found group by country code: {member_state_name}", log_ref)
-            except Exception:
-                _job_log('warning', f"Group with code '{country_code}' not found", log_ref)
-        
-        if not member_state_name:
-            _job_log('warning', f"No group found for member state URI: {member_state_uri}", log_ref)
+        if not resolved_groups:
+            _job_log('warning', f"No groups could be resolved from member state URIs", log_ref)
             return False
         
         # Get current package to check existing groups
@@ -196,29 +221,33 @@ def _add_member_state_to_package(package_id, member_state_uri, context, log_ref)
         existing_groups = package_data.get('groups', [])
         existing_group_names = {g.get('name') for g in existing_groups}
         
-        if member_state_name in existing_group_names:
-            _job_log('info', f"Package {package_id} already has group {member_state_name}", log_ref)
+        # Filter out groups that already exist
+        new_group_names = [g for g in resolved_groups if g not in existing_group_names]
+        
+        if not new_group_names:
+            _job_log('info', f"Package {package_id} already has all detected groups", log_ref)
             return True
         
-        # Add the new group while preserving existing ones
-        new_groups = list(existing_groups)
-        new_groups.append({'name': member_state_name})
+        # Add the new groups while preserving existing ones
+        all_groups = list(existing_groups)
+        for group_name in new_group_names:
+            all_groups.append({'name': group_name})
         
-        # Update the package with the new group
+        # Update the package with the new groups
         package_patch_action = get_action('package_patch')
         patch_data = {
             'id': package_id,
-            'groups': [{'name': g.get('name')} for g in new_groups]
+            'groups': [{'name': g.get('name')} for g in all_groups]
         }
         
-        _job_log('info', f"Adding group {member_state_name} to package {package_id}", log_ref)
+        _job_log('info', f"Adding {len(new_group_names)} groups to package {package_id}: {new_group_names}", log_ref)
         package_patch_action(context, patch_data)
-        _job_log('info', f"Successfully added member state {member_state_name} to package {package_id}", log_ref)
+        _job_log('info', f"Successfully added member states to package {package_id}", log_ref)
         
         return True
         
     except Exception as e:
-        _job_log('error', f"Error adding member state to package: {e}", log_ref)
+        _job_log('error', f"Error adding member states to package: {e}", log_ref)
         return False
 
 
@@ -461,8 +490,8 @@ def extract_comprehensive_metadata_job(job_data):
             
             log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
 
-            # Detect member state (country) from spatial extent
-            detected_member_uri = None
+            # Detect member states (countries) from spatial extent
+            detected_member_uris = []
             try:
                 extent_geojson = metadata.get('spatial_extent')
                 _job_log('info', f"Attempting member state detection for resource {resource_id}, extent available: {extent_geojson is not None}", log)
@@ -476,17 +505,18 @@ def extract_comprehensive_metadata_job(job_data):
                     _job_log('info', f"Extent GeoJSON type: {extent_geojson.get('type') if isinstance(extent_geojson, dict) else type(extent_geojson)}", log)
                     
                     from ckanext.schemingdcat import helpers as sd_helpers
-                    detected_member_uri = sd_helpers.schemingdcat_detect_member_state(extent_geojson)
+                    # Use plural detection to get all overlapping countries
+                    detected_member_uris = sd_helpers.schemingdcat_detect_member_states(extent_geojson)
                     
-                    if detected_member_uri:
-                        _job_log('info', f"Detected member state for resource {resource_id}: {detected_member_uri}", log)
+                    if detected_member_uris:
+                        _job_log('info', f"Detected {len(detected_member_uris)} member states for resource {resource_id}: {detected_member_uris}", log)
                     else:
-                        _job_log('info', f"No member state detected for resource {resource_id} (detection returned None)", log)
+                        _job_log('info', f"No member states detected for resource {resource_id} (detection returned empty)", log)
                 else:
                     _job_log('info', f"No spatial_extent in metadata for resource {resource_id}, skipping member state detection", log)
             except Exception as e:
-                _job_log('warning', f"Could not detect member state from extent for resource {resource_id}: {e}", log)
-                log.warning(f"Could not detect member state from extent for resource {resource_id}: {e}", exc_info=True)
+                _job_log('warning', f"Could not detect member states from extent for resource {resource_id}: {e}", log)
+                log.warning(f"Could not detect member states from extent for resource {resource_id}: {e}", exc_info=True)
             
             try:
                 # Ensure we have a valid database session
@@ -603,13 +633,13 @@ def extract_comprehensive_metadata_job(job_data):
                         _job_log('info', f"Successfully updated comprehensive metadata for resource {resource_id}. Updated {len(fields_to_update)} fields.", log)
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
                         
-                        # Now add member state to the package if detected
-                        if detected_member_uri and package_id:
+                        # Now add member states to the package if detected
+                        if detected_member_uris and package_id:
                             try:
-                                _job_log('info', f"Adding member state {detected_member_uri} to package {package_id}", log)
-                                _add_member_state_to_package(package_id, detected_member_uri, context, log)
+                                _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
+                                _add_member_states_to_package(package_id, detected_member_uris, context, log)
                             except Exception as group_error:
-                                _job_log('warning', f"Could not add member state to package: {group_error}", log)
+                                _job_log('warning', f"Could not add member states to package: {group_error}", log)
                         
                         return True
                     except Exception as patch_error:
@@ -617,13 +647,13 @@ def extract_comprehensive_metadata_job(job_data):
                         return False
                 else:
                     _job_log('info', f"No meaningful metadata fields to update for resource {resource_id}", log)
-                    # Even if no resource metadata, still add member state if detected
-                    if detected_member_uri and package_id:
+                    # Even if no resource metadata, still add member states if detected
+                    if detected_member_uris and package_id:
                         try:
-                            _job_log('info', f"Adding member state {detected_member_uri} to package {package_id}", log)
-                            _add_member_state_to_package(package_id, detected_member_uri, context, log)
+                            _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
+                            _add_member_states_to_package(package_id, detected_member_uris, context, log)
                         except Exception as group_error:
-                            _job_log('warning', f"Could not add member state to package: {group_error}", log)
+                            _job_log('warning', f"Could not add member states to package: {group_error}", log)
                     return True
                 
             except Exception as e:
