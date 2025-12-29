@@ -457,7 +457,11 @@ class MemberStateDetector:
         return self._country_choices
     
     def _get_bounds_from_geojson(self, geojson: Dict[str, Any]) -> Optional[Tuple[float, float, float, float]]:
-        """Extract bounding box (minx, miny, maxx, maxy) from GeoJSON geometry."""
+        """Extract bounding box (minx, miny, maxx, maxy) from GeoJSON geometry.
+        
+        For MultiPolygon geometries, uses only the largest polygon (by bounding box area)
+        to avoid issues with countries that have scattered overseas territories.
+        """
         try:
             geom_type = geojson.get('type')
             coordinates = geojson.get('coordinates', [])
@@ -465,25 +469,42 @@ class MemberStateDetector:
             if not coordinates:
                 return None
             
-            all_coords = []
-            
             if geom_type == 'Polygon':
+                all_coords = []
                 for ring in coordinates:
                     all_coords.extend(ring)
+                if not all_coords:
+                    return None
+                xs = [c[0] for c in all_coords]
+                ys = [c[1] for c in all_coords]
+                return (min(xs), min(ys), max(xs), max(ys))
+                
             elif geom_type == 'MultiPolygon':
+                # For MultiPolygon, find the largest polygon by bounding box area
+                # This avoids issues with countries like USA/France that have
+                # scattered overseas territories creating huge bounding boxes
+                largest_bounds = None
+                largest_area = 0
+                
                 for polygon in coordinates:
+                    poly_coords = []
                     for ring in polygon:
-                        all_coords.extend(ring)
+                        poly_coords.extend(ring)
+                    if not poly_coords:
+                        continue
+                    
+                    xs = [c[0] for c in poly_coords]
+                    ys = [c[1] for c in poly_coords]
+                    bounds = (min(xs), min(ys), max(xs), max(ys))
+                    area = (bounds[2] - bounds[0]) * (bounds[3] - bounds[1])
+                    
+                    if area > largest_area:
+                        largest_area = area
+                        largest_bounds = bounds
+                
+                return largest_bounds
             else:
                 return None
-            
-            if not all_coords:
-                return None
-            
-            xs = [c[0] for c in all_coords]
-            ys = [c[1] for c in all_coords]
-            
-            return (min(xs), min(ys), max(xs), max(ys))
             
         except Exception as e:
             log.debug(f"Error extracting bounds from GeoJSON: {e}")
