@@ -60,11 +60,12 @@ def _get_authenticated_download_url(resource_id, resource_url, log_ref=None):
                 filename = resource.get('url', '').rsplit('/', 1)[-1] if resource.get('url') else None
                 
                 if filename:
-                    # Create storage instance and get secure URL
+                    # Create storage instance and get secure URL using get_url_from_filename
                     storage = ResourceCloudStorage({})
                     
                     if storage.can_use_advanced_azure or storage.can_use_advanced_aws:
-                        secure_url = storage.url_for_secure_download(resource_id, filename)
+                        # Use get_url_from_filename which generates SAS token URLs
+                        secure_url = storage.get_url_from_filename(resource_id, filename)
                         if secure_url:
                             _job_log('info', f"Got secure cloud storage URL for resource {resource_id}", log_ref)
                             return (secure_url, None)
@@ -74,22 +75,32 @@ def _get_authenticated_download_url(resource_id, resource_url, log_ref=None):
         except Exception as e:
             _job_log('debug', f"Could not get cloud storage URL: {e}", log_ref)
         
-        # Fallback: Get API token for authenticated download
+        # Fallback: Generate a new API token for authenticated download
         try:
             import ckan.model as model
-            from ckan.logic import get_action
+            from ckan.lib.api_token import encode as encode_api_token
+            from ckan.lib.api_token import _get_secret
             
             # Get a sysadmin user for API access
             admin_user = model.Session.query(model.User).filter_by(sysadmin=True).first()
             if admin_user:
-                # Try to get existing API token or use the user's apikey
-                api_key = admin_user.apikey
-                if api_key:
-                    _job_log('info', f"Using API key for authenticated download of resource {resource_id}", log_ref)
-                    return (None, api_key)
+                # Generate a proper JWT API token for the sysadmin user
+                import jwt
+                from datetime import datetime, timedelta
+                
+                secret = _get_secret(encode=True)
+                payload = {
+                    'jti': str(admin_user.id) + '_metadata_extraction',
+                    'iat': datetime.utcnow(),
+                    'exp': datetime.utcnow() + timedelta(hours=1),
+                    'sub': admin_user.id
+                }
+                api_token = jwt.encode(payload, secret, algorithm='HS256')
+                _job_log('info', f"Generated JWT API token for authenticated download of resource {resource_id}", log_ref)
+                return (None, api_token)
                     
         except Exception as e:
-            _job_log('debug', f"Could not get API key: {e}", log_ref)
+            _job_log('debug', f"Could not generate API token: {e}", log_ref)
             
     except Exception as e:
         _job_log('warning', f"Error getting authenticated download URL: {e}", log_ref)
