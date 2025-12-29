@@ -310,6 +310,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Chained action to ensure metadata extraction triggers even if IResourceController is skipped.
         """
         result = next_action(context, data_dict)
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
+            return result
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -322,6 +326,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Chained action for updates; triggers extraction if a new upload/format warrants it.
         """
         result = next_action(context, data_dict)
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
+            return result
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -482,6 +490,12 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         All background processing is done via job queue.
         """
         resource_id = resource.get('id', 'unknown')
+        
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [HOOK] Skipping after_create - metadata job context")
+            return resource
+            
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
         self._trigger_metadata_extraction(resource)

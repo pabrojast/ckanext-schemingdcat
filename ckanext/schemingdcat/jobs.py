@@ -503,7 +503,8 @@ def extract_comprehensive_metadata_job(job_data):
                     'session': model.Session,
                     'user': admin_user.name if admin_user else 'default',
                     'ignore_auth': True,
-                    'defer_commit': False
+                    'defer_commit': False,
+                    '_schemingdcat_metadata_job': True,  # Prevent re-triggering extraction
                 }
                 
                 resource_patch_action = get_action('resource_patch')
