@@ -290,9 +290,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         return data_dict
 
     def before_dataset_create(self, context, data_dict):
+        log.info("[SchemingDCATPlugin.before_dataset_create] CALLED")
         return self._ensure_memberstate_groups(context, data_dict)
 
     def before_dataset_update(self, context, data_dict):
+        log.info("[SchemingDCATPlugin.before_dataset_update] CALLED")
         return self._ensure_memberstate_groups(context, data_dict)
 
     def get_uploader(self, upload_to, old_filename=None):
@@ -317,6 +319,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         actions.update({
             "resource_create": self.resource_create,
             "resource_update": self.resource_update,
+            "package_patch": self.package_patch,
         })
         return actions
 
@@ -351,6 +354,19 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         except Exception as e:
             log.warning(f"⚠️ [ACTION] Could not trigger metadata extraction after resource_update: {e}")
         return result
+
+    @toolkit.chained_action
+    def package_patch(self, next_action, context, data_dict):
+        """
+        Chained action for package_patch to ensure groups are processed correctly
+        in multi-page forms.
+        """
+        log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
+        
+        # Process groups__X__id fields before the patch
+        data_dict = self._ensure_memberstate_groups(context, data_dict)
+        
+        return next_action(context, data_dict)
 
     # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
     def get_auth_functions(self):
