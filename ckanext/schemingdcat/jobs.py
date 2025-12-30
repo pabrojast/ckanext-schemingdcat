@@ -18,6 +18,113 @@ import urllib.error
 log = logging.getLogger(__name__)
 
 
+def _merge_geojson_geometries(existing_geojson, new_geojson):
+    """
+    Merge two GeoJSON geometries into a single GeometryCollection or MultiPolygon.
+    
+    This function combines spatial extents from multiple resources to represent
+    the full geographic coverage of a dataset. Each resource's bounding box 
+    becomes a separate polygon in the resulting MultiPolygon.
+    
+    Args:
+        existing_geojson: Existing GeoJSON geometry (dict or string)
+        new_geojson: New GeoJSON geometry to merge (dict or string)
+        
+    Returns:
+        dict: Merged GeoJSON geometry
+    """
+    # Parse strings to dicts if needed
+    if isinstance(existing_geojson, str):
+        try:
+            existing_geojson = json.loads(existing_geojson)
+        except (json.JSONDecodeError, TypeError):
+            return new_geojson if isinstance(new_geojson, dict) else None
+    
+    if isinstance(new_geojson, str):
+        try:
+            new_geojson = json.loads(new_geojson)
+        except (json.JSONDecodeError, TypeError):
+            return existing_geojson
+    
+    if not existing_geojson:
+        return new_geojson
+    if not new_geojson:
+        return existing_geojson
+    
+    # Extract geometries from both
+    def get_geometries(geom):
+        """Extract individual geometries from a GeoJSON object."""
+        if not geom or not isinstance(geom, dict):
+            return []
+        
+        geom_type = geom.get('type', '')
+        
+        if geom_type == 'GeometryCollection':
+            return list(geom.get('geometries', []))
+        elif geom_type == 'MultiPolygon':
+            # Extract each polygon from MultiPolygon as separate geometry
+            coords = geom.get('coordinates', [])
+            return [{'type': 'Polygon', 'coordinates': c} for c in coords]
+        elif geom_type in ('Polygon', 'Point', 'MultiPoint', 
+                          'LineString', 'MultiLineString'):
+            return [geom]
+        elif geom_type == 'Feature':
+            inner_geom = geom.get('geometry')
+            return get_geometries(inner_geom) if inner_geom else []
+        elif geom_type == 'FeatureCollection':
+            result = []
+            for feature in geom.get('features', []):
+                result.extend(get_geometries(feature))
+            return result
+        else:
+            return []
+    
+    def geometry_key(geom):
+        """Create a hashable key for a geometry to detect duplicates."""
+        if not geom or not isinstance(geom, dict):
+            return None
+        return json.dumps(geom, sort_keys=True)
+    
+    existing_geoms = get_geometries(existing_geojson)
+    new_geoms = get_geometries(new_geojson)
+    
+    # Track existing geometries to avoid duplicates
+    existing_keys = {geometry_key(g) for g in existing_geoms}
+    
+    # Add only new geometries that don't already exist
+    unique_new_geoms = [g for g in new_geoms if geometry_key(g) not in existing_keys]
+    
+    if not unique_new_geoms:
+        # No new geometries to add
+        return existing_geojson
+    
+    # Combine all geometries
+    all_geoms = existing_geoms + unique_new_geoms
+    
+    if not all_geoms:
+        return new_geojson or existing_geojson
+    
+    if len(all_geoms) == 1:
+        return all_geoms[0]
+    
+    # Check if all are Polygons - then create MultiPolygon
+    all_polygons = all(g.get('type') == 'Polygon' for g in all_geoms)
+    if all_polygons:
+        # Combine into MultiPolygon
+        coordinates = [g.get('coordinates', []) for g in all_geoms]
+        return {
+            'type': 'MultiPolygon',
+            'coordinates': coordinates
+        }
+    
+    # Otherwise create GeometryCollection
+    return {
+        'type': 'GeometryCollection',
+        'geometries': all_geoms
+    }
+
+
+
 def _get_authenticated_download_url(resource_id, resource_url, log_ref=None):
     """
     Get an authenticated download URL for a resource.
@@ -247,31 +354,61 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
             has_updates = True
             _job_log('info', f"Will add {len(new_group_names)} groups to package {package_id}: {new_group_names}", log_ref)
         
-        # Update spatial field (bounding box) if auto-fill is enabled, field is empty, and we have extent data
+        # Update spatial field (bounding box) - merge with existing if present
         current_spatial = package_data.get('spatial', '')
-        if auto_fill_spatial and spatial_extent and not current_spatial:
-            # Convert to string if it's a dict
-            if isinstance(spatial_extent, dict):
-                spatial_str = json.dumps(spatial_extent)
+        if auto_fill_spatial and spatial_extent:
+            if current_spatial:
+                # Merge with existing spatial extent
+                _job_log('info', f"Package {package_id} has existing spatial, will merge with new extent", log_ref)
+                merged_spatial = _merge_geojson_geometries(current_spatial, spatial_extent)
+                if merged_spatial:
+                    spatial_str = json.dumps(merged_spatial) if isinstance(merged_spatial, dict) else str(merged_spatial)
+                    # Only update if the merged result is different from current
+                    current_spatial_normalized = json.dumps(json.loads(current_spatial)) if current_spatial else ''
+                    if spatial_str != current_spatial_normalized:
+                        patch_data['spatial'] = spatial_str
+                        has_updates = True
+                        _job_log('info', f"Will merge spatial field for package {package_id}", log_ref)
+                    else:
+                        _job_log('info', f"Merged spatial is same as existing, no update needed", log_ref)
             else:
-                spatial_str = str(spatial_extent)
-            patch_data['spatial'] = spatial_str
-            has_updates = True
-            _job_log('info', f"Will set spatial field for package {package_id}", log_ref)
-        elif current_spatial:
-            _job_log('info', f"Package {package_id} already has spatial field set, not overwriting", log_ref)
+                # Set new spatial extent
+                if isinstance(spatial_extent, dict):
+                    spatial_str = json.dumps(spatial_extent)
+                else:
+                    spatial_str = str(spatial_extent)
+                patch_data['spatial'] = spatial_str
+                has_updates = True
+                _job_log('info', f"Will set spatial field for package {package_id}", log_ref)
         elif not auto_fill_spatial:
             _job_log('info', f"Spatial auto-fill is disabled (schemingdcat.spatial.auto_fill_dataset=False)", log_ref)
         
-        # Update spatial_uri field if auto-fill is enabled, field is empty, and we have detected member states
-        # Use the first (best matching) member state URI
+        # Update spatial_uri field - add new URIs if not already present
         current_spatial_uri = package_data.get('spatial_uri', '')
-        if auto_fill_spatial and member_state_uris and not current_spatial_uri:
-            patch_data['spatial_uri'] = member_state_uris[0]
-            has_updates = True
-            _job_log('info', f"Will set spatial_uri field for package {package_id}: {member_state_uris[0]}", log_ref)
-        elif current_spatial_uri:
-            _job_log('info', f"Package {package_id} already has spatial_uri field set, not overwriting", log_ref)
+        if auto_fill_spatial and member_state_uris:
+            # Parse existing spatial_uri (could be a single URI or comma-separated list)
+            existing_uris = set()
+            if current_spatial_uri:
+                # Handle both single URI and list formats
+                if ',' in current_spatial_uri:
+                    existing_uris = {uri.strip() for uri in current_spatial_uri.split(',')}
+                else:
+                    existing_uris = {current_spatial_uri.strip()}
+            
+            # Find new URIs that are not already in the list
+            new_uris = [uri for uri in member_state_uris if uri not in existing_uris]
+            
+            if new_uris:
+                # Combine existing and new URIs
+                all_uris = list(existing_uris) + new_uris
+                # Use the first URI (best match) as the primary value
+                # For schemas that expect a single value, use the first one
+                # For schemas that support multiple, they can parse the full list
+                patch_data['spatial_uri'] = all_uris[0] if len(all_uris) == 1 else all_uris[0]
+                has_updates = True
+                _job_log('info', f"Will add spatial_uri for package {package_id}: {new_uris}", log_ref)
+            else:
+                _job_log('info', f"All detected member states already in spatial_uri for package {package_id}", log_ref)
         
         # Only update if there are changes to make
         if not has_updates:
