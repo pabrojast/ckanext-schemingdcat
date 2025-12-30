@@ -32,8 +32,14 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
     cleanupStaleInstances();
 
     if (!$hiddenContainer || !$hiddenContainer.length) {
+      console.log('[group-multiselect] rebuildHiddenInputs: no container, returning');
       return;
     }
+
+    console.log('[group-multiselect] rebuildHiddenInputs: instances count =', instances.length);
+    instances.forEach(function (inst, idx) {
+      console.log('[group-multiselect]   instance[' + idx + ']: type=' + inst.type + ', order=' + inst.order + ', inDOM=' + (inst.$select && inst.$select.closest('body').length > 0));
+    });
 
     $hiddenContainer.empty();
 
@@ -44,11 +50,23 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
     var index = 0;
 
     orderedInstances.forEach(function (instance) {
-      // Skip if the instance's select element is no longer in DOM
-      if (!instance.$select || !instance.$select.closest('body').length) {
+      // Re-query the element in case DOM was manipulated
+      var $currentEl = instance.$el;
+      if (!$currentEl || !$currentEl.closest('body').length) {
+        console.log('[group-multiselect] rebuildHiddenInputs: skipping instance type=' + instance.type + ' ($el not in DOM)');
         return;
       }
+      
+      // Re-query the select element
+      var $currentSelect = $currentEl.find('select[data-group-multiselect]');
+      if (!$currentSelect.length) {
+        console.log('[group-multiselect] rebuildHiddenInputs: skipping instance type=' + instance.type + ' (select not found)');
+        return;
+      }
+      instance.$select = $currentSelect;
+      
       var values = instance.getSelected();
+      console.log('[group-multiselect] rebuildHiddenInputs: instance type=' + instance.type + ', values=', values);
       values.forEach(function (value) {
         if (value) {
           $('<input>', {
@@ -60,6 +78,7 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
         }
       });
     });
+    console.log('[group-multiselect] rebuildHiddenInputs: total hidden inputs created =', index);
   }
 
   return {
@@ -71,8 +90,12 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
       this.type = this.$el.data('groupType') || 'member';
       this.instanceId = this.$el.attr('id') || this.type + '-' + this.order;
 
+      console.log('[group-multiselect] initialize: type=' + this.type + ', order=' + this.order);
+
       // Clean up stale instances from previous page loads
       cleanupStaleInstances();
+
+      console.log('[group-multiselect] after cleanupStaleInstances: instances count =', instances.length);
 
       // Prevent duplicate registration of the same element
       var isDuplicate = instances.some(function (inst) {
@@ -80,6 +103,7 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
       }.bind(this));
 
       if (isDuplicate) {
+        console.log('[group-multiselect] initialize: duplicate detected, returning');
         return;
       }
 
@@ -87,6 +111,7 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
       ensureHiddenContainer(containerSelector);
 
       instances.push(this);
+      console.log('[group-multiselect] initialize: registered, instances count =', instances.length);
 
       var self = this;
 
@@ -123,6 +148,11 @@ ckan.module('schemingdcat-group-multiselect', function ($) {
     },
 
     getSelected: function () {
+      // Re-query the select in case DOM was manipulated
+      var $currentSelect = this.$el.find('select[data-group-multiselect]');
+      if ($currentSelect.length) {
+        this.$select = $currentSelect;
+      }
       return this.$select.find('option:selected').map(function () {
         return $(this).val();
       }).get();
