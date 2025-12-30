@@ -493,7 +493,11 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         // Check if field already has value
         if (overwrite || !$identifierField.val() || $identifierField.val().trim() === '') {
           // For documents we want to keep a human friendly identifier (paper title)
+          // Limit to 100 characters to respect CKAN name field constraints
           var identifier = (isDocumentsForm && title ? title : this._generateUuidFromDoi(doi));
+          if (identifier && identifier.length > 100) {
+            identifier = identifier.substring(0, 100).trim();
+          }
           $identifierField.val(identifier).trigger('change').trigger('input');
           console.log('[DOI Autofill] Generated identifier:', identifier);
         } else {
