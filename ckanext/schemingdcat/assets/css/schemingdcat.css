@@ -718,6 +718,7 @@ img.item_image {
   font-size: 14px;
   line-height: 1.2;
   flex: 0 0 auto;
+  height: 3rem;
 }
 
 .slug-preview {
