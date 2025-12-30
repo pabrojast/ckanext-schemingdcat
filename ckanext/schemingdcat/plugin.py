@@ -211,43 +211,52 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         Make sure selected member states (via group multiselect or spatial_uri)
         end up in the dataset's groups list before create/update.
         """
+        log.info("[_ensure_memberstate_groups] ENTRY")
+        
+        # Import helpers - if this fails, log and continue without spatial_uri resolution
+        sd_helpers = None
         try:
             from ckanext.schemingdcat import helpers as sd_helpers
-        except Exception:
-            return data_dict
+        except Exception as e:
+            log.warning(f"[_ensure_memberstate_groups] Could not import helpers: {e}")
 
         # Log all keys to understand what's coming in
         all_keys = [str(k) for k in data_dict.keys()]
-        log.debug(f"[_ensure_memberstate_groups] all data_dict keys: {all_keys}")
+        log.info(f"[_ensure_memberstate_groups] all data_dict keys: {all_keys}")
 
         group_names = []
 
         existing_groups = data_dict.get('groups') or []
-        log.debug(f"[_ensure_memberstate_groups] existing_groups from data_dict: {existing_groups}")
-        log.debug(f"[_ensure_memberstate_groups] existing_groups type: {type(existing_groups)}")
+        log.info(f"[_ensure_memberstate_groups] existing_groups from data_dict: {existing_groups}")
+        log.info(f"[_ensure_memberstate_groups] existing_groups type: {type(existing_groups)}")
         if isinstance(existing_groups, dict):
             existing_groups = [existing_groups]
         for g in existing_groups:
-            log.debug(f"[_ensure_memberstate_groups] processing group: {g} (type: {type(g)})")
-            if not isinstance(g, dict):
+            log.info(f"[_ensure_memberstate_groups] processing group: {g} (type: {type(g)})")
+            # Handle both dict format {'id': 'xxx', 'name': 'xxx'} and string format 'xxx'
+            if isinstance(g, dict):
+                name = g.get('name') or g.get('id')
+            elif isinstance(g, str):
+                name = g
+            else:
+                log.warning(f"[_ensure_memberstate_groups] Unexpected group format: {g}")
                 continue
-            name = g.get('name') or g.get('id')
-            log.debug(f"[_ensure_memberstate_groups] extracted name/id: {name}")
+            log.info(f"[_ensure_memberstate_groups] extracted name/id: {name}")
             if name:
                 group_names.append(name)
 
-        log.debug(f"[_ensure_memberstate_groups] group_names after existing_groups: {group_names}")
+        log.info(f"[_ensure_memberstate_groups] group_names after existing_groups: {group_names}")
 
         for key, value in list(data_dict.items()):
             key_name = key
             if isinstance(key, tuple) and key:
                 key_name = key[-1]
             if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
-                log.debug(f"[_ensure_memberstate_groups] found groups__ key: {key_name} = {value}")
+                log.info(f"[_ensure_memberstate_groups] found groups__ key: {key_name} = {value}")
                 if value:
                     group_names.append(value)
 
-        log.debug(f"[_ensure_memberstate_groups] group_names after groups__X__id: {group_names}")
+        log.info(f"[_ensure_memberstate_groups] group_names after groups__X__id: {group_names}")
 
         spatial_val = data_dict.get('spatial_uri')
         spatial_list = []
@@ -264,14 +273,14 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 spatial_list = [spatial_val]
 
         for uri in spatial_list:
-            if not uri:
+            if not uri or not sd_helpers:
                 continue
             try:
                 group_slug = sd_helpers.schemingdcat_find_member_state_group(uri, context)
                 if group_slug:
                     group_names.append(group_slug)
             except Exception as e:
-                log.debug(f"Could not resolve member state group for {uri}: {e}")
+                log.info(f"Could not resolve member state group for {uri}: {e}")
 
         seen = set()
         unique_group_names = []
@@ -281,11 +290,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             seen.add(name)
             unique_group_names.append(name)
 
-        log.debug(f"[_ensure_memberstate_groups] unique_group_names final: {unique_group_names}")
+        log.info(f"[_ensure_memberstate_groups] unique_group_names final: {unique_group_names}")
 
         if unique_group_names:
             data_dict['groups'] = [{'name': n} for n in unique_group_names]
-            log.debug(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
+            log.info(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
 
         return data_dict
 
@@ -363,8 +372,20 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
         
+        # Log the incoming groups data for debugging
+        groups_before = data_dict.get('groups', 'NOT_PRESENT')
+        log.info(f"[SchemingDCATPlugin.package_patch] groups BEFORE processing: {groups_before}")
+        
+        # Log any groups__X__id fields
+        groups_fields = {k: v for k, v in data_dict.items() 
+                        if isinstance(k, str) and k.startswith('groups__') and k.endswith('__id')}
+        log.info(f"[SchemingDCATPlugin.package_patch] groups__X__id fields: {groups_fields}")
+        
         # Process groups__X__id fields before the patch
         data_dict = self._ensure_memberstate_groups(context, data_dict)
+        
+        groups_after = data_dict.get('groups', 'NOT_PRESENT')
+        log.info(f"[SchemingDCATPlugin.package_patch] groups AFTER processing: {groups_after}")
         
         return next_action(context, data_dict)
 
