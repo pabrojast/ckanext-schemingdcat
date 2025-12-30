@@ -2632,3 +2632,6 @@ li.resource-item .dropdown-menu li a img.format_icon {
 .doi-applied-message {
   margin-top: 10px;
 }
+.stages li {
+    margin-top: -1px !important
+}
