@@ -386,14 +386,19 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
         # Update spatial_uri field - add new URIs if not already present
         current_spatial_uri = package_data.get('spatial_uri', '')
         if auto_fill_spatial and member_state_uris:
-            # Parse existing spatial_uri (could be a single URI or comma-separated list)
+            # Parse existing spatial_uri (could be a single URI, comma-separated list, or actual list)
             existing_uris = set()
             if current_spatial_uri:
-                # Handle both single URI and list formats
-                if ',' in current_spatial_uri:
-                    existing_uris = {uri.strip() for uri in current_spatial_uri.split(',')}
+                # Handle list, string with commas, or single string
+                if isinstance(current_spatial_uri, list):
+                    existing_uris = {uri.strip() if isinstance(uri, str) else str(uri) for uri in current_spatial_uri}
+                elif isinstance(current_spatial_uri, str):
+                    if ',' in current_spatial_uri:
+                        existing_uris = {uri.strip() for uri in current_spatial_uri.split(',')}
+                    else:
+                        existing_uris = {current_spatial_uri.strip()}
                 else:
-                    existing_uris = {current_spatial_uri.strip()}
+                    existing_uris = {str(current_spatial_uri)}
             
             # Find new URIs that are not already in the list
             new_uris = [uri for uri in member_state_uris if uri not in existing_uris]
