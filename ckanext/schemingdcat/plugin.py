@@ -216,25 +216,38 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         except Exception:
             return data_dict
 
+        # Log all keys to understand what's coming in
+        all_keys = [str(k) for k in data_dict.keys()]
+        log.debug(f"[_ensure_memberstate_groups] all data_dict keys: {all_keys}")
+
         group_names = []
 
         existing_groups = data_dict.get('groups') or []
+        log.debug(f"[_ensure_memberstate_groups] existing_groups from data_dict: {existing_groups}")
+        log.debug(f"[_ensure_memberstate_groups] existing_groups type: {type(existing_groups)}")
         if isinstance(existing_groups, dict):
             existing_groups = [existing_groups]
         for g in existing_groups:
+            log.debug(f"[_ensure_memberstate_groups] processing group: {g} (type: {type(g)})")
             if not isinstance(g, dict):
                 continue
             name = g.get('name') or g.get('id')
+            log.debug(f"[_ensure_memberstate_groups] extracted name/id: {name}")
             if name:
                 group_names.append(name)
+
+        log.debug(f"[_ensure_memberstate_groups] group_names after existing_groups: {group_names}")
 
         for key, value in list(data_dict.items()):
             key_name = key
             if isinstance(key, tuple) and key:
                 key_name = key[-1]
             if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                log.debug(f"[_ensure_memberstate_groups] found groups__ key: {key_name} = {value}")
                 if value:
                     group_names.append(value)
+
+        log.debug(f"[_ensure_memberstate_groups] group_names after groups__X__id: {group_names}")
 
         spatial_val = data_dict.get('spatial_uri')
         spatial_list = []
@@ -268,8 +281,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             seen.add(name)
             unique_group_names.append(name)
 
+        log.debug(f"[_ensure_memberstate_groups] unique_group_names final: {unique_group_names}")
+
         if unique_group_names:
             data_dict['groups'] = [{'name': n} for n in unique_group_names]
+            log.debug(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
 
         return data_dict
 
