@@ -104,7 +104,7 @@ class PackageController():
 
         # Handle repeating_subfields: convert complex objects to JSON strings for Solr
         # List of fields with repeating_subfields that need special handling
-        repeating_fields = ['authors']
+        repeating_fields = ['authors', 'authors_json']
 
         for field_name in repeating_fields:
             if field_name in data_dict:
