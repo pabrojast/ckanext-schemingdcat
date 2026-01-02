@@ -439,8 +439,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         'document_type': ['document_type', 'dcat_type'],
         'keywords': ['tag_string', 'tags', 'keywords'],
         'license': ['license_id', 'license'],
-        // Keep authors away from contact fields so user contact auto-fill is preserved
-        'authors': ['authors', 'author']
+        // Prefer structured authors; fall back to plain fields if needed
+        'authors': ['authors_json', 'authors', 'author']
       };
       
       // Merge with custom mapping
@@ -806,7 +806,18 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
     _setAuthorsValue: function(fieldName, authors) {
       if (!Array.isArray(authors) || authors.length === 0) return;
       
+      // Always try to populate structured authors first
+      var structuredFilled = this._setAuthorsRepeatingSubfields(authors);
+      
       var $field = $('[name="' + fieldName + '"]');
+      var isPlainAuthorField = fieldName === 'authors' || fieldName === 'author';
+      var targetsStructuredField = fieldName === 'authors_json';
+      
+      // If structured authors were populated, avoid filling the comma-separated field
+      if (structuredFilled && (isPlainAuthorField || targetsStructuredField)) {
+        return;
+      }
+      
       if ($field.length === 0) return;
       
       // Format authors as string
@@ -819,9 +830,6 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       }).join('; ');
       
       $field.val(value).trigger('change');
-
-      // Populate structured authors in repeating_subfields (authors_json)
-      this._setAuthorsRepeatingSubfields(authors);
     },
 
     /**
@@ -829,7 +837,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
      * @param {Array} authors - Array of author objects from DOI
      */
     _setAuthorsRepeatingSubfields: function(authors) {
-      if (!Array.isArray(authors) || authors.length === 0) return;
+      if (!Array.isArray(authors) || authors.length === 0) return false;
       
       var self = this;
       
@@ -875,7 +883,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       
       if (!$container || $container.length === 0) {
         console.log('[DOI Autofill] Structured authors container not found');
-        return;
+        return false;
       }
       
       console.log('[DOI Autofill] Found authors container for field:', fieldName);
@@ -945,6 +953,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
           console.log('[DOI Autofill] Processed author', index, ':', authorName);
         }, 150 * (index + 1));
       });
+      
+      return true;
     },
     
     /**

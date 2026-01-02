@@ -135,7 +135,9 @@ dataset_fields:
     publisher: publisher_name
     document_type: document_type
     keywords: tag_string
-    authors: authors
+    authors:
+      - authors_json
+      - authors
 
 # Dataset title translated (M)
 - field_name: title_translated
