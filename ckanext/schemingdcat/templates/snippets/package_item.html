@@ -2,6 +2,7 @@
 
 {# Override the heading title block to handle custom dataset types #}
 {% block heading_title %}
+  {% set truncate_title = truncate_title or 80 %}
   {% set blueprint_name = 'dataset' if package.type not in ['dataset', 'harvest'] else package.type %}
   {{ h.link_to(title|truncate(truncate_title), h.url_for('%s.read' % blueprint_name, id=package.name)) }}
 {% endblock %}
