@@ -137,7 +137,6 @@ dataset_fields:
     keywords: tag_string
     authors:
       - authors_json
-      - authors
 
 # Dataset title translated (M)
 - field_name: title_translated
@@ -408,23 +407,6 @@ dataset_fields:
     en: "Name of the publisher or publishing organization."
     es: "Nombre del editor o de la organización editorial."
     fr: "Nom de l'éditeur ou de l'organisation éditrice."
-  form_group_id: identification
-
-# Authors (R) - Structured list of authors
-- field_name: authors
-  label:
-    en: Authors
-    es: Autores
-    fr: Auteurs
-  display_property: dct:creator
-  form_placeholder:
-    en: "e.g. Smith, John; García, María; Chen, Wei"
-    es: "ej. Smith, John; García, María; Chen, Wei"
-    fr: "p. ex. Smith, John; García, María; Chen, Wei"
-  help_text:
-    en: "List of document authors, separated by semicolons. Format: LastName, FirstName"
-    es: "Lista de autores del documento, separados por punto y coma. Formato: Apellido, Nombre"
-    fr: "Liste des auteurs du document, séparés par des points-virgules. Format: Nom, Prénom"
   form_group_id: identification
 
 # Authors (structured) - keeps structured authors fetched from DOI with repeating subfields UI
