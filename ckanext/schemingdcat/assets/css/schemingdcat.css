@@ -719,6 +719,7 @@ img.item_image {
   line-height: 1.2;
   flex: 0 0 auto;
   height: 3rem;
+  justify-content: center;
 }
 
 .slug-preview {
