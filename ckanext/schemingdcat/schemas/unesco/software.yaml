@@ -475,7 +475,7 @@ dataset_fields:
   validators: "not_empty scheming_required schemingdcat_clean_identifier"
   form_group_id: identification
   form_attrs:
-    data-module: "copy-from-title slug-preview-target"
+    data-module: "copy-from-title"
 
 # Software URL slug (O)
 - field_name: name
