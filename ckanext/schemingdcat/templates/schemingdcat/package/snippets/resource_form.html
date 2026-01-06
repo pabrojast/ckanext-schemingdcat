@@ -95,13 +95,13 @@
               field.style.display = isHidden ? 'none' : '';
             });
             
-            // Also hide/show the submit button when in batch mode
+            // Also hide/show all submit/add buttons when in batch mode
             var form = toggleBtn.closest('form');
             if (form) {
-              var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-              if (submitBtn) {
-                submitBtn.style.display = isHidden ? 'none' : '';
-              }
+              var actionButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], button[name="save"], .form-actions .btn-primary');
+              actionButtons.forEach(function(btn) {
+                btn.style.display = isHidden ? 'none' : '';
+              });
               // Disable the form submit in batch mode to prevent accidental submissions
               if (isHidden) {
                 form.dataset.batchModeActive = 'true';
