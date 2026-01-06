@@ -15,6 +15,7 @@ from ckanext.schemingdcat.lib.doi_resolver import (
     fetch_from_datacite,
     fetch_from_crossref,
     fetch_from_zenodo,
+    _normalize_files,
     _map_datacite_type,
     _map_crossref_type,
     _map_zenodo_type,
@@ -138,6 +139,23 @@ class TestTypeMapping:
         assert _map_zenodo_type("dataset") == "dataset_documentation"
 
 
+class TestNormalizationHelpers:
+    """Tests for DOI link normalization helpers."""
+
+    def test_normalize_files_deduplicates_and_prefers_https(self):
+        files = [
+            {'url': 'http://example.com/file.pdf', 'format': 'unspecified', 'description': ''},
+            {'url': 'http://example.com/file.pdf', 'format': 'PDF', 'description': 'Full text'},
+        ]
+
+        normalized = _normalize_files(files)
+
+        assert len(normalized) == 1
+        assert normalized[0]['url'] == 'https://example.com/file.pdf'
+        assert normalized[0]['format'] == 'PDF'
+        assert normalized[0]['description'] == 'Full text'
+
+
 class TestDoiResolution:
     """Tests for DOI resolution with mocked API calls."""
 
@@ -241,6 +259,34 @@ class TestDoiResolution:
         assert result is not None
         assert result['source'] == 'zenodo'
         mock_zenodo.assert_called_once()
+
+    @patch('ckanext.schemingdcat.lib.doi_resolver.fetch_from_datacite')
+    def test_resolve_doi_normalizes_files(self, mock_datacite):
+        """Ensure DOI resolution deduplicates and secures file links."""
+        mock_datacite.return_value = {
+            'source': 'datacite',
+            'doi': '10.1234/test',
+            'url': 'http://example.com/landing',
+            'files': [
+                {'url': 'http://example.com/file.pdf', 'format': 'pdf', 'description': 'PDF'},
+                {'url': 'http://example.com/file.pdf', 'format': 'UNSPECIFIED', 'description': 'duplicate'},
+                {'url': 'http://localhost/internal', 'format': 'html'},
+            ],
+        }
+
+        result = resolve_doi("10.1234/test", providers=['datacite'])
+
+        assert result is not None
+        assert result['url'] == 'https://example.com/landing'
+        assert len(result['files']) == 2
+
+        urls = {f['url'] for f in result['files']}
+        assert 'https://example.com/file.pdf' in urls
+        assert 'http://localhost/internal' in urls  # local URLs stay http
+
+        pdf_entry = [f for f in result['files'] if f['url'].endswith('file.pdf')][0]
+        assert pdf_entry['format'] == 'PDF'
+        assert pdf_entry['description'] == 'PDF'
 
 
 class TestIntegration:

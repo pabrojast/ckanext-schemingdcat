@@ -14,7 +14,7 @@ import re
 import json
 import logging
 from typing import Dict, Any, Optional, List
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, urlunparse
 
 import requests
 from ckan.common import config
@@ -154,6 +154,118 @@ def _make_request(url: str, headers: Dict[str, str] = None) -> Optional[Dict]:
         log.warning(f"JSON decode error for URL {url}: {e}")
     
     return None
+
+
+def _prefer_https(url: str) -> str:
+    """
+    Upgrade http URLs to https when the host is not local/private.
+    """
+    if not url:
+        return ""
+
+    url = url.strip()
+
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return url
+
+    if parsed.scheme != "http":
+        return url
+
+    hostname = (parsed.hostname or "").lower()
+    if hostname in ("localhost", "127.0.0.1"):
+        return url
+    if re.match(r"^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$", hostname):
+        return url
+    if re.match(r"^192\.168\.\d{1,3}\.\d{1,3}$", hostname):
+        return url
+
+    secure = parsed._replace(scheme="https")
+    return urlunparse(secure)
+
+
+def _format_priority(fmt: str) -> int:
+    """
+    Rank formats to keep the most useful entry when deduplicating links.
+    """
+    if not fmt:
+        return 0
+    fmt = fmt.upper()
+    if fmt == "PDF":
+        return 3
+    if fmt in ("HTML", "HTM"):
+        return 2
+    return 1
+
+
+def _normalize_files(files: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Normalize and deduplicate file/link entries.
+
+    - Prefer https over http for non-local hosts
+    - Remove duplicates by URL, keeping the entry with the richest data/format
+    - Normalize formats to uppercase and drop UNSPECIFIED noise
+    """
+    normalized: List[Dict[str, Any]] = []
+    seen: Dict[str, Dict[str, Any]] = {}
+
+    for file in files or []:
+        if not isinstance(file, dict):
+            continue
+
+        raw_url = file.get("url", "") or ""
+        url = _prefer_https(raw_url)
+        if not url:
+            continue
+
+        fmt = (file.get("format") or "").upper()
+        if fmt == "UNSPECIFIED":
+            fmt = ""
+
+        entry = {
+            "filename": file.get("filename", ""),
+            "url": url,
+            "description": file.get("description", ""),
+            "format": fmt,
+            "content_type": file.get("content_type", ""),
+            "size": file.get("size"),
+            "checksum": file.get("checksum", ""),
+        }
+
+        key = url.lower()
+        if key in seen:
+            existing = seen[key]
+            # Keep the entry with the best-known format
+            if _format_priority(fmt) > _format_priority(existing.get("format")):
+                existing["format"] = fmt
+                if entry.get("content_type"):
+                    existing["content_type"] = entry["content_type"]
+
+            # Fill in any missing metadata from the new entry
+            for field in ("filename", "description", "size", "checksum"):
+                if not existing.get(field) and entry.get(field):
+                    existing[field] = entry[field]
+            continue
+
+        normalized.append(entry)
+        seen[key] = entry
+
+    return normalized
+
+
+def _normalize_result(result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalize resolver output before returning it to the client.
+    """
+    if not result:
+        return result
+
+    normalized = dict(result)
+    if "url" in normalized:
+        normalized["url"] = _prefer_https(normalized.get("url", ""))
+    normalized["files"] = _normalize_files(normalized.get("files", []))
+    return normalized
 
 
 def fetch_from_datacite(doi: str) -> Optional[Dict[str, Any]]:
@@ -532,7 +644,7 @@ def resolve_doi(doi: str, providers: List[str] = None) -> Optional[Dict[str, Any
             result = provider_functions[provider](doi)
             if result:
                 log.info(f"Successfully resolved DOI {doi} using {provider}")
-                return result
+                return _normalize_result(result)
         except Exception as e:
             log.error(f"Error with provider {provider} for DOI {doi}: {e}")
     
