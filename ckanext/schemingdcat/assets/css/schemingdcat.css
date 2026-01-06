@@ -50,6 +50,7 @@
 }
 .stages li:after {
   margin-top: -23px !important;
+  top: 45% !important;
 }
 
 .stages li.active:before {
@@ -2623,4 +2624,92 @@ li.resource-item .dropdown-menu li a img.format_icon {
 }
 .stages li {
     margin-top: -1px !important
+}
+
+/* Graphic overview uploader */
+.graphic-overview-upload {
+  margin-top: 10px;
+}
+
+.graphic-overview-dropzone {
+  border: 2px dashed #b9c5d3;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.graphic-overview-dropzone .dropzone-content i {
+  color: #4a90e2;
+  margin-bottom: 6px;
+}
+
+.graphic-overview-dropzone .dropzone-content p {
+  margin: 4px 0;
+  color: #4a5568;
+}
+
+.graphic-overview-dropzone .dropzone-content .text-muted {
+  color: #6c757d;
+}
+
+.graphic-overview-dropzone.dragover {
+  border-color: #2c7be5;
+  background: #eef5ff;
+}
+
+.graphic-overview-dropzone.uploading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.graphic-overview-progress {
+  margin-top: 8px;
+}
+
+.graphic-overview-progress .progress {
+  height: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: #e5e7eb;
+}
+
+.graphic-overview-progress .progress-bar {
+  background: #2c7be5;
+  width: 0%;
+  transition: width 0.2s ease;
+}
+
+.graphic-overview-progress .progress-text {
+  margin: 0;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.graphic-overview-preview {
+  margin-top: 12px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+.graphic-overview-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.graphic-overview-preview .preview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.graphic-overview-error {
+  margin-top: 8px;
+  font-size: 13px;
 }

@@ -29,6 +29,7 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-graphic-overview-upload' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-authors-add-button' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-group-multiselect' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-doi-autofill' %}
@@ -42,6 +43,7 @@
 {# Añadir módulo para manejar navegación del formulario #}
 <div data-module="schemingdcat-simple-navigation"></div>
 <div data-module="schemingdcat-multi-resource-upload"></div><!-- NUEVO: inicializa multiupload -->
+<div data-module="schemingdcat-graphic-overview-upload"></div>
 <div data-module="schemingdcat-authors-add-button"></div>
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages -%}

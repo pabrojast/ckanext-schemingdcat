@@ -101,6 +101,14 @@ schemingdcat-group-multiselect:
   contents:
     - js/modules/schemingdcat-group-multiselect.js
 
+schemingdcat-graphic-overview-upload:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_graphic_overview_upload.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-graphic-overview-upload.js
+
 schemingdcat-publisher-uri:
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:
