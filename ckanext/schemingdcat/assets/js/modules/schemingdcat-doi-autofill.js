@@ -548,19 +548,23 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
     },
 
     /**
-     * Build and set a custom citation using DOI metadata (authors, year, title, publisher, DOI)
+     * Build and set a citation using DOI metadata (authors, year, title, publisher, DOI)
+     * Targets the dedicated citation field when present, otherwise falls back to custom_citation
      * @param {Object} data - DOI metadata
      * @param {boolean} overwrite - Whether to overwrite existing values
      */
     _setCustomCitation: function(data, overwrite) {
-      var $citationField = $('[name="custom_citation"]');
-      if ($citationField.length === 0) {
+      var $autoCitationField = $('[name="citation"]');
+      var $customCitationField = $('[name="custom_citation"]');
+
+      var $targetField = $autoCitationField.length ? $autoCitationField : $customCitationField;
+      if ($targetField.length === 0) {
         return;
       }
 
-      var currentVal = ($citationField.val() || '').trim();
+      var currentVal = ($targetField.val() || '').trim();
       if (!overwrite && currentVal) {
-        console.log('[DOI Autofill] Custom citation already set, skipping');
+        console.log('[DOI Autofill] Citation already set, skipping');
         return;
       }
 
@@ -600,8 +604,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
 
       var citation = pieces.join(' ').replace(/\s+/g, ' ').trim();
       if (citation) {
-        $citationField.val(citation).trigger('change');
-        console.log('[DOI Autofill] Set custom citation:', citation);
+        $targetField.val(citation).trigger('change');
+        console.log('[DOI Autofill] Set citation:', citation);
       }
     },
 

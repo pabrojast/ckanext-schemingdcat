@@ -29,6 +29,12 @@ schema_form_groups:
       es: Identificación del documento
       fr: Identification du document
     fa_icon: fa-id-card
+  - form_group_id: citation
+    label:
+      en: Citation
+      es: Citación
+      fr: Citation
+    fa_icon: fa-quote-right
   - form_group_id: notes
     label:
       en: Abstract
@@ -190,21 +196,40 @@ dataset_fields:
     fr: "Conserve l'URL du DOI du document. Renseigné après la récupération des métadonnées, mais modifiable."
   form_group_id: identification
 
-# Custom Citation (optional, overrides auto citation with DOI authors/title)
+# Auto Citation (auto-generated from metadata)
+- field_name: citation
+  label:
+    en: Citation
+    es: Citación automática
+    fr: Citation automatique
+  display_property: dct:bibliographicCitation
+  form_placeholder:
+    en: Auto-generated from authors, year, title and publisher.
+    es: Se genera automáticamente usando autores, año, título y editorial.
+    fr: Générée automatiquement à partir des auteurs, année, titre et éditeur.
+  help_text:
+    en: "Read-only citation built automatically from the other metadata. Edit the custom citation below only if you need to override it."
+    es: "Campo de solo lectura generado con los demás metadatos. Usa la citación personalizada solo si necesitas sobrescribirla."
+    fr: "Champ en lecture seule généré à partir des autres métadonnées. Utilisez la citation personnalisée uniquement en cas de besoin."
+  form_attrs:
+    readonly: true
+  form_group_id: citation
+
+# Custom Citation (optional override)
 - field_name: custom_citation
   label:
-    en: Custom Citation
-    es: Citación personalizada
-    fr: Citation personnalisée
+    en: Custom citation (optional)
+    es: Citación personalizada (opcional)
+    fr: Citation personnalisée (optionnelle)
   form_placeholder:
     en: "Lastname, F.; Second, A. (2025). Title. [Document]. Publisher. https://doi.org/..."
     es: "Apellido, N.; Segundo, A. (2025). Título. [Documento]. Editorial. https://doi.org/..."
     fr: "Nom, P.; Second, A. (2025). Titre. [Document]. Éditeur. https://doi.org/..."
   help_text:
-    en: "If set, this citation will be shown instead of the auto-generated one. Filled automatically when fetching metadata from DOI."
-    es: "Si se completa, esta citación se mostrará en lugar de la generada automáticamente. Se rellena al obtener metadatos desde el DOI."
-    fr: "Si renseignée, cette citation sera affichée à la place de celle générée automatiquement. Renseignée lors de la récupération des métadonnées du DOI."
-  form_group_id: identification
+    en: "Leave blank to use the automatic citation. Fill only if you need to override the generated citation."
+    es: "Deja vacío para usar la citación automática. Completa solo si necesitas sobrescribir la generada."
+    fr: "Laissez vide pour utiliser la citation automatique. Renseignez uniquement si vous devez la remplacer."
+  form_group_id: citation
 
 
 # Document Type (R) - IHP-WINS specific
@@ -409,17 +434,17 @@ dataset_fields:
     fr: "Nom de l'éditeur ou de l'organisation éditrice."
   form_group_id: identification
 
-# Authors (structured) - keeps structured authors fetched from DOI with repeating subfields UI
+# Authors - keeps structured authors fetched from DOI with repeating subfields UI
 - field_name: authors_json
   label:
-    en: Authors (structured)
-    es: Autores (estructurado)
-    fr: Auteurs (structuré)
+    en: Authors
+    es: Autores
+    fr: Auteurs
   display_property: dct:creator
   help_text:
-    en: "Auto-filled from DOI with full author objects (name, given/family, ORCID, affiliation)."
-    es: "Se rellena automáticamente desde el DOI con objetos de autores (nombre, nombre/apellido, ORCID, afiliación)."
-    fr: "Renseigné automatiquement depuis le DOI avec les objets auteurs (nom, prénom/nom, ORCID, affiliation)."
+    en: "Auto-filled from DOI with full author objects (name, given/family, ORCID, affiliation). Add one row per author."
+    es: "Se rellena automáticamente desde el DOI con los datos completos. Añade una fila por autor."
+    fr: "Renseigne automatiquement depuis le DOI avec les données complètes. Ajoutez une ligne par auteur."
   form_group_id: identification
   repeating_subfields:
     - field_name: name

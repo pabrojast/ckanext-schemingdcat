@@ -141,6 +141,14 @@ schemingdcat-dataset-notes:
   contents:
     - js/modules/schemingdcat-dataset-notes.js
 
+schemingdcat-auto-citation:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_auto_citation.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-auto-citation.js
+
 main:
   output: base/%(version)s_main.js
   extra:
