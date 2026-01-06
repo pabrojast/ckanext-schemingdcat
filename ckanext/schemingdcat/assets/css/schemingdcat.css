@@ -2345,6 +2345,7 @@ li.resource-item .dropdown-menu li a img.format_icon {
   color: #6c757d;
   font-size: 14px;
   line-height: 1.6;
+  padding: 12px 15px !important;
 }
 
 .dataset-notes__preview {
