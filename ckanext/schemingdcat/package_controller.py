@@ -87,7 +87,7 @@ class PackageController():
         """
         # Add debug logging to verify this method is being called
         dataset_id = data_dict.get('id', 'unknown')
-        log.info(f"[before_dataset_index] Processing dataset {dataset_id} - SchemingDCAT controller active")
+        log.debug(f"[before_dataset_index] Processing dataset {dataset_id} - SchemingDCAT controller active")
         # Process facets
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
@@ -132,44 +132,36 @@ class PackageController():
             all_keys = list(data_dict.keys())
             multilingual_keys = [k for k in all_keys if any(k.endswith(f'_{lang}') for lang in languages)]
             if multilingual_keys:
-                log.info(f"[before_dataset_index] Found multilingual keys in {dataset_id}: {multilingual_keys}")
+                log.debug(f"[before_dataset_index] Found multilingual keys in {dataset_id}: {multilingual_keys}")
             
             # Check for and fix multilingual fields that cause atomic update issues
             problematic_fields = []
             multilingual_translated_fields = ['title_translated', 'notes_translated', 'provenance', 'purpose', 'version_notes']
-            
-            for key, value in data_dict.items():
-                if isinstance(value, dict) and any(lang_code in value for lang_code in languages):
-                    problematic_fields.append(f"{key}: {list(value.keys())}")
-                    
-                    # Fix the problematic field by converting multilingual dict to JSON string
-                    if key in multilingual_translated_fields:
-                        try:
-                            # Convert the multilingual dict to JSON string for Solr indexing
-                            data_dict[key] = json.dumps(value)
-                            log.info(f"[before_dataset_index] Converted multilingual field {key} to JSON string")
-                        except (TypeError, ValueError) as e:
-                            log.warning(f"[before_dataset_index] Could not serialize {key} to JSON: {e}")
-                            # Fallback: use the first available language value or empty string
-                            if 'en' in value:
-                                data_dict[key] = str(value['en'])
-                            elif value:
-                                data_dict[key] = str(list(value.values())[0])
-                            else:
-                                data_dict[key] = ""
-                    else:
-                        # For other problematic fields, try to extract the most appropriate value
-                        try:
-                            if 'en' in value:
-                                data_dict[key] = str(value['en'])
-                            elif value:
-                                data_dict[key] = str(list(value.values())[0])
-                            else:
-                                data_dict[key] = ""
-                            log.info(f"[before_dataset_index] Fixed problematic field {key}")
-                        except Exception as e:
-                            log.warning(f"[before_dataset_index] Error fixing field {key}: {e}")
-                            data_dict[key] = ""
+
+            for key, value in list(data_dict.items()):
+                if not (isinstance(value, dict) and any(lang_code in value for lang_code in languages)):
+                    continue
+
+                if key in multilingual_translated_fields:
+                    try:
+                        # Convert the multilingual dict to JSON string for Solr indexing
+                        data_dict[key] = json.dumps(value)
+                        log.debug(f"[before_dataset_index] Converted multilingual field {key} to JSON string")
+                    except (TypeError, ValueError) as e:
+                        log.warning(f"[before_dataset_index] Could not serialize {key} to JSON: {e}")
+                        fallback_value = value.get('en') or next(iter(value.values()), "")
+                        data_dict[key] = str(fallback_value) if fallback_value is not None else ""
+                        problematic_fields.append(f"{key}: {list(value.keys())}")
+                else:
+                    # For other multilingual dicts, keep a single representative value
+                    try:
+                        fallback_value = value.get('en') or next(iter(value.values()), "")
+                        data_dict[key] = str(fallback_value) if fallback_value is not None else ""
+                        log.debug(f"[before_dataset_index] Flattened multilingual field {key}")
+                    except Exception as e:
+                        log.warning(f"[before_dataset_index] Error fixing field {key}: {e}")
+                        data_dict[key] = ""
+                        problematic_fields.append(f"{key}: {list(value.keys())}")
             
             if problematic_fields:
                 log.warning(f"[before_dataset_index] Found potentially problematic fields in {dataset_id}: {problematic_fields}")
