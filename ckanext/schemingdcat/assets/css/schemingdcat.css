@@ -2285,19 +2285,6 @@ li.resource-item .dropdown-menu li a img.format_icon {
   background-color: transparent !important;
 }
 
-/* ZIP format icon */
-.format-label[data-format=zip],
-.format-label[data-format*=zip] {
-  width: 60px !important;
-  height: 65px !important;
-  background-position: -1220px -220px !important;
-  transform: scale(0.53) !important;
-  margin: -14px 0 0 -14px !important;
-  color: transparent !important;
-  border: none !important;
-  background-color: transparent !important;
-}
-
 /* SHP format icon */
 .format-label[data-format=shp],
 .format-label[data-format*=shp] {
