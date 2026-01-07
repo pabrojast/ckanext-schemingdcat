@@ -1,329 +1,59 @@
-REPORTE DE IMPLEMENTACIÓN: MULTIUPLOAD Y DETECCIÓN ESPACIAL (ckanext-schemingdcat)
-===============================================================================
-
-Fecha: 2026-01-07
-
-
-1) Identificación del repositorio
--------------------------------
-
-- Repo (git remote): https://github.com/pabrojast/ckanext-schemingdcat.git
-- Branch actual: dev210 (tracking origin/dev210)
-- Commit revisado: 47629fa2e4138fac4c7bb3b3f01d12f60d13d4b7
-- Ruta local (workspace): C:\Users\Lenovo\Proyectos\ckanext-schemingdcat
-
-Nota: En `setup.py` figura un upstream histórico distinto:
-  - name: ckanext-schemingdcat
-  - version: 3.1.0
-  - url: https://github.com/mjanez/ckanext-schemingdcat
-
-
-2) Objetivo funcional (lo que se implementó)
--------------------------------------------
-
-A) Multiupload:
-   Permitir subir/crear múltiples recursos (resources) a partir de múltiples
-   ficheros seleccionados en una sola interacción.
-
-B) Detección/Extracción espacial:
-   Cuando se suben archivos geoespaciales compatibles (p.ej. SHP, GeoTIFF,
-   GeoJSON, KML, GPKG y ZIP con Shapefile), se calcula la extensión espacial
-   (bounding box) y se devuelve/guarda como GeoJSON.
-
-   Además, se intenta detectar “member states” (países) solapados/contenedores
-   del extent y usar esa detección para:
-   - autocompletar `spatial_uri` (dataset)
-   - añadir grupos (dataset) relacionados con esos países
-   - opcionalmente actualizar/combinar el `spatial` del dataset
-
-
-3) Componentes principales (dónde está implementado)
----------------------------------------------------
-
-Frontend (UI / JS)
-  - Multi-upload simple (dividir selección múltiple en varios resources):
-    `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`
-
-  - Batch upload (widget dedicado que crea N resources vía API):
-    `ckanext/schemingdcat/assets/js/modules/schemingdcat-batch-upload.js`
-    `ckanext/schemingdcat/templates/schemingdcat/snippets/batch_upload.html`
-    Activación desde:
-    `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
-      - controlado por `ckanext.schemingdcat.batch_upload_enabled` (default "true")
-
-  - Upload “moderno” (dropzone + autofill + progress + spatial autofill):
-    Campo preset `resource_url_upload` apunta a:
-    `ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html`
-    que incluye el script modular:
-    `ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html`
-      - `upload_ui.html`: procesa el fichero y llama a extracción espacial
-      - `upload_spatial.html`: realiza la llamada a la API de extracción
-
-Backend (API + jobs + hooks)
-  - Endpoints Flask (Blueprint):
-    `ckanext/schemingdcat/blueprint.py`
-      - POST `/api/extract-spatial-extent`
-      - POST `/api/extract-spatial-extent-from-resource`
-      - POST `/api/get-azure-upload-url` (direct upload Azure)
-
-  - Implementación endpoints:
-    `ckanext/schemingdcat/upload/api.py`
-
-  - Extracción espacial y detección de países (member states):
-    `ckanext/schemingdcat/upload/extractors.py`
-      - `SpatialExtentExtractor` (extent bbox -> GeoJSON Polygon)
-      - `MemberStateDetector` (solape de bounds contra choices del schema)
-
-  - Análisis de ficheros (metadata “comprehensiva”):
-    `ckanext/schemingdcat/upload/analyzers.py` (`FileAnalyzer`)
-
-  - Disparo de extracción tras crear/actualizar resources:
-    `ckanext/schemingdcat/plugin.py` (`SchemingDCATDatasetsPlugin`)
-      - IResourceController: `before_create` marca `_needs_metadata_extraction`
-      - IResourceController: `after_create` llama a `_trigger_metadata_extraction`
-      - IActions: chained actions de `resource_create` / `resource_update`
-        para asegurar el trigger aunque hooks no corran (CKAN 2.10)
-
-  - Job que descarga el fichero y escribe metadata (resource/dataset):
-    `ckanext/schemingdcat/jobs.py` (`extract_comprehensive_metadata_job`)
-      - `resource_patch` con campos extraídos (incl. `spatial_extent`)
-      - `_add_member_states_to_package` usa `package_patch` para:
-        - añadir grupos de países
-        - actualizar `spatial_uri`
-        - combinar/actualizar `spatial` del dataset (configurable)
-
-
-4) Flujo A: Multiupload “simple” (selección múltiple en el input de upload)
----------------------------------------------------------------------------
-
-Archivo: `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`
-
-Cómo funciona:
-  1) Al inicializar, fuerza `multiple` en inputs file que matchean:
-       input[type="file"][id^="field-resource-upload"]
-  2) Captura el evento `change` del input.
-  3) Si el usuario selecciona >1 fichero:
-       - deja el primer fichero en el resource actual
-       - por cada fichero adicional:
-           - simula click en el botón “Añadir recurso”
-           - espera ~250ms a que CKAN clone el bloque
-           - asigna el fichero al input del nuevo bloque (DataTransfer)
-           - auto-rellena campos básicos (name/format/created)
-
-Dónde se inyecta:
-  - `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
-  - `ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html`
-
-Notas/limitaciones:
-  - Depende de selectores DOM específicos (id `field-resource-upload*`,
-    `.add-resource` / `#add-resource`, etc.). Si el snippet de upload cambia
-    (p.ej. el upload “moderno” usa un input con id `upload`), este módulo puede
-    no interceptar el input esperado.
-  - Requiere `DataTransfer` para setear `input.files` de forma programática;
-    navegadores muy antiguos pueden no soportarlo.
-
-
-5) Flujo B: Batch upload (widget dedicado que crea N resources vía API)
------------------------------------------------------------------------
-
-Archivos:
-  - UI snippet: `ckanext/schemingdcat/templates/schemingdcat/snippets/batch_upload.html`
-  - Lógica: `ckanext/schemingdcat/assets/js/modules/schemingdcat-batch-upload.js`
-  - Toggle/habilitación: `ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html`
-
-Cómo funciona (alto nivel):
-  1) Permite seleccionar múltiples ficheros (input multiple + dropzone).
-  2) Por cada fichero arma un “fileItem” con estado/progreso.
-  3) Si `useDirectUpload` y Azure está disponible:
-       - POST `/api/get-azure-upload-url` -> SAS URL + blob_path
-       - PUT directo a Azure Blob (xhr)
-       - POST `/api/3/action/resource_create` (JSON) con:
-           - `url` apuntando al blob (sin SAS)
-           - flags `azure_upload` + `azure_blob_path`
-  4) Si no hay Azure:
-       - POST `/api/3/action/resource_create` (multipart/form-data)
-         subiendo `upload` + metadatos.
-  5) Al finalizar, redirige a `/dataset/<packageId>` si todo OK.
-
-Extracción espacial en batch (frontend):
-  - Para extensiones: shp/geojson/kml/gpkg/tif/tiff/zip
-  - Hace POST con FormData(file) a un endpoint de extracción y guarda:
-      - `metadata.spatial` = GeoJSON extent
-      - `metadata.spatial_uri` si se detecta país
-  - Luego incluye `metadata` en el `resource_create`.
-
-Observación importante:
-  - El endpoint usado en el JS es `'/schemingdcat/api/extract-spatial-extent'`
-    mientras que el Blueprint del plugin expone `'/api/extract-spatial-extent'`
-    (sin prefijo). Si en este despliegue no existe un prefijo de ruta, la
-    extracción espacial del batch puede no estar llamando al endpoint correcto.
-  - Además, el batch guarda el extent en la clave `spatial` (resourceData),
-    pero el schema de recursos (p.ej. UNESCO) usa `spatial_extent`. Si el schema
-    no define `spatial` como campo de resource, ese valor podría quedar como
-    extra no utilizado o ignorarse en UI.
-
-
-6) Detección/Extracción espacial (detalles técnicos)
-----------------------------------------------------
-
-6.1 Endpoint: `/api/extract-spatial-extent` (frontend -> backend)
-
-Archivos:
-  - Ruta: `ckanext/schemingdcat/blueprint.py`
-  - Handler: `ckanext/schemingdcat/upload/api.py` -> `extract_spatial_extent_endpoint()`
-
-Entradas soportadas:
-  A) multipart/form-data con `file`
-  B) JSON con `resource_url` y `resource_format` (para procesar por URL)
-
-Salida:
-  - `extent`: GeoJSON (Polygon/MultiPolygon/GeometryCollection según casos)
-  - `spatial_uri`: mejor país detectado (o null)
-  - `spatial_uris`: lista de países solapados (o vacía)
-
-6.2 Extracción del extent (bbox -> GeoJSON)
-
-Archivo: `ckanext/schemingdcat/upload/extractors.py`
-Clase: `SpatialExtentExtractor`
-
-Formatos soportados (por extensión):
-  - shp (vector): Fiona
-  - zip (zip shapefile): Fiona + extracción a tmp dir
-  - tif/tiff/geotiff (raster): Rasterio
-  - kml/gpkg/geojson/json (vector): Fiona
-
-Normalización CRS:
-  - Vector (Fiona): intenta reproyectar bounds a EPSG:4326 si CRS != 4326
-  - Raster (Rasterio): usa `transform_bounds` hacia EPSG:4326 si aplica
-
-Representación:
-  - El bbox se convierte a GeoJSON Polygon (5 puntos cerrando el anillo).
-
-6.3 Detección de “member states” (países) desde extent
-
-Archivo: `ckanext/schemingdcat/upload/extractors.py`
-Clase: `MemberStateDetector`
-
-Fuente de países:
-  - Lee el schema del dataset y toma los `choices` del campo `spatial_uri`.
-  - Cada choice puede incluir un atributo `spatial` (GeoJSON) con el polígono
-    del país; se reduce a bounds para calcular solapes.
-
-Algoritmo (resumen):
-  - Extrae bounds del extent.
-  - Para cada país (bounds):
-      - si el extent está totalmente contenido, prioriza esos matches
-      - si hay solape, calcula % de solape (sobre el área del extent)
-  - Devuelve:
-      - `detect_member_state`: mejor match (contenido o mayor solape >= threshold)
-      - `detect_member_states`: lista ordenada (contenidos primero, luego solape)
-
-Helpers asociados:
-  - `ckanext/schemingdcat/helpers.py`:
-      - `schemingdcat_detect_member_state(s)`
-      - resolución de grupo para un country URI:
-        `schemingdcat_find_member_state_group()` / `schemingdcat_get_member_state_group_slug()`
-
-
-7) Extracción “post-creación” (job backend) y autocompletado de dataset
-----------------------------------------------------------------------
-
-Disparo del job:
-  - `ckanext/schemingdcat/plugin.py` (SchemingDCATDatasetsPlugin)
-    - `before_create`: marca `_needs_metadata_extraction` si:
-        - es upload (`url_type == 'upload'` o `resource.get('upload')`)
-        - o si `_should_extract_metadata()` lo considera candidato por format/url
-    - `after_create`: llama `_trigger_metadata_extraction(resource)`
-    - chained actions: también llaman `_trigger_metadata_extraction` para
-      asegurar ejecución aunque hooks no se disparen.
-
-Ejecución:
-  - Por defecto usa fallback vía threading:
-      `self._fallback_metadata_extraction(resource)` -> `extract_comprehensive_metadata_job`
-    Motivación indicada en código: issues de ejecución de RQ en CKAN 2.10.
-
-Job:
-  - `ckanext/schemingdcat/jobs.py` -> `extract_comprehensive_metadata_job(job_data)`
-  - Descarga el fichero a un temp file (soporta:
-      - URL pública
-      - URL segura de cloudstorage (SAS) o descarga autenticada por API key)
-  - Ejecuta análisis con `FileAnalyzer`:
-      `ckanext/schemingdcat/upload/analyzers.py`
-  - Parcha el resource con `resource_patch` (`ignore_auth=True` en contexto)
-  - Si hay `spatial_extent`, detecta países y llama:
-      `_add_member_states_to_package(package_id, detected_uris, ..., spatial_extent=extent)`
-    que hace `package_patch` para añadir grupos / spatial_uri / spatial
-
-Auto-fill de dataset (config):
-  - En `_add_member_states_to_package` se lee:
-      `schemingdcat.spatial.auto_fill_dataset` (default True)
-  - Si está habilitado, puede actualizar:
-      - `spatial` (GeoJSON) combinando con el valor existente
-      - `spatial_uri` (elige/actualiza el URI)
-
-Merge de geometrías:
-  - `ckanext/schemingdcat/jobs.py` -> `_merge_geojson_geometries()`
-    intenta consolidar extents múltiples en MultiPolygon o GeometryCollection.
-
-
-8) Campos afectados (según schemas)
------------------------------------
-
-Ejemplo (UNESCO):
-  - Schema: `ckanext/schemingdcat/schemas/unesco/dataset.yaml`
-  - Resource fields auto-generados relevantes:
-      - `spatial_extent` (GeoJSON)
-      - `spatial_crs`, `spatial_resolution`
-      - `feature_count`, `geometry_type`
-      - `data_fields`, `data_statistics`, etc.
-
-Dataset:
-  - `spatial` (GeoJSON) y `spatial_uri` (URI país)
-  - `groups` (se agregan grupos de países detectados)
-
-
-9) Dependencias y degradación
-----------------------------
-
-Dependencias opcionales (extras “spatial”):
-  - fiona, rasterio, pyproj, GDAL (ver `spatial-requirements.txt` y `setup.py`)
-
-Comportamiento sin dependencias:
-  - La extracción espacial devuelve None / falla silenciosamente en frontend
-  - El job de metadata intenta extraer lo posible y sigue sin bloquear el flujo
-
-
-10) Puntos a revisar (inconsistencias detectadas)
--------------------------------------------------
-
-1) Endpoint en batch upload:
-   - `schemingdcat-batch-upload.js` llama `'/schemingdcat/api/extract-spatial-extent'`
-   - El Blueprint registra `'/api/extract-spatial-extent'`
-   => Si no hay un prefijo real, la detección espacial en batch no funcionará.
-
-2) Campo donde se guarda el extent en batch upload:
-   - batch guarda `resourceData.spatial` (no `spatial_extent`)
-   - los schemas revisados usan `spatial_extent` para recursos
-   => Puede quedar en un campo no mostrado/no usado.
-
-3) Multi-resource upload vs upload moderno:
-   - multi-resource upload busca inputs con id `field-resource-upload*`
-   - el upload moderno define un input `id="upload"` (en `form_snippets/upload.html`)
-   => El multi-upload “simple” puede no aplicarse al widget moderno salvo que
-      haya otro input compatible en el DOM (p.ej. por cloudstorage).
-
-
-11) Recomendación de validación manual (pasos)
-----------------------------------------------
-
-1) Crear dataset y abrir “Add data” (resource/new).
-2) Probar batch upload (si está habilitado) y/o selección múltiple:
-   - seleccionar 2+ ficheros y confirmar que se crean N recursos.
-3) Subir un fichero geoespacial (GeoJSON/TIF/SHP/ZIP shapefile):
-   - comprobar que se rellena `spatial_extent` (frontend o post-job).
-4) Revisar dataset:
-   - `spatial` y `spatial_uri` (si auto-fill habilitado)
-   - grupos de países añadidos (si hay correspondencias en schema/grupos)
-5) Revisar logs del servidor para confirmación del job:
-   - logs del plugin y de `extract_comprehensive_metadata_job`.
-
+MULTIUPLOAD + SPATIAL EXTRACTION — CONDENSED IMPLEMENTATION REPORT (ckanext-schemingdcat)
+========================================================================================
+
+Date: 2026-01-07
+Branch/commit: dev210 @ 47629fa2e4138fac4c7bb3b3f01d12f60d13d4b7
+Repo path: C:\Users\Lenovo\Proyectos\ckanext-schemingdcat
+
+Scope
+-----
+- Multi-upload: create multiple resources from one selection.
+- Spatial extraction: derive extent + country from geo files, autofill resource/dataset fields.
+
+Frontend touchpoints
+--------------------
+- Simple multi-select splitter: `ckanext/schemingdcat/assets/js/modules/schemingdcat-multi-resource-upload.js`; injected in package/resource form snippets. Forces `multiple` on file inputs, clones resource blocks, assigns extra files, auto-fills name/format/created. Depends on selectors `field-resource-upload*`, `.add-resource`.
+- Batch upload widget: `assets/js/modules/schemingdcat-batch-upload.js` + `templates/schemingdcat/snippets/batch_upload.html`; enabled via `ckanext.schemingdcat.batch_upload_enabled` (default true). Supports dropzone, per-file status, Azure direct upload (`/api/get-azure-upload-url`) or multipart `resource_create`. Performs client-side spatial extraction before calling the API.
+- Modern upload preset: `templates/schemingdcat/form_snippets/upload.html` + `upload_snippets/upload_script.html`; modular scripts `upload_ui.html` (dropzone/progress) and `upload_spatial.html` (calls extraction endpoint) used by preset field `resource_url_upload`.
+
+Backend touchpoints
+-------------------
+- Blueprint routes: `ckanext/schemingdcat/blueprint.py`
+  - POST `/api/extract-spatial-extent`
+  - POST `/api/extract-spatial-extent-from-resource`
+  - POST `/api/get-azure-upload-url`
+- API handler: `ckanext/schemingdcat/upload/api.py`; accepts multipart `file` or JSON `{resource_url, resource_format}`, returns `extent` GeoJSON + `spatial_uri`/`spatial_uris`.
+- Extractors: `ckanext/schemingdcat/upload/extractors.py`
+  - `SpatialExtentExtractor`: supports shp/zip-shp, geojson/json, kml, gpkg (Fiona) + tif/tiff/geotiff (Rasterio); reprojects to EPSG:4326; outputs GeoJSON polygon from bbox.
+  - `MemberStateDetector`: reads `spatial_uri` choices from schema, compares extent bounds vs country bounds, prefers containment then overlap to pick best URI/list.
+- File analyzer: `ckanext/schemingdcat/upload/analyzers.py` (`FileAnalyzer`) gathers metadata for jobs.
+- Hooks and chained actions: `ckanext/schemingdcat/plugin.py` (`SchemingDCATDatasetsPlugin`)
+  - `before_create` flags `_needs_metadata_extraction`.
+  - `after_create` and chained `resource_create/resource_update` trigger extraction.
+- Job runner: `ckanext/schemingdcat/jobs.py` (`extract_comprehensive_metadata_job`)
+  - Downloads the file (direct URL, cloudstorage SAS, or API-auth download).
+  - Runs `FileAnalyzer`; `resource_patch` writes metadata incl. `spatial_extent`.
+  - Uses `MemberStateDetector` to add package groups, `spatial_uri`, and merge dataset `spatial` when `schemingdcat.spatial.auto_fill_dataset` (default true).
+
+Flows and behavior
+------------------
+- Simple multiupload: multi-select on legacy upload input; clones resource rows for extra files. Not active if the upload widget uses a different input id.
+- Batch upload:
+  - For Azure: get SAS via `/api/get-azure-upload-url`, PUT to Blob, then `resource_create` with `url`, `azure_upload`, `azure_blob_path`.
+  - Fallback: multipart `resource_create` per file.
+  - Client-side spatial extraction for extensions shp/geojson/kml/gpkg/tif/tiff/zip; metadata attached to create payload.
+- Modern upload: dropzone triggers backend extraction, fills resource fields, and shows progress; shares extraction logic with API.
+
+Known gaps / risks
+------------------
+1) Endpoint prefix mismatch: batch JS calls `'/schemingdcat/api/extract-spatial-extent'` but Blueprint exposes `'/api/extract-spatial-extent'`. Without a real `/schemingdcat` prefix, batch spatial extraction fails.
+2) Field name mismatch: batch stores extent in `resourceData.spatial`; reviewed schemas use `spatial_extent` for resources, so the extent may be ignored.
+3) Selector dependency: simple multiupload watches `field-resource-upload*`; modern upload uses `id="upload"`, so the multi-select splitter may not run there.
+4) Optional deps: requires fiona/rasterio/pyproj/GDAL (see `spatial-requirements.txt`). Without them, extraction silently degrades.
+
+Quick validation steps
+----------------------
+- Enable batch upload, select multiple files, confirm it creates one resource per file and redirects.
+- Upload geospatial files (GeoJSON/TIF/SHP/zip-shp) through batch or modern upload; check resource `spatial_extent`.
+- Inspect dataset after upload: `spatial`, `spatial_uri`, and country groups added when auto-fill is enabled.
+- Review logs from `extract_comprehensive_metadata_job` for extraction failures or country detection output.

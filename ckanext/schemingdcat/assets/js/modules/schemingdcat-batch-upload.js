@@ -732,7 +732,7 @@ ckan.module('schemingdcat-batch-upload', function ($) {
       formData.append('file', fileItem.file);
       
       $.ajax({
-        url: '/schemingdcat/api/extract-spatial-extent',
+        url: '/api/extract-spatial-extent',
         type: 'POST',
         data: formData,
         processData: false,
@@ -740,6 +740,8 @@ ckan.module('schemingdcat-batch-upload', function ($) {
         success: function(response) {
           if (response.success && response.extent) {
             fileItem.metadata = fileItem.metadata || {};
+            fileItem.metadata.spatial_extent = JSON.stringify(response.extent);
+            // Keep legacy key in case downstream expects it
             fileItem.metadata.spatial = JSON.stringify(response.extent);
             
             // Add spatial_uri if detected
