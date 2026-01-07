@@ -199,6 +199,28 @@ def _format_priority(fmt: str) -> int:
     return 1
 
 
+def _infer_format_from_url(url: str) -> str:
+    """
+    Infer a file format from a URL path extension.
+    """
+    if not url:
+        return ""
+    try:
+        path = urlparse(url).path or ""
+    except Exception:
+        return ""
+    filename = path.rsplit("/", 1)[-1]
+    if "." not in filename:
+        return ""
+    ext = filename.rsplit(".", 1)[-1].strip()
+    if not ext:
+        return ""
+    ext = ext.upper()
+    if ext == "HTM":
+        return "HTML"
+    return ext
+
+
 def _normalize_files(files: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Normalize and deduplicate file/link entries.
@@ -506,17 +528,25 @@ def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
         url = link.get('URL', '')
         
         if url:
-            file_format = 'PDF' if 'pdf' in content_type.lower() else content_type.split('/')[-1].upper()
+            file_format = ''
+            if content_type:
+                file_format = 'PDF' if 'pdf' in content_type.lower() else content_type.split('/')[-1].upper()
+            if not file_format:
+                file_format = _infer_format_from_url(url)
             host = urlparse(url).hostname.lower() if url else None
+
+            if not file_format and pdf_from_landing and host and (host == pdf_host or host == landing_host):
+                continue
 
             # If we already captured a PDF from the landing page, skip CrossRef PDFs on the same host
             if pdf_from_landing and file_format == 'PDF' and pdf_host and host == pdf_host:
                 continue
 
+            description = f'Full text ({file_format})' if file_format else 'Full text'
             files.append({
                 'filename': '',
                 'url': url,
-                'description': f'Full text ({file_format})',
+                'description': description,
                 'format': file_format,
                 'content_type': content_type,
             })

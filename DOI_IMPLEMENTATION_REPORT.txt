@@ -1,0 +1,28 @@
+Title: DOI-powered imports and related workflows for ckanext-schemingdcat
+
+Repository
+- Path: C:\Users\Lenovo\Proyectos\ckanext-schemingdcat (CKAN extension).
+- Purpose: enrich CKAN forms with DOI autofill, remote-link handling, and metadata helpers for datasets and documents.
+
+What was implemented
+- DOI autofill on dataset/document forms: enter a DOI, the extension fetches title, authors, year, and other metadata.
+- Remote-link capture: the resolver stores links found in DOI metadata and shows them on the resource form so users can add them as remote resources or prefill the form.
+- Link normalization: prefers https for public hosts, removes duplicate links, and keeps the most useful format (e.g., real PDF instead of placeholder URLs).
+- Crossref landing-page scan: when Crossref provides broken download URLs, the resolver now opens the landing page, looks for a PDF (meta tag citation_pdf_url or href to .pdf), and uses that instead.
+- Example fix: DOI https://doi.org/10.47366/sabia.v5n1a3 now yields the working PDF link (…/article/download/18/86) instead of the broken …/download/18/18.
+
+How it works (simplified flow)
+1) User enters a DOI and clicks fetch on the dataset/document form.
+2) The extension calls /api/doi/resolve, which queries Crossref/DataCite/Zenodo.
+3) The resolver cleans the DOI, validates it, fetches metadata, upgrades links to https when safe, deduplicates, and prefers working PDFs from the landing page.
+4) Metadata fills the form; links are stored in session storage and displayed on the resource form so the user can apply or add them as remote resources.
+5) Users can still upload local files; remote links are optional.
+
+Related workflows in this repository
+- Spatial upload vs. documents: keep two upload protocols. Documents use DOI autofill and remote-link capture. Spatial datasets use the existing resource auto-fields plus spatial upload API; guidance text should steer users to the correct path per type.
+- Automatic extent detection with Member State assignment: finalize the spatial extractor to auto-detect extent on upload, then attach the detected geometry to the appropriate Member State Data Hub entry, with a review/confirm step in the form.
+- Multi-upload data protocol: extend the current “Links found from DOI” multi-add pattern to support selecting multiple local files in one go, batching metadata extraction, and queuing resource creation with clear progress and error display.
+
+Notes for deployment
+- Target CKAN 2.10 for compatibility; run the schemingdcat test suite in a CKAN-equipped environment (local run here fails only because CKAN is not installed).
+- Rebuild webassets after deployment so the updated JavaScript/CSS for DOI and upload flows are active.
