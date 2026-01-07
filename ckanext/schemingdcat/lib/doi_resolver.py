@@ -14,7 +14,7 @@ import re
 import json
 import logging
 from typing import Dict, Any, Optional, List
-from urllib.parse import quote, urlparse, urlunparse
+from urllib.parse import quote, urlparse, urlunparse, urljoin
 
 import requests
 from ckan.common import config
@@ -477,14 +477,27 @@ def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
         List of file/link dicts
     """
     files = []
-    
-    # Primary URL
-    if message.get('URL'):
+
+    landing_url = message.get('resource', {}).get('primary', {}).get('URL') or message.get('URL')
+
+    # Primary/landing page
+    if landing_url:
         files.append({
             'filename': '',
-            'url': message.get('URL'),
+            'url': landing_url,
             'description': 'Publisher page',
             'format': 'HTML',
+        })
+
+    pdf_from_landing = _extract_pdf_from_landing(landing_url) if landing_url else None
+    landing_host = urlparse(landing_url).hostname.lower() if landing_url else None
+    pdf_host = urlparse(pdf_from_landing).hostname.lower() if pdf_from_landing else None
+    if pdf_from_landing:
+        files.append({
+            'filename': '',
+            'url': pdf_from_landing,
+            'description': 'Full text (PDF)',
+            'format': 'PDF',
         })
     
     # Check for PDF links
@@ -494,6 +507,12 @@ def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
         
         if url:
             file_format = 'PDF' if 'pdf' in content_type.lower() else content_type.split('/')[-1].upper()
+            host = urlparse(url).hostname.lower() if url else None
+
+            # If we already captured a PDF from the landing page, skip CrossRef PDFs on the same host
+            if pdf_from_landing and file_format == 'PDF' and pdf_host and host == pdf_host:
+                continue
+
             files.append({
                 'filename': '',
                 'url': url,
@@ -503,6 +522,50 @@ def _extract_crossref_links(message: Dict) -> List[Dict[str, Any]]:
             })
     
     return files
+
+
+def _extract_pdf_from_landing(landing_url: str) -> Optional[str]:
+    """
+    Attempt to locate a PDF link from the landing page (e.g., via citation_pdf_url meta tag).
+    """
+    if not landing_url:
+        return None
+
+    try:
+        resp = requests.get(
+            landing_url,
+            headers={"User-Agent": USER_AGENT, "Accept": "text/html"},
+            timeout=REQUEST_TIMEOUT,
+            allow_redirects=True,
+        )
+        resp.raise_for_status()
+    except Exception as e:
+        log.debug(f"Could not fetch landing page {landing_url}: {e}")
+        return None
+
+    html = resp.text or ""
+
+    # Look for standard meta tag used by many journal platforms (OJS, etc.)
+    meta_match = re.search(
+        r'<meta[^>]+name=[\"\']citation_pdf_url[\"\'][^>]+content=[\"\']([^\"\']+)[\"\']',
+        html,
+        flags=re.IGNORECASE,
+    )
+    if meta_match:
+        pdf_url = meta_match.group(1).strip()
+        return _prefer_https(urljoin(resp.url, pdf_url))
+
+    # Fallback: any href pointing to a PDF
+    href_match = re.search(
+        r'<a[^>]+href=[\"\']([^\"\']+\\.pdf[^\"\']*)[\"\']',
+        html,
+        flags=re.IGNORECASE,
+    )
+    if href_match:
+        pdf_url = href_match.group(1).strip()
+        return _prefer_https(urljoin(resp.url, pdf_url))
+
+    return None
 
 
 def fetch_from_zenodo(doi: str) -> Optional[Dict[str, Any]]:

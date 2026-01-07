@@ -15,6 +15,7 @@ from ckanext.schemingdcat.lib.doi_resolver import (
     fetch_from_datacite,
     fetch_from_crossref,
     fetch_from_zenodo,
+    _extract_pdf_from_landing,
     _normalize_files,
     _map_datacite_type,
     _map_crossref_type,
@@ -287,6 +288,48 @@ class TestDoiResolution:
         pdf_entry = [f for f in result['files'] if f['url'].endswith('file.pdf')][0]
         assert pdf_entry['format'] == 'PDF'
         assert pdf_entry['description'] == 'PDF'
+
+    @patch('ckanext.schemingdcat.lib.doi_resolver._make_request')
+    @patch('ckanext.schemingdcat.lib.doi_resolver.requests.get')
+    def test_fetch_from_crossref_prefers_pdf_from_landing(self, mock_get_html, mock_get_json):
+        """Prefer PDF discovered on landing page over broken CrossRef link."""
+
+        class DummyResp:
+            def __init__(self, text, url, status_code=200):
+                self.text = text
+                self.url = url
+                self.status_code = status_code
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise Exception(f"HTTP {self.status_code}")
+
+        mock_get_json.return_value = {
+            'message': {
+                'title': ['Test CrossRef Document'],
+                'abstract': 'Test CrossRef abstract',
+                'author': [{'given': 'John', 'family': 'Doe'}],
+                'published': {'date-parts': [[2023]]},
+                'publisher': 'CrossRef Publisher',
+                'type': 'journal-article',
+                'subject': ['hydrology'],
+                'URL': 'http://example.com/view/18',
+                'resource': {'primary': {'URL': 'http://example.com/view/18'}},
+                'link': [
+                    {'URL': 'http://example.com/download/18/18', 'content-type': 'application/pdf'},
+                ],
+            }
+        }
+        mock_get_html.return_value = DummyResp(
+            '<meta name=\"citation_pdf_url\" content=\"/article/view/18/86\">',
+            'http://example.com/view/18',
+        )
+
+        result = fetch_from_crossref("10.1234/test")
+
+        urls = {f['url'] for f in result['files']}
+        assert 'https://example.com/article/view/18/86' in urls
+        assert not any('download/18/18' in u for u in urls)
 
 
 class TestIntegration:
