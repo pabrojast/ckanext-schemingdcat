@@ -2238,7 +2238,7 @@ li.resource-item .dropdown-menu li a img.format_icon {
 .format-label[data-format*=json] {
   width: 60px !important;
   height: 65px !important;
-  background-position: -820px -220px !important;
+  background-position: -220px -220px !important;
   transform: scale(0.53) !important;
   margin: -14px 0 0 -14px !important;
   color: transparent !important;
