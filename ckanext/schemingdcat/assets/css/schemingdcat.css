@@ -2259,19 +2259,6 @@ li.resource-item .dropdown-menu li a img.format_icon {
   background-color: transparent !important;
 }
 
-/* PDF format icon */
-.format-label[data-format=pdf],
-.format-label[data-format*=pdf] {
-  width: 60px !important;
-  height: 65px !important;
-  background-position: -1020px -220px !important;
-  transform: scale(0.53) !important;
-  margin: -14px 0 0 -14px !important;
-  color: transparent !important;
-  border: none !important;
-  background-color: transparent !important;
-}
-
 /* XLS/XLSX format icons */
 .format-label[data-format=xls],
 .format-label[data-format*=xls],
