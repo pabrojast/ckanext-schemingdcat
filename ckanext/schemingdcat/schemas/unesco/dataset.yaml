@@ -1287,7 +1287,6 @@ dataset_fields:
         en: "Full name of the author (including titles if appropriate)"
         es: "Nombre completo del autor (incluyendo títulos si es apropiado)"
         fr: "Nom complet de l'auteur (y compris les titres le cas échéant)"
-      required: true
     - field_name: orcid
       label:
         en: ORCID ID
