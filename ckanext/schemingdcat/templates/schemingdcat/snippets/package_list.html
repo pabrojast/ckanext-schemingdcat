@@ -12,6 +12,7 @@
     
     #}
     {% block package_list %}
+      {% asset 'ckanext-schemingdcat/schemingdcat-dataset-notes' %}
       {% if packages %}
         <ul class="{{ list_class or 'dataset-list list-unstyled' }}">
             {% block package_list_inner %}

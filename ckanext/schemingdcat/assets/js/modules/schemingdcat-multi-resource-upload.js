@@ -1,3 +1,5 @@
+var SCHEMINGDCAT_FILE_INPUT_SELECTOR = 'input[type=\"file\"][id^=\"field-resource-upload\"], input[type=\"file\"]#upload, input[type=\"file\"].upload-file-input';
+
 ckan.module('schemingdcat-multi-resource-upload', function ($) {
   return {
     initialize: function () {
@@ -7,7 +9,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       self._enableMultipleSelection();
 
       // Delegamos el evento change para capturar selecciones múltiples
-      $(document).on('change', 'input[type="file"][id^="field-resource-upload"]', function (e) {
+      $(document).on('change', SCHEMINGDCAT_FILE_INPUT_SELECTOR, function (e) {
         var $input = $(this);
         var files = e.target.files;
         if (!files || files.length <= 1) {
@@ -20,7 +22,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
 
     /* Añade atributo multiple a los inputs existentes (y futuros mediante delegación) */
     _enableMultipleSelection: function () {
-      $('input[type="file"][id^="field-resource-upload"]').attr('multiple', 'multiple');
+      $(SCHEMINGDCAT_FILE_INPUT_SELECTOR).attr('multiple', 'multiple');
     },
 
     /* Gestiona la selección múltiple dividiendo los ficheros en varios bloques resource */
@@ -57,7 +59,7 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
           console.warn('schemingdcat: No se encontró el contenedor del nuevo recurso.');
           return;
         }
-        var $fileInput = $wrapper.find('input[type="file"][id^="field-resource-upload"]');
+        var $fileInput = $wrapper.find(SCHEMINGDCAT_FILE_INPUT_SELECTOR);
         if (!$fileInput.length) {
           console.warn('schemingdcat: El nuevo recurso no contiene input file.');
           return;
@@ -92,7 +94,10 @@ ckan.module('schemingdcat-multi-resource-upload', function ($) {
       var ext = file.name.split('.').pop().toUpperCase();
       var map = { 'XLSX': 'XLS', 'GEOJSON': 'GeoJSON' };
       var format = map[ext] || ext;
-      $wrapper.find('input[name$="format"], input[name$="format__"]').first().val(format);
+      var $format = $wrapper.find('input[name$="format"], input[name$="format__"], select[name$="format"], select[name$="format__"]').first();
+      if ($format.length) {
+        $format.val(format).trigger('change');
+      }
 
       // Fecha (created) si existe y está vacía
       var $created = $wrapper.find('input[name$="created"], input[name$="created__"]').first();

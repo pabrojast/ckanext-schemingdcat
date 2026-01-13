@@ -3,11 +3,12 @@
 Spatial extent extractors for various geospatial file formats.
 """
 
+import json
 import logging
 import os
 import tempfile
 import zipfile
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 
 log = logging.getLogger(__name__)
 
@@ -368,5 +369,308 @@ class SpatialExtentExtractor:
         return None
 
 
-# Global instance
+class MemberStateDetector:
+    """Detect member state (country) based on spatial extent overlap."""
+    
+    def __init__(self):
+        self._country_choices = None
+    
+    def reset_cache(self):
+        """Reset the country choices cache to force reload from schema."""
+        self._country_choices = None
+        log.info("[MemberStateDetector] Cache reset, will reload country choices on next use")
+    
+    def _get_country_choices(self) -> list:
+        """Get country choices from the dataset schema with their spatial extents."""
+        if self._country_choices is not None:
+            return self._country_choices
+        
+        self._country_choices = []
+        
+        try:
+            from ckanext.schemingdcat import helpers
+            log.info("[MemberStateDetector] Attempting to load schema...")
+            
+            try:
+                schema_data = helpers.schemingdcat_get_dataset_schema()
+            except Exception as schema_err:
+                log.error(f"[MemberStateDetector] Error calling schemingdcat_get_dataset_schema: {schema_err}")
+                # Try to get schema directly using action
+                try:
+                    import ckan.plugins.toolkit as toolkit
+                    schema_data = toolkit.get_action("scheming_dataset_schema_show")({}, {"type": "dataset"})
+                    log.info("[MemberStateDetector] Loaded schema using direct action call")
+                except Exception as direct_err:
+                    log.error(f"[MemberStateDetector] Direct action call also failed: {direct_err}")
+                    return self._country_choices
+            
+            if not schema_data:
+                log.info("[MemberStateDetector] No schema data available (returned None/empty)")
+                return self._country_choices
+            
+            log.info(f"[MemberStateDetector] Schema loaded, has {len(schema_data.get('dataset_fields', []))} fields")
+            
+            spatial_uri_field = next(
+                (f for f in schema_data.get('dataset_fields', []) 
+                 if f.get('field_name') == 'spatial_uri'), 
+                None
+            )
+            
+            if not spatial_uri_field:
+                log.info("[MemberStateDetector] No spatial_uri field found in schema")
+                return self._country_choices
+            
+            if 'choices' not in spatial_uri_field:
+                log.info("[MemberStateDetector] No choices in spatial_uri field")
+                return self._country_choices
+            
+            choices_with_spatial = 0
+            choices_without_spatial = 0
+            
+            for choice in spatial_uri_field['choices']:
+                if 'spatial' in choice and 'value' in choice:
+                    try:
+                        import json
+                        spatial_geom = json.loads(choice['spatial'])
+                        bounds = self._get_bounds_from_geojson(spatial_geom)
+                        if bounds:
+                            self._country_choices.append({
+                                'value': choice['value'],
+                                'label': choice.get('label', {}),
+                                'spatial': spatial_geom,
+                                'bounds': bounds
+                            })
+                            choices_with_spatial += 1
+                        else:
+                            log.debug(f"[MemberStateDetector] Could not get bounds for {choice.get('value')}")
+                    except (json.JSONDecodeError, TypeError) as e:
+                        log.debug(f"[MemberStateDetector] Error parsing spatial for {choice.get('value')}: {e}")
+                        continue
+                else:
+                    choices_without_spatial += 1
+            
+            log.info(f"[MemberStateDetector] Loaded {choices_with_spatial} countries with spatial data, {choices_without_spatial} without")
+                            
+        except Exception as e:
+            log.error(f"[MemberStateDetector] Error loading country choices from schema: {e}")
+        
+        return self._country_choices
+    
+    def _get_bounds_from_geojson(self, geojson: Dict[str, Any]) -> Optional[Tuple[float, float, float, float]]:
+        """Extract bounding box (minx, miny, maxx, maxy) from GeoJSON geometry.
+        
+        For MultiPolygon geometries, uses only the largest polygon (by bounding box area)
+        to avoid issues with countries that have scattered overseas territories.
+        """
+        try:
+            geom_type = geojson.get('type')
+            coordinates = geojson.get('coordinates', [])
+            
+            if not coordinates:
+                return None
+            
+            if geom_type == 'Polygon':
+                all_coords = []
+                for ring in coordinates:
+                    all_coords.extend(ring)
+                if not all_coords:
+                    return None
+                xs = [c[0] for c in all_coords]
+                ys = [c[1] for c in all_coords]
+                return (min(xs), min(ys), max(xs), max(ys))
+                
+            elif geom_type == 'MultiPolygon':
+                # For MultiPolygon, find the largest polygon by bounding box area
+                # This avoids issues with countries like USA/France that have
+                # scattered overseas territories creating huge bounding boxes
+                largest_bounds = None
+                largest_area = 0
+                
+                for polygon in coordinates:
+                    poly_coords = []
+                    for ring in polygon:
+                        poly_coords.extend(ring)
+                    if not poly_coords:
+                        continue
+                    
+                    xs = [c[0] for c in poly_coords]
+                    ys = [c[1] for c in poly_coords]
+                    bounds = (min(xs), min(ys), max(xs), max(ys))
+                    area = (bounds[2] - bounds[0]) * (bounds[3] - bounds[1])
+                    
+                    if area > largest_area:
+                        largest_area = area
+                        largest_bounds = bounds
+                
+                return largest_bounds
+            else:
+                return None
+            
+        except Exception as e:
+            log.debug(f"Error extracting bounds from GeoJSON: {e}")
+            return None
+    
+    def _bounds_overlap(self, bounds1: Tuple[float, float, float, float], 
+                        bounds2: Tuple[float, float, float, float]) -> bool:
+        """Check if two bounding boxes overlap."""
+        minx1, miny1, maxx1, maxy1 = bounds1
+        minx2, miny2, maxx2, maxy2 = bounds2
+        
+        return not (maxx1 < minx2 or minx1 > maxx2 or maxy1 < miny2 or miny1 > maxy2)
+    
+    def _bounds_contains(self, container: Tuple[float, float, float, float], 
+                         contained: Tuple[float, float, float, float]) -> bool:
+        """Check if container bounds fully contain the contained bounds."""
+        minx1, miny1, maxx1, maxy1 = container
+        minx2, miny2, maxx2, maxy2 = contained
+        
+        return minx1 <= minx2 and miny1 <= miny2 and maxx1 >= maxx2 and maxy1 >= maxy2
+    
+    def _calculate_overlap_percentage(self, bounds1: Tuple[float, float, float, float], 
+                                       bounds2: Tuple[float, float, float, float]) -> float:
+        """Calculate the percentage of bounds1 that overlaps with bounds2."""
+        minx1, miny1, maxx1, maxy1 = bounds1
+        minx2, miny2, maxx2, maxy2 = bounds2
+        
+        # Calculate intersection
+        inter_minx = max(minx1, minx2)
+        inter_miny = max(miny1, miny2)
+        inter_maxx = min(maxx1, maxx2)
+        inter_maxy = min(maxy1, maxy2)
+        
+        if inter_minx >= inter_maxx or inter_miny >= inter_maxy:
+            return 0.0
+        
+        inter_area = (inter_maxx - inter_minx) * (inter_maxy - inter_miny)
+        bounds1_area = (maxx1 - minx1) * (maxy1 - miny1)
+        
+        if bounds1_area <= 0:
+            return 0.0
+        
+        return (inter_area / bounds1_area) * 100
+    
+    def detect_member_state(self, extent_geojson: Dict[str, Any], 
+                            min_overlap_percentage: float = 50.0) -> Optional[str]:
+        """
+        Detect the member state (country) that best contains the given spatial extent.
+        
+        Args:
+            extent_geojson: GeoJSON geometry of the extent (Polygon or MultiPolygon)
+            min_overlap_percentage: Minimum overlap percentage to consider a match (default 50%)
+        
+        Returns:
+            The URI of the best matching country, or None if no suitable match found.
+        """
+        if not extent_geojson:
+            log.info("[MemberStateDetector] No extent_geojson provided")
+            return None
+        
+        extent_bounds = self._get_bounds_from_geojson(extent_geojson)
+        if not extent_bounds:
+            log.info("[MemberStateDetector] Could not extract bounds from extent_geojson")
+            return None
+        
+        log.info(f"[MemberStateDetector] Extent bounds: {extent_bounds}")
+        
+        country_choices = self._get_country_choices()
+        if not country_choices:
+            log.info("[MemberStateDetector] No country choices available from schema")
+            return None
+        
+        log.info(f"[MemberStateDetector] Loaded {len(country_choices)} country choices from schema")
+        
+        best_match = None
+        best_overlap = 0.0
+        fully_contained_matches = []
+        overlapping_countries = []
+        
+        for country in country_choices:
+            country_bounds = country.get('bounds')
+            if not country_bounds:
+                continue
+            
+            # Check if extent is fully contained within country
+            if self._bounds_contains(country_bounds, extent_bounds):
+                fully_contained_matches.append(country)
+                log.info(f"[MemberStateDetector] Extent fully contained in: {country.get('value')}")
+            elif self._bounds_overlap(country_bounds, extent_bounds):
+                overlap = self._calculate_overlap_percentage(extent_bounds, country_bounds)
+                overlapping_countries.append({'value': country.get('value'), 'overlap': overlap})
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    best_match = country
+        
+        if overlapping_countries:
+            log.info(f"[MemberStateDetector] Overlapping countries: {overlapping_countries[:5]}")
+        
+        # Prefer fully contained matches, pick the smallest (most specific) country
+        if fully_contained_matches:
+            # Sort by area (smallest first) to get the most specific country
+            def get_area(c):
+                b = c.get('bounds')
+                if not b:
+                    return float('inf')
+                return (b[2] - b[0]) * (b[3] - b[1])
+            
+            fully_contained_matches.sort(key=get_area)
+            result = fully_contained_matches[0]['value']
+            log.info(f"[MemberStateDetector] Result: Extent fully contained in country: {result}")
+            return result
+        
+        # Fall back to best overlap if above threshold
+        if best_match and best_overlap >= min_overlap_percentage:
+            result = best_match['value']
+            log.info(f"[MemberStateDetector] Result: Best matching country with {best_overlap:.1f}% overlap: {result}")
+            return result
+        
+        log.info(f"[MemberStateDetector] No suitable country match found (best overlap: {best_overlap:.1f}%, threshold: {min_overlap_percentage}%)")
+        return None
+    
+    def detect_member_states(self, extent_geojson: Dict[str, Any], 
+                             min_overlap_percentage: float = 10.0) -> list:
+        """
+        Detect all member states (countries) that overlap with the given spatial extent.
+        
+        Args:
+            extent_geojson: GeoJSON geometry of the extent (Polygon or MultiPolygon)
+            min_overlap_percentage: Minimum overlap percentage to include a country (default 10%)
+        
+        Returns:
+            List of country URIs that overlap with the extent, sorted by overlap percentage.
+        """
+        if not extent_geojson:
+            return []
+        
+        extent_bounds = self._get_bounds_from_geojson(extent_geojson)
+        if not extent_bounds:
+            return []
+        
+        country_choices = self._get_country_choices()
+        if not country_choices:
+            return []
+        
+        matches = []
+        
+        for country in country_choices:
+            country_bounds = country.get('bounds')
+            if not country_bounds:
+                continue
+            
+            if self._bounds_overlap(country_bounds, extent_bounds):
+                overlap = self._calculate_overlap_percentage(extent_bounds, country_bounds)
+                if overlap >= min_overlap_percentage:
+                    matches.append({
+                        'value': country['value'],
+                        'overlap': overlap,
+                        'contained': self._bounds_contains(country_bounds, extent_bounds)
+                    })
+        
+        # Sort by: fully contained first, then by overlap percentage
+        matches.sort(key=lambda x: (-x['contained'], -x['overlap']))
+        
+        return [m['value'] for m in matches]
+
+
+# Global instances
 extent_extractor = SpatialExtentExtractor()
+member_state_detector = MemberStateDetector()

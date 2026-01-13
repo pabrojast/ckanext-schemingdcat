@@ -31,16 +31,26 @@ def extract_spatial_extent_endpoint():
     
     This endpoint is designed for frontend use only and does not interfere 
     with CKAN's core API operations.
+    
+    Returns:
+        JSON with:
+        - success: bool
+        - extent: GeoJSON geometry or None
+        - spatial_uri: Detected member state URI or None
+        - spatial_uris: List of all overlapping member state URIs
+        - error: Error message if failed
     """
     try:
         if not is_module_available('ckanext.schemingdcat.upload'):
             return jsonify({
                 'success': False,
                 'error': 'Spatial extent extraction not available',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
 
-        from ckanext.schemingdcat.upload import extent_extractor
+        from ckanext.schemingdcat.upload import extent_extractor, member_state_detector
         
         # Check if it's a direct file upload
         if 'file' in request.files:
@@ -49,7 +59,9 @@ def extract_spatial_extent_endpoint():
                 return jsonify({
                     'success': False,
                     'error': 'No file selected',
-                    'extent': None
+                    'extent': None,
+                    'spatial_uri': None,
+                    'spatial_uris': []
                 }), 400
             
             extent = extent_extractor.extract_extent_from_upload(file)
@@ -64,7 +76,9 @@ def extract_spatial_extent_endpoint():
                 return jsonify({
                     'success': False,
                     'error': 'No resource_url provided',
-                    'extent': None
+                    'extent': None,
+                    'spatial_uri': None,
+                    'spatial_uris': []
                 }), 400
             
             extent = extent_extractor.extract_extent_from_url(resource_url, resource_format)
@@ -73,20 +87,30 @@ def extract_spatial_extent_endpoint():
             return jsonify({
                 'success': False,
                 'error': 'No file or resource_url provided',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
         
         if extent:
+            # Detect member state(s) based on the extracted extent
+            spatial_uri = member_state_detector.detect_member_state(extent)
+            spatial_uris = member_state_detector.detect_member_states(extent)
+            
             return jsonify({
                 'success': True,
                 'error': None,
-                'extent': extent
+                'extent': extent,
+                'spatial_uri': spatial_uri,
+                'spatial_uris': spatial_uris
             })
         else:
             return jsonify({
                 'success': False,
                 'error': 'Could not extract spatial extent from file',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
             
     except Exception as e:
@@ -94,7 +118,9 @@ def extract_spatial_extent_endpoint():
         return jsonify({
             'success': False,
             'error': f'Internal error: {str(e)}',
-            'extent': None
+            'extent': None,
+            'spatial_uri': None,
+            'spatial_uris': []
         }), 500
 
 
@@ -104,23 +130,37 @@ def extract_spatial_extent_from_resource_endpoint():
     
     This endpoint is designed for processing resources that have already been uploaded
     to cloud storage (like Azure) and processes them based on their format.
+    
+    Returns:
+        JSON with:
+        - success: bool
+        - extent: GeoJSON geometry or None
+        - spatial_uri: Detected member state URI or None
+        - spatial_uris: List of all overlapping member state URIs
+        - processed_url: The resource URL that was processed
+        - format: The resource format
+        - error: Error message if failed
     """
     try:
         if not is_module_available('ckanext.schemingdcat.upload'):
             return jsonify({
                 'success': False,
                 'error': 'Spatial extent extraction not available',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
 
-        from ckanext.schemingdcat.upload import extent_extractor
+        from ckanext.schemingdcat.upload import extent_extractor, member_state_detector
         
         data = request.get_json()
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'No JSON data provided',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
         
         resource_url = data.get('resource_url')
@@ -130,7 +170,9 @@ def extract_spatial_extent_from_resource_endpoint():
             return jsonify({
                 'success': False,
                 'error': 'No resource_url provided',
-                'extent': None
+                'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': []
             }), 400
         
         log.info(f"Processing resource for spatial extent: {resource_url} (format: {resource_format})")
@@ -138,10 +180,16 @@ def extract_spatial_extent_from_resource_endpoint():
         extent = extent_extractor.extract_extent_from_resource(resource_url, resource_format)
         
         if extent:
+            # Detect member state(s) based on the extracted extent
+            spatial_uri = member_state_detector.detect_member_state(extent)
+            spatial_uris = member_state_detector.detect_member_states(extent)
+            
             return jsonify({
                 'success': True,
                 'error': None,
                 'extent': extent,
+                'spatial_uri': spatial_uri,
+                'spatial_uris': spatial_uris,
                 'processed_url': resource_url,
                 'format': resource_format
             })
@@ -150,6 +198,8 @@ def extract_spatial_extent_from_resource_endpoint():
                 'success': False,
                 'error': 'Could not extract spatial extent from resource',
                 'extent': None,
+                'spatial_uri': None,
+                'spatial_uris': [],
                 'processed_url': resource_url,
                 'format': resource_format
             }), 400
@@ -159,7 +209,9 @@ def extract_spatial_extent_from_resource_endpoint():
         return jsonify({
             'success': False,
             'error': f'Internal error: {str(e)}',
-            'extent': None
+            'extent': None,
+            'spatial_uri': None,
+            'spatial_uris': []
         }), 500
 
 

@@ -19,11 +19,17 @@ from ckanext.schemingdcat.faceted import Faceted
 from ckanext.schemingdcat.utils import init_config
 from ckanext.schemingdcat.package_controller import PackageController
 from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
+import os
 
 import logging
 import json
+import sys
 
 log = logging.getLogger(__name__)
+
+# Debug: Print when module is imported (to diagnose RQ worker issues)
+print(f"[SCHEMINGDCAT PLUGIN] Module imported successfully", file=sys.stderr)
+sys.stderr.flush()
 
 class SchemingDCATPlugin(
     plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
@@ -36,6 +42,7 @@ class SchemingDCATPlugin(
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IClick)
+    plugins.implements(plugins.IPackageController, inherit=True)
 
     # IConfigurer
     def update_config(self, config_):
@@ -137,11 +144,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     # Add cloudstorage support
     plugins.implements(plugins.IUploader)
     plugins.implements(plugins.IResourceController, inherit=True)
+    plugins.implements(plugins.IPackageController, inherit=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         log.info("🚀 [PLUGIN INIT] SchemingDCATDatasetsPlugin initialized with IResourceController")
         log.info("🚀 [PLUGIN INIT] Spatial extent extraction will be processed after resource creation/update")
+        # Debug print to stderr for worker visibility
+        import sys
+        print(f"[PLUGIN INIT] SchemingDCATDatasetsPlugin.__init__ called", file=sys.stderr)
+        sys.stderr.flush()
 
     def update_config(self, config_):
         # Call parent update_config first
@@ -193,23 +205,189 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         
         return uploader
 
+    # --- Package lifecycle helpers: ensure member-state/initiative groups are captured ---
+    def _ensure_memberstate_groups(self, context, data_dict):
+        """
+        Make sure selected member states (via group multiselect or spatial_uri)
+        end up in the dataset's groups list before create/update.
+        """
+        log.info("[_ensure_memberstate_groups] ENTRY")
+        
+        # Import helpers - if this fails, log and continue without spatial_uri resolution
+        sd_helpers = None
+        try:
+            from ckanext.schemingdcat import helpers as sd_helpers
+        except Exception as e:
+            log.warning(f"[_ensure_memberstate_groups] Could not import helpers: {e}")
+
+        # Log all keys to understand what's coming in
+        all_keys = [str(k) for k in data_dict.keys()]
+        log.info(f"[_ensure_memberstate_groups] all data_dict keys: {all_keys}")
+
+        group_names = []
+
+        existing_groups = data_dict.get('groups') or []
+        log.info(f"[_ensure_memberstate_groups] existing_groups from data_dict: {existing_groups}")
+        log.info(f"[_ensure_memberstate_groups] existing_groups type: {type(existing_groups)}")
+        if isinstance(existing_groups, dict):
+            existing_groups = [existing_groups]
+        for g in existing_groups:
+            log.info(f"[_ensure_memberstate_groups] processing group: {g} (type: {type(g)})")
+            # Handle both dict format {'id': 'xxx', 'name': 'xxx'} and string format 'xxx'
+            if isinstance(g, dict):
+                name = g.get('name') or g.get('id')
+            elif isinstance(g, str):
+                name = g
+            else:
+                log.warning(f"[_ensure_memberstate_groups] Unexpected group format: {g}")
+                continue
+            log.info(f"[_ensure_memberstate_groups] extracted name/id: {name}")
+            if name:
+                group_names.append(name)
+
+        log.info(f"[_ensure_memberstate_groups] group_names after existing_groups: {group_names}")
+
+        for key, value in list(data_dict.items()):
+            key_name = key
+            if isinstance(key, tuple) and key:
+                key_name = key[-1]
+            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                log.info(f"[_ensure_memberstate_groups] found groups__ key: {key_name} = {value}")
+                if value:
+                    group_names.append(value)
+
+        log.info(f"[_ensure_memberstate_groups] group_names after groups__X__id: {group_names}")
+
+        spatial_val = data_dict.get('spatial_uri')
+        spatial_list = []
+        if spatial_val:
+            if isinstance(spatial_val, str):
+                try:
+                    parsed = json.loads(spatial_val)
+                    spatial_list = parsed if isinstance(parsed, list) else [parsed]
+                except Exception:
+                    spatial_list = [spatial_val]
+            elif isinstance(spatial_val, list):
+                spatial_list = spatial_val
+            else:
+                spatial_list = [spatial_val]
+
+        for uri in spatial_list:
+            if not uri or not sd_helpers:
+                continue
+            try:
+                group_slug = sd_helpers.schemingdcat_find_member_state_group(uri, context)
+                if group_slug:
+                    group_names.append(group_slug)
+            except Exception as e:
+                log.info(f"Could not resolve member state group for {uri}: {e}")
+
+        seen = set()
+        unique_group_names = []
+        for name in group_names:
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            unique_group_names.append(name)
+
+        log.info(f"[_ensure_memberstate_groups] unique_group_names final: {unique_group_names}")
+
+        if unique_group_names:
+            data_dict['groups'] = [{'name': n} for n in unique_group_names]
+            log.info(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
+
+        return data_dict
+
+    def before_dataset_create(self, context, data_dict):
+        log.info("[SchemingDCATPlugin.before_dataset_create] CALLED")
+        return self._ensure_memberstate_groups(context, data_dict)
+
+    def before_dataset_update(self, context, data_dict):
+        log.info("[SchemingDCATPlugin.before_dataset_update] CALLED")
+        return self._ensure_memberstate_groups(context, data_dict)
+
     def get_uploader(self, upload_to, old_filename=None):
         """Fallback to CKAN's default uploader for non-resource uploads.
 
         CKAN 2.10 calls this method for user/group images or other assets.
         Returning None keeps the core uploader behaviour while our custom
         resource uploader continues to handle dataset resources.
+        This is consistent with cloudstorage plugin behavior.
         """
         return None
 
     def get_actions(self):
         # Only return schemingdcat-specific actions
         # cloudstorage actions are provided by the cloudstorage plugin
-        return {
+        actions = {
             "schemingdcat_dataset_schema_name": logic.schemingdcat_dataset_schema_name,
             "scheming_dataset_schema_list": scheming_logic.scheming_dataset_schema_list,
             "scheming_dataset_schema_show": scheming_logic.scheming_dataset_schema_show,
         }
+        # Wrap resource_create/resource_update to ensure metadata extraction is triggered even if IResourceController hooks are skipped
+        actions.update({
+            "resource_create": self.resource_create,
+            "resource_update": self.resource_update,
+            "package_patch": self.package_patch,
+        })
+        return actions
+
+    @toolkit.chained_action
+    def resource_create(self, next_action, context, data_dict):
+        """
+        Chained action to ensure metadata extraction triggers even if IResourceController is skipped.
+        """
+        result = next_action(context, data_dict)
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
+            return result
+        try:
+            self._trigger_metadata_extraction(result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not trigger metadata extraction after resource_create: {e}")
+        return result
+
+    @toolkit.chained_action
+    def resource_update(self, next_action, context, data_dict):
+        """
+        Chained action for updates; triggers extraction if a new upload/format warrants it.
+        """
+        result = next_action(context, data_dict)
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
+            return result
+        try:
+            self._trigger_metadata_extraction(result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not trigger metadata extraction after resource_update: {e}")
+        return result
+
+    @toolkit.chained_action
+    def package_patch(self, next_action, context, data_dict):
+        """
+        Chained action for package_patch to ensure groups are processed correctly
+        in multi-page forms.
+        """
+        log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
+        
+        # Log the incoming groups data for debugging
+        groups_before = data_dict.get('groups', 'NOT_PRESENT')
+        log.info(f"[SchemingDCATPlugin.package_patch] groups BEFORE processing: {groups_before}")
+        
+        # Log any groups__X__id fields
+        groups_fields = {k: v for k, v in data_dict.items() 
+                        if isinstance(k, str) and k.startswith('groups__') and k.endswith('__id')}
+        log.info(f"[SchemingDCATPlugin.package_patch] groups__X__id fields: {groups_fields}")
+        
+        # Process groups__X__id fields before the patch
+        data_dict = self._ensure_memberstate_groups(context, data_dict)
+        
+        groups_after = data_dict.get('groups', 'NOT_PRESENT')
+        log.info(f"[SchemingDCATPlugin.package_patch] groups AFTER processing: {groups_after}")
+        
+        return next_action(context, data_dict)
 
     # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
     def get_auth_functions(self):
@@ -348,6 +526,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             # Mark for metadata extraction after creation
             resource['_needs_metadata_extraction'] = True
             log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction")
+        else:
+            # Also mark if the declared format/URL looks like a spatial or document we can parse
+            if self._should_extract_metadata(resource):
+                resource['_needs_metadata_extraction'] = True
+                log.info(f"📝 [BEFORE CREATE] Resource marked for metadata extraction based on format/URL")
         
         return resource
 
@@ -360,48 +543,94 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         All background processing is done via job queue.
         """
         resource_id = resource.get('id', 'unknown')
+        
+        # Skip if this is a metadata job update (prevent infinite loop)
+        if context.get('_schemingdcat_metadata_job'):
+            log.debug(f"⏭️ [HOOK] Skipping after_create - metadata job context")
+            return resource
+            
         log.info(f"🔥 [HOOK] after_create called for resource: {resource_id}")
 
-        # Skip if not marked for extraction
-        if not resource.get('_needs_metadata_extraction'):
-            log.info(f"⏭️ [HOOK] Resource {resource_id} doesn't need metadata extraction")
-            return resource
-
-        # Check if job queue is available
-        try:
-            from ckan.lib import jobs
-            job_queue_available = True
-        except ImportError:
-            job_queue_available = False
-            log.warning("Job queue not available, using threading fallback")
-
-        if job_queue_available:
-            # Queue metadata extraction job
-            try:
-                metadata_job_data = {
-                    'resource_id': resource.get('id'),
-                    'resource_url': resource.get('url'),
-                    'resource_format': resource.get('format'),
-                    'package_id': resource.get('package_id'),
-                }
-                jobs.enqueue(
-                    extract_comprehensive_metadata_job,
-                    [metadata_job_data],
-                    title=f"Extract metadata for resource {resource_id[:8]}",
-                    queue='default'
-                )
-                log.info(f"✅ [HOOK] Queued metadata extraction job for resource {resource_id}")
-
-            except Exception as queue_error:
-                log.error(f"⚠️ [HOOK] Could not queue job: {queue_error}")
-                # Fall back to threading
-                self._fallback_metadata_extraction(resource)
-        else:
-            # Use threading fallback
-            self._fallback_metadata_extraction(resource)
+        self._trigger_metadata_extraction(resource)
 
         # RETURN IMMEDIATELY - don't wait for jobs
         return resource
+
+    def _trigger_metadata_extraction(self, resource):
+        """
+        Centralized trigger for metadata extraction that can be called from hooks or chained actions.
+        
+        Note: RQ background worker in CKAN 2.10 has known issues with job execution.
+        We use threading-based extraction directly which is more reliable.
+        """
+        resource_id = resource.get('id', 'unknown')
+        needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
+
+        if not needs_extraction:
+            log.info(f"⏭️ [TRIGGER] Resource {resource_id} doesn't need metadata extraction")
+            return
+
+        # Use threading-based extraction directly (more reliable than RQ in CKAN 2.10)
+        # RQ worker has known issues where jobs complete without executing the function
+        log.info(f"🚀 [TRIGGER] Starting metadata extraction for resource {resource_id}")
+        self._fallback_metadata_extraction(resource)
+
+    def _start_job_watchdog(self, job, resource, delay_seconds=60):
+        """
+        If the job stays queued (no worker), trigger fallback extraction after a delay.
+        This avoids uploads appearing stuck when no job workers are running.
+        """
+        try:
+            import threading
+            import time
+            from ckan.lib import jobs
+
+            def watcher():
+                try:
+                    time.sleep(delay_seconds)
+                    # Re-fetch job state
+                    j = jobs.get(job.id) if job else None
+                    state = getattr(j, 'state', None) or getattr(j, 'status', None)
+                    if state in (None, 'queued', 'failed'):
+                        log.warning(f"⏱️ [WATCHDOG] Metadata job {job.id if job else 'unknown'} still {state or 'unknown'} after {delay_seconds}s. Running fallback.")
+                        self._fallback_metadata_extraction(resource)
+                    else:
+                        log.info(f"⏱️ [WATCHDOG] Metadata job {job.id} state={state}, no fallback needed.")
+                except Exception as e:
+                    log.debug(f"Watchdog could not check job status: {e}")
+
+            t = threading.Thread(target=watcher, name=f"metadata-watchdog-{resource.get('id', 'unknown')[:8]}", daemon=True)
+            t.start()
+        except Exception as e:
+            log.debug(f"Could not start job watchdog: {e}")
+
+    def _should_extract_metadata(self, resource):
+        """
+        Heuristic to decide if a resource likely needs metadata extraction.
+        This avoids relying solely on transient flags that are lost after creation.
+        """
+        url_type = (resource.get('url_type') or '').lower()
+        if url_type == 'upload':
+            return True
+
+        fmt = (resource.get('format') or '').lower()
+        url = resource.get('url') or ''
+        url_ext = ''
+        if url:
+            clean_url = url.split('?')[0].split('#')[0]
+            url_ext = os.path.splitext(clean_url)[1].lower().lstrip('.')
+
+        candidate_formats = {
+            'zip', 'shp', 'tif', 'tiff', 'geotiff', 'kml', 'geojson', 'json',
+            'gpkg', 'csv', 'xls', 'xlsx', 'pdf'
+        }
+
+        if fmt in candidate_formats:
+            return True
+        if url_ext in candidate_formats:
+            return True
+
+        return False
 
     def _fallback_metadata_extraction(self, resource):
         """Fallback metadata extraction using threading when job queue is not available."""
@@ -449,440 +678,10 @@ class SchemingDCATOrganizationsPlugin(SchemingOrganizationsPlugin):
         return "schemingdcat/organization/about.html"
 
 
-def extract_comprehensive_metadata_job(job_data):
-    """
-    Job function para extraer metadata comprensiva en segundo plano usando CKAN Jobs Queue.
-    
-    Función que extrae toda la información disponible de archivos (espacial y no espacial).
-    
-    Args:
-        job_data: Diccionario con resource_id, resource_url, resource_format, package_id
-    """
-    import json
-    import logging
-    import tempfile
-    import urllib.request
-    import os
-    import sys
-    
-    # Configure logging for the worker with more detail
-    log = logging.getLogger(__name__)
-    log.info(f"========= STARTING COMPREHENSIVE METADATA JOB =========")
-    log.info(f"Job data received: {job_data}")
-    log.info(f"Python version: {sys.version}")
-    log.info(f"Working directory: {os.getcwd()}")
-    
-    try:
-        # Get job data with validation
-        if not isinstance(job_data, dict):
-            log.error(f"Invalid job_data type: {type(job_data)}, expected dict")
-            return False
-            
-        resource_id = job_data.get('resource_id')
-        resource_url = job_data.get('resource_url')
-        resource_format = job_data.get('resource_format')
-        package_id = job_data.get('package_id')
-        skip_spatial = bool(job_data.get('skip_spatial'))
-        
-        if not resource_id:
-            log.error("No resource_id in job_data")
-            return False
-            
-        log.info(f"Processing comprehensive metadata job for resource {resource_id}")
-        log.info(f"Resource URL: {resource_url}")
-        log.info(f"Resource format: {resource_format}")
-        log.info(f"Package ID: {package_id}")
-        
-        # CKAN imports inside try block to handle import errors
-        try:
-            import ckan.model as model
-            import ckan.plugins.toolkit as toolkit
-            from ckan.logic import get_action
-            import traceback
-            # Import scheming logic functions to ensure they're registered
-            from ckanext.scheming import logic as scheming_logic
-            
-            # Ensure scheming actions are available in the worker context
-            # This is necessary because workers don't automatically load all plugin actions
-            import ckan.plugins as p
-            scheming_plugins = [
-                'scheming_datasets',
-                'scheming_groups', 
-                'scheming_organizations'
-            ]
-            
-            for plugin_name in scheming_plugins:
-                try:
-                    plugin = p.get_plugin(plugin_name)
-                    if hasattr(plugin, 'get_actions'):
-                        actions = plugin.get_actions()
-                        for action_name, action_func in actions.items():
-                            if action_name not in toolkit._actions:
-                                toolkit._actions[action_name] = action_func
-                                log.info(f"Registered action {action_name} from {plugin_name}")
-                except Exception as plugin_error:
-                    log.warning(f"Could not load actions from {plugin_name}: {plugin_error}")
-            
-            log.info("CKAN modules imported successfully")
-        except ImportError as e:
-            log.error(f"Could not import CKAN modules: {e}")
-            return False
-        
-        # Import analyzer
-        try:
-            from ckanext.schemingdcat.spatial_extent import FileAnalyzer
-            log.info("FileAnalyzer imported successfully")
-        except ImportError as e:
-            log.error(f"Could not import FileAnalyzer: {e}")
-            return False
-        
-        # Analyze file comprehensively
-        metadata = {}
-        
-        try:
-            analyzer = FileAnalyzer()
-            log.info(f"FileAnalyzer created successfully for resource {resource_id}")
-            
-            # Check if file is local or remote
-            if resource_url and (resource_url.startswith('/') or '://' not in resource_url):
-                # Local file
-                log.info(f"Analyzing local file: {resource_url}")
-                
-                # Check if file exists
-                if os.path.exists(resource_url):
-                    log.info(f"Local file exists, analyzing: {resource_url}")
-                    metadata = analyzer.analyze_file(resource_url, trust_extension=True)
-                    log.info(f"Local file analysis completed, extracted {len(metadata)} metadata fields")
-                else:
-                    log.warning(f"Local file does not exist: {resource_url}")
-                    metadata = {}
-                    
-            else:
-                # Remote file - download temporarily for analysis
-                log.info(f"Analyzing remote file: {resource_url}")
-                metadata = {}
-                
-                if resource_url:
-                    ext = resource_format.lower() if resource_format else 'unknown'
-                    suffix = f".{ext}" if ext and ext != 'unknown' else ""
-                    
-                    log.info(f"Creating temporary file with suffix: {suffix}")
-                    
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
-                        try:
-                            # Download file with proper headers
-                            req = urllib.request.Request(resource_url)
-                            req.add_header('User-Agent', 'CKAN-SchemingDCAT-FileAnalyzer/1.0')
-                            
-                            log.info(f"Starting download from: {resource_url}")
-                            
-                            import time
-                            max_attempts = 3
-                            backoff = 2
-                            last_error = None
-
-                            for attempt in range(1, max_attempts + 1):
-                                try:
-                                    with urllib.request.urlopen(req, timeout=45) as response:
-                                        log.info(f"Download response received, content-type: {response.headers.get('Content-Type', 'unknown')}")
-                                        
-                                        chunk_size = 8192
-                                        total_size = 0
-                                        while True:
-                                            chunk = response.read(chunk_size)
-                                            if not chunk:
-                                                break
-                                            tmp_file.write(chunk)
-                                            total_size += len(chunk)
-                                            # Limit file size to 100MB
-                                            if total_size > 100 * 1024 * 1024:
-                                                log.warning("File too large (>100MB), aborting download")
-                                                raise Exception("File too large (>100MB)")
-                                        
-                                        tmp_file.flush()
-                                        
-                                        if total_size > 0:
-                                            log.info(f"Downloaded {total_size} bytes to {tmp_file.name}, starting analysis...")
-                                            # Analyze downloaded file
-                                            metadata = analyzer.analyze_file(tmp_file.name, trust_extension=True)
-                                            # If spatial is explicitly skipped, post-filter spatial keys
-                                            if skip_spatial and isinstance(metadata, dict):
-                                                for k in ['spatial_extent','spatial_crs','spatial_resolution','feature_count','geometry_type','geographic_coverage','administrative_boundaries']:
-                                                    metadata.pop(k, None)
-                                            log.info(f"Remote file analysis completed, extracted {len(metadata)} metadata fields")
-                                        else:
-                                            log.warning(f"Downloaded file is empty")
-                                        last_error = None
-                                        break
-                                except urllib.error.URLError as e:
-                                    last_error = e
-                                    log.warning(f"Download attempt {attempt}/{max_attempts} failed: {e}")
-                                except Exception as e:
-                                    last_error = e
-                                    log.warning(f"Download attempt {attempt}/{max_attempts} failed: {e}")
-                                
-                                if attempt < max_attempts:
-                                    time.sleep(backoff)
-                                    backoff *= 2
-
-                            if last_error is not None:
-                                log.error(f"All download attempts failed: {last_error}")
-                            
-                        except urllib.error.URLError as e:
-                            log.error(f"URL error downloading file: {e}")
-                        except Exception as e:
-                            log.error(f"Error downloading file for analysis: {e}")
-                        finally:
-                            # Clean up temporary file
-                            try:
-                                if os.path.exists(tmp_file.name):
-                                    os.unlink(tmp_file.name)
-                                    log.debug(f"Cleaned up temporary file: {tmp_file.name}")
-                            except Exception as cleanup_error:
-                                log.warning(f"Could not clean up temporary file {tmp_file.name}: {cleanup_error}")
-                else:
-                    log.warning("No resource URL provided for analysis")
-                
-        except Exception as e:
-            log.error(f"Error extracting comprehensive metadata: {e}", exc_info=True)
-            return False
-        
-        if metadata:
-            log.info(f"Successfully extracted comprehensive metadata from resource {resource_id} in job")
-            log.info(f"Metadata fields extracted: {list(metadata.keys())}")
-            
-            # Debug: Log raw metadata to understand what's being extracted
-            log.debug(f"Raw metadata extracted: {json.dumps(metadata, indent=2, default=str)}")
-            
-            try:
-                # Ensure we have a valid database session and close any existing one
-                try:
-                    model.Session.close()
-                except:
-                    pass
-                
-                # Create fresh system context for updating the resource with proper setup
-                # Use a site user to bypass authorization issues with private datasets
-                try:
-                    site_user = toolkit.get_action('get_site_user')({'ignore_auth': True}, {})
-                    user_name = site_user['name']
-                    log.info(f"Using site user '{user_name}' for resource update")
-                except Exception as e:
-                    log.warning(f"Could not get site user: {e}, using default system user")
-                    user_name = 'default'
-                
-                context = {
-                    'model': model,
-                    'session': model.Session,
-                    'ignore_auth': True,
-                    'user': user_name,  # Use site user to handle private datasets
-                    'auth_user_obj': None,
-                    'api_version': 3,
-                    'defer_commit': False,
-                    'for_view': False,  # This is not for rendering
-                    'return_id_only': False,  # We want the full object back
-                    'bypass_auth': True,  # Additional flag for some auth checks
-                    '__auth_audit': []  # Prevent auth audit logging
-                }
-                
-                log.info(f"Created system context for resource update")
-                
-                # Prepare data for updating with all extracted metadata
-                resource_patch_data = {'id': resource_id}
-                
-                # Add all fields that have valid values
-                metadata_fields = {
-                    'spatial_extent': metadata.get('spatial_extent'),
-                    'spatial_crs': metadata.get('spatial_crs'),
-                    'spatial_resolution': metadata.get('spatial_resolution'),
-                    'feature_count': metadata.get('feature_count'),
-                    'geometry_type': metadata.get('geometry_type'),
-                    'data_fields': metadata.get('data_fields'),
-                    'data_statistics': metadata.get('data_statistics'),
-                    'data_domains': metadata.get('data_domains'),
-                    'geographic_coverage': metadata.get('geographic_coverage'),
-                    'administrative_boundaries': metadata.get('administrative_boundaries'),
-                    'file_created_date': metadata.get('file_created_date'),
-                    'file_modified_date': metadata.get('file_modified_date'),
-                    'data_temporal_coverage': metadata.get('data_temporal_coverage'),
-                    'file_size_bytes': metadata.get('file_size_bytes'),
-                    'compression_info': metadata.get('compression_info'),
-                    'format_version': metadata.get('format_version'),
-                    'file_integrity': metadata.get('file_integrity'),
-                    'content_type_detected': metadata.get('content_type_detected'),
-                    'document_pages': metadata.get('document_pages'),
-                    'spreadsheet_sheets': metadata.get('spreadsheet_sheets'),
-                    'text_content_info': metadata.get('text_content_info')
-                }
-                
-                # Only add fields that have meaningful values
-                fields_to_update = []
-                for field_name, field_value in metadata_fields.items():
-                    # Skip None values completely
-                    if field_value is None:
-                        continue
-                        
-                    # Skip empty strings
-                    if field_value == '':
-                        continue
-                        
-                    # Handle lists more rigorously - only include lists with meaningful content
-                    if isinstance(field_value, list):
-                        # Filter empty/meaningless values from the list
-                        filtered_list = []
-                        for item in field_value:
-                            if item is not None:
-                                # Convert to string and clean whitespace
-                                item_str = str(item).strip()
-                                # Only add if not empty and not meaningless values
-                                if item_str and item_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                                    filtered_list.append(item_str)
-                        
-                        # Only add the list if it has at least one meaningful item
-                        if filtered_list:
-                            # Convert list to JSON string for fields that expect JSON format
-                            json_fields = ['data_fields', 'data_statistics', 'data_domains', 
-                                         'geographic_coverage', 'administrative_boundaries',
-                                         'compression_info', 'format_version', 'file_integrity',
-                                         'document_pages', 'spreadsheet_sheets', 'text_content_info']
-                            
-                            if field_name in json_fields:
-                                resource_patch_data[field_name] = json.dumps(filtered_list)
-                            else:
-                                resource_patch_data[field_name] = filtered_list
-                            fields_to_update.append(field_name)
-                        # If empty list after filtering, skip this field completely
-                        continue
-                    
-                    # For non-list values, verify they're not just whitespace or meaningless values
-                    field_str = str(field_value).strip()
-                    if field_str and field_str not in ['', 'None', 'null', 'undefined', '0', '-', 'N/A', 'n/a']:
-                        resource_patch_data[field_name] = field_value
-                        fields_to_update.append(field_name)
-                
-                log.info(f"Prepared to update {len(fields_to_update)} metadata fields: {fields_to_update}")
-                
-                # Use resource_patch to update the fields
-                if len(fields_to_update) > 0:
-                    log.info(f"Updating resource {resource_id} with {len(fields_to_update)} metadata fields: {fields_to_update}")
-                    log.debug(f"Resource patch data: {resource_patch_data}")
-                    
-                    try:
-                        # Use direct action import for better worker compatibility
-                        log.info(f"Getting resource_patch action...")
-                        resource_patch_action = get_action('resource_patch')
-                        log.info(f"Calling resource_patch action with context and data...")
-                        # Defensive: ensure strings where fields expect text to avoid TypeErrors in validators
-                        safe_patch_data = {}
-                        for k, v in resource_patch_data.items():
-                            if isinstance(v, (dict, list)):
-                                try:
-                                    safe_patch_data[k] = json.dumps(v)
-                                except Exception:
-                                    safe_patch_data[k] = str(v)
-                            else:
-                                safe_patch_data[k] = v
-                        result = resource_patch_action(context, safe_patch_data)
-                        log.info(f"Resource_patch call completed successfully!")
-                        log.info(f"Successfully updated comprehensive metadata for resource {resource_id} via job queue. Updated {len(fields_to_update)} fields.")
-                        log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
-
-                        # Verify that all intended fields persisted; if some are missing (likely not in active schema), store them as extras
-                        try:
-                            resource_show = get_action('resource_show')(context, {'id': resource_id})
-                            missing_fields = []
-                            for fname in fields_to_update:
-                                persisted = False
-                                # Check direct field
-                                if fname in resource_show and resource_show.get(fname):
-                                    persisted = True
-                                # Check extras list structure
-                                if not persisted and isinstance(resource_show.get('extras'), list):
-                                    for ex in resource_show['extras']:
-                                        if isinstance(ex, dict) and ex.get('key') == fname and ex.get('value'):
-                                            persisted = True
-                                            break
-                                if not persisted:
-                                    missing_fields.append(fname)
-                            if missing_fields:
-                                log.info(f"Some fields not persisted via action (likely not in schema): {missing_fields}. Writing as extras via fallback.")
-                                fallback_map = {k: metadata_fields.get(k) for k in missing_fields}
-                                _update_resource_metadata_direct_db(resource_id, fallback_map, model)
-                        except Exception as verify_error:
-                            log.debug(f"Could not verify persisted fields: {verify_error}")
-                        
-                        # NOW: Clean up any empty metadata fields AFTER successful update
-                        log.info(f"🧹 Cleaning up empty metadata fields after successful update for resource {resource_id}")
-                        try:
-                            _cleanup_empty_metadata_fields_post_processing(resource_id, model)
-                        except Exception as cleanup_error:
-                            log.warning(f"Error in post-processing cleanup: {cleanup_error}")
-                        
-                        return True
-                    except Exception as patch_error:
-                        log.error(f"Error in resource_patch for resource {resource_id}: {patch_error}", exc_info=True)
-                        log.error(f"Context was: {context}")
-                        log.error(f"Resource patch data was: {resource_patch_data}")
-                        try:
-                            model.Session.rollback()
-                        except Exception as rollback_error:
-                            log.error(f"Error during rollback: {rollback_error}")
-                        
-                        # FALLBACK: Try direct database update if action fails (only for fields we prepared)
-                        log.warning(f"Attempting fallback direct database update for resource {resource_id}")
-                        try:
-                            # Restrict to fields we attempted to update
-                            fallback_field_map = {k: metadata_fields.get(k) for k in fields_to_update}
-                            fallback_success = _update_resource_metadata_direct_db(resource_id, fallback_field_map, model)
-                            if fallback_success:
-                                log.info(f"Successfully updated resource {resource_id} via fallback direct database access")
-                                return True
-                            else:
-                                log.error(f"Fallback database update also failed for resource {resource_id}")
-                        except Exception as fallback_error:
-                            log.error(f"Fallback database update failed: {fallback_error}", exc_info=True)
-                        
-                        return False
-                else:
-                    log.info(f"No meaningful metadata fields to update for resource {resource_id}")
-                    return True
-                
-            except Exception as e:
-                log.error(f"Error preparing update for resource {resource_id}: {e}", exc_info=True)
-                try:
-                    model.Session.rollback()
-                except:
-                    pass
-                return False
-                
-        else:
-            log.info(f"No comprehensive metadata could be extracted from resource {resource_id}")
-            return True  # Not an error, just no metadata found
-            
-    except Exception as e:
-        log.error(f"General error in comprehensive metadata extraction job for resource {job_data.get('resource_id', 'unknown')}: {str(e)}", exc_info=True)
-        # Don't re-raise to avoid crashing the worker
-        import traceback
-        log.debug(f"Full traceback: {traceback.format_exc()}")
-        return False
-    
-    finally:
-        # Always close the session to prevent connection leaks
-        try:
-            model.Session.close()
-            log.debug("Database session closed")
-        except:
-            pass
-        
-        log.info(f"========= COMPLETED COMPREHENSIVE METADATA JOB =========")
-    
-    return True
-
-
-# Función legacy para compatibilidad hacia atrás
-def extract_spatial_extent_job(job_data):
-    """
-    Función legacy que redirige al nuevo sistema comprensivo.
-    Mantenida para compatibilidad hacia atrás.
-    """
-    return extract_comprehensive_metadata_job(job_data)
+# Import job functions from dedicated module for backward compatibility
+# These imports allow existing code that imports from plugin.py to continue working
+from ckanext.schemingdcat.jobs import (
+    extract_comprehensive_metadata_job,
+    extract_spatial_extent_job,
+    test_simple_job
+)

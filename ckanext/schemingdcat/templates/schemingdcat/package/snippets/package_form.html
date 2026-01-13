@@ -2,6 +2,7 @@
 
 {% set exclude_fields = [] %}
 {% set user_is_admin = h.check_access('sysadmin') %}
+{% set admin_only_form_groups = ['author', 'unesdoc'] %}
 
 {% block secondary %}
 <aside class="secondary col-sm-3">
@@ -10,7 +11,7 @@
   {%- set form_groups = h.schemingdcat_get_schema_form_groups(entity_type, object_type, schema) -%}
   <ul>
     {%- for form_group in form_groups -%}
-      {%- if user_is_admin or form_group.form_group_id != 'author' -%}
+      {%- if user_is_admin or form_group.form_group_id not in admin_only_form_groups -%}
         <li><a href="#{{ form_group.form_group_id }}">{{ h.scheming_language_text(form_group.label) }}</a></li>
       {%- endif -%}
     {%- endfor -%}
@@ -28,13 +29,22 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-graphic-overview-upload' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-authors-add-button' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-group-multiselect' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-doi-autofill' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-auto-citation' %}
+
+{# Hidden user data to auto-fill contact fields on all form layouts #}
+<input type="hidden" id="current-user-data"
+       value="{{ h.dump_json(h.schemingdcat_get_current_user()) }}"
+       data-module="auto-contact" />
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
 <div data-module="schemingdcat-simple-navigation"></div>
 <div data-module="schemingdcat-multi-resource-upload"></div><!-- NUEVO: inicializa multiupload -->
+<div data-module="schemingdcat-graphic-overview-upload"></div>
 <div data-module="schemingdcat-authors-add-button"></div>
   {%- set pages = h.scheming_get_dataset_form_pages(dataset_type) -%}
   {%- if pages -%}
@@ -42,13 +52,6 @@
     <ol class="stages stage-1">
 
       
-
-
-      {# Añadimos el campo oculto con los datos del usuario #}
-      <input type="hidden" id="current-user-data" 
-             value="{{ h.dump_json(h.schemingdcat_get_current_user()) }}"
-             data-module="auto-contact" />
-
       {%- for p in pages -%}
         <li class="{{
           'first ' if loop.first else ''}}{{
@@ -122,7 +125,7 @@
   {# Create a list of elements (fields and form groups) ordered by their first occurrence in the fields list #}
   {%- set elements = [] -%}
   {%- for field in fields -%}
-    {%- if user_is_admin or field.form_group_id != 'author' -%}
+    {%- if user_is_admin or field.form_group_id not in admin_only_form_groups -%}
       {%- if field.form_group_id -%}
         {%- if form_groups | length > 0 -%}
           {%- set matching_groups = form_groups | selectattr("form_group_id", "equalto", field.form_group_id) | list -%}
@@ -155,7 +158,7 @@
     {# Render each element (field or form group) in the order they appear in the fields list #}
     {%- for element in elements -%}
       {%- if element is mapping and 'form_group_id' in element and element.form_group_id is defined -%}
-        {%- if user_is_admin or element.form_group_id != 'author' -%}
+        {%- if user_is_admin or element.form_group_id not in admin_only_form_groups -%}
           {# This is a form group #}
           {# Check if any field in this form group is in the current page #}
           {%- set group_fields = fields | selectattr("form_group_id", "equalto", element.form_group_id) | list -%}

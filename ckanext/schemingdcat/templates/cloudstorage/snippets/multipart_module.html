@@ -92,12 +92,19 @@
                 
                 // Update container classes based on progress
                 if (percent >= 100 && isCompleted) {
-                    progressElements.container.className = 'cloudstorage-progress-container completed';
-                    progressElements.bar.className = 'progress-bar bg-success';
+                    progressElements.container.className = 'cloudstorage-progress-container completed upload-finished';
+                    progressElements.bar.className = 'progress-bar bg-success upload-finished-bar';
                     
                     // Add success icon
                     progressElements.info.innerHTML = '<strong><i class="fa fa-check-circle text-success"></i> ' + 
                                                     progressElements.info.textContent.replace(/^.*\s/, '') + '</strong>';
+                    
+                    // Fade out gently so the user sees it finished
+                    setTimeout(function() {
+                        if (progressElements && progressElements.container) {
+                            progressElements.container.classList.add('upload-faded');
+                        }
+                    }, 1200);
                 }
             }
         }
@@ -108,6 +115,11 @@
             var nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
             // Clean up the name (remove special characters, etc.)
             var cleanName = nameWithoutExtension.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+            var extension = '';
+            var extMatch = fileName.match(/\.([^.]+)$/);
+            if (extMatch && extMatch[1]) {
+                extension = extMatch[1].toUpperCase();
+            }
             
             // Find form fields to populate
             var form = inputElement.closest('form');
@@ -163,6 +175,52 @@
                     descField.dispatchEvent(new Event('input', { bubbles: true }));
                     
                     console.log('[schemingdcat-cloudstorage] Auto-populated description field');
+                }
+
+                // Try to auto-set format/extension if empty
+                if (extension) {
+                    var formatSelectors = [
+                        'select[name="format"]',
+                        'input[name="format"]',
+                        'select[name="resource_format"]',
+                        'input[name="resource_format"]'
+                    ];
+                    var formatField = null;
+                    for (var k = 0; k < formatSelectors.length; k++) {
+                        formatField = form.querySelector(formatSelectors[k]);
+                        if (formatField) break;
+                    }
+
+                    if (formatField) {
+                        var currentVal = (formatField.value || '').trim();
+                        if (!currentVal) {
+                            if (formatField.tagName.toLowerCase() === 'select') {
+                                var options = formatField.options;
+                                var selected = false;
+                                for (var idx = 0; idx < options.length; idx++) {
+                                    var optVal = (options[idx].value || '').toUpperCase();
+                                    if (optVal === extension) {
+                                        formatField.value = options[idx].value;
+                                        selected = true;
+                                        break;
+                                    }
+                                }
+                                if (!selected) {
+                                    // Fallback: set uppercase extension directly
+                                    formatField.value = extension;
+                                }
+                            } else {
+                                formatField.value = extension;
+                            }
+                            formatField.dispatchEvent(new Event('change', { bubbles: true }));
+                            formatField.dispatchEvent(new Event('input', { bubbles: true }));
+                            formatField.style.backgroundColor = '#d4edda';
+                            setTimeout(function() {
+                                formatField.style.backgroundColor = '';
+                            }, 2000);
+                            console.log('[schemingdcat-cloudstorage] Auto-populated format field:', extension);
+                        }
+                    }
                 }
             }
         }
@@ -285,7 +343,8 @@
             })
             .then(function() {
                 console.log('[schemingdcat-cloudstorage] Upload completed successfully');
-                updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', false);
+                // Mark as completed so spinner disappears
+                updateProgress(progressElements, 100, '{{ _("Upload completed successfully!") }}', true);
                 
                 // Mark upload as complete
                 if (window.cloudStorageUploads[fileId]) {
@@ -296,10 +355,9 @@
                     console.log('[schemingdcat-cloudstorage] Upload completed in', duration.toFixed(1), 'seconds');
                 }
 
-                // If it's an existing resource, update it
-                if (resourceId && resourceId.trim()) {
-                    updateResourceAfterUpload(resourceId, file.name);
-                }
+                // ALWAYS update the URL field with the filename (for both new and existing resources)
+                // This is critical for the backend to know what file was uploaded
+                updateResourceUrlField(file.name);
 
                 // IMPORTANT: Unregister upload immediately to enable Save button
                 if (typeof unregisterUpload === 'function' && fileId) {
@@ -312,6 +370,27 @@
                 console.log('[schemingdcat-cloudstorage] Clearing beforeunload warning after successful upload');
                 window.onbeforeunload = null;
                 window._originalBeforeUnload = null;
+
+                // Visually finalize: hide spinner, show success tick, and fade out progress bar after a short delay
+                setTimeout(function() {
+                    try {
+                        // Replace progress bar with a compact success state
+                        if (progressElements && progressElements.container) {
+                            progressElements.container.classList.add('upload-finished');
+                        }
+                        if (progressElements && progressElements.bar) {
+                            progressElements.bar.classList.add('upload-finished-bar');
+                        }
+                        // Optional fade-out after completion
+                        setTimeout(function() {
+                            if (progressElements && progressElements.container) {
+                                progressElements.container.classList.add('upload-faded');
+                            }
+                        }, 800);
+                    } catch (e) {
+                        console.log('[schemingdcat-cloudstorage] UI finalize skipped:', e);
+                    }
+                }, 150);
             })
             .catch(function(error) {
                 console.error('[schemingdcat-cloudstorage] Upload error:', error);
@@ -328,16 +407,25 @@
             });
         }
 
+        function updateResourceUrlField(filename) {
+            // Update the URL field with the filename
+            // This is required for CKAN to know a file was uploaded
+            var urlInput = document.querySelector('input[name="url"]');
+            if (urlInput) {
+                urlInput.value = filename;
+                urlInput.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('[schemingdcat-cloudstorage] Updated URL field with filename:', filename);
+            } else {
+                console.warn('[schemingdcat-cloudstorage] URL input field not found');
+            }
+        }
+
         function updateResourceAfterUpload(resourceId, filename) {
             // Update the resource metadata to point to the uploaded file
             console.log('[schemingdcat-cloudstorage] Updating resource metadata for:', resourceId);
             
             // The URL field should be updated
-            var urlInput = document.querySelector('input[name="url"]');
-            if (urlInput && !urlInput.value) {
-                // Set filename - CKAN's cloudstorage will handle the actual URL
-                urlInput.value = filename;
-            }
+            updateResourceUrlField(filename);
         }
 
         function uploadToAzure(file, uploadUrl, contentType, progressElements, fileId) {
@@ -399,8 +487,17 @@
         }
         
         // Handle form submission for resources with Azure uploads
+        // IMPORTANT: This handler runs BEFORE the Form Interceptor (capture phase)
         function setupFormSubmitHandler() {
-            var form = document.querySelector('form.dataset-form, form#resource-edit');
+            // Try multiple selectors to find the resource form
+            var form = document.querySelector('form.dataset-form, form#resource-edit, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+            if (!form) {
+                // Try to find any form that contains a file upload input
+                var fileInput = document.querySelector('input[type="file"][name="upload"]');
+                if (fileInput) {
+                    form = fileInput.closest('form');
+                }
+            }
             if (!form) {
                 console.log('[schemingdcat-cloudstorage] No resource form found');
                 return;
@@ -414,7 +511,16 @@
 
             console.log('[schemingdcat-cloudstorage] Setting up form submit handler for Azure uploads');
 
+            // Use capture phase (true) to run BEFORE other submit handlers
             form.addEventListener('submit', function(e) {
+                // Check for batch mode - block form submission when batch upload is active
+                if (window.__schemingdcat_batch_mode_active__ || form.dataset.batchModeActive === 'true') {
+                    console.log('[schemingdcat-cloudstorage] Batch mode active - blocking form submit');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
                 // Check if there are any completed Azure uploads
                 var hasAzureUpload = false;
                 var azureUpload = null;
@@ -438,36 +544,50 @@
 
                 console.log('[schemingdcat-cloudstorage] Found completed Azure upload:', azureUpload.blobPath);
 
-                // Clear the file input so the file isn't uploaded again
-                var fileInput = document.querySelector('input[type="file"][name="upload"]');
-                if (fileInput && fileInput.files.length > 0) {
-                    console.log('[schemingdcat-cloudstorage] Clearing file input to prevent duplicate upload');
-                    
-                    // Create a hidden input with the blob path
+                // Add hidden fields FIRST (before clearing file input)
+                if (!form.querySelector('input[name="azure_blob_path"]')) {
                     var blobPathInput = document.createElement('input');
                     blobPathInput.type = 'hidden';
                     blobPathInput.name = 'azure_blob_path';
                     blobPathInput.value = azureUpload.blobPath;
                     form.appendChild(blobPathInput);
-                    
-                    // Also add a flag to indicate this is an Azure upload
+                    console.log('[schemingdcat-cloudstorage] Added azure_blob_path:', azureUpload.blobPath);
+                }
+                
+                if (!form.querySelector('input[name="azure_upload"]')) {
                     var azureFlagInput = document.createElement('input');
                     azureFlagInput.type = 'hidden';
                     azureFlagInput.name = 'azure_upload';
                     azureFlagInput.value = 'true';
                     form.appendChild(azureFlagInput);
-                    
-                    // Clear the file input by cloning it
-                    var newFileInput = fileInput.cloneNode(true);
-                    newFileInput.value = '';
-                    fileInput.parentNode.replaceChild(newFileInput, fileInput);
-                    
-                    console.log('[schemingdcat-cloudstorage] Added azure_blob_path:', azureUpload.blobPath);
                 }
 
-                // Allow form submission
+                // Clear the file input so the file isn't uploaded again
+                var fileInput = form.querySelector('input[type="file"][name="upload"]');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    console.log('[schemingdcat-cloudstorage] Clearing file input to prevent duplicate upload');
+                    
+                    // Use DataTransfer to properly clear the files (modern browsers)
+                    try {
+                        var dt = new DataTransfer();
+                        fileInput.files = dt.files;
+                        console.log('[schemingdcat-cloudstorage] File input cleared using DataTransfer');
+                    } catch (err) {
+                        // Fallback: clone and replace the input
+                        console.log('[schemingdcat-cloudstorage] DataTransfer not supported, using clone method');
+                        var newFileInput = fileInput.cloneNode(true);
+                        try { newFileInput.value = ''; } catch (e) {}
+                        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+                    }
+                }
+
+                // Mark form as processed by CloudStorage
+                form.dataset.azureUploadProcessed = 'true';
+
+                // Allow form submission (no file to upload now)
+                console.log('[schemingdcat-cloudstorage] Form ready for submission (metadata only)');
                 return true;
-            });
+            }, true); // CAPTURE PHASE - runs before bubbling handlers
         }
         
         // Function to initialize cloudstorage when jQuery is available

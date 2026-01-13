@@ -255,6 +255,16 @@
     });
   }
 
+  // Helper to get CSRF token from hidden input or cookie
+  function getCsrfToken() {
+    var input = document.querySelector('input[name="csrf_token"]');
+    if (input && input.value) {
+      return input.value;
+    }
+    var match = document.cookie.match(/csrf_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
   // Function to check if any uploads are active
   function hasActiveUploads() {
     for (var key in window.__schemingdcat_active_uploads__) {
@@ -721,7 +731,19 @@
 
     // Wait for DOM to be ready
     function installInterceptor() {
-      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form');
+      // Find forms that may have file uploads
+      var forms = document.querySelectorAll('form.dataset-form, form.dataset-resource-form, form[action*="/resource/new"], form[action*="/resource_edit"]');
+      
+      // Also check for forms containing file upload inputs
+      if (forms.length === 0) {
+        var fileInputs = document.querySelectorAll('input[type="file"][name="upload"]');
+        var formSet = new Set();
+        fileInputs.forEach(function(input) {
+          var form = input.closest('form');
+          if (form) formSet.add(form);
+        });
+        forms = Array.from(formSet);
+      }
 
       forms.forEach(function(form) {
         if (form.getAttribute('data-ajax-interceptor')) return; // Already installed
@@ -730,7 +752,80 @@
         console.log('[Form Interceptor] Installing interceptor on form:', form.id || form.className);
 
         form.addEventListener('submit', function(e) {
+          // =====================================================================
+          // CHECK FOR BATCH MODE - Block form submission when batch upload is active
+          // =====================================================================
+          if (window.__schemingdcat_batch_mode_active__ || form.dataset.batchModeActive === 'true') {
+            console.log('[Form Interceptor] Batch mode active - blocking form submit');
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+          
           var fileInput = form.querySelector('input[type="file"][name="upload"]');
+
+          // =====================================================================
+          // CHECK FOR COMPLETED AZURE UPLOAD - Skip file re-upload if already done
+          // =====================================================================
+          var hasCompletedAzureUpload = false;
+          var azureUploadInfo = null;
+          
+          if (window.cloudStorageUploads) {
+            for (var uploadId in window.cloudStorageUploads) {
+              var upload = window.cloudStorageUploads[uploadId];
+              if (upload && upload.status === 'completed' && upload.blobPath) {
+                hasCompletedAzureUpload = true;
+                azureUploadInfo = upload;
+                console.log('[Form Interceptor] Found completed Azure upload:', upload.blobPath);
+                break;
+              }
+            }
+          }
+
+          // If Azure upload is complete, clear file input and add blob path as hidden field
+          if (hasCompletedAzureUpload && azureUploadInfo) {
+            console.log('[Form Interceptor] Azure upload already completed - submitting metadata only');
+            
+            // Add hidden fields for Azure blob path if not already present
+            if (!form.querySelector('input[name="azure_blob_path"]')) {
+              var blobPathInput = document.createElement('input');
+              blobPathInput.type = 'hidden';
+              blobPathInput.name = 'azure_blob_path';
+              blobPathInput.value = azureUploadInfo.blobPath;
+              form.appendChild(blobPathInput);
+            }
+            
+            if (!form.querySelector('input[name="azure_upload"]')) {
+              var azureFlagInput = document.createElement('input');
+              azureFlagInput.type = 'hidden';
+              azureFlagInput.name = 'azure_upload';
+              azureFlagInput.value = 'true';
+              form.appendChild(azureFlagInput);
+            }
+            
+            // Clear the file input to prevent re-upload
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+              console.log('[Form Interceptor] Clearing file input to prevent duplicate upload');
+              // Create a new empty file input to replace the current one
+              var newFileInput = fileInput.cloneNode(true);
+              // Use DataTransfer to clear files (modern browsers)
+              try {
+                var dt = new DataTransfer();
+                newFileInput.files = dt.files;
+              } catch (err) {
+                // Fallback for older browsers - just set value to empty
+                try { newFileInput.value = ''; } catch (e) {}
+              }
+              fileInput.parentNode.replaceChild(newFileInput, fileInput);
+              fileInput = newFileInput;
+            }
+            
+            // Clear beforeunload and allow normal form submission (no file to upload)
+            clearBeforeUnloadWarning('azure upload complete');
+            console.log('[Form Interceptor] Allowing normal form submission (metadata only)');
+            // Don't prevent default - let form submit normally without file
+            return true;
+          }
 
           // Only intercept if there's a file being uploaded
           if (fileInput && fileInput.files && fileInput.files.length > 0) {
@@ -886,8 +981,13 @@
                 console.error('[Form Interceptor] Form submission failed with status:', xhr.status);
                 console.error('[Form Interceptor] Response:', xhr.responseText);
 
+                // Check if this was an Azure upload - don't retry if file is already in Azure
+                var wasAzureUpload = form.querySelector('input[name="azure_upload"]') || 
+                                     form.querySelector('input[name="azure_blob_path"]');
+                
                 // Handle retryable errors (502, 504 - server timeout/gateway errors)
-                if ((xhr.status === 502 || xhr.status === 504) && retryCount < maxRetries) {
+                // BUT don't retry for Azure uploads - the file is already there, backend is just slow
+                if ((xhr.status === 502 || xhr.status === 504) && retryCount < maxRetries && !wasAzureUpload) {
                   retryCount++;
                   console.warn('[Form Interceptor] Retrying form submission (' + retryCount + '/' + maxRetries + ') after ' + retryDelay + 'ms');
 
@@ -907,6 +1007,24 @@
                     }
                     xhr.send(formData);
                   }, retryDelay);
+                  return;
+                }
+                
+                // For Azure uploads with 502/504, show a more helpful message
+                if ((xhr.status === 502 || xhr.status === 504) && wasAzureUpload) {
+                  console.log('[Form Interceptor] Azure upload completed but backend timeout - file is safe');
+                  
+                  // Clean up and show success message
+                  window.__schemingdcat_active_uploads__ = {};
+                  updateFormSubmitButtons(false);
+                  clearBeforeUnloadWarning('azure upload timeout');
+                  
+                  alert('{{ _("File uploaded successfully to cloud storage!") }}\n\n{{ _("The server is still processing the metadata. Please wait a moment and refresh the page to see your resource.") }}');
+                  
+                  // Reload page after short delay to show the resource
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 2000);
                   return;
                 }
 
@@ -1128,10 +1246,9 @@
         }
         
         // Clear format field if it was auto-filled
-        var formatFields = document.querySelectorAll('input[name*="format"]');
+        var formatFields = form.querySelectorAll('input[name$="format"], select[name$="format"]');
         formatFields.forEach(function(field) {
-          if ((field.name.indexOf('resources') !== -1 || field.name === 'format') && 
-              field.hasAttribute('data-auto-filled')) {
+          if (field.hasAttribute('data-auto-filled')) {
             field.value = '';
             field.removeAttribute('data-auto-filled');
             field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1248,18 +1365,13 @@
       
       var fileName = file.name;
       var ext = fileName.split('.').pop().toLowerCase();
+      var form = wrapper.closest('form') || document;
       
       // Auto-fill name field (force update to overwrite previous values)
       autoFillNameField(fileName, true);
       
       // Auto-fill format field if exists
-      var formatFields = document.querySelectorAll('input[name*="format"]');
-      var formatField = null;
-      formatFields.forEach(function(field) {
-        if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-          formatField = field;
-        }
-      });
+      var formatField = form.querySelector('input[name$="format"], select[name$="format"]');
       
       if (formatField) {
         var extUpper = ext.toUpperCase();
@@ -1446,20 +1558,15 @@
           // Extract extension from URL
           var urlParts = url.split('?')[0].split('.');
           if (urlParts.length > 1) {
-            var ext = urlParts[urlParts.length - 1].toLowerCase();
-            var extUpper = ext.toUpperCase();
-            
-            // Auto-fill format field
-            var formatFields = document.querySelectorAll('input[name*="format"]');
-            var formatField = null;
-            formatFields.forEach(function(field) {
-              if (field.name.indexOf('resources') !== -1 || field.name === 'format') {
-                formatField = field;
-              }
-            });
-            
-            if (formatField && !formatField.value) {
-              // Format mapping
+              var ext = urlParts[urlParts.length - 1].toLowerCase();
+              var extUpper = ext.toUpperCase();
+                
+                // Auto-fill format field
+                var form = wrapper.closest('form') || document;
+                var formatField = form.querySelector('input[name$="format"], select[name$="format"]');
+                
+                if (formatField && !formatField.value) {
+                  // Format mapping
               var formatMap = {
                 'CSV': 'CSV',
                 'XLS': 'XLS', 
@@ -1800,31 +1907,29 @@
   // Function to setup format field listener for spatial processing
   function setupFormatFieldListener() {
     // Find format fields
-    var formatFields = document.querySelectorAll('input[name*="format"]');
+    var formatFields = document.querySelectorAll('input[name$="format"], select[name$="format"]');
     formatFields.forEach(function(formatField) {
-      if (formatField.name.indexOf('resources') !== -1 || formatField.name === 'format') {
-        formatField.addEventListener('change', function(e) {
-          var format = e.target.value.toUpperCase();
+      formatField.addEventListener('change', function(e) {
+        var format = (e.target.value || '').toUpperCase();
+        
+        // If format is changed to SHP, try to process any existing URL for spatial extent
+        if (format === 'SHP' || format === 'SHAPEFILE') {
+          // Look for URL field
+          var urlFields = document.querySelectorAll('input[name*="url"]');
+          var resourceUrl = null;
           
-          // If format is changed to SHP, try to process any existing URL for spatial extent
-          if (format === 'SHP' || format === 'SHAPEFILE') {
-            // Look for URL field
-            var urlFields = document.querySelectorAll('input[name*="url"]');
-            var resourceUrl = null;
-            
-            urlFields.forEach(function(urlField) {
-              if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
-                resourceUrl = urlField.value;
-              }
-            });
-            
-            if (resourceUrl && resourceUrl.trim()) {
-              console.log('Format changed to SHP, processing resource:', resourceUrl);
-              extractSpatialExtentFromResource(resourceUrl, format);
+          urlFields.forEach(function(urlField) {
+            if ((urlField.name.indexOf('resources') !== -1 || urlField.name === 'url') && urlField.value) {
+              resourceUrl = urlField.value;
             }
+          });
+          
+          if (resourceUrl && resourceUrl.trim()) {
+            console.log('Format changed to SHP, processing resource:', resourceUrl);
+            extractSpatialExtentFromResource(resourceUrl, format);
           }
-        });
-      }
+        }
+      });
     });
   }
 
@@ -1853,11 +1958,13 @@
     // Create FormData to send the file
       var formData = new FormData();
       formData.append('file', file);
+    var csrfToken = getCsrfToken();
       
     // Make request to extract spatial extent
     fetch('/api/extract-spatial-extent', {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
     })
     .then(function(response) {
       return response.json();
@@ -1968,11 +2075,14 @@
       console.debug('Max retries reached for spatial extent status check');
       return;
     }
+
+    var csrfToken = getCsrfToken();
     
     fetch('/api/spatial-extent-status/' + resourceId, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || ''
       }
     })
     .then(function(response) {
@@ -2047,100 +2157,12 @@
 
 
 
-  // Function to extract spatial extent from uploaded file (direct upload)
-  // Frontend extraction disabled - all processing handled by backend
-  function extractSpatialExtentFromFile(file, ext) {
-    console.log('Frontend metadata extraction disabled - metadata will be processed by backend after upload');
-    
-    // Show a message that processing will happen in the background
-    showSpatialExtentMessage('{{ _("File uploaded successfully. Metadata will be extracted automatically in the background.") }}', 'info');
-  }
-
-  // Function to extract spatial extent from resource URL (after upload)
-  // Frontend extraction disabled - all processing handled by backend
-  function extractSpatialExtentFromResource(resourceUrl, resourceFormat) {
-    console.log('Frontend resource metadata extraction disabled - processing handled by backend job system');
-    console.log('Resource:', resourceUrl, 'Format:', resourceFormat);
-    
-    // Show a message that processing will happen in the background
-    showSpatialExtentMessage('{{ _("File uploaded successfully. Comprehensive metadata will be extracted automatically in the background.") }}', 'info');
-  }
-
-  // Function to setup spatial processing when format is changed
-  function setupSpatialProcessingOnFormatChange(formatField) {
-    // Remove existing listener if any
-    if (formatField._spatialListener) {
-      formatField.removeEventListener('change', formatField._spatialListener);
-    }
-    
-    // Add new listener
-    formatField._spatialListener = function(e) {
-      var format = e.target.value;
-      
-      // If user changed format to SHP, try to extract spatial extent
-      if (format && format.toLowerCase() === 'shp') {
-        console.log('Format changed to SHP, attempting spatial extent extraction');
-        
-        // Look for resource URL in the form
-        var resourceUrlField = document.querySelector('input[name*="url"]');
-        if (resourceUrlField && resourceUrlField.value) {
-          var resourceUrl = resourceUrlField.value;
-          console.log('Found resource URL:', resourceUrl);
-          
-          // Extract spatial extent from the resource
-          extractSpatialExtentFromResource(resourceUrl, format);
-        } else {
-          console.debug('No resource URL found for spatial processing');
-        }
-      }
-    };
-    
-    formatField.addEventListener('change', formatField._spatialListener);
-    
-    // Also check immediately if format is already SHP
-    if (formatField.value && formatField.value.toLowerCase() === 'shp') {
-      formatField._spatialListener({ target: formatField });
-    }
-  }
-
-  // Function to show spatial extent extraction messages
-  function showSpatialExtentMessage(message, type) {
-    // Find or create a message container near the spatial extent field
-    var spatialExtentField = document.querySelector('textarea[name="spatial_extent"], input[name="spatial_extent"]');
-    if (!spatialExtentField) return;
-
-    var messageContainer = spatialExtentField.parentNode.querySelector('.spatial-extent-message');
-    if (!messageContainer) {
-      messageContainer = document.createElement('div');
-      messageContainer.className = 'spatial-extent-message';
-      spatialExtentField.parentNode.appendChild(messageContainer);
-    }
-
-    // Set message content and style
-    messageContainer.innerHTML = '<i class="fa fa-info-circle"></i> ' + message;
-    messageContainer.className = 'spatial-extent-message alert alert-' + 
-      (type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info');
-
-    // Auto-hide after 5 seconds for non-error messages
-    if (type !== 'warning') {
-        setTimeout(function() {
-        if (messageContainer && messageContainer.parentNode) {
-          messageContainer.style.opacity = '0';
-          setTimeout(function() {
-            if (messageContainer && messageContainer.parentNode) {
-              messageContainer.parentNode.removeChild(messageContainer);
-            }
-          }, 300);
-        }
-      }, 5000);
-    }
-  }
   // Initialize spatial processing on page load
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Setting up spatial extent processing...');
     
     // Setup format field listener for spatial processing
-    var formatField = document.querySelector('select[name*="format"], input[name*="format"]');
+    var formatField = document.querySelector('select[name$="format"], input[name$="format"]');
     if (formatField) {
       console.log('Found format field, setting up spatial processing listener');
       setupSpatialProcessingOnFormatChange(formatField);
@@ -2153,7 +2175,7 @@
       mutations.forEach(function(mutation) {
         mutation.addedNodes.forEach(function(node) {
           if (node.nodeType === 1) { // Element node
-            var formatField = node.querySelector ? node.querySelector('select[name*="format"], input[name*="format"]') : null;
+            var formatField = node.querySelector ? node.querySelector('select[name$="format"], input[name$="format"]') : null;
             if (formatField) {
               console.log('Found new format field, setting up spatial processing listener');
               setupSpatialProcessingOnFormatChange(formatField);

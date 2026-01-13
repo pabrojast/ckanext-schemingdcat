@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "ask": []

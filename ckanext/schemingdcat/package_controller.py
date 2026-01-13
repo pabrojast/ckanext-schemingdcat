@@ -85,6 +85,9 @@ class PackageController():
         Returns:
             dict: The processed data dictionary with JSON strings parsed into objects where applicable and empty facets removed.
         """
+        # Add debug logging to verify this method is being called
+        dataset_id = data_dict.get('id', 'unknown')
+        log.debug(f"[before_dataset_index] Processing dataset {dataset_id} - SchemingDCAT controller active")
         # Process facets
         for facet, label in utils.get_facets_dict().items():
             data = data_dict.get(facet)
@@ -101,7 +104,7 @@ class PackageController():
 
         # Handle repeating_subfields: convert complex objects to JSON strings for Solr
         # List of fields with repeating_subfields that need special handling
-        repeating_fields = ['authors']
+        repeating_fields = ['authors', 'authors_json']
 
         for field_name in repeating_fields:
             if field_name in data_dict:
@@ -115,6 +118,59 @@ class PackageController():
                         log.warning(f"[before_index] Could not serialize {field_name} to JSON: {e}")
                         # If serialization fails, remove the field from indexing to avoid Solr errors
                         del data_dict[field_name]
+
+        # Handle multilingual fields that may cause atomic update issues
+        # Only process if we detect potential fluent-related data issues
+        try:
+            # Languages supported in the schema
+            languages = ['en', 'es', 'fr', 'ar']
+            
+            # Fields that might have multilingual versions
+            multilingual_base_fields = ['title', 'notes', 'description']
+            
+            # Log all keys in data_dict to detect problematic fields
+            all_keys = list(data_dict.keys())
+            multilingual_keys = [k for k in all_keys if any(k.endswith(f'_{lang}') for lang in languages)]
+            if multilingual_keys:
+                log.debug(f"[before_dataset_index] Found multilingual keys in {dataset_id}: {multilingual_keys}")
+            
+            # Check for and fix multilingual fields that cause atomic update issues
+            problematic_fields = []
+            multilingual_translated_fields = ['title_translated', 'notes_translated', 'provenance', 'purpose', 'version_notes']
+
+            for key, value in list(data_dict.items()):
+                if not (isinstance(value, dict) and any(lang_code in value for lang_code in languages)):
+                    continue
+
+                if key in multilingual_translated_fields:
+                    try:
+                        # Convert the multilingual dict to JSON string for Solr indexing
+                        data_dict[key] = json.dumps(value)
+                        log.debug(f"[before_dataset_index] Converted multilingual field {key} to JSON string")
+                    except (TypeError, ValueError) as e:
+                        log.warning(f"[before_dataset_index] Could not serialize {key} to JSON: {e}")
+                        fallback_value = value.get('en') or next(iter(value.values()), "")
+                        data_dict[key] = str(fallback_value) if fallback_value is not None else ""
+                        problematic_fields.append(f"{key}: {list(value.keys())}")
+                else:
+                    # For other multilingual dicts, keep a single representative value
+                    try:
+                        fallback_value = value.get('en') or next(iter(value.values()), "")
+                        data_dict[key] = str(fallback_value) if fallback_value is not None else ""
+                        log.debug(f"[before_dataset_index] Flattened multilingual field {key}")
+                    except Exception as e:
+                        log.warning(f"[before_dataset_index] Error fixing field {key}: {e}")
+                        data_dict[key] = ""
+                        problematic_fields.append(f"{key}: {list(value.keys())}")
+            
+            if problematic_fields:
+                log.warning(f"[before_dataset_index] Found potentially problematic fields in {dataset_id}: {problematic_fields}")
+            
+                            
+        except Exception as e:
+            # If the entire multilingual processing fails, log but don't break indexing
+            log.error(f"[before_index] Error in multilingual field processing: {e}")
+            # Continue without the multilingual processing
 
         return data_dict
 
@@ -201,7 +257,8 @@ def _get_request_param_value(name, default=None):
     except RuntimeError:
         return default
 
-    for attr in ("params", "values", "args"):
+    # Prefer 'args' (CKAN 2.10+) to avoid deprecation warnings, fallback to 'params' for 2.9
+    for attr in ("args", "values", "params"):
         params = getattr(req, attr, None)
         if params is not None and hasattr(params, "get"):
             return params.get(name, default)

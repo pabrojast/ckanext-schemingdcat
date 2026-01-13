@@ -20,11 +20,9 @@
     'data-module-prefix': domain,
     'data-module-placeholder': module_placeholder } -%}
 
-{%- set form_slug_related = field.form_slug_related or 'identifier' %}
-
 {{ form.prepend(
     field.field_name,
-    id='field-' + form_slug_related,
+    id='field-' + field.field_name,
     label=h.scheming_language_text(field.label),
     prepend=prefix,
     placeholder=h.scheming_language_text(field.form_placeholder),

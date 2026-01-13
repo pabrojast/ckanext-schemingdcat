@@ -5,6 +5,7 @@
 
   {% if group_dropdown %}
     <form class="add-to-group add_to_group_field" method="post">
+      {{ h.csrf_input() if 'csrf_input' in h }}
       <select id="field-add_group" name="group_added" data-module="autocomplete" style="flex: 7; margin-right: 10px;">
         {% for option in group_dropdown %}
           <option value="{{ option[0] }}"> {{ option[1] }}</option>
@@ -16,6 +17,7 @@
 
   {% if pkg_dict.groups %}
     <form method="post">
+      {{ h.csrf_input() if 'csrf_input' in h }}
       {% snippet 'group/snippets/group_list.html', groups=pkg_dict.groups %}
     </form>
   {% else %}

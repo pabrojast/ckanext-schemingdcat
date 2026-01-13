@@ -34,6 +34,7 @@
       {% block form %}
         {% if page.item_count %}
           <form method="POST" data-module="basic-form">
+            {{ h.csrf_input() if 'csrf_input' in h }}
             <table class="table table-bordered table-header table-hover table-bulk-edit table-edit-hover" data-module="table-selectable-rows">
               <col width="8">
               <col width="120">
@@ -75,7 +76,7 @@
                         {{ _('Edit') }}
                       </a>
                       <h3 class="dataset-heading">
-                        {{ h.link_to(h.truncate(title, truncate_title), h.url_for(package.type ~ '.read', id=package.name)) }}
+                        {{ h.link_to(title|truncate(truncate_title), h.url_for(package.type ~ '.read', id=package.name)) }}
                         {% if package.get('state', '').startswith('draft') %}
                           <span class="label label-info">{{ _('Draft') }}</span>
                         {% elif package.get('state', '').startswith('deleted') %}

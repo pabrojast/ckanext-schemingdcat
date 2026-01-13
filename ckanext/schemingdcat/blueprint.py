@@ -146,3 +146,100 @@ def get_azure_upload_url():
     from ckanext.schemingdcat.upload.api import get_azure_upload_url_endpoint
     return get_azure_upload_url_endpoint()
 
+@schemingdcat.route('/api/doi/resolve', methods=['POST'])
+def resolve_doi_endpoint():
+    """
+    API endpoint to resolve DOI and fetch metadata.
+    
+    Expects JSON body with:
+        - doi: The DOI to resolve (required)
+        - providers: Optional list of providers to try
+        
+    Returns:
+        JSON with metadata or error message
+    """
+    from ckanext.schemingdcat.lib.doi_resolver import resolve_doi, validate_doi, clean_doi
+    
+    try:
+        data = request.get_json() or {}
+        doi = data.get('doi', '').strip()
+        providers = data.get('providers')
+        
+        if not doi:
+            return jsonify({
+                'success': False,
+                'error': _('DOI is required')
+            }), 400
+        
+        # Clean the DOI
+        doi = clean_doi(doi)
+        
+        # Validate DOI format
+        if not validate_doi(doi):
+            return jsonify({
+                'success': False,
+                'error': _('Invalid DOI format. Expected format: 10.xxxx/xxxxx')
+            }), 400
+        
+        # Resolve DOI
+        result = resolve_doi(doi, providers=providers)
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'data': result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': _('Could not resolve DOI. The DOI may not exist or the metadata service is unavailable.')
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Error resolving DOI: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@schemingdcat.route('/api/doi/validate', methods=['POST'])
+def validate_doi_endpoint():
+    """
+    API endpoint to validate DOI format.
+    
+    Expects JSON body with:
+        - doi: The DOI to validate (required)
+        
+    Returns:
+        JSON with validation result
+    """
+    from ckanext.schemingdcat.lib.doi_resolver import validate_doi, clean_doi
+    
+    try:
+        data = request.get_json() or {}
+        doi = data.get('doi', '').strip()
+        
+        if not doi:
+            return jsonify({
+                'success': False,
+                'valid': False,
+                'error': _('DOI is required')
+            }), 400
+        
+        cleaned_doi = clean_doi(doi)
+        is_valid = validate_doi(cleaned_doi)
+        
+        return jsonify({
+            'success': True,
+            'valid': is_valid,
+            'cleaned_doi': cleaned_doi if is_valid else None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error validating DOI: {str(e)}")
+        return jsonify({
+            'success': False,
+            'valid': False,
+            'error': str(e)
+        }), 500
+

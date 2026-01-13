@@ -29,6 +29,12 @@ schema_form_groups:
       es: Identificación del documento
       fr: Identification du document
     fa_icon: fa-id-card
+  - form_group_id: citation
+    label:
+      en: Citation
+      es: Citación
+      fr: Citation
+    fa_icon: fa-quote-right
   - form_group_id: notes
     label:
       en: Abstract
@@ -107,6 +113,37 @@ schema_form_groups:
 #--Dataset (dcat:Dataset) fields--#
 dataset_fields:
 
+# Document DOI for auto-fill (O)
+# Enter a DOI to automatically fetch and fill metadata from DataCite/CrossRef/Zenodo
+- field_name: document_doi
+  label:
+    en: Document DOI
+    es: DOI del documento
+    fr: DOI du document
+  form_snippet: schemingdcat/form_snippets/doi_autofill.html
+  display_snippet: schemingdcat/display_snippets/doi_link.html
+  display_property: dct:identifier
+  validators: ignore_missing schemingdcat_valid_doi
+  form_placeholder:
+    en: e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example
+    es: ej. 10.5281/zenodo.1234567 o https://doi.org/10.1234/example
+    fr: p. ex. 10.5281/zenodo.1234567 ou https://doi.org/10.1234/example
+  help_text:
+    en: "Enter a DOI to auto-fill document metadata from <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, or <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Click 'Fetch' to retrieve and preview metadata before applying."
+    es: "Ingrese un DOI para auto-rellenar los metadatos del documento desde <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, o <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Haga clic en 'Buscar' para obtener y previsualizar los metadatos antes de aplicarlos."
+    fr: "Entrez un DOI pour auto-remplir les métadonnées du document depuis <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, ou <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Cliquez sur 'Rechercher' pour récupérer et prévisualiser les métadonnées avant de les appliquer."
+  help_allow_html: True
+  form_group_id: identification
+  field_mapping:
+    title: title_translated
+    abstract: notes_translated
+    publication_year: publication_year
+    publisher: publisher_name
+    document_type: document_type
+    keywords: tag_string
+    authors:
+      - authors_json
+
 # Dataset title translated (M)
 - field_name: title_translated
   label: 
@@ -145,8 +182,302 @@ dataset_fields:
     fr: Résumé par défaut du document {document}.
   form_group_id: notes
 
+# Custom DOI (optional, keeps the fetched DOI URL or lets users enter one manually)
+- field_name: custom_doi
+  label:
+    en: Custom DOI
+    es: DOI personalizado
+    fr: DOI personnalisé
+  display_property: adms:identifier
+  form_placeholder: https://doi.org/10.63253/ilrsgq77
+  help_text:
+    en: "Keeps the document DOI URL. Auto-filled after fetching metadata, but you can edit it."
+    es: "Conserva la URL del DOI del documento. Se rellena al obtener metadatos, pero puede editarse."
+    fr: "Conserve l'URL du DOI du document. Renseigné après la récupération des métadonnées, mais modifiable."
+  form_group_id: identification
+
+# Auto Citation (auto-generated from metadata)
+- field_name: citation
+  label:
+    en: Citation
+    es: Citación automática
+    fr: Citation automatique
+  display_property: dct:bibliographicCitation
+  form_placeholder:
+    en: Auto-generated from authors, year, title and publisher.
+    es: Se genera automáticamente usando autores, año, título y editorial.
+    fr: Générée automatiquement à partir des auteurs, année, titre et éditeur.
+  help_text:
+    en: "Read-only citation built automatically from the other metadata. Edit the custom citation below only if you need to override it."
+    es: "Campo de solo lectura generado con los demás metadatos. Usa la citación personalizada solo si necesitas sobrescribirla."
+    fr: "Champ en lecture seule généré à partir des autres métadonnées. Utilisez la citation personnalisée uniquement en cas de besoin."
+  form_attrs:
+    readonly: true
+  form_group_id: citation
+
+# Custom Citation (optional override)
+- field_name: custom_citation
+  label:
+    en: Custom citation (optional)
+    es: Citación personalizada (opcional)
+    fr: Citation personnalisée (optionnelle)
+  form_placeholder:
+    en: "Lastname, F.; Second, A. (2025). Title. [Document]. Publisher. https://doi.org/..."
+    es: "Apellido, N.; Segundo, A. (2025). Título. [Documento]. Editorial. https://doi.org/..."
+    fr: "Nom, P.; Second, A. (2025). Titre. [Document]. Éditeur. https://doi.org/..."
+  help_text:
+    en: "Leave blank to use the automatic citation. Fill only if you need to override the generated citation."
+    es: "Deja vacío para usar la citación automática. Completa solo si necesitas sobrescribir la generada."
+    fr: "Laissez vide pour utiliser la citation automatique. Renseignez uniquement si vous devez la remplacer."
+  form_group_id: citation
 
 
+# Document Type (R) - IHP-WINS specific
+- field_name: document_type
+  label:
+    en: Document type
+    es: Tipo de documento
+    fr: Type de document
+  preset: select
+  display_property: dct:type
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  form_include_blank_choice: True
+  required: False
+  sorted_choices: False
+  choices:
+    - label:
+        en: Scientific Paper
+        es: Artículo científico
+        fr: Article scientifique
+      value: scientific_paper
+    - label:
+        en: Technical Report
+        es: Informe técnico
+        fr: Rapport technique
+      value: technical_report
+    - label:
+        en: Policy Brief
+        es: Informe de políticas
+        fr: Note de politique
+      value: policy_brief
+    - label:
+        en: Dataset Documentation
+        es: Documentación de datos
+        fr: Documentation de jeu de données
+      value: dataset_documentation
+    - label:
+        en: Book
+        es: Libro
+        fr: Livre
+      value: book
+    - label:
+        en: Book Chapter
+        es: Capítulo de libro
+        fr: Chapitre de livre
+      value: book_chapter
+    - label:
+        en: Conference Paper
+        es: Artículo de conferencia
+        fr: Article de conférence
+      value: conference_paper
+    - label:
+        en: Thesis/Dissertation
+        es: Tesis/Disertación
+        fr: Thèse/Mémoire
+      value: thesis
+    - label:
+        en: Preprint
+        es: Preprint
+        fr: Prépublication
+      value: preprint
+    - label:
+        en: Working Paper
+        es: Documento de trabajo
+        fr: Document de travail
+      value: working_paper
+    - label:
+        en: Manual/Guide
+        es: Manual/Guía
+        fr: Manuel/Guide
+      value: manual
+    - label:
+        en: Educational Material
+        es: Material educativo
+        fr: Matériel pédagogique
+      value: educational_material
+    - label:
+        en: Other
+        es: Otro
+        fr: Autre
+      value: other
+  help_text:
+    en: "Type of document according to its nature and purpose."
+    es: "Tipo de documento según su naturaleza y propósito."
+    fr: "Type de document selon sa nature et son objectif."
+  form_group_id: general_info
+
+# IHP Water Theme (R) - UNESCO IHP specific vocabulary
+- field_name: ihp_water_theme
+  label:
+    en: IHP Water Theme
+    es: Tema hídrico IHP
+    fr: Thème hydrique PIH
+  preset: select
+  display_property: dcat:theme
+  form_include_blank_choice: True
+  required: False
+  sorted_choices: False
+  choices:
+    - label:
+        en: Groundwater
+        es: Aguas subterráneas
+        fr: Eaux souterraines
+      value: groundwater
+    - label:
+        en: Surface Water
+        es: Aguas superficiales
+        fr: Eaux de surface
+      value: surface_water
+    - label:
+        en: Water Quality
+        es: Calidad del agua
+        fr: Qualité de l'eau
+      value: water_quality
+    - label:
+        en: Transboundary Waters
+        es: Aguas transfronterizas
+        fr: Eaux transfrontalières
+      value: transboundary_waters
+    - label:
+        en: Urban Water Management
+        es: Gestión del agua urbana
+        fr: Gestion de l'eau urbaine
+      value: urban_water
+    - label:
+        en: Climate and Water
+        es: Clima y agua
+        fr: Climat et eau
+      value: climate_water
+    - label:
+        en: Ecohydrology
+        es: Ecohidrología
+        fr: Écohydrologie
+      value: ecohydrology
+    - label:
+        en: Water Education
+        es: Educación sobre el agua
+        fr: Éducation à l'eau
+      value: water_education
+    - label:
+        en: Water Governance
+        es: Gobernanza del agua
+        fr: Gouvernance de l'eau
+      value: water_governance
+    - label:
+        en: Water Security
+        es: Seguridad hídrica
+        fr: Sécurité hydrique
+      value: water_security
+    - label:
+        en: Hydrological Processes
+        es: Procesos hidrológicos
+        fr: Processus hydrologiques
+      value: hydrological_processes
+    - label:
+        en: Water and Disasters
+        es: Agua y desastres
+        fr: Eau et catastrophes
+      value: water_disasters
+    - label:
+        en: Water-Energy-Food Nexus
+        es: Nexo agua-energía-alimentos
+        fr: Nexus eau-énergie-alimentation
+      value: water_energy_food_nexus
+  help_text:
+    en: "Select the main water-related theme according to UNESCO IHP thematic areas."
+    es: "Seleccione el tema principal relacionado con el agua según las áreas temáticas del PHI de la UNESCO."
+    fr: "Sélectionnez le thème principal lié à l'eau selon les domaines thématiques du PIH de l'UNESCO."
+  form_group_id: vocabs
+
+# Publication Year (R)
+- field_name: publication_year
+  label:
+    en: Publication year
+    es: Año de publicación
+    fr: Année de publication
+  display_property: dct:issued
+  form_placeholder:
+    en: e.g. 2024
+    es: ej. 2024
+    fr: p. ex. 2024
+  validators: ignore_missing int_validator
+  help_text:
+    en: "Year when the document was published."
+    es: "Año en que se publicó el documento."
+    fr: "Année de publication du document."
+  form_group_id: identification
+
+# Publisher Name (R)
+- field_name: publisher_name
+  label:
+    en: Publisher
+    es: Editorial/Editor
+    fr: Éditeur
+  display_property: dct:publisher
+  form_placeholder:
+    en: e.g. UNESCO, Springer, Elsevier
+    es: ej. UNESCO, Springer, Elsevier
+    fr: p. ex. UNESCO, Springer, Elsevier
+  help_text:
+    en: "Name of the publisher or publishing organization."
+    es: "Nombre del editor o de la organización editorial."
+    fr: "Nom de l'éditeur ou de l'organisation éditrice."
+  form_group_id: identification
+
+# Authors - keeps structured authors fetched from DOI with repeating subfields UI
+- field_name: authors_json
+  label:
+    en: Authors
+    es: Autores
+    fr: Auteurs
+  display_property: dct:creator
+  help_text:
+    en: "Auto-filled from DOI with full author objects (name, given/family, ORCID, affiliation). Add one row per author."
+    es: "Se rellena automáticamente desde el DOI con los datos completos. Añade una fila por autor."
+    fr: "Renseigne automatiquement depuis le DOI avec les données complètes. Ajoutez une ligne par auteur."
+  form_group_id: identification
+  repeating_subfields:
+    - field_name: name
+      label:
+        en: Author Name
+        es: Nombre del Autor
+        fr: Nom de l'Auteur
+      form_placeholder: "Dr. José Blanco"
+      help_text:
+        en: "Full name of the author (including titles if appropriate)"
+        es: "Nombre completo del autor (incluyendo títulos si es apropiado)"
+        fr: "Nom complet de l'auteur (y compris les titres le cas échéant)"
+    - field_name: orcid
+      label:
+        en: ORCID ID
+        es: ID ORCID
+        fr: ID ORCID
+      form_placeholder: "0000-0000-0000-0000"
+      help_text:
+        en: "ORCID identifier (format: 0000-0000-0000-0000). Visit <a href='https://orcid.org' target='_blank'>orcid.org</a> to get your ORCID ID."
+        es: "Identificador ORCID (formato: 0000-0000-0000-0000). Visite <a href='https://orcid.org' target='_blank'>orcid.org</a> para obtener su ID ORCID."
+        fr: "Identifiant ORCID (format: 0000-0000-0000-0000). Visitez <a href='https://orcid.org' target='_blank'>orcid.org</a> pour obtenir votre ID ORCID."
+      help_allow_html: True
+    - field_name: affiliation
+      label:
+        en: Affiliation
+        es: Afiliación
+        fr: Affiliation
+      form_placeholder: "University of Example, Department of Science"
+      help_text:
+        en: "Institutional affiliation of the author"
+        es: "Afiliación institucional del autor"
+        fr: "Affiliation institutionnelle de l'auteur"
 
 # Non-spatial Dataset (Hidden field, based on dcat_type)
 - field_name: dataset_scope
@@ -406,7 +737,7 @@ dataset_fields:
   validators: "not_empty scheming_required schemingdcat_clean_identifier"
   form_group_id: identification
   form_attrs:
-    data-module: "copy-from-title slug-preview-target"
+    data-module: "copy-from-title"
 # Dataset locator (O)
 ## For all resources that is equivalent to this element, such as a URI (of dcat:Dataset).
 - field_name: name

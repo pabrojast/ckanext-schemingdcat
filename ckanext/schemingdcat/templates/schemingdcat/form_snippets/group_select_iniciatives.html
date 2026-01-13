@@ -1,11 +1,17 @@
-{% set initiative_names = h.get_initiatives() %}
 {% set existing_groups = data.groups if data.groups else [] %}
-{% set available_groups = h.groups_available() %}
-{% set selected_initiative_ids = [] %}
+{% set all_initiative_groups = h.get_all_initiatives_groups() %}
+{% set selected_initiative_names = [] %}
 
+{# Build a set of identifiers from existing groups (can be name or id) #}
+{% set existing_identifiers = [] %}
 {% for group in existing_groups %}
-  {% if group.name in initiative_names %}
-    {% do selected_initiative_ids.append(group.id) %}
+  {% if group.name %}{% do existing_identifiers.append(group.name) %}{% endif %}
+  {% if group.id %}{% do existing_identifiers.append(group.id) %}{% endif %}
+{% endfor %}
+
+{% for init_group in all_initiative_groups %}
+  {% if init_group.name in existing_identifiers or init_group.id in existing_identifiers %}
+    {% do selected_initiative_names.append(init_group.name) %}
   {% endif %}
 {% endfor %}
 
@@ -21,14 +27,12 @@
           class="form-control group-multiselect-select"
           multiple
           data-group-multiselect>
-    {% for group in available_groups %}
-      {% if group.name in initiative_names %}
-        <option value="{{ group.id }}"
-                data-group-name="{{ group.name }}"
-                {% if group.id in selected_initiative_ids %}selected{% endif %}>
-          {{ group.title }}
-        </option>
-      {% endif %}
+    {% for group in all_initiative_groups %}
+      <option value="{{ group.name }}"
+              data-group-name="{{ group.name }}"
+              {% if group.name in selected_initiative_names %}selected{% endif %}>
+        {{ group.title }}
+      </option>
     {% endfor %}
   </select>
   {% snippet 'scheming/form_snippets/help_text.html', field=field %}

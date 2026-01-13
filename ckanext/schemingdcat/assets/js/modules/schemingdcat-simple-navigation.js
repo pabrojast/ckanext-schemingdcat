@@ -89,15 +89,13 @@ ckan.module('schemingdcat-simple-navigation', function ($) {
     },
     
     _redirectToDraft: function(draft) {
+      var draftUrl = '/dataset/new/' + draft.slug + '/1';
       var message = 'Se encontró un borrador existente: "' + draft.title + '"<br>' +
-                   'Redirigiendo en 3 segundos...<br>' +
-                   '<small>Si no deseas continuar con este borrador, recarga la página.</small>';
+                   '<a class="btn btn-primary btn-sm" style="margin-top: 10px;" href="' + draftUrl + '">' +
+                   '<i class="fa fa-folder-open"></i> Continuar con este borrador</a><br>' +
+                   '<small>Puedes seguir aquí o cerrar este aviso para continuar con un nuevo dataset.</small>';
       
       this._showMessage(message, 'warning');
-      
-      setTimeout(function() {
-        window.location.href = '/dataset/new/' + draft.slug + '/1';
-      }, 3000);
     },
     
     _saveDraftInfo: function() {
@@ -147,12 +145,12 @@ ckan.module('schemingdcat-simple-navigation', function ($) {
       type = type || 'info';
       var alertClass = 'alert-' + type;
       
-      var $message = $('<div class="alert ' + alertClass + '" style="margin: 20px 0; padding: 15px; border-radius: 4px;">' +
+      // Remove only previous notices from this module
+      $('.schemingdcat-draft-alert').remove();
+
+      var $message = $('<div class="alert ' + alertClass + ' schemingdcat-draft-alert" style="margin: 20px 0; padding: 15px; border-radius: 4px;">' +
         '<i class="fa fa-info-circle"></i> ' + message +
         '</div>');
-      
-      // Remover mensajes anteriores
-      $('.alert').remove();
       
       // Agregar al inicio del formulario o body
       var $target = $('form').first();

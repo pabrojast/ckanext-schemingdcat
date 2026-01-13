@@ -50,6 +50,7 @@
 }
 .stages li:after {
   margin-top: -23px !important;
+  top: 45% !important;
 }
 
 .stages li.active:before {
@@ -191,6 +192,20 @@
 
 .filters .module .sorting:hover .label {
 	color:var(--bs-body-color);	
+}
+
+/* Breadcrumbs: allow long names to wrap instead of truncating with ellipsis */
+.breadcrumb {
+  flex-wrap: wrap;
+}
+.breadcrumb > li {
+  max-width: none !important;
+  white-space: normal !important;
+}
+.breadcrumb > li > a {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 	
 .filters .module .sorting .up {
@@ -683,6 +698,32 @@ img.item_image {
   overflow:hidden;
 }
 
+/* Dataset form actions: add breathing room and align buttons */
+.dataset-form .form-actions,
+.package-form .form-actions,
+.form-horizontal .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 0 14px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.dataset-form .form-actions .btn,
+.package-form .form-actions .btn,
+.form-horizontal .form-actions .btn {
+  min-width: 96px;
+  max-width: 150px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.2;
+  flex: 0 0 auto;
+  height: 3rem;
+  justify-content: center;
+  margin-top: 10px;
+}
+
 .slug-preview {
   font-size: 14px;
   line-height: 1;
@@ -742,7 +783,9 @@ img.item_image {
 
 .metadata-download{
   position:relative;
-  float: left;
+  float: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .metadata-download_info_label{
@@ -761,32 +804,48 @@ img.item_image {
   position: relative;
 }
 
+.download-links {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
 .download-links .btn-group{
-  float:right;
-  margin-right:3px;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  float: none !important;
+  margin-right: 3px;
   margin-left: 3px;
 }
 
 .download-links .btn-group .btn{
   max-width: 130px;
+  white-space: nowrap !important;
 }
 
 .metadata-label{
-  display: block;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
   max-width: 180px;
   max-height: 34px;
-  padding: 6px 5px 6px 5px;
+  padding: 6px 8px !important;
   margin-right: 5px;
   text-align: center;
   font-weight: 600;
   letter-spacing: -0.01em;
-
+  float: none !important;
   color: #ECECEC;
   font-size: 14px;
   background-color: #f5f5f5;
   border-color: #ECECEC;
   border: 1px solid #e3e3e3;
   border-radius: 4px;
+  white-space: nowrap !important;
 }
 
 .metadata-label > i { 
@@ -1765,4 +1824,880 @@ input.loading[name="spatial_extent"] {
 
 .email-protect .email-status {
   font-size: 12px;
+}
+
+/* ===== RESOURCE LIST ITEM FIX - CKAN 2.10 ===== */
+/* Fix for format icons overlapping title text and dropdown positioning */
+
+/* Resource list container */
+ul.resource-list,
+.resource-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 20px 0 !important;
+}
+
+/* Individual resource item - 3 column grid: icon | content | button */
+ul.resource-list li.resource-item,
+.resource-list .resource-item,
+li.resource-item {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: auto auto !important;
+  gap: 2px 15px !important;
+  align-items: start !important;
+  background: #fff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  margin-bottom: 12px !important;
+  padding: 15px 20px !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+ul.resource-list li.resource-item:hover,
+.resource-list .resource-item:hover,
+li.resource-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border-color: #c0c0c0 !important;
+}
+
+/* Resource title row - contains format-label and heading - Column 1, Row 1 */
+.resource-item .resource-title-row,
+li.resource-item .resource-title-row {
+  display: contents !important;
+}
+
+/* Format label inside resource-title-row */
+.resource-item .resource-title-row .format-label,
+li.resource-item .resource-title-row .format-label {
+  grid-column: 1 !important;
+  grid-row: 1 / 3 !important;
+  align-self: start !important;
+  
+  /* Sprite scaling logic */
+  display: inline-block !important;
+  width: 60px !important;
+  height: 65px !important;
+  min-width: 60px !important;
+  
+  transform: scale(0.6) !important;
+  transform-origin: top left !important;
+  margin: 0 -24px -26px 0 !important;
+  
+  position: relative !important;
+  z-index: 1 !important;
+  border-radius: 4px !important;
+  
+  background-color: transparent !important;
+  color: transparent !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+/* Fix for non-sprite icons (images) */
+.resource-item .resource-title-row .format-label:has(img),
+li.resource-item .resource-title-row .format-label:has(img) {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  transform: none !important;
+  margin: 0 !important;
+  background: none !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.resource-item .resource-title-row .format-label img,
+li.resource-item .resource-title-row .format-label img,
+.resource-item .format-label img,
+li.resource-item .format-label img {
+  max-width: 40px !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* Title - Col 2, Row 1 */
+.resource-item .resource-title-row .heading,
+.resource-item .resource-title-row a.heading,
+li.resource-item .resource-title-row .heading {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  margin: 0 0 4px 0 !important;
+  align-self: end !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #333 !important;
+  text-decoration: none !important;
+  line-height: 1.3 !important;
+}
+
+.resource-item .resource-title-row .heading:hover,
+li.resource-item .resource-title-row .heading:hover {
+  color: #005090 !important;
+  text-decoration: underline !important;
+}
+
+/* Heading link inside resource-title-row */
+.resource-item .resource-title-row .heading,
+.resource-item .resource-title-row a.heading,
+li.resource-item .resource-title-row .heading {
+  flex: 1 1 auto !important;
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #0069B4 !important;
+  text-decoration: none !important;
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+.resource-item .resource-title-row .heading:hover,
+li.resource-item .resource-title-row .heading:hover {
+  text-decoration: underline !important;
+  color: #005090 !important;
+}
+
+/* Format icon image inside resource item */
+.resource-item img.format-icon,
+.resource-item .format-label img,
+li.resource-item img.format-icon {
+  max-width: 40px !important;
+  max-height: 40px !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* Fallback: Resource heading/title as direct child - Column 1, Row 1 */
+.resource-item > a.heading,
+.resource-item > .heading,
+li.resource-item > a.heading {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #0069B4 !important;
+  text-decoration: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+.resource-item > a.heading:hover,
+li.resource-item > a.heading:hover {
+  text-decoration: underline !important;
+  color: #005090 !important;
+}
+
+/* Hide format label inside heading link - shown in resource-title-row */
+.resource-item a.heading .format-label,
+li.resource-item a.heading .format-label {
+  display: none !important;
+}
+
+/* Description paragraph - Column 2, Row 2 */
+.resource-item p.description,
+.resource-item .description,
+li.resource-item p.description,
+li.resource-item .description {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  color: #666 !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+}
+
+/* Explore/Download button group - Column 3, spans both rows */
+/* CRITICAL: position relative for correct dropdown positioning */
+.resource-item .btn-group,
+.resource-item .dropdown.btn-group,
+li.resource-item .btn-group,
+li.resource-item .dropdown.btn-group {
+  grid-column: 3 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  position: relative !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  z-index: 10 !important;
+}
+
+.resource-item .btn-group .btn,
+li.resource-item .btn-group .btn {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
+
+.resource-item .btn-group .btn-primary,
+li.resource-item .btn-group .btn-primary {
+  background-color: #0069B4 !important;
+  border-color: #0069B4 !important;
+  color: white !important;
+  border-radius: 4px 0 0 4px !important;
+}
+
+.resource-item .btn-group .btn-primary:hover,
+li.resource-item .btn-group .btn-primary:hover {
+  background-color: #005a9e !important;
+  border-color: #005a9e !important;
+}
+
+.resource-item .btn-group .dropdown-toggle,
+li.resource-item .btn-group .dropdown-toggle {
+  border-radius: 0 4px 4px 0 !important;
+  padding: 8px 10px !important;
+}
+
+/* ===== DOWNLOAD LINKS BAR FIX ===== */
+/* Fix for download bar being stacked vertically */
+
+.download-links {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.download-links .btn-group {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+.download-links .btn-group .btn {
+  white-space: nowrap !important;
+}
+
+/* Datastore download section fix */
+.datastore-download,
+.metadata-download {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+.datastore-download .btn-group,
+.metadata-download .btn-group {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Resource actions section - horizontal layout */
+.resource-actions,
+.resource-item-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Badge/label next to download button */
+.resource-item .label:not(.format-label),
+.resource-item .badge:not(.format-label),
+li.resource-item .label:not(.format-label),
+li.resource-item .badge:not(.format-label) {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin-left: 8px !important;
+}
+
+/* ===== DROPDOWN MENU FIX ===== */
+
+.resource-item .dropdown-menu,
+.resource-item .btn-group .dropdown-menu,
+li.resource-item .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  z-index: 1000 !important;
+  min-width: 160px !important;
+  padding: 5px 0 !important;
+  margin: 0 !important;
+  background-color: #fff !important;
+  border: 1px solid rgba(0,0,0,0.15) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.175) !important;
+}
+
+/* Show dropdown when open - Bootstrap 3 uses .open, Bootstrap 5 uses .show */
+.resource-item .dropdown.open .dropdown-menu,
+.resource-item .btn-group.open .dropdown-menu,
+.resource-item .dropdown-menu.show,
+.resource-item .btn-group .dropdown-menu.show,
+li.resource-item .dropdown.open .dropdown-menu,
+li.resource-item .dropdown-menu.show,
+.btn-group .dropdown-menu.show {
+  display: block !important;
+}
+
+.resource-item .dropdown-menu li a,
+li.resource-item .dropdown-menu li a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 15px !important;
+  color: #333 !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+}
+
+.resource-item .dropdown-menu li a:hover,
+li.resource-item .dropdown-menu li a:hover {
+  background-color: #f5f5f5 !important;
+  color: #0069B4 !important;
+}
+
+.resource-item .dropdown-menu li a img.format_icon,
+li.resource-item .dropdown-menu li a img.format_icon {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ===== RESPONSIVE FIX FOR RESOURCE ITEMS ===== */
+
+@media (max-width: 768px) {
+  ul.resource-list li.resource-item,
+  .resource-list .resource-item,
+  li.resource-item {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+  }
+  
+  .resource-item .format-label,
+  li.resource-item .format-label {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .resource-item > a.heading,
+  .resource-item a.heading,
+  li.resource-item > a.heading {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+  
+  .resource-item p.description,
+  li.resource-item p.description {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+  
+  .resource-item .btn-group,
+  li.resource-item .btn-group {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    justify-self: start !important;
+    margin-top: 10px !important;
+  }
+}
+
+/* ===== FORMAT LABEL SPRITE ICONS ===== */
+/* Base sprite definition for format labels */
+.format-label {
+  background-image: url('../../../public/base/images/sprite-resource-icons.png') !important;
+  background-repeat: no-repeat !important;
+  display: inline-block !important;
+}
+
+/* CSV format icon */
+.format-label[data-format=csv],
+.format-label[data-format*=csv] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -720px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* JSON format icon */
+.format-label[data-format=json],
+.format-label[data-format*=json] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -220px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* XML format icon */
+.format-label[data-format=xml],
+.format-label[data-format*=xml] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -920px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* XLS/XLSX format icons */
+.format-label[data-format=xls],
+.format-label[data-format*=xls],
+.format-label[data-format=xlsx],
+.format-label[data-format*=xlsx] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1120px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* SHP format icon */
+.format-label[data-format=shp],
+.format-label[data-format*=shp] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -2320px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* TIFF/TIF format icons */
+.format-label[data-format=tiff],
+.format-label[data-format*=tiff],
+.format-label[data-format=tif],
+.format-label[data-format*=tif] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -2420px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* API format icon */
+.format-label[data-format=api],
+.format-label[data-format*=api] {
+  width: 60px !important;
+  height: 65px !important;
+  background-position: -1320px -220px !important;
+  transform: scale(0.53) !important;
+  margin: -14px 0 0 -14px !important;
+  color: transparent !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* Dataset list notes with inline read-more toggle */
+.dataset-notes {
+  position: relative;
+  color: #6c757d;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 12px 15px !important;
+}
+
+.dataset-notes__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.dataset-notes__full {
+  display: none;
+  margin-top: 6px;
+}
+
+.dataset-notes__full p {
+  margin: 0 0 6px 0;
+}
+
+.dataset-notes__full p:last-child {
+  margin-bottom: 0;
+}
+
+.dataset-notes--expanded .dataset-notes__preview {
+  display: none;
+}
+
+.dataset-notes--expanded .dataset-notes__full {
+  display: block;
+}
+
+.dataset-notes__toggle {
+  background: none;
+  border: none;
+  padding: 4px 0 0 0;
+  color: #005a9e;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dataset-notes__toggle:hover,
+.dataset-notes__toggle:focus {
+  text-decoration: underline;
+}
+
+.dataset-notes__toggle:focus {
+  outline: 2px solid #005a9e;
+  outline-offset: 2px;
+}
+
+/* ===== TABLE COLLAPSIBLE ROWS FUNCTIONALITY ===== */
+/* Hide expandable rows by default when table is in "more" state */
+.table-toggle-more tr.toggle-more {
+  display: none !important;
+}
+
+/* Hide the "Show less" link when table is in "more" state */
+.table-toggle-more .toggle-show .show-less {
+  display: none !important;
+}
+
+/* Show the "Show more" link when table is in "more" state */
+.table-toggle-more .toggle-show .show-more {
+  display: inline !important;
+}
+
+/* Show all rows when table is in "less" state (expanded) */
+.table-toggle-less tr.toggle-more {
+  display: table-row !important;
+}
+
+/* Show the "Show less" link when table is in "less" state */
+.table-toggle-less .toggle-show .show-less {
+  display: inline !important;
+}
+
+/* Hide the "Show more" link when table is in "less" state */
+.table-toggle-less .toggle-show .show-more {
+  display: none !important;
+}
+
+/* Style the toggle row */
+.toggle-show td {
+  padding: 8px !important;
+  text-align: center !important;
+  border-top: 1px solid #ddd !important;
+}
+
+.toggle-show a {
+  color: #0069B4 !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+}
+
+.toggle-show a:hover {
+  text-decoration: underline !important;
+}
+
+/* Style for separator row */
+.toggle-separator td {
+  padding: 0px !important;
+  height: 1px !important;
+  border: none !important;
+}
+
+/* DOI Files Notification Styles */
+.doi-files-notification {
+  margin: 15px 0;
+  border: 2px solid #5bc0de;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.doi-files-notification .doi-upload-note {
+  margin-bottom: 10px;
+}
+
+.doi-files-notification .doi-notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #5bc0de 0%, #46b8da 100%);
+  border-radius: 6px 6px 0 0;
+  color: #fff;
+}
+
+.doi-files-notification .doi-notification-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.doi-files-notification .doi-notification-title i {
+  margin-right: 8px;
+}
+
+.doi-files-notification .doi-notification-header .btn-link {
+  color: #fff;
+  opacity: 0.8;
+  padding: 0;
+  font-size: 18px;
+}
+
+.doi-files-notification .doi-notification-header .btn-link:hover {
+  opacity: 1;
+}
+
+.doi-files-notification .doi-notification-body {
+  padding: 15px;
+}
+
+.doi-files-notification .doi-help-text {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.doi-files-notification .doi-help-text i {
+  color: #5bc0de;
+  margin-right: 5px;
+}
+
+.doi-files-notification .doi-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.doi-files-notification .doi-select-all-wrapper {
+  margin: 0;
+  font-weight: 600;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.doi-files-notification .doi-files-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.doi-files-notification .doi-file-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.doi-files-notification .doi-file-item:last-child {
+  border-bottom: none;
+}
+
+.doi-files-notification .doi-file-item:hover {
+  background: #f5f9fc;
+}
+
+.doi-files-notification .doi-file-item.used {
+  background: #d4edda;
+}
+
+.doi-files-notification .doi-file-item.created {
+  background: #cce5ff;
+}
+
+.doi-files-notification .doi-file-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doi-files-notification .doi-file-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  cursor: pointer;
+}
+
+.doi-files-notification .doi-file-check-label input {
+  margin: 0;
+}
+
+.doi-files-notification .doi-file-name .badge {
+  margin-left: 8px;
+  font-weight: normal;
+  background: #337ab7;
+}
+
+.doi-files-notification .doi-file-url {
+  font-size: 12px;
+  color: #888;
+  word-break: break-all;
+}
+
+.doi-files-notification .doi-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.doi-files-notification .doi-inline-actions .btn-link {
+  padding: 0;
+}
+
+.doi-files-notification .doi-inline-hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.doi-files-notification .doi-multi-progress {
+  margin-top: 15px;
+}
+
+.doi-files-notification .doi-multi-progress .progress {
+  margin-bottom: 10px;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.doi-files-notification .doi-progress-status {
+  font-size: 13px;
+  color: #666;
+}
+
+.doi-files-notification .doi-multi-errors,
+.doi-files-notification .doi-multi-success {
+  margin-top: 10px;
+}
+
+.doi-applied-message {
+  margin-top: 10px;
+}
+.stages li {
+    margin-top: -1px !important
+}
+
+/* Graphic overview uploader */
+.graphic-overview-upload {
+  margin-top: 10px;
+}
+
+.graphic-overview-dropzone {
+  border: 2px dashed #b9c5d3;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.graphic-overview-dropzone .dropzone-content i {
+  color: #4a90e2;
+  margin-bottom: 6px;
+}
+
+.graphic-overview-dropzone .dropzone-content p {
+  margin: 4px 0;
+  color: #4a5568;
+}
+
+.graphic-overview-dropzone .dropzone-content .text-muted {
+  color: #6c757d;
+}
+
+.graphic-overview-dropzone.dragover {
+  border-color: #2c7be5;
+  background: #eef5ff;
+}
+
+.graphic-overview-dropzone.uploading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.graphic-overview-progress {
+  margin-top: 8px;
+}
+
+.graphic-overview-progress .progress {
+  height: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: #e5e7eb;
+}
+
+.graphic-overview-progress .progress-bar {
+  background: #2c7be5;
+  width: 0%;
+  transition: width 0.2s ease;
+}
+
+.graphic-overview-progress .progress-text {
+  margin: 0;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.graphic-overview-preview {
+  margin-top: 12px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+.graphic-overview-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.graphic-overview-preview .preview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.graphic-overview-error {
+  margin-top: 8px;
+  font-size: 13px;
 }

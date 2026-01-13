@@ -101,6 +101,14 @@ schemingdcat-group-multiselect:
   contents:
     - js/modules/schemingdcat-group-multiselect.js
 
+schemingdcat-graphic-overview-upload:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_graphic_overview_upload.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-graphic-overview-upload.js
+
 schemingdcat-publisher-uri:
   output: ckanext-schemingdcat/%(version)s_schemingdcat_publisher_uri.js
   contents:
@@ -125,6 +133,22 @@ schemingdcat-simple-navigation:
   contents:
     - js/modules/schemingdcat-simple-navigation.js
 
+schemingdcat-dataset-notes:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_dataset_notes.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-dataset-notes.js
+
+schemingdcat-auto-citation:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_auto_citation.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-auto-citation.js
+
 main:
   output: base/%(version)s_main.js
   extra:
@@ -148,3 +172,24 @@ schemingdcat-resource-auto-fields:
       - base/main
   contents:
     - js/modules/schemingdcat-resource-auto-fields.js
+
+schemingdcat-batch-upload:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_batch_upload.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-batch-upload.js
+
+schemingdcat-batch-upload-css:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_batch_upload.css
+  contents:
+    - css/schemingdcat-batch-upload.css
+
+schemingdcat-doi-autofill:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_doi_autofill.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-doi-autofill.js

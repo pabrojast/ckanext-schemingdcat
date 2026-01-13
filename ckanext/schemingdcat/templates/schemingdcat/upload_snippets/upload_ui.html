@@ -465,8 +465,15 @@
       
       var files = e.dataTransfer.files;
       if (files && files.length > 0) {
-        // Set the files but don't trigger change immediately if CloudStorage is active
-        fileInput.files = files;
+        // Only process the first file - limit to single file upload
+        if (files.length > 1) {
+          console.warn('[schemingdcat-upload] Multiple files dropped, only the first one will be processed');
+        }
+        
+        // Create a new DataTransfer with only the first file
+        var dt = new DataTransfer();
+        dt.items.add(files[0]);
+        fileInput.files = dt.files;
         
         if (isCloudStorageEnabled) {
           // For CloudStorage, just set the files and let it detect the change naturally

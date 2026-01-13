@@ -67,7 +67,9 @@
   {% endif %}
 
   {% block package_tags %}
-    {% snippet "doi/snippets/package_citation.html", pkg_dict=g.pkg_dict %}
+    {% if pkg.get('doi') or pkg.get('custom_doi') %}
+      {% snippet "doi/snippets/package_citation.html", pkg_dict=pkg %}
+    {% endif %}
     {% snippet "schemingdcat/package/snippets/tags.html", tags=pkg.tags %}
   {% endblock %}
 

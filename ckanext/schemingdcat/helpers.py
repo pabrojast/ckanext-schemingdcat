@@ -12,6 +12,7 @@ from pathlib import Path
 from functools import lru_cache
 import datetime
 import typing
+from typing import Optional
 from urllib.parse import urlparse
 from urllib.error import URLError
 
@@ -49,6 +50,58 @@ all_helpers = {}
 prettify_cache = {}
 DEFAULT_LANG = None
 
+
+def _get_action_context(ignore_auth=False):
+    """
+    Build a CKAN action context that honours the current user and optionally
+    skips authorization checks.
+    """
+    user_name = ''
+    flask_globals = getattr(p.toolkit, 'g', None)
+    if flask_globals is not None:
+        user_name = getattr(flask_globals, 'user', '') or ''
+        if not user_name:
+            user_obj = getattr(flask_globals, 'userobj', None)
+            if user_obj is not None:
+                user_name = getattr(user_obj, 'name', '') or ''
+    if not user_name:
+        user_name = getattr(c, 'user', '') or ''
+
+    context = {
+        'model': model,
+        'session': model.Session,
+        'user': user_name or ''
+    }
+    if ignore_auth:
+        context['ignore_auth'] = True
+    return context
+
+
+def _safe_call_action(action_name, data_dict=None, allow_ignore_auth=True):
+    """
+    Execute a CKAN action ensuring we first try with the current user's context
+    and, if required, fall back to ignore_auth for read-only operations.
+    """
+    action = p.toolkit.get_action(action_name)
+    payload = data_dict or {}
+    attempts = [False]
+    if allow_ignore_auth:
+        attempts.append(True)
+
+    last_error = None
+    for ignore_auth in attempts:
+        try:
+            return action(_get_action_context(ignore_auth=ignore_auth), payload)
+        except p.toolkit.NotAuthorized as err:
+            last_error = err
+        except p.toolkit.ObjectNotFound:
+            log.debug('Action %s could not find the requested object', action_name)
+            return None
+
+    if last_error:
+        log.debug('Action %s not authorized for user %s', action_name, getattr(c, 'user', ''))
+    return None
+
 @lru_cache(maxsize=None)
 def get_scheming_dataset_schemas():
     """
@@ -78,7 +131,8 @@ def _get_request_params():
     except RuntimeError:
         return {}
 
-    for attr in ("params", "values", "args"):
+    # Prefer 'args' (CKAN 2.10+) to avoid deprecation warnings, fallback to 'params' for 2.9
+    for attr in ("args", "values", "params"):
         params = getattr(req, attr, None)
         if params is not None:
             return params
@@ -134,6 +188,24 @@ def schemingdcat_request_param_list(name):
     """Return a list of values for a given request parameter."""
     params = _get_request_params()
     return _get_param_list(params, name)
+
+
+@helper
+def schemingdcat_get_config_value(key, default=None):
+    """
+    Get a configuration value from CKAN config.
+    
+    This is a helper function to safely access CKAN configuration values
+    from templates.
+    
+    Args:
+        key (str): The configuration key to retrieve.
+        default: The default value if the key is not found.
+    
+    Returns:
+        The configuration value or the default value.
+    """
+    return p.toolkit.config.get(key, default)
 
 
 @helper
@@ -1082,6 +1154,50 @@ def schemingdcat_extract_lang_text(text, current_lang):
     return lang_text
 
 @helper
+def schemingdcat_dataset_type_label(dataset_type, plural=False):
+    """
+    Build a display label for a dataset type without adding an extra trailing
+    "s" when the type name is already plural.
+    """
+    if not dataset_type:
+        return ""
+
+    normalized = dataset_type.strip().lower()
+    base_label = dataset_type.strip().replace("_", " ").replace("-", " ").title()
+
+    overrides = {
+        "dataset": {
+            "singular": p.toolkit._("Dataset"),
+            "plural": p.toolkit._("Datasets"),
+        },
+        "document": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "documents": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "doc": {
+            "singular": p.toolkit._("Document"),
+            "plural": p.toolkit._("Documents"),
+        },
+        "software": {
+            "singular": p.toolkit._("Software"),
+            "plural": p.toolkit._("Software"),
+        },
+    }
+
+    if normalized in overrides:
+        return overrides[normalized]["plural" if plural else "singular"]
+
+    if plural and normalized.endswith("s"):
+        return p.toolkit._(base_label)
+    if plural:
+        return p.toolkit._(base_label + "s")
+    return p.toolkit._(base_label)
+
+@helper
 def dataset_display_name(package_or_package_dict):
     """
     Returns the localized value of the dataset name by extracting the correct translation.
@@ -1298,6 +1414,230 @@ def schemingdcat_get_dataset_schema(schema_type="dataset"):
     )   
 
 @helper
+def schemingdcat_detect_member_state(extent_geojson, min_overlap_percentage=50.0):
+    """
+    Detect the member state (country) that best contains the given spatial extent.
+    
+    This function compares the provided extent with country boundaries defined
+    in the schema's spatial_uri field choices.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to consider a match (default 50%)
+    
+    Returns:
+        str: The URI of the best matching country, or None if no suitable match found.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-3.5, 40.0], [-3.0, 40.0], [-3.0, 40.5], [-3.5, 40.5], [-3.5, 40.0]]]}
+        >>> uri = schemingdcat_detect_member_state(extent)
+        >>> # Returns: "http://publications.europa.eu/resource/authority/country/ESP"
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        # Reset cache to ensure fresh data in worker processes
+        member_state_detector.reset_cache()
+        result = member_state_detector.detect_member_state(extent_geojson, min_overlap_percentage)
+        log.info(f"[schemingdcat_detect_member_state] Detection result: {result}")
+        return result
+    except Exception as e:
+        log.error(f"Error detecting member state: {e}", exc_info=True)
+        return None
+
+@helper
+def schemingdcat_detect_member_states(extent_geojson, min_overlap_percentage=10.0):
+    """
+    Detect all member states (countries) that overlap with the given spatial extent.
+    
+    This function returns a list of all countries that have significant overlap
+    with the provided extent.
+    
+    Args:
+        extent_geojson: GeoJSON geometry dict (Polygon or MultiPolygon) representing the extent
+        min_overlap_percentage: Minimum overlap percentage to include a country (default 10%)
+    
+    Returns:
+        list: List of country URIs that overlap with the extent, sorted by overlap percentage.
+    
+    Example:
+        >>> extent = {"type": "Polygon", "coordinates": [[[-7.5, 37.0], [4.0, 37.0], [4.0, 44.0], [-7.5, 44.0], [-7.5, 37.0]]]}
+        >>> uris = schemingdcat_detect_member_states(extent)
+        >>> # Returns: ["http://publications.europa.eu/resource/authority/country/ESP", 
+        >>> #          "http://publications.europa.eu/resource/authority/country/PRT", ...]
+    """
+    try:
+        from ckanext.schemingdcat.upload import member_state_detector
+        return member_state_detector.detect_member_states(extent_geojson, min_overlap_percentage)
+    except Exception as e:
+        log.error(f"Error detecting member states: {e}")
+        return []
+
+
+@helper
+def schemingdcat_get_member_state_group_slug(member_state_uri: str):
+    """
+    Best-effort guess of the group slug that represents a member state,
+    based on the spatial_uri choices defined in the dataset schema.
+
+    It looks up the matching choice for the provided URI, then slugifies the
+    human label (preferring English, then Spanish, then French, then any).
+
+    Returns:
+        str or None: The guessed slug (eg. "ethiopia") or None if it cannot
+        be determined.
+    """
+    if not member_state_uri:
+        return None
+
+    try:
+        schema = schemingdcat_get_dataset_schema()
+        if not schema:
+            return None
+
+        spatial_field = next(
+            (f for f in schema.get('dataset_fields', []) if f.get('field_name') == 'spatial_uri'),
+            None
+        )
+        if not spatial_field:
+            return None
+
+        target_choice = None
+        for choice in spatial_field.get('choices', []):
+            if choice.get('value') == member_state_uri:
+                target_choice = choice
+                break
+
+        if not target_choice:
+            return None
+
+        label = target_choice.get('label', {})
+        # Prefer language order: en -> es -> fr -> any first value
+        if isinstance(label, dict):
+            candidate = label.get('en') or label.get('es') or label.get('fr')
+            if not candidate and label:
+                candidate = next(iter(label.values()))
+        else:
+            candidate = label
+
+        if not candidate:
+            return None
+
+        try:
+            from ckan.lib.munge import munge_title_to_name
+            return munge_title_to_name(candidate)
+        except Exception as e:
+            log.warning(f"Could not munge member state label '{candidate}' to slug: {e}")
+            return None
+    except Exception as e:
+        log.error(f"Error guessing member state group slug for {member_state_uri}: {e}")
+        return None
+
+
+def _normalize_slug(text: str) -> Optional[str]:
+    """Helper to normalize arbitrary text into a CKAN-safe slug."""
+    if not text:
+        return None
+    try:
+        from ckan.lib.munge import munge_title_to_name
+        return munge_title_to_name(text)
+    except Exception:
+        return None
+
+
+@helper
+def schemingdcat_find_member_state_group(member_state_uri: str, context: Optional[dict] = None) -> Optional[str]:
+    """
+    Try to find the existing CKAN group slug that corresponds to the given member state URI.
+
+    Strategy:
+    1) Look up the slug derived from the schema choice label (via schemingdcat_get_member_state_group_slug)
+       and check if that group exists.
+    2) Inspect children of the 'member-states' group (if present) and try to match by:
+         - name equality
+         - slugified display_name/title equality
+    3) Fall back to a direct group_list search by the label text.
+    """
+    if not member_state_uri:
+        return None
+
+    ctx = context or {'ignore_auth': True}
+    try:
+        from ckan.plugins import toolkit
+    except Exception:
+        return None
+
+    # First attempt: derived slug from schema label
+    candidate_slug = schemingdcat_get_member_state_group_slug(member_state_uri)
+    if candidate_slug:
+        try:
+            toolkit.get_action('group_show')(ctx, {'id': candidate_slug})
+            log.debug(f"Member state group resolved via schema label: {candidate_slug}")
+            return candidate_slug
+        except Exception:
+            log.debug(f"Candidate member state group '{candidate_slug}' not found")
+
+    # Load member-states parent to limit the search scope
+    member_children = []
+    try:
+        parent = toolkit.get_action('group_show')(ctx, {'id': 'member-states', 'include_groups': True})
+        member_children = parent.get('groups', []) or []
+    except Exception as e:
+        log.debug(f"Could not load member-states group: {e}")
+
+    # Get label text to try matching against display_name/title
+    label_text = None
+    try:
+        schema = schemingdcat_get_dataset_schema()
+        spatial_field = next(
+            (f for f in schema.get('dataset_fields', []) if f.get('field_name') == 'spatial_uri'),
+            None
+        )
+        if spatial_field:
+            for choice in spatial_field.get('choices', []):
+                if choice.get('value') == member_state_uri:
+                    lbl = choice.get('label')
+                    if isinstance(lbl, dict):
+                        label_text = lbl.get('en') or lbl.get('es') or lbl.get('fr') or next(iter(lbl.values()), None)
+                    else:
+                        label_text = lbl
+                    break
+    except Exception as e:
+        log.debug(f"Could not read schema label for member state {member_state_uri}: {e}")
+
+    normalized_label = _normalize_slug(label_text) if label_text else None
+
+    # Try matching among children of member-states
+    for child in member_children:
+        name = child.get('name')
+        disp = child.get('display_name') or child.get('title')
+        disp_norm = _normalize_slug(disp) if disp else None
+        if candidate_slug and name == candidate_slug:
+            log.debug(f"Member state group matched child by candidate slug: {name}")
+            return name
+        if normalized_label and name == normalized_label:
+            log.debug(f"Member state group matched child by normalized label: {name}")
+            return name
+        if normalized_label and disp_norm and normalized_label == disp_norm:
+            log.debug(f"Member state group matched child by display_name/title: {name}")
+            return name
+
+    # Last fallback: search by label text
+    if label_text:
+        try:
+            matches = toolkit.get_action('group_list')(ctx, {'q': label_text, 'all_fields': True, 'limit': 20})
+            for g in matches or []:
+                name = g.get('name')
+                disp = g.get('display_name') or g.get('title')
+                disp_norm = _normalize_slug(disp) if disp else None
+                if normalized_label and (name == normalized_label or disp_norm == normalized_label):
+                    log.debug(f"Member state group matched via group_list search: {name}")
+                    return name
+        except Exception as e:
+            log.debug(f"group_list search failed for '{label_text}': {e}")
+
+    return None
+
+@helper
 def schemingdcat_get_schema_form_groups(entity_type=None, object_type=None, schema=None):
     """
     Return a list of schema metadata groups for this form.
@@ -1455,15 +1795,23 @@ def get_memberstates():
     Get the list of member states groups.
     
     Returns:
-        list: List of group names, or ['Not available'] if the group doesn't exist
+        list: List of group names. Empty list if the group does not exist or cannot be read.
     """
-    try:
-        memberstates = p.toolkit.get_action('group_show')(
-            data_dict={'id': 'member-states', 'include_groups': True, 'all_fields': True}
-        )
-        return [item['name'] for item in memberstates["groups"]]
-    except (p.toolkit.ObjectNotFound, KeyError):
-        return ['Not available']
+    data_dict = {
+        'id': 'member-states',
+        'include_groups': True,
+        'all_fields': True
+    }
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    if not memberstates:
+        return []
+
+    groups = memberstates.get('groups', []) or []
+    return [
+        item['name']
+        for item in groups
+        if item.get('state', 'active') == 'active' and item.get('name')
+    ]
 
 @helper
 def schemingdcat_get_current_user():
@@ -1492,30 +1840,82 @@ def get_initiatives():
     Get the list of initiative groups by excluding member states groups.
     
     Returns:
-        list: List of initiative group names, or ['Not available'] if there's an error
+        list: List of initiative group names. Empty list if no initiatives are available.
     """
-    try:
-        # Get all groups
-        groups = p.toolkit.get_action('group_list')(
-            data_dict={'include_dataset_count': True}
-        )
-        
-        # Get member states groups to exclude
-        memberstates = p.toolkit.get_action('group_show')(
-            data_dict={'id': 'member-states', 'include_groups': True}
-        )
-        
-        # Create list of groups to exclude (member states and the main member-states group)
-        exclude_groups = [item['name'] for item in memberstates["groups"]]
-        exclude_groups.append('member-states')
-        
-        # Get the difference between all groups and excluded groups
-        initiatives = list(set(groups) - set(exclude_groups))
-        
-        return initiatives
-        
-    except (p.toolkit.ObjectNotFound, KeyError):
-        return ['Not available']
+    memberstate_names = set(get_memberstates())
+    memberstate_names.add('member-states')
+
+    available_groups = ckan_helpers.groups_available()
+    if available_groups:
+        initiatives = [
+            group['name'] if isinstance(group, dict) else group.name
+            for group in available_groups
+            if (group.get('name') if isinstance(group, dict) else getattr(group, 'name', None)) not in memberstate_names
+        ]
+        if initiatives:
+            return initiatives
+
+    groups = _safe_call_action('group_list', data_dict={'all_fields': False}) or []
+    return [
+        group_name
+        for group_name in groups
+        if group_name not in memberstate_names
+    ]
+
+@helper
+def get_all_memberstates_groups():
+    """
+    Get all member state groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all member states.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    data_dict = {
+        'id': 'member-states',
+        'include_groups': True,
+        'all_fields': True
+    }
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    if not memberstates:
+        return []
+
+    groups = memberstates.get('groups', []) or []
+    return [
+        {
+            'id': item.get('id'),
+            'name': item.get('name'),
+            'title': item.get('title') or item.get('name')
+        }
+        for item in groups
+        if item.get('state', 'active') == 'active' and item.get('name')
+    ]
+
+@helper
+def get_all_initiatives_groups():
+    """
+    Get all initiative groups with full details (id, name, title) for display in forms.
+    Uses ignore_auth to ensure all users can see all initiatives.
+    
+    Returns:
+        list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
+    """
+    memberstate_names = set(get_memberstates())
+    memberstate_names.add('member-states')
+
+    # Get all groups with full details using ignore_auth
+    all_groups = _safe_call_action('group_list', data_dict={'all_fields': True}) or []
+    
+    return [
+        {
+            'id': group.get('id'),
+            'name': group.get('name'),
+            'title': group.get('title') or group.get('name')
+        }
+        for group in all_groups
+        if group.get('state', 'active') == 'active' 
+        and group.get('name') not in memberstate_names
+    ]
 
 @helper
 def schemingdcat_spatial_extent_available():

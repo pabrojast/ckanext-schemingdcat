@@ -23,7 +23,7 @@
         
         <li>
           <div class="trash-dataset-badges">
-            {{ h.link_to(h.truncate(title, truncate_title), url) }}
+            {{ h.link_to(title|truncate(truncate_title), url) }}
             {% if entity.private %}
             <span class="dataset-private badge pull-left">
               <i class="fa fa-lock"></i>
@@ -50,6 +50,7 @@
 <!-- show button only if there is entity to purge -->
   {% if entities.first() %}
     <form method="POST" action="{{ h.url_for('admin.trash') }}" id="form-purge-{{ ent_type }}">
+      {{ h.csrf_input() if 'csrf_input' in h }}
       <input type="hidden" name="action" value="{{ent_type}}">
       <a href="{{ h.url_for('admin.trash', name=ent_type) }}" 
          class="btn btn-danger purge-all"
