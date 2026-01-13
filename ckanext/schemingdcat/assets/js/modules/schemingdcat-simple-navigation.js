@@ -90,10 +90,10 @@ ckan.module('schemingdcat-simple-navigation', function ($) {
     
     _redirectToDraft: function(draft) {
       var draftUrl = '/dataset/new/' + draft.slug + '/1';
-      var message = 'Se encontró un borrador existente: "' + draft.title + '"<br>' +
+      var message = 'An existing draft was found: "' + draft.title + '"<br>' +
                    '<a class="btn btn-primary btn-sm" style="margin-top: 10px;" href="' + draftUrl + '">' +
-                   '<i class="fa fa-folder-open"></i> Continuar con este borrador</a><br>' +
-                   '<small>Puedes seguir aquí o cerrar este aviso para continuar con un nuevo dataset.</small>';
+                   '<i class="fa fa-folder-open"></i> Continue with this draft</a><br>' +
+                   '<small>You can stay here or close this notice to continue with a new dataset.</small>';
       
       this._showMessage(message, 'warning');
     },
