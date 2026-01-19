@@ -20,6 +20,7 @@ from ckanext.schemingdcat.utils import init_config
 from ckanext.schemingdcat.package_controller import PackageController
 from ckanext.schemingdcat import helpers, validators, logic, blueprint, views
 import os
+from urllib.parse import parse_qs, urlparse
 
 import logging
 import json
@@ -342,6 +343,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if context.get('_schemingdcat_metadata_job'):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
+        self._normalize_pdf_resource_format(context, result)
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -358,6 +360,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if context.get('_schemingdcat_metadata_job'):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
+        self._normalize_pdf_resource_format(context, result)
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -630,6 +633,97 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if url_ext in candidate_formats:
             return True
 
+        return False
+
+    def _normalize_pdf_resource_format(self, context, resource):
+        if not resource or not resource.get('id'):
+            return resource
+
+        if not self._resource_looks_pdf(resource):
+            return resource
+
+        fmt = (resource.get('format') or '').strip()
+        fmt_is_pdf = self._value_looks_pdf(fmt)
+        if fmt_is_pdf and fmt.upper() == 'PDF':
+            return resource
+
+        patch_data = {'id': resource['id']}
+        if not fmt_is_pdf or fmt.upper() != 'PDF':
+            patch_data['format'] = 'PDF'
+
+        if not (resource.get('mimetype') or '').strip():
+            pdf_mimetype = sdct_config.OGC2CKAN_MD_FORMATS.get('pdf', (None, None))[1]
+            if pdf_mimetype:
+                patch_data['mimetype'] = pdf_mimetype
+
+        if len(patch_data) == 1:
+            return resource
+
+        try:
+            system_context = dict(context)
+            system_context.update({
+                'ignore_auth': True,
+                'api_version': 3,
+                'defer_commit': False,
+                '_schemingdcat_metadata_job': True,
+            })
+            toolkit.get_action('resource_patch')(system_context, patch_data)
+            for key, value in patch_data.items():
+                if key != 'id':
+                    resource[key] = value
+        except Exception as e:
+            log.warning(f"⚠️ [FORMAT] Could not normalize PDF format for resource {resource.get('id')}: {e}")
+
+        return resource
+
+    def _resource_looks_pdf(self, resource):
+        fmt = resource.get('format') or ''
+        mimetype = resource.get('mimetype') or ''
+        url = resource.get('url') or ''
+
+        if self._value_looks_pdf(fmt) or self._value_looks_pdf(mimetype):
+            return True
+
+        return self._url_looks_pdf(url)
+
+    def _value_looks_pdf(self, value):
+        value = (value or '').strip().lower()
+        if not value:
+            return False
+        if value == 'pdf':
+            return True
+        if 'application/pdf' in value or value.endswith('/pdf'):
+            return True
+        if value.startswith('http') and 'pdf' in value:
+            return True
+        return False
+
+    def _url_looks_pdf(self, url):
+        if not url:
+            return False
+        try:
+            parsed = urlparse(url)
+        except Exception:
+            return False
+
+        path = (parsed.path or '').lower()
+        if path.endswith('.pdf'):
+            return True
+
+        fragment = (parsed.fragment or '').lower()
+        if fragment.endswith('.pdf') or fragment == 'pdf':
+            return True
+
+        query = parse_qs(parsed.query or '')
+        for key in ('file', 'filename', 'download', 'name', 'attachment', 'path'):
+            for value in query.get(key, []):
+                if value.lower().endswith('.pdf'):
+                    return True
+        for key in ('format', 'type', 'mime', 'mimetype'):
+            for value in query.get(key, []):
+                low = value.lower()
+                if low == 'pdf' or 'application/pdf' in low:
+                    return True
         return False
 
     def _fallback_metadata_extraction(self, resource):
