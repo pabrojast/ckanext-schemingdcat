@@ -1224,3 +1224,9 @@ msgstr "Conjuntos de datos no espaciales"
 
 msgid "Spatial datasets"
 msgstr "Conjuntos de datos espaciales"
+
+msgid "External link"
+msgstr "Enlace externo"
+
+msgid "Opens an external URL; the file is not stored in the portal."
+msgstr "Abre una URL externa; el archivo no se almacena en el portal."

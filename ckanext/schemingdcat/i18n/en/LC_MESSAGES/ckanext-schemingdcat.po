@@ -1212,3 +1212,9 @@ msgstr "Non-spatial datasets"
 
 msgid "Spatial datasets"
 msgstr "Spatial datasets"
+
+msgid "External link"
+msgstr "External link"
+
+msgid "Opens an external URL; the file is not stored in the portal."
+msgstr "Opens an external URL; the file is not stored in the portal."

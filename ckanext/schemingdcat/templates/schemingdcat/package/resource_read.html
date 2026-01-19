@@ -62,6 +62,13 @@
 {% endblock %}
 
 {% block resource_additional_information_inner %}
+  {% set is_external_link = res.url and res.url_type != 'upload' %}
+  {% if is_external_link %}
+    <div class="resource-access-note">
+      <span class="label label-info">{{ _('External link') }}</span>
+      <span class="resource-access-hint">{{ _('Opens an external URL; the file is not stored in the portal.') }}</span>
+    </div>
+  {% endif %}
 
   {% if res.datastore_active or res.url_type == 'datastore' %}
   {% block resource_data_dictionary %}
