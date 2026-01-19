@@ -8,3 +8,33 @@
 {% block breadcrumb_content %}
   <li class="active">{{ h.nav_link(dataset_label_plural, named_route='%s.search' % dataset_type, highlight_actions='new index') }}</li>
 {% endblock %}
+
+{% block page_primary_action %}
+  {% if h.check_access('package_create') %}
+    {% set dataset_types = h.schemingdcat_dataset_types(dataset_type) %}
+    {% set current_type = dataset_type if dataset_type else (dataset_types[0] if dataset_types else None) %}
+    {% if dataset_types|length > 1 and current_type %}
+      {% set current_plural = current_type.lower().endswith('s') %}
+      {% set current_label = h.schemingdcat_dataset_type_label(current_type, plural=current_plural) or _(current_type.title()) %}
+      <div class="btn-group">
+        {% link_for _('Add %(label)s', label=current_label), named_route='%s.new' % current_type, class_='btn btn-primary' %}
+        <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#" aria-haspopup="true" aria-expanded="false">
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          {% for dtype in dataset_types %}
+            {% if dtype != current_type %}
+              {% set label_plural = dtype.lower().endswith('s') %}
+              {% set dtype_label = h.schemingdcat_dataset_type_label(dtype, plural=label_plural) or _(dtype.title()) %}
+              <li>{% link_for _('Add %(label)s', label=dtype_label), named_route='%s.new' % dtype %}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% elif current_type %}
+      {% set current_plural = current_type.lower().endswith('s') %}
+      {% set current_label = h.schemingdcat_dataset_type_label(current_type, plural=current_plural) or _(current_type.title()) %}
+      {% link_for _('Add %(label)s', label=current_label), named_route='%s.new' % current_type, class_='btn btn-primary', icon='plus-sign-alt' %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

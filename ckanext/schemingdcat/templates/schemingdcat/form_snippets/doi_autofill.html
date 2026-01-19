@@ -31,122 +31,166 @@
 
 {# Get placeholder text for current language #}
 {%- set placeholder_text = h.scheming_language_text(field.form_placeholder) or _('e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example') -%}
+{%- set default_mode = 'manual' if field.get('default_no_doi') and not current_value else 'doi' -%}
+{%- set no_doi_help_text = h.scheming_language_text(field.get('no_doi_help_text')) -%}
+{%- set no_doi_help_text = no_doi_help_text or _('No DOI? Skip the fetch step and fill the metadata manually. You can upload a file after saving this step or paste a link.') -%}
 
 <div class="doi-autofill-wrapper"
      data-module="schemingdcat-doi-autofill"
      data-module-field-id="{{ field_id }}"
      data-module-field-name="{{ field.field_name }}"
-     data-module-field-mapping='{{ field_mapping | tojson }}'>
-  
-  <div class="doi-heading">
-    <i class="fa fa-book"></i>
-    <span>{{ _('Document DOI (auto-fill)') }}</span>
+     data-module-field-mapping='{{ field_mapping | tojson }}'
+     data-module-default-mode="{{ default_mode }}">
+
+  <div class="doi-mode-switch" role="group" aria-label="{{ _('DOI workflow') }}">
+    <button type="button" class="btn btn-default doi-mode-btn" data-doi-mode="doi" aria-pressed="false">
+      <i class="fa fa-bolt"></i>
+      <span>{{ _('Use DOI to auto-fill') }}</span>
+    </button>
+    <button type="button" class="btn btn-default doi-mode-btn" data-doi-mode="manual" aria-pressed="false">
+      <i class="fa fa-pencil"></i>
+      <span>{{ _('No DOI (manual entry)') }}</span>
+    </button>
   </div>
-  
-  <div class="doi-input-group">
-    <div class="input-group">
-      <input type="text"
-             id="{{ field_id }}"
-             name="{{ field.field_name }}"
-             value="{{ current_value }}"
-             placeholder="{{ placeholder_text }}"
-             class="form-control doi-input"
-             autocomplete="off">
-      <span class="input-group-btn">
-        <button type="button" 
-                class="btn btn-primary doi-fetch-btn"
-                title="{{ _('Fetch metadata from DOI') }}">
-          <i class="fa fa-search"></i>
-          <span class="btn-text">{{ _('Fetch') }}</span>
-        </button>
-      </span>
+
+  <div class="doi-fetch-section">
+    <div class="doi-heading">
+      <i class="fa fa-book"></i>
+      <span>{{ _('Document DOI (auto-fill)') }}</span>
     </div>
-    
-    <div class="doi-validation-feedback" style="display: none;">
-      <span class="doi-valid text-success" style="display: none;">
-        <i class="fa fa-check-circle"></i> {{ _('Valid DOI format') }}
-      </span>
-      <span class="doi-invalid text-danger" style="display: none;">
-        <i class="fa fa-times-circle"></i> {{ _('Invalid DOI format') }}
-      </span>
-    </div>
-  </div>
-  
-  <div class="doi-loading" style="display: none;">
-    <div class="loading-spinner">
-      <i class="fa fa-spinner fa-spin fa-2x"></i>
-      <p>{{ _('Fetching metadata from DOI providers...') }}</p>
-    </div>
-  </div>
-  
-  <div class="doi-error alert alert-danger" style="display: none;">
-    <i class="fa fa-exclamation-triangle"></i>
-    <span class="error-message"></span>
-    <button type="button" class="close doi-error-close">&times;</button>
-  </div>
-  
-  <div class="doi-preview-panel" style="display: none;">
-    <div class="panel panel-info">
-      <div class="panel-heading">
-        <h4 class="panel-title">
-          <i class="fa fa-file-text-o"></i>
-          {{ _('Metadata Preview') }}
-          <span class="doi-source badge"></span>
-        </h4>
+
+    <div class="doi-input-group">
+      <div class="input-group">
+        <input type="text"
+               id="{{ field_id }}"
+               name="{{ field.field_name }}"
+               value="{{ current_value }}"
+               placeholder="{{ placeholder_text }}"
+               class="form-control doi-input"
+               autocomplete="off">
+        <span class="input-group-btn">
+          <button type="button"
+                  class="btn btn-primary doi-fetch-btn"
+                  title="{{ _('Fetch metadata from DOI') }}">
+            <i class="fa fa-search"></i>
+            <span class="btn-text">{{ _('Fetch') }}</span>
+          </button>
+        </span>
       </div>
-      <div class="panel-body">
-        <div class="doi-preview-content">
-          <dl class="dl-horizontal">
-            <dt>{{ _('Title') }}</dt>
-            <dd class="preview-title"></dd>
-            
-            <dt>{{ _('Authors') }}</dt>
-            <dd class="preview-authors"></dd>
-            
-            <dt>{{ _('Year') }}</dt>
-            <dd class="preview-year"></dd>
-            
-            <dt>{{ _('Publisher') }}</dt>
-            <dd class="preview-publisher"></dd>
-            
-            <dt>{{ _('Type') }}</dt>
-            <dd class="preview-type"></dd>
-            
-            <dt>{{ _('Abstract') }}</dt>
-            <dd class="preview-abstract"></dd>
-            
-            <dt>{{ _('Keywords') }}</dt>
-            <dd class="preview-keywords"></dd>
-          </dl>
+
+      <div class="doi-validation-feedback" style="display: none;">
+        <span class="doi-valid text-success" style="display: none;">
+          <i class="fa fa-check-circle"></i> {{ _('Valid DOI format') }}
+        </span>
+        <span class="doi-invalid text-danger" style="display: none;">
+          <i class="fa fa-times-circle"></i> {{ _('Invalid DOI format') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="doi-loading" style="display: none;">
+      <div class="loading-spinner">
+        <i class="fa fa-spinner fa-spin fa-2x"></i>
+        <p>{{ _('Fetching metadata from DOI providers...') }}</p>
+      </div>
+    </div>
+
+    <div class="doi-error alert alert-danger" style="display: none;">
+      <i class="fa fa-exclamation-triangle"></i>
+      <span class="error-message"></span>
+      <button type="button" class="close doi-error-close">&times;</button>
+    </div>
+
+    <div class="doi-preview-panel" style="display: none;">
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <i class="fa fa-file-text-o"></i>
+            {{ _('Metadata Preview') }}
+            <span class="doi-source badge"></span>
+          </h4>
         </div>
-        
-        <div class="doi-preview-options">
-          <div class="checkbox">
-            <label>
-              <input type="checkbox" class="doi-overwrite-option" checked>
-              {{ _('Overwrite existing values') }}
-            </label>
+        <div class="panel-body">
+          <div class="doi-preview-content">
+            <dl class="dl-horizontal">
+              <dt>{{ _('Title') }}</dt>
+              <dd class="preview-title"></dd>
+
+              <dt>{{ _('Authors') }}</dt>
+              <dd class="preview-authors"></dd>
+
+              <dt>{{ _('Year') }}</dt>
+              <dd class="preview-year"></dd>
+
+              <dt>{{ _('Publisher') }}</dt>
+              <dd class="preview-publisher"></dd>
+
+              <dt>{{ _('Type') }}</dt>
+              <dd class="preview-type"></dd>
+
+              <dt>{{ _('Abstract') }}</dt>
+              <dd class="preview-abstract"></dd>
+
+              <dt>{{ _('Keywords') }}</dt>
+              <dd class="preview-keywords"></dd>
+            </dl>
+          </div>
+
+          <div class="doi-preview-options">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" class="doi-overwrite-option" checked>
+                {{ _('Overwrite existing values') }}
+              </label>
+            </div>
+          </div>
+
+          <div class="doi-preview-actions">
+            <button type="button" class="btn btn-success doi-apply-btn">
+              <i class="fa fa-check"></i> {{ _('Apply Metadata') }}
+            </button>
+            <button type="button" class="btn btn-default doi-cancel-btn">
+              <i class="fa fa-times"></i> {{ _('Cancel') }}
+            </button>
           </div>
         </div>
-        
-        <div class="doi-preview-actions">
-          <button type="button" class="btn btn-success doi-apply-btn">
-            <i class="fa fa-check"></i> {{ _('Apply Metadata') }}
-          </button>
-          <button type="button" class="btn btn-default doi-cancel-btn">
-            <i class="fa fa-times"></i> {{ _('Cancel') }}
-          </button>
-        </div>
       </div>
     </div>
+
+    {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
   </div>
-  
-  {%- snippet 'scheming/form_snippets/help_text.html', field=field -%}
+
+  <div class="doi-manual-section alert alert-info" style="display: none;">
+    <div class="doi-manual-title">
+      <i class="fa fa-check-circle"></i>
+      <span>{{ _('Continue without DOI') }}</span>
+    </div>
+    <p class="doi-manual-text">{{ no_doi_help_text }}</p>
+  </div>
 </div>
 
 <style>
 .doi-autofill-wrapper {
   margin-bottom: 15px;
+}
+
+.doi-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.doi-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doi-mode-btn.is-active {
+  background: #003164;
+  border-color: #003164;
+  color: #fff;
 }
 
 .doi-heading {
@@ -155,6 +199,18 @@
   gap: 8px;
   font-weight: 600;
   color: #003164;
+  margin-bottom: 6px;
+}
+
+.doi-manual-section {
+  margin-top: 10px;
+}
+
+.doi-manual-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
   margin-bottom: 6px;
 }
 

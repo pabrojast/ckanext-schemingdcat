@@ -36,7 +36,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       fieldMapping: {},
       debounceDelay: 500,
       apiEndpoint: '/api/doi/resolve',
-      validateEndpoint: '/api/doi/validate'
+      validateEndpoint: '/api/doi/validate',
+      defaultMode: 'doi'
     },
 
     /**
@@ -49,6 +50,8 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       this.fieldName = this.options.fieldName;
       this.fieldMapping = this.options.fieldMapping || {};
       this.resolvedData = null;
+      this.currentMode = null;
+      this.pendingRequest = null;
 
       // Cache DOM elements
       this.$input = this.el.find('.doi-input');
@@ -60,17 +63,31 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       this.$validFeedback = this.el.find('.doi-valid');
       this.$invalidFeedback = this.el.find('.doi-invalid');
       this.$validationFeedback = this.el.find('.doi-validation-feedback');
+      this.$modeButtons = this.el.find('.doi-mode-btn');
+      this.$fetchSection = this.el.find('.doi-fetch-section');
+      this.$manualSection = this.el.find('.doi-manual-section');
 
       // Bind events
       this.$input.on('input', this._onInputChange);
       this.$input.on('keypress', this._onInputKeypress);
       this.$fetchBtn.on('click', this._onFetchClick);
+      this.$modeButtons.on('click', this._onModeToggle);
       this.el.find('.doi-apply-btn').on('click', this._onApplyClick);
       this.el.find('.doi-cancel-btn').on('click', this._onCancelClick);
       this.el.find('.doi-error-close').on('click', this._onErrorClose);
 
       // Set up debounced validation
       this._debouncedValidate = this._debounce(this._validateDoi.bind(this), this.options.debounceDelay);
+
+      // Initialize mode (defaults to DOI unless configured otherwise)
+      var initialMode = (this.options.defaultMode || 'doi').toString();
+      if (initialMode !== 'manual' && initialMode !== 'doi') {
+        initialMode = 'doi';
+      }
+      if (this.$input.val().trim()) {
+        initialMode = 'doi';
+      }
+      this._setMode(initialMode);
 
       console.log('[DOI Autofill] Module initialized for field:', this.fieldName);
     },
@@ -130,6 +147,59 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
     },
 
     /**
+     * Handle mode toggle clicks (DOI vs manual)
+     */
+    _onModeToggle: function(e) {
+      e.preventDefault();
+      var mode = $(e.currentTarget).data('doiMode');
+      this._setMode(mode);
+    },
+
+    /**
+     * Set active mode for the UI
+     * @param {string} mode - 'doi' or 'manual'
+     */
+    _setMode: function(mode) {
+      if (mode !== 'manual' && mode !== 'doi') {
+        mode = 'doi';
+      }
+
+      this.currentMode = mode;
+      var isManual = mode === 'manual';
+
+      if (this.$fetchSection.length) {
+        this.$fetchSection.toggle(!isManual);
+      }
+      if (this.$manualSection.length) {
+        this.$manualSection.toggle(isManual);
+      }
+
+      if (this.$modeButtons.length) {
+        this.$modeButtons.removeClass('is-active').attr('aria-pressed', 'false');
+        this.$modeButtons
+          .filter('[data-doi-mode="' + mode + '"]')
+          .addClass('is-active')
+          .attr('aria-pressed', 'true');
+      }
+
+      if (isManual) {
+        this._hideValidation();
+        this._hideError();
+        this._hidePreview();
+        this._hideLoading();
+        this.el.find('.doi-success').remove();
+
+        if (this.pendingRequest && this.pendingRequest.abort) {
+          this.pendingRequest.abort();
+          this.pendingRequest = null;
+        }
+      }
+
+      this.$input.prop('disabled', isManual);
+      this.$fetchBtn.prop('disabled', isManual);
+    },
+
+    /**
      * Validate DOI and show feedback
      * @param {string} value - The DOI value to validate
      */
@@ -160,6 +230,10 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
      * Handle fetch button click
      */
     _onFetchClick: function() {
+      if (this.currentMode === 'manual') {
+        return;
+      }
+
       var doi = this.$input.val().trim();
       
       if (!doi) {
@@ -189,7 +263,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       this._hideError();
       this._hidePreview();
       
-      $.ajax({
+      this.pendingRequest = $.ajax({
         url: this.options.apiEndpoint,
         method: 'POST',
         contentType: 'application/json',
@@ -197,6 +271,10 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         timeout: 30000
       })
       .done(function(response) {
+        if (self.currentMode !== 'doi') {
+          return;
+        }
+
         console.log('[DOI Autofill] Response received:', response);
         self._hideLoading();
         
@@ -208,6 +286,10 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         }
       })
       .fail(function(xhr, status, error) {
+        if (self.currentMode !== 'doi') {
+          return;
+        }
+
         console.error('[DOI Autofill] Request failed:', status, error);
         console.error('[DOI Autofill] XHR response:', xhr.responseText);
         self._hideLoading();
@@ -225,6 +307,9 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         }
         
         self._showError(errorMessage);
+      })
+      .always(function() {
+        self.pendingRequest = null;
       });
     },
 

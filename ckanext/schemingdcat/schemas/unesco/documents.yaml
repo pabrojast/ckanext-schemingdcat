@@ -129,10 +129,15 @@ dataset_fields:
     es: ej. 10.5281/zenodo.1234567 o https://doi.org/10.1234/example
     fr: p. ex. 10.5281/zenodo.1234567 ou https://doi.org/10.1234/example
   help_text:
-    en: "Enter a DOI to auto-fill document metadata from <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, or <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Click 'Fetch' to retrieve and preview metadata before applying."
-    es: "Ingrese un DOI para auto-rellenar los metadatos del documento desde <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, o <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Haga clic en 'Buscar' para obtener y previsualizar los metadatos antes de aplicarlos."
-    fr: "Entrez un DOI pour auto-remplir les métadonnées du document depuis <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, ou <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Cliquez sur 'Rechercher' pour récupérer et prévisualiser les métadonnées avant de les appliquer."
+    en: "Enter a DOI to auto-fill document metadata from <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, or <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Click 'Fetch' to retrieve and preview metadata before applying. If you do not have a DOI, leave this empty and continue with manual metadata."
+    es: "Ingrese un DOI para auto-rellenar los metadatos del documento desde <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, o <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Haga clic en 'Buscar' para obtener y previsualizar los metadatos antes de aplicarlos. Si no tiene DOI, deje este campo en blanco y continúe con los metadatos manuales."
+    fr: "Entrez un DOI pour auto-remplir les métadonnées du document depuis <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, ou <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Cliquez sur 'Rechercher' pour récupérer et prévisualiser les métadonnées avant de les appliquer. Si vous n'avez pas de DOI, laissez ce champ vide et continuez avec les métadonnées manuelles."
   help_allow_html: True
+  default_no_doi: true
+  no_doi_help_text:
+    en: "No DOI? Skip the fetch step and fill the document metadata manually. You can upload a file in the Add data step or paste a link."
+    es: "Si no tiene DOI, omita la búsqueda y complete los metadatos manualmente. Puede subir el archivo en el paso de Añadir datos o pegar un enlace."
+    fr: "Si vous n'avez pas de DOI, ignorez la recherche et complétez les métadonnées manuellement. Vous pourrez téléverser le fichier à l'étape Ajouter des données ou coller un lien."
   form_group_id: identification
   field_mapping:
     title: title_translated

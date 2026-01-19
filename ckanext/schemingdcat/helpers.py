@@ -1198,6 +1198,52 @@ def schemingdcat_dataset_type_label(dataset_type, plural=False):
     return p.toolkit._(base_label)
 
 @helper
+def schemingdcat_dataset_types(current_type=None):
+    """
+    Return a stable, de-duplicated list of dataset types for UI menus.
+
+    Prefers CKAN helpers when available and falls back to scheming schemas.
+    """
+    dataset_types = []
+
+    for helper_name in ("get_dataset_types", "package_types"):
+        getter = getattr(ckan_helpers, helper_name, None)
+        if getter is None:
+            continue
+        if callable(getter):
+            try:
+                dataset_types = list(getter())
+                break
+            except TypeError:
+                continue
+        try:
+            dataset_types = list(getter)
+            break
+        except TypeError:
+            continue
+
+    if not dataset_types:
+        schemas = get_scheming_dataset_schemas()
+        if isinstance(schemas, dict):
+            dataset_types = list(schemas.keys())
+
+    seen = set()
+    ordered = []
+    for dtype in dataset_types:
+        if not dtype or dtype in seen:
+            continue
+        seen.add(dtype)
+        ordered.append(dtype)
+
+    if current_type and current_type not in seen:
+        ordered.append(current_type)
+
+    if "dataset" in ordered:
+        ordered = ["dataset"] + [dtype for dtype in ordered if dtype != "dataset"]
+
+    return ordered
+
+@helper
 def dataset_display_name(package_or_package_dict):
     """
     Returns the localized value of the dataset name by extracting the correct translation.
