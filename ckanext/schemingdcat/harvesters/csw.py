@@ -31,7 +31,7 @@ class SchemingDCATCSWHarvester(CSWHarvester, SchemingDCATHarvester):
     csw = None
         
     def _set_constraints_keywords(self, constraints):
-        self.contraints['keywords'] = [PropertyIsLike("csw:anyText", keyword) for keyword in constraints["keywords"]]
+        self.constraints['keywords'] = [PropertyIsLike("csw:anyText", keyword) for keyword in constraints["keywords"]]
     
     def _set_constraints_mails(self, constraints):
         self.constraints["mails"] = [mail.lower().replace(' ','') for mail in constraints["mails"]]

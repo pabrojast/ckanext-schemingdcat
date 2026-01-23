@@ -289,6 +289,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
     
         except ReadError as e:
             self._save_gather_error('Error generating default values for dataset/distribution config field mappings: {0}'.format(e), harvest_job)
+            return []
 
         # Create harvest objects for each dataset
         try:

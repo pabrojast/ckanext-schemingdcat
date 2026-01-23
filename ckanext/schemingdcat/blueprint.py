@@ -1,10 +1,9 @@
-﻿# encoding: utf-8
+# encoding: utf-8
 import ckan.model as model
 import ckan.lib.base as base
 import ckan.logic as logic
-from flask import Blueprint, request, redirect, url_for, jsonify
-from ckan.logic import ValidationError
-from ckan.plugins.toolkit import render, g, h, _, config as tk_config
+from flask import Blueprint, request, redirect, jsonify
+from ckan.plugins.toolkit import render, g, h, _
 import re
 
 import ckanext.schemingdcat.utils as sdct_utils

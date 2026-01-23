@@ -946,7 +946,7 @@ def schemingdcat_get_geospatial_endpoint(type="dataset"):
             csw_uri = "/csw"
         else:
             csw_uri = sdct_config.geometadata_base_uri.rstrip("/")
-    except:
+    except Exception:
         csw_uri = "/csw"
 
     if type == "catalog":
@@ -1877,7 +1877,7 @@ def schemingdcat_get_current_user():
             'email': user.email,
             'url': None  # Podrías añadir más campos si los necesitas
         }
-    except:
+    except Exception:
         return None
 
 @helper

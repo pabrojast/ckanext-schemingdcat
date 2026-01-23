@@ -560,7 +560,7 @@ def schemingdcat_if_empty_same_as_title(field, schema):
         fallback_key = 'title' + LANG_SUFFIX
         pkg_type = data.get(key[:-1] + ('type',), {})
         
-        extras = schemingdcat_get_extras(data, pkg_type)
+        extras = schemingdcat_get_extras(key, data, pkg_type)
         output = json.loads(extras.get(fallback_key, '{}')).get(lang, '')
 
         data[key] = output
@@ -631,11 +631,12 @@ def multilingual_text_output(value):
         return value
     return parse_json(value)
     
-def schemingdcat_get_extras(data, pkg_type='dataset'):
+def schemingdcat_get_extras(key, data, pkg_type='dataset'):
     """
     Returns the extras for a given package type from the provided data dictionary.
 
     Args:
+        key (tuple): The key tuple from the validator context.
         data (dict): The data dictionary to extract extras from.
         pkg_type (str, optional): The package type to extract extras for. Defaults to 'dataset'.
 
@@ -648,11 +649,11 @@ def schemingdcat_get_extras(data, pkg_type='dataset'):
             extras = data.get(key[:-1] + ('__extras',), {})
             return extras
         elif pkg_type in ('group', 'organization'):
-            for key, value in data.items():
-                if isinstance(key, tuple) and key[0] == 'extras' and key[2] == '__extras':
+            for data_key, value in data.items():
+                if isinstance(data_key, tuple) and data_key[0] == 'extras' and data_key[2] == '__extras':
                     extras[value['key']] = value['value']
             return extras
-    except:
+    except Exception:
         return extras
 
 @scheming_validator
