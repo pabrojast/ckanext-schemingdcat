@@ -4,3 +4,8 @@
    <!-- <button class="btn btn-primary" id="next-tab">{{ _('Next Category') }}</button> -->
    {{ super() }}
 {% endblock %}
+
+{% block basic_fields %}
+  {% if 'csrf_input' in h %}{{ h.csrf_input() }}{% endif %}
+  {{ super() }}
+{% endblock %}
