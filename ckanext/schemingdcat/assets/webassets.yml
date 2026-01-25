@@ -93,6 +93,14 @@ schemingdcat-email-protect:
   contents:
     - js/modules/schemingdcat-email-protect.js
 
+schemingdcat-csrf:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_csrf.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/schemingdcat-csrf.js
+
 schemingdcat-group-multiselect:
   output: ckanext-schemingdcat/%(version)s-schemingdcat_group_multiselect.js
   extra:

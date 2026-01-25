@@ -42,6 +42,7 @@
 {% endblock %}
 
 {% block basic_fields %}
+  {% if 'csrf_input' in h %}{{ h.csrf_input() }}{% endif %}
   {# --- MÓDULO MULTI-UPLOAD --- #}
   {% asset 'ckanext-schemingdcat/schemingdcat-multi-resource-upload' %}
   <div data-module="schemingdcat-multi-resource-upload"></div>

@@ -4,3 +4,8 @@
   {{ super() }}
   {% include 'schemingdcat/snippets/schemingdcat_asset.html' %}
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% asset 'ckanext-schemingdcat/schemingdcat-csrf' %}
+{% endblock %}
