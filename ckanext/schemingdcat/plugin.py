@@ -80,12 +80,14 @@ class SchemingDCATPlugin(
                     is_new = getattr(beaker_session, 'is_new', False)
                     has_csrf = '_csrf_token' in beaker_session
                     
-                    # For new sessions or sessions with CSRF, force immediate save
-                    if is_new or has_csrf:
-                        # Mark session as dirty to ensure it saves
-                        beaker_session._dirty = True
-                        beaker_session.save()
-                        log.info(f"[CSRF FIX] Forced session save: is_new={is_new}, has_csrf={has_csrf}, id={beaker_session.id[:8] if beaker_session.id else 'none'}")
+                    # Always save the session for non-static requests
+                    beaker_session._dirty = True
+                    beaker_session.save()
+                    
+                    # Log only for new sessions without CSRF (to debug the issue)
+                    if is_new and not has_csrf:
+                        path = request.environ.get('PATH_INFO', 'unknown')
+                        log.info(f"[CSRF FIX] New session without CSRF: path={path}, id={beaker_session.id[:8] if beaker_session.id else 'none'}")
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
