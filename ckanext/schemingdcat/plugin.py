@@ -56,6 +56,7 @@ class SchemingDCATPlugin(
         The handler runs inside Flask, where Beaker session is available.
         """
         from flask import request, session as flask_session
+        import hashlib
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         # Check multiple sources for the field name configuration
@@ -77,17 +78,16 @@ class SchemingDCATPlugin(
                 # Get the Beaker session from environ (same object as Flask session)
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
-                    is_new = getattr(beaker_session, 'is_new', False)
-                    has_csrf = '_csrf_token' in beaker_session
+                    # Pre-generate CSRF token if not present
+                    # This ensures the token exists BEFORE user visits a form page
+                    if '_csrf_token' not in beaker_session:
+                        csrf_token = hashlib.sha1(os.urandom(64)).hexdigest()
+                        beaker_session['_csrf_token'] = csrf_token
+                        log.info(f"[CSRF FIX] Pre-generated CSRF token for session {beaker_session.id[:8] if beaker_session.id else 'none'}")
                     
-                    # Always save the session for non-static requests
+                    # Always mark session as dirty and save
                     beaker_session._dirty = True
                     beaker_session.save()
-                    
-                    # Log only for new sessions without CSRF (to debug the issue)
-                    if is_new and not has_csrf:
-                        path = request.environ.get('PATH_INFO', 'unknown')
-                        log.info(f"[CSRF FIX] New session without CSRF: path={path}, id={beaker_session.id[:8] if beaker_session.id else 'none'}")
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
