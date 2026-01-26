@@ -57,7 +57,19 @@ class SchemingDCATPlugin(
         """
         from flask import request
         
-        log.info("[CSRF FIX] Registering after_request handler for Beaker session save")
+        # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
+        # Check multiple sources for the field name configuration
+        csrf_field = (
+            app.config.get('WTF_CSRF_FIELD_NAME') or
+            config.get('WTF_CSRF_FIELD_NAME') or
+            config.get('wtf_csrf_field_name') or
+            os.environ.get('WTF_CSRF_FIELD_NAME') or
+            os.environ.get('CKAN___WTF_CSRF_FIELD_NAME') or
+            os.environ.get('CKAN__WTF_CSRF_FIELD_NAME') or
+            '_csrf_token'  # Default to CKAN's expected field name
+        )
+        app.config['WTF_CSRF_FIELD_NAME'] = csrf_field
+        log.info(f"[CSRF FIX] Set WTF_CSRF_FIELD_NAME={csrf_field}")
         
         @app.after_request
         def save_beaker_session(response):
