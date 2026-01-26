@@ -9,7 +9,7 @@
     if (metaField && metaField.getAttribute('content')) {
       return metaField.getAttribute('content');
     }
-    return 'csrf_token';
+    return '_csrf_token';
   }
 
   function getCsrfToken() {

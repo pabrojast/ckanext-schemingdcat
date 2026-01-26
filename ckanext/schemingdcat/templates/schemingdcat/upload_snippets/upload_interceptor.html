@@ -158,10 +158,36 @@
 
             xhr.open(form.method || 'POST', form.action || window.location.href, true);
 
+            function getCsrfFieldName() {
+              var metaField = document.querySelector('meta[name="csrf_field_name"]');
+              if (metaField && metaField.getAttribute('content')) {
+                return metaField.getAttribute('content');
+              }
+              return '_csrf_token';
+            }
+
+            function getCsrfToken() {
+              var fieldName = getCsrfFieldName();
+
+              var metaToken = document.querySelector('meta[name="' + fieldName + '"]');
+              if (metaToken && metaToken.getAttribute('content')) {
+                return metaToken.getAttribute('content');
+              }
+
+              var input = document.querySelector('input[name="' + fieldName + '"]');
+              if (input && input.value) {
+                return input.value;
+              }
+
+              var re = new RegExp('(?:^|; )' + fieldName + '=([^;]+)');
+              var match = document.cookie.match(re);
+              return match ? decodeURIComponent(match[1]) : '';
+            }
+
             // Copy any CSRF tokens or headers
-            var csrfToken = form.querySelector('input[name="csrf_token"]');
-            if (csrfToken) {
-              xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+            var csrfTokenValue = getCsrfToken();
+            if (csrfTokenValue) {
+              xhr.setRequestHeader('X-CSRFToken', csrfTokenValue);
             }
 
             // Track retry attempts for 502/504 errors
