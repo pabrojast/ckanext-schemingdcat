@@ -57,15 +57,21 @@ class SchemingDCATPlugin(
         """
         from flask import request
         
+        log.info("[CSRF FIX] Registering after_request handler for Beaker session save")
+        
         @app.after_request
         def save_beaker_session(response):
             try:
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
+                    is_new = getattr(beaker_session, 'is_new', False)
+                    has_csrf = '_csrf_token' in beaker_session
                     # Force save to persist CSRF tokens for new sessions
                     beaker_session.save()
-            except Exception:
-                pass
+                    if is_new or has_csrf:
+                        log.debug(f"[CSRF FIX] Session saved: is_new={is_new}, has_csrf={has_csrf}")
+            except Exception as e:
+                log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
         
         return app
