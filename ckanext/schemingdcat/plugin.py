@@ -56,10 +56,8 @@ class SchemingDCATPlugin(
         The handler runs inside Flask, where Beaker session is available.
         """
         from flask import request, session as flask_session
-        import hashlib
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
-        # Check multiple sources for the field name configuration
         csrf_field = (
             app.config.get('WTF_CSRF_FIELD_NAME') or
             config.get('WTF_CSRF_FIELD_NAME') or
@@ -67,7 +65,7 @@ class SchemingDCATPlugin(
             os.environ.get('WTF_CSRF_FIELD_NAME') or
             os.environ.get('CKAN___WTF_CSRF_FIELD_NAME') or
             os.environ.get('CKAN__WTF_CSRF_FIELD_NAME') or
-            '_csrf_token'  # Default to CKAN's expected field name
+            '_csrf_token'
         )
         app.config['WTF_CSRF_FIELD_NAME'] = csrf_field
         log.info(f"[CSRF FIX] Set WTF_CSRF_FIELD_NAME={csrf_field}")
@@ -75,17 +73,10 @@ class SchemingDCATPlugin(
         @app.after_request
         def save_beaker_session(response):
             try:
-                # Get the Beaker session from environ (same object as Flask session)
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
-                    # Pre-generate CSRF token if not present
-                    # This ensures the token exists BEFORE user visits a form page
-                    if '_csrf_token' not in beaker_session:
-                        csrf_token = hashlib.sha1(os.urandom(64)).hexdigest()
-                        beaker_session['_csrf_token'] = csrf_token
-                        log.info(f"[CSRF FIX] Pre-generated CSRF token for session {beaker_session.id[:8] if beaker_session.id else 'none'}")
-                    
-                    # Always mark session as dirty and save
+                    # Always force save the session to Redis
+                    # This ensures CSRF tokens persist across pods
                     beaker_session._dirty = True
                     beaker_session.save()
             except Exception as e:
