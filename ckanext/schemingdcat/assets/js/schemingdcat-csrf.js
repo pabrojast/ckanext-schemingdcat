@@ -4,13 +4,29 @@
     return;
   }
 
+  function getCsrfFieldName() {
+    var metaField = document.querySelector('meta[name="csrf_field_name"]');
+    if (metaField && metaField.getAttribute('content')) {
+      return metaField.getAttribute('content');
+    }
+    return 'csrf_token';
+  }
+
   function getCsrfToken() {
-    var input = document.querySelector('input[name="csrf_token"]');
+    var fieldName = getCsrfFieldName();
+
+    var metaToken = document.querySelector('meta[name="' + fieldName + '"]');
+    if (metaToken && metaToken.getAttribute('content')) {
+      return metaToken.getAttribute('content');
+    }
+
+    var input = document.querySelector('input[name="' + fieldName + '"]');
     if (input && input.value) {
       return input.value;
     }
 
-    var match = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+    var re = new RegExp('(?:^|; )' + fieldName + '=([^;]+)');
+    var match = document.cookie.match(re);
     if (match) {
       return decodeURIComponent(match[1]);
     }
