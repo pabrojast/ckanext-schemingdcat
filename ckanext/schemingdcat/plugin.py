@@ -55,7 +55,7 @@ class SchemingDCATPlugin(
         This fixes CSRF token issues in multi-pod Kubernetes deployments.
         The handler runs inside Flask, where Beaker session is available.
         """
-        from flask import request
+        from flask import request, session as flask_session
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         # Check multiple sources for the field name configuration
@@ -74,14 +74,18 @@ class SchemingDCATPlugin(
         @app.after_request
         def save_beaker_session(response):
             try:
+                # Get the Beaker session from environ (same object as Flask session)
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
                     is_new = getattr(beaker_session, 'is_new', False)
                     has_csrf = '_csrf_token' in beaker_session
-                    # Force save to persist CSRF tokens for new sessions
-                    beaker_session.save()
+                    
+                    # For new sessions or sessions with CSRF, force immediate save
                     if is_new or has_csrf:
-                        log.debug(f"[CSRF FIX] Session saved: is_new={is_new}, has_csrf={has_csrf}")
+                        # Mark session as dirty to ensure it saves
+                        beaker_session._dirty = True
+                        beaker_session.save()
+                        log.info(f"[CSRF FIX] Forced session save: is_new={is_new}, has_csrf={has_csrf}, id={beaker_session.id[:8] if beaker_session.id else 'none'}")
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
