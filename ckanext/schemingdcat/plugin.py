@@ -45,6 +45,30 @@ class SchemingDCATPlugin(
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
+    plugins.implements(plugins.IMiddleware, inherit=True)
+
+    # IMiddleware
+    def make_middleware(self, app, config):
+        """
+        Register after_request handler to save Beaker sessions.
+        
+        This fixes CSRF token issues in multi-pod Kubernetes deployments.
+        The handler runs inside Flask, where Beaker session is available.
+        """
+        from flask import request
+        
+        @app.after_request
+        def save_beaker_session(response):
+            try:
+                beaker_session = request.environ.get('beaker.session')
+                if beaker_session is not None:
+                    # Force save to persist CSRF tokens for new sessions
+                    beaker_session.save()
+            except Exception:
+                pass
+            return response
+        
+        return app
 
     # IConfigurer
     def update_config(self, config_):
