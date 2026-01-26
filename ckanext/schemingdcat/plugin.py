@@ -32,6 +32,47 @@ log = logging.getLogger(__name__)
 print(f"[SCHEMINGDCAT PLUGIN] Module imported successfully", file=sys.stderr)
 sys.stderr.flush()
 
+class SessionSaveMiddleware:
+    """
+    WSGI Middleware to ensure Beaker sessions are saved to Redis.
+
+    This fixes the CSRF "session token is missing" error in Kubernetes
+    multi-pod deployments. Beaker doesn't save new sessions by default,
+    so CSRF tokens generated during form rendering are lost.
+
+    Strategy: Mark session as "dirty" BEFORE Flask processes the request,
+    then save again AFTER to ensure CSRF tokens are persisted.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        # BEFORE request: Mark session as modified so it will be saved
+        session = environ.get('beaker.session')
+        if session is not None:
+            try:
+                # Mark session as dirty BEFORE Flask processes request
+                # This ensures session.save() will actually persist data
+                session['_fresh'] = False
+                session.accessed()  # Mark as accessed
+            except Exception:
+                pass
+
+        # Wrapper to save session after response headers are sent
+        def saving_start_response(status, headers, exc_info=None):
+            # Save session after Flask has added CSRF token
+            sess = environ.get('beaker.session')
+            if sess is not None:
+                try:
+                    sess.save()
+                except Exception:
+                    pass
+            return start_response(status, headers, exc_info)
+
+        return self.app(environ, saving_start_response)
+
+
 class SchemingDCATPlugin(
     plugins.SingletonPlugin, Faceted, PackageController, DefaultTranslation
 ):
@@ -44,6 +85,7 @@ class SchemingDCATPlugin(
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
+    plugins.implements(plugins.IMiddleware, inherit=True)
 
     # IConfigurer
     def update_config(self, config_):
@@ -134,6 +176,17 @@ class SchemingDCATPlugin(
     # IClick
     def get_commands(self):
         return cli.get_commands()
+
+    # IMiddleware
+    def make_middleware(self, app, config):
+        """
+        Wrap the CKAN app with session-saving middleware.
+
+        This ensures Beaker sessions are always saved to Redis,
+        fixing CSRF token issues in multi-pod Kubernetes deployments.
+        """
+        return SessionSaveMiddleware(app)
+
 
 class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IConfigurer)

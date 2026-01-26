@@ -2,7 +2,7 @@
 import ckan.model as model
 import ckan.lib.base as base
 import ckan.logic as logic
-from flask import Blueprint, request, redirect, jsonify, session
+from flask import Blueprint, request, redirect, jsonify
 from ckan.plugins.toolkit import render, g, h, _
 import re
 
@@ -16,33 +16,6 @@ logger = getLogger(__name__)
 get_action = logic.get_action
 
 schemingdcat = Blueprint(u'schemingdcat', __name__)
-
-
-@schemingdcat.after_app_request
-def ensure_session_saved(response):
-    """
-    Ensure the Beaker session is properly saved to Redis after each request.
-
-    This fixes the CSRF "session token is missing" error that occurs in
-    Kubernetes deployments with multiple pods. The issue is that Beaker
-    doesn't save new sessions by default until they are explicitly modified.
-
-    By marking the session as modified and saving it explicitly, we ensure
-    that CSRF tokens generated during form rendering are persisted to Redis.
-    """
-    try:
-        # Access the Beaker session from the request environment
-        beaker_session = request.environ.get('beaker.session')
-        if beaker_session:
-            # Mark session as modified to force save
-            if '_fresh' not in beaker_session or beaker_session.get('_fresh', True):
-                beaker_session['_fresh'] = False
-            # Explicitly save to Redis
-            beaker_session.save()
-    except Exception as e:
-        logger.debug(f"Could not save session: {e}")
-
-    return response
 
 
 def endpoints():
