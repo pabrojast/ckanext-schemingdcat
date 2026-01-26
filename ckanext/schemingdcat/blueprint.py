@@ -18,6 +18,25 @@ get_action = logic.get_action
 schemingdcat = Blueprint(u'schemingdcat', __name__)
 
 
+@schemingdcat.after_app_request
+def ensure_session_saved(response):
+    """
+    Ensure Beaker session is saved to Redis after each request.
+    
+    This fixes CSRF "session token is missing" error in multi-pod Kubernetes.
+    Flask's after_app_request runs INSIDE Beaker's middleware, so we have
+    access to the session via request.environ['beaker.session'].
+    """
+    try:
+        beaker_session = request.environ.get('beaker.session')
+        if beaker_session is not None:
+            # Force save - this persists CSRF tokens to Redis
+            beaker_session.save()
+    except Exception as e:
+        logger.debug(f"Could not save session: {e}")
+    return response
+
+
 def endpoints():
     return render(
         'schemingdcat/endpoints/index.html',
