@@ -140,82 +140,87 @@ class SchemingDCATPlugin(
                     )
                 except Exception as e:
                     log.warning(f"[CSRF ERROR] Failed to log CSRF details: {e}")
-                # Instead of returning error, regenerate CSRF token and redirect
-                # This handles the case where user has stale session cookie
-                from flask import redirect, flash
-                from flask_wtf.csrf import generate_csrf
                 
-                try:
-                    beaker_session = request.environ.get('beaker.session')
-                    if beaker_session is not None:
-                        # Generate new CSRF token and save to session
-                        new_token = generate_csrf()
-                        # Force save the session
-                        internal_session = beaker_session._session()
-                        if hasattr(internal_session, 'save'):
-                            internal_session.save()
-                        log.warning(
-                            "[CSRF RECOVERY] Regenerated CSRF token for session %s, redirecting to %s",
-                            getattr(beaker_session, 'id', None),
-                            request.referrer or request.path
-                        )
-                except Exception as regen_err:
-                    log.warning(f"[CSRF RECOVERY] Failed to regenerate token: {regen_err}")
-                
-                # Flash message to inform user
-                try:
-                    flash('Your session was refreshed. Please try again.', 'info')
-                except:
-                    pass
-                
-                # Redirect to the form (referrer or current path)
-                redirect_url = request.referrer or request.path
-                if request.method == 'POST' and '/dataset' in request.path:
-                    # For dataset forms, redirect to the new form
-                    redirect_url = request.path
-                return redirect(redirect_url)
+                # Return a user-friendly error page
+                from flask import render_template_string
+                return render_template_string('''
+                    <!DOCTYPE html>
+                    <html><head><title>Session Error</title></head>
+                    <body>
+                        <h1>Session Error</h1>
+                        <p>Your session has expired or is invalid. Please refresh the page and try again.</p>
+                        <p><a href="{{ request.path }}">Refresh and try again</a></p>
+                    </body></html>
+                '''), 400
 
             app._schemingdcat_csrf_error_handler = True
         
-        # Add before_request to debug POST requests
+        # Fix CSRF token BEFORE Flask-WTF validates
         @app.before_request
-        def debug_csrf_before():
-            if '/dataset/new' in request.path:
-                beaker_session = request.environ.get('beaker.session')
-                session_id = getattr(beaker_session, 'id', None) if beaker_session else None
-                field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+        def fix_csrf_token_before_validation():
+            """
+            If this is a POST request and the session doesn't have a CSRF token,
+            but the form has one, extract the token from the form and put it in
+            the session so Flask-WTF validation will pass.
+            """
+            if request.method != 'POST':
+                return
+            
+            # Only apply to dataset forms and other POST endpoints
+            if '/dataset' not in request.path:
+                return
+            
+            beaker_session = request.environ.get('beaker.session')
+            if beaker_session is None:
+                return
+            
+            field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+            session_token = beaker_session.get(field_name)
+            form_token = request.form.get(field_name)
+            
+            # If session already has token, nothing to fix
+            if session_token:
+                return
+            
+            # If no form token, can't fix
+            if not form_token:
+                return
+            
+            # Extract the real token from the signed form token and put it in session
+            try:
+                from itsdangerous import URLSafeTimedSerializer, BadSignature
                 
-                # Check if session exists in Redis BEFORE any access
-                session_params = beaker_session.__dict__.get('_params', {}) if beaker_session else {}
-                cookie_key = session_params.get('key', 'ckan')
-                cookie_val = request.cookies.get(cookie_key)
-                cookie_session_id = cookie_val[-32:] if cookie_val and len(cookie_val) >= 32 else None
+                # Get the secret key used by Flask-WTF
+                secret_key = app.config.get('WTF_CSRF_SECRET_KEY', app.secret_key)
                 
-                # Check internal session state
-                internal = beaker_session.__dict__.get('_sess') if beaker_session else None
-                is_new_before = getattr(internal, 'is_new', 'NO_INTERNAL') if internal else 'NO_INTERNAL'
-                
-                session_token = beaker_session.get(field_name) if beaker_session else None
-                form_token = request.form.get(field_name) if request.method == 'POST' else None
-                
-                # Now check is_new after accessing session
-                internal_after = beaker_session._session() if beaker_session else None
-                is_new_after = getattr(internal_after, 'is_new', 'N/A') if internal_after else 'N/A'
-                
-                def _sig(val):
-                    if not val:
-                        return None
-                    return hashlib.sha1(val.encode('utf-8')).hexdigest()[:8]
-                
-                # Log ALL cookies to see if there are multiple session cookies
-                all_cookies = {k: v[-8:] if len(v) > 8 else v for k, v in request.cookies.items()}
-                
-                log.warning(
-                    "[CSRF DEBUG before_request] %s %s cookie_sid=%s session_id=%s "
-                    "is_new_before=%s is_new_after=%s session_token=%s form_token=%s cookies=%s",
-                    request.method, request.path, cookie_session_id, session_id,
-                    is_new_before, is_new_after, _sig(session_token), _sig(form_token), all_cookies
-                )
+                # Deserialize the form token to get the actual token value
+                s = URLSafeTimedSerializer(secret_key, salt='wtf-csrf-token')
+                try:
+                    # Try to load the token (with a generous time limit)
+                    real_token = s.loads(form_token, max_age=86400)  # 24 hours
+                    
+                    # Put the real token in the session
+                    beaker_session[field_name] = real_token
+                    
+                    # Force save the session immediately
+                    internal_session = beaker_session._session()
+                    if hasattr(internal_session, 'save'):
+                        internal_session.save()
+                    
+                    log.warning(
+                        "[CSRF FIX] Restored token from form to session. "
+                        "session_id=%s token_hash=%s",
+                        getattr(beaker_session, 'id', None),
+                        hashlib.sha1(real_token.encode('utf-8')).hexdigest()[:8]
+                    )
+                except BadSignature:
+                    log.warning(
+                        "[CSRF FIX] Could not deserialize form token - invalid signature. "
+                        "session_id=%s",
+                        getattr(beaker_session, 'id', None)
+                    )
+            except Exception as e:
+                log.warning(f"[CSRF FIX] Error restoring token: {e}")
         
         @app.after_request
         def save_beaker_session(response):
