@@ -182,16 +182,19 @@ class SchemingDCATPlugin(
                             auto_mode, is_dirty, is_new
                         )
                     
-                    # SessionObject.save() only marks _dirty=True but doesn't persist
-                    # We need to call the internal Session's save() to write to Redis
-                    beaker_session._dirty = True
-                    
-                    # Get the internal Session object and force immediate save
-                    internal_session = beaker_session._session()
-                    if internal_session is not None:
-                        internal_session.save()
-                        if '/dataset/new' in request.path:
-                            log.info("[CSRF DEBUG] Session saved to Redis: session_id=%s", session_id)
+                    # Only force save if session has CSRF token (to avoid race conditions)
+                    # Other requests should let Beaker's persist() handle saving normally
+                    if has_token:
+                        # SessionObject.save() only marks _dirty=True but doesn't persist
+                        # We need to call the internal Session's save() to write to Redis
+                        beaker_session._dirty = True
+                        
+                        # Get the internal Session object and force immediate save
+                        internal_session = beaker_session._session()
+                        if internal_session is not None:
+                            internal_session.save()
+                            if '/dataset/new' in request.path:
+                                log.info("[CSRF DEBUG] Session saved to Redis: session_id=%s", session_id)
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
