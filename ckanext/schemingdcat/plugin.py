@@ -140,14 +140,40 @@ class SchemingDCATPlugin(
                     )
                 except Exception as e:
                     log.warning(f"[CSRF ERROR] Failed to log CSRF details: {e}")
-                # Return the error response (don't re-raise)
-                from flask import render_template_string
-                return render_template_string('''
-                    <!DOCTYPE html>
-                    <html><head><title>400 Bad Request</title></head>
-                    <body><h1>400 Bad Request</h1><p>{{ message }}</p>
-                    <p><a href="{{ request.referrer or '/' }}">Go back</a></p></body></html>
-                ''', message=str(err.description)), 400
+                # Instead of returning error, regenerate CSRF token and redirect
+                # This handles the case where user has stale session cookie
+                from flask import redirect, flash
+                from flask_wtf.csrf import generate_csrf
+                
+                try:
+                    beaker_session = request.environ.get('beaker.session')
+                    if beaker_session is not None:
+                        # Generate new CSRF token and save to session
+                        new_token = generate_csrf()
+                        # Force save the session
+                        internal_session = beaker_session._session()
+                        if hasattr(internal_session, 'save'):
+                            internal_session.save()
+                        log.warning(
+                            "[CSRF RECOVERY] Regenerated CSRF token for session %s, redirecting to %s",
+                            getattr(beaker_session, 'id', None),
+                            request.referrer or request.path
+                        )
+                except Exception as regen_err:
+                    log.warning(f"[CSRF RECOVERY] Failed to regenerate token: {regen_err}")
+                
+                # Flash message to inform user
+                try:
+                    flash('Your session was refreshed. Please try again.', 'info')
+                except:
+                    pass
+                
+                # Redirect to the form (referrer or current path)
+                redirect_url = request.referrer or request.path
+                if request.method == 'POST' and '/dataset' in request.path:
+                    # For dataset forms, redirect to the new form
+                    redirect_url = request.path
+                return redirect(redirect_url)
 
             app._schemingdcat_csrf_error_handler = True
         
