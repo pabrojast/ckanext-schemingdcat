@@ -61,6 +61,10 @@ class SchemingDCATPlugin(
         from ckan.common import config
         import hashlib
         
+        # Log beaker session params for debugging
+        beaker_params = {k: v for k, v in config.items() if k.startswith('beaker.session')}
+        log.info(f"[CSRF FIX] Beaker session params: {beaker_params}")
+        
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         csrf_field = (
             app.config.get('WTF_CSRF_FIELD_NAME') or
@@ -164,10 +168,18 @@ class SchemingDCATPlugin(
                             token_hash = hashlib.sha1(token.encode('utf-8')).hexdigest()[:8]
                     
                     # Log session state for /dataset/new requests
-                    if '/dataset/new' in request.path or '/dataset' in request.path:
+                    if '/dataset/new' in request.path:
+                        # Get session params to check auto mode
+                        session_params = beaker_session.__dict__.get('_params', {})
+                        auto_mode = session_params.get('auto', False)
+                        is_dirty = beaker_session.dirty()
+                        is_new = getattr(beaker_session._session() if beaker_session.__dict__.get('_sess') else None, 'is_new', 'N/A')
+                        
                         log.info(
-                            "[CSRF DEBUG] %s %s session_id=%s has_token=%s token_hash=%s status=%s",
-                            request.method, request.path, session_id, has_token, token_hash, response.status_code
+                            "[CSRF DEBUG] %s %s session_id=%s has_token=%s token_hash=%s status=%s "
+                            "auto=%s dirty=%s is_new=%s",
+                            request.method, request.path, session_id, has_token, token_hash, response.status_code,
+                            auto_mode, is_dirty, is_new
                         )
                     
                     # SessionObject.save() only marks _dirty=True but doesn't persist
