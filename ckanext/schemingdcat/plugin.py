@@ -103,7 +103,7 @@ class SchemingDCATPlugin(
                         "user=%s session_id=%s session_has_token=%s "
                         "header_token=%s form_token=%s session_token=%s "
                         "cookie_present=%s cookie_len=%s referer=%s host=%s "
-                        "xff=%s remote=%s",
+                        "xff=%s remote=%s err=%s",
                         request.method,
                         request.path,
                         getattr(current_user, 'name', None) if current_user else None,
@@ -117,19 +117,59 @@ class SchemingDCATPlugin(
                         request.headers.get('Referer'),
                         request.host,
                         request.headers.get('X-Forwarded-For'),
-                        request.remote_addr
+                        request.remote_addr,
+                        str(err)
                     )
                 except Exception as e:
                     log.warning(f"[CSRF ERROR] Failed to log CSRF details: {e}")
-                return err
+                # Re-raise to let CKAN's error handler render the page
+                raise err
 
             app._schemingdcat_csrf_error_handler = True
+        
+        # Add before_request to debug POST requests
+        @app.before_request
+        def debug_csrf_before():
+            if request.method == 'POST' and '/dataset' in request.path:
+                beaker_session = request.environ.get('beaker.session')
+                session_id = getattr(beaker_session, 'id', None) if beaker_session else None
+                field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+                session_token = beaker_session.get(field_name) if beaker_session else None
+                form_token = request.form.get(field_name)
+                
+                def _sig(val):
+                    if not val:
+                        return None
+                    return hashlib.sha1(val.encode('utf-8')).hexdigest()[:8]
+                
+                log.info(
+                    "[CSRF DEBUG before_request] POST %s session_id=%s session_has_token=%s "
+                    "session_token=%s form_token=%s field_name=%s",
+                    request.path, session_id, bool(session_token),
+                    _sig(session_token), _sig(form_token), field_name
+                )
         
         @app.after_request
         def save_beaker_session(response):
             try:
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
+                    field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+                    session_id = getattr(beaker_session, 'id', None)
+                    has_token = field_name in beaker_session
+                    token_hash = None
+                    if has_token:
+                        token = beaker_session.get(field_name)
+                        if token:
+                            token_hash = hashlib.sha1(token.encode('utf-8')).hexdigest()[:8]
+                    
+                    # Log session state for /dataset/new requests
+                    if '/dataset/new' in request.path or '/dataset' in request.path:
+                        log.info(
+                            "[CSRF DEBUG] %s %s session_id=%s has_token=%s token_hash=%s status=%s",
+                            request.method, request.path, session_id, has_token, token_hash, response.status_code
+                        )
+                    
                     # SessionObject.save() only marks _dirty=True but doesn't persist
                     # We need to call the internal Session's save() to write to Redis
                     beaker_session._dirty = True
@@ -138,6 +178,8 @@ class SchemingDCATPlugin(
                     internal_session = beaker_session._session()
                     if internal_session is not None:
                         internal_session.save()
+                        if '/dataset/new' in request.path:
+                            log.info("[CSRF DEBUG] Session saved to Redis: session_id=%s", session_id)
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
