@@ -184,7 +184,13 @@ class SchemingDCATPlugin(
             
             # If no form token, can't fix
             if not form_token:
+                log.warning("[CSRF FIX] No form token found in POST request")
                 return
+            
+            log.warning(
+                "[CSRF FIX] Attempting to restore token. session_id=%s form_token_len=%s",
+                getattr(beaker_session, 'id', None), len(form_token) if form_token else 0
+            )
             
             # Extract the real token from the signed form token and put it in session
             try:
@@ -213,14 +219,15 @@ class SchemingDCATPlugin(
                         getattr(beaker_session, 'id', None),
                         hashlib.sha1(real_token.encode('utf-8')).hexdigest()[:8]
                     )
-                except BadSignature:
+                except BadSignature as bs_err:
                     log.warning(
                         "[CSRF FIX] Could not deserialize form token - invalid signature. "
-                        "session_id=%s",
-                        getattr(beaker_session, 'id', None)
+                        "session_id=%s error=%s",
+                        getattr(beaker_session, 'id', None), str(bs_err)
                     )
             except Exception as e:
-                log.warning(f"[CSRF FIX] Error restoring token: {e}")
+                import traceback
+                log.warning(f"[CSRF FIX] Error restoring token: {e}\n{traceback.format_exc()}")
         
         @app.after_request
         def save_beaker_session(response):
