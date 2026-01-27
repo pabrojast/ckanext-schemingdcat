@@ -167,18 +167,25 @@ class SchemingDCATPlugin(
                         if token:
                             token_hash = hashlib.sha1(token.encode('utf-8')).hexdigest()[:8]
                     
-                    # Log session state for /dataset/new requests
+                    # Log session state for /dataset/new requests (both GET and POST)
                     if '/dataset/new' in request.path:
                         # Get session params to check auto mode
                         session_params = beaker_session.__dict__.get('_params', {})
                         auto_mode = session_params.get('auto', False)
                         is_dirty = beaker_session.dirty()
-                        is_new = getattr(beaker_session._session() if beaker_session.__dict__.get('_sess') else None, 'is_new', 'N/A')
+                        internal = beaker_session._session() if beaker_session.__dict__.get('_sess') else None
+                        is_new = getattr(internal, 'is_new', 'N/A')
                         
-                        log.info(
-                            "[CSRF DEBUG] %s %s session_id=%s has_token=%s token_hash=%s status=%s "
+                        # Get cookie value to compare
+                        cookie_key = session_params.get('key', 'ckan')
+                        cookie_val = request.cookies.get(cookie_key)
+                        cookie_session_id = cookie_val[-32:] if cookie_val and len(cookie_val) >= 32 else None
+                        
+                        log.warning(
+                            "[CSRF DEBUG] %s %s session_id=%s cookie_sid=%s has_token=%s token_hash=%s status=%s "
                             "auto=%s dirty=%s is_new=%s",
-                            request.method, request.path, session_id, has_token, token_hash, response.status_code,
+                            request.method, request.path, session_id, cookie_session_id,
+                            has_token, token_hash, response.status_code,
                             auto_mode, is_dirty, is_new
                         )
                     
@@ -194,7 +201,7 @@ class SchemingDCATPlugin(
                         if internal_session is not None:
                             internal_session.save()
                             if '/dataset/new' in request.path:
-                                log.info("[CSRF DEBUG] Session saved to Redis: session_id=%s", session_id)
+                                log.warning("[CSRF DEBUG] Session saved to Redis: session_id=%s token_hash=%s", session_id, token_hash)
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response
