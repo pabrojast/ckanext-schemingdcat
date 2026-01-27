@@ -56,6 +56,10 @@ class SchemingDCATPlugin(
         The handler runs inside Flask, where Beaker session is available.
         """
         from flask import request, session as flask_session
+        from flask_wtf.csrf import CSRFError
+        from flask_login import current_user
+        from ckan.common import config
+        import hashlib
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         csrf_field = (
@@ -69,16 +73,71 @@ class SchemingDCATPlugin(
         )
         app.config['WTF_CSRF_FIELD_NAME'] = csrf_field
         log.info(f"[CSRF FIX] Set WTF_CSRF_FIELD_NAME={csrf_field}")
+
+        # Log CSRF failures with useful request/session context
+        if not getattr(app, '_schemingdcat_csrf_error_handler', False):
+            @app.errorhandler(CSRFError)
+            def _schemingdcat_csrf_error(err):
+                try:
+                    beaker_session = request.environ.get('beaker.session')
+                    session_id = getattr(beaker_session, 'id', None)
+                    field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+                    session_token = None
+                    if beaker_session is not None:
+                        session_token = beaker_session.get(field_name)
+
+                    header_token = (request.headers.get('X-CSRFToken') or
+                                    request.headers.get('X-CSRF-Token'))
+                    form_token = request.form.get(field_name)
+
+                    def _sig(val):
+                        if not val:
+                            return None
+                        return hashlib.sha1(val.encode('utf-8')).hexdigest()[:8]
+
+                    cookie_key = config.get('beaker.session.key', 'ckan')
+                    cookie_val = request.cookies.get(cookie_key)
+
+                    log.warning(
+                        "[CSRF ERROR] %s %s status=400 "
+                        "user=%s session_id=%s session_has_token=%s "
+                        "header_token=%s form_token=%s session_token=%s "
+                        "cookie_present=%s cookie_len=%s referer=%s host=%s "
+                        "xff=%s remote=%s",
+                        request.method,
+                        request.path,
+                        getattr(current_user, 'name', None) if current_user else None,
+                        session_id,
+                        bool(session_token),
+                        _sig(header_token),
+                        _sig(form_token),
+                        _sig(session_token),
+                        bool(cookie_val),
+                        len(cookie_val) if cookie_val else 0,
+                        request.headers.get('Referer'),
+                        request.host,
+                        request.headers.get('X-Forwarded-For'),
+                        request.remote_addr
+                    )
+                except Exception as e:
+                    log.warning(f"[CSRF ERROR] Failed to log CSRF details: {e}")
+                return err
+
+            app._schemingdcat_csrf_error_handler = True
         
         @app.after_request
         def save_beaker_session(response):
             try:
                 beaker_session = request.environ.get('beaker.session')
                 if beaker_session is not None:
-                    # Always force save the session to Redis
-                    # This ensures CSRF tokens persist across pods
+                    # SessionObject.save() only marks _dirty=True but doesn't persist
+                    # We need to call the internal Session's save() to write to Redis
                     beaker_session._dirty = True
-                    beaker_session.save()
+                    
+                    # Get the internal Session object and force immediate save
+                    internal_session = beaker_session._session()
+                    if internal_session is not None:
+                        internal_session.save()
             except Exception as e:
                 log.warning(f"[CSRF FIX] Error saving session: {e}")
             return response

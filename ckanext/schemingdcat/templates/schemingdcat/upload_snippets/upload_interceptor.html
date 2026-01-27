@@ -325,8 +325,9 @@
                     console.log('[Form Interceptor] Executing retry #' + retryCount + ' for form submission');
                     xhr.onload = xhr.onload; // Keep the same handler for retry
                     xhr.open(form.method || 'POST', form.action || window.location.href, true);
-                    if (csrfToken) {
-                      xhr.setRequestHeader('X-CSRFToken', csrfToken.value);
+                    var retryCsrfToken = getCsrfToken();
+                    if (retryCsrfToken) {
+                      xhr.setRequestHeader('X-CSRFToken', retryCsrfToken);
                     }
                     xhr.send(formData);
                   }, retryDelay);
