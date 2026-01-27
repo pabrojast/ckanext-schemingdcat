@@ -126,8 +126,14 @@ class SchemingDCATPlugin(
                     )
                 except Exception as e:
                     log.warning(f"[CSRF ERROR] Failed to log CSRF details: {e}")
-                # Re-raise to let CKAN's error handler render the page
-                raise err
+                # Return the error response (don't re-raise)
+                from flask import render_template_string
+                return render_template_string('''
+                    <!DOCTYPE html>
+                    <html><head><title>400 Bad Request</title></head>
+                    <body><h1>400 Bad Request</h1><p>{{ message }}</p>
+                    <p><a href="{{ request.referrer or '/' }}">Go back</a></p></body></html>
+                ''', message=str(err.description)), 400
 
             app._schemingdcat_csrf_error_handler = True
         
