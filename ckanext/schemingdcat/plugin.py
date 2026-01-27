@@ -140,23 +140,38 @@ class SchemingDCATPlugin(
         # Add before_request to debug POST requests
         @app.before_request
         def debug_csrf_before():
-            if request.method == 'POST' and '/dataset' in request.path:
+            if '/dataset/new' in request.path:
                 beaker_session = request.environ.get('beaker.session')
                 session_id = getattr(beaker_session, 'id', None) if beaker_session else None
                 field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
+                
+                # Check if session exists in Redis BEFORE any access
+                session_params = beaker_session.__dict__.get('_params', {}) if beaker_session else {}
+                cookie_key = session_params.get('key', 'ckan')
+                cookie_val = request.cookies.get(cookie_key)
+                cookie_session_id = cookie_val[-32:] if cookie_val and len(cookie_val) >= 32 else None
+                
+                # Check internal session state
+                internal = beaker_session.__dict__.get('_sess') if beaker_session else None
+                is_new_before = getattr(internal, 'is_new', 'NO_INTERNAL') if internal else 'NO_INTERNAL'
+                
                 session_token = beaker_session.get(field_name) if beaker_session else None
-                form_token = request.form.get(field_name)
+                form_token = request.form.get(field_name) if request.method == 'POST' else None
+                
+                # Now check is_new after accessing session
+                internal_after = beaker_session._session() if beaker_session else None
+                is_new_after = getattr(internal_after, 'is_new', 'N/A') if internal_after else 'N/A'
                 
                 def _sig(val):
                     if not val:
                         return None
                     return hashlib.sha1(val.encode('utf-8')).hexdigest()[:8]
                 
-                log.info(
-                    "[CSRF DEBUG before_request] POST %s session_id=%s session_has_token=%s "
-                    "session_token=%s form_token=%s field_name=%s",
-                    request.path, session_id, bool(session_token),
-                    _sig(session_token), _sig(form_token), field_name
+                log.warning(
+                    "[CSRF DEBUG before_request] %s %s cookie_sid=%s session_id=%s "
+                    "is_new_before=%s is_new_after=%s session_token=%s form_token=%s",
+                    request.method, request.path, cookie_session_id, session_id,
+                    is_new_before, is_new_after, _sig(session_token), _sig(form_token)
                 )
         
         @app.after_request
