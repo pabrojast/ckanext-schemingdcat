@@ -87,8 +87,10 @@ class SchemingDCATPlugin(
                     session_id = getattr(beaker_session, 'id', None)
                     field_name = app.config.get('WTF_CSRF_FIELD_NAME', '_csrf_token')
                     session_token = None
+                    session_token_default = None
                     if beaker_session is not None:
                         session_token = beaker_session.get(field_name)
+                        session_token_default = beaker_session.get('_csrf_token')
 
                     header_token = (request.headers.get('X-CSRFToken') or
                                     request.headers.get('X-CSRF-Token'))
@@ -101,23 +103,35 @@ class SchemingDCATPlugin(
 
                     cookie_key = config.get('beaker.session.key', 'ckan')
                     cookie_val = request.cookies.get(cookie_key)
+                    raw_cookie = request.headers.get('Cookie', '')
+                    cookie_hashes = []
+                    if raw_cookie:
+                        parts = [p.strip() for p in raw_cookie.split(';') if p.strip()]
+                        for p in parts:
+                            if p.startswith(cookie_key + '='):
+                                val = p.split('=', 1)[1]
+                                cookie_hashes.append(_sig(val))
 
                     log.warning(
                         "[CSRF ERROR] %s %s status=400 "
-                        "user=%s session_id=%s session_has_token=%s "
+                        "user=%s session_id=%s field_name=%s "
+                        "session_has_token=%s session_has__csrf_token=%s "
                         "header_token=%s form_token=%s session_token=%s "
-                        "cookie_present=%s cookie_len=%s referer=%s host=%s "
-                        "xff=%s remote=%s err=%s",
+                        "cookie_present=%s cookie_len=%s cookie_hashes=%s "
+                        "referer=%s host=%s xff=%s remote=%s err=%s",
                         request.method,
                         request.path,
                         getattr(current_user, 'name', None) if current_user else None,
                         session_id,
+                        field_name,
                         bool(session_token),
+                        bool(session_token_default),
                         _sig(header_token),
                         _sig(form_token),
                         _sig(session_token),
                         bool(cookie_val),
                         len(cookie_val) if cookie_val else 0,
+                        cookie_hashes,
                         request.headers.get('Referer'),
                         request.host,
                         request.headers.get('X-Forwarded-For'),
@@ -167,11 +181,14 @@ class SchemingDCATPlugin(
                         return None
                     return hashlib.sha1(val.encode('utf-8')).hexdigest()[:8]
                 
+                # Log ALL cookies to see if there are multiple session cookies
+                all_cookies = {k: v[-8:] if len(v) > 8 else v for k, v in request.cookies.items()}
+                
                 log.warning(
                     "[CSRF DEBUG before_request] %s %s cookie_sid=%s session_id=%s "
-                    "is_new_before=%s is_new_after=%s session_token=%s form_token=%s",
+                    "is_new_before=%s is_new_after=%s session_token=%s form_token=%s cookies=%s",
                     request.method, request.path, cookie_session_id, session_id,
-                    is_new_before, is_new_after, _sig(session_token), _sig(form_token)
+                    is_new_before, is_new_after, _sig(session_token), _sig(form_token), all_cookies
                 )
         
         @app.after_request
