@@ -30,12 +30,22 @@ ckan.module('schemingdcat-auto-citation', function ($) {
         $(document).on('input change', sel, self._updateCitation);
       });
 
-      $(document).on('input change', '[name^="authors_json"]', this._updateCitation);
+      $(document).on(
+        'input change',
+        '[name^="authors_json"], [name^="authors__"], [name^="authors-"]',
+        this._updateCitation
+      );
     },
 
     _collectAuthors: function () {
       var authors = [];
-      $('[name^="authors_json"][name$="name"]').each(function () {
+      var selectors = [
+        '[name^="authors_json"][name$="name"]',
+        '[name^="authors__"][name$="__name"]',
+        '[name^="authors-"][name$="-name"]'
+      ];
+
+      $(selectors.join(', ')).each(function () {
         var val = ($(this).val() || '').trim();
         if (val) {
           authors.push(val);
