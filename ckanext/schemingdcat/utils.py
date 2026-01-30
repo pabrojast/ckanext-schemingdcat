@@ -6,7 +6,6 @@ import os
 import inspect
 import json
 import hashlib
-from threading import Lock
 from ckanext.dcat.utils import CONTENT_TYPES
 import yaml
 from yaml.loader import SafeLoader
@@ -24,8 +23,9 @@ _public_dirs = None
 _files_hash = []
 _dirs_hash = []
 
-_facets_dict_lock = Lock()
-_public_dirs_lock = Lock()
+# TTL cache for facets_dict
+_facets_dict_timestamp = 0
+_FACETS_CACHE_TTL = 300  # 5 minutes
 
 
 def get_facets_dict():
@@ -34,41 +34,44 @@ def get_facets_dict():
     Returns:
         dict: A dictionary containing the labels for all fields defined in the scheming file.
     """
-    global _facets_dict
-    if not _facets_dict:
-        with _facets_dict_lock:
-            if not _facets_dict:
-                _facets_dict = {}
+    import time
+    global _facets_dict, _facets_dict_timestamp
+    
+    current_time = time.time()
+    if _facets_dict is not None and current_time - _facets_dict_timestamp < _FACETS_CACHE_TTL:
+        return _facets_dict
+    
+    _facets_dict = {}
+    try:
+        # Try to get the action
+        action = logic.get_action('scheming_dataset_schema_show')
+        schema = action({}, {'type': 'dataset'})
 
-                try:
-                    # Try to get the action
-                    action = logic.get_action('scheming_dataset_schema_show')
-                    schema = action({}, {'type': 'dataset'})
+        for item in schema['dataset_fields']:
+            _facets_dict[item['field_name']] = item['label']
 
-                    for item in schema['dataset_fields']:
-                        _facets_dict[item['field_name']] = item['label']
+        for item in schema['resource_fields']:
+            _facets_dict[item['field_name']] = item['label']
+    except KeyError:
+        # Action not available (e.g., in worker context)
+        # Try to import and register scheming actions
+        try:
+            from ckanext.scheming import logic as scheming_logic
+            # Register the action manually
+            logic._actions['scheming_dataset_schema_show'] = scheming_logic.scheming_dataset_schema_show
+            # Try again
+            schema = logic.get_action('scheming_dataset_schema_show')({}, {'type': 'dataset'})
+            
+            for item in schema['dataset_fields']:
+                _facets_dict[item['field_name']] = item['label']
 
-                    for item in schema['resource_fields']:
-                        _facets_dict[item['field_name']] = item['label']
-                except KeyError:
-                    # Action not available (e.g., in worker context)
-                    # Try to import and register scheming actions
-                    try:
-                        from ckanext.scheming import logic as scheming_logic
-                        # Register the action manually
-                        logic._actions['scheming_dataset_schema_show'] = scheming_logic.scheming_dataset_schema_show
-                        # Try again
-                        schema = logic.get_action('scheming_dataset_schema_show')({}, {'type': 'dataset'})
-                        
-                        for item in schema['dataset_fields']:
-                            _facets_dict[item['field_name']] = item['label']
+            for item in schema['resource_fields']:
+                _facets_dict[item['field_name']] = item['label']
+        except Exception:
+            # If still failing, return empty dict to avoid breaking the worker
+            pass
 
-                        for item in schema['resource_fields']:
-                            _facets_dict[item['field_name']] = item['label']
-                    except Exception:
-                        # If still failing, return empty dict to avoid breaking the worker
-                        pass
-
+    _facets_dict_timestamp = current_time
     return _facets_dict
 
 def get_public_dirs():

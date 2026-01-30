@@ -43,11 +43,17 @@ from ckanext.schemingdcat.utils import (
 from ckanext.dcat.utils import CONTENT_TYPES, get_endpoint
 from ckanext.fluent.validators import LANG_SUFFIX
 import logging
+import time
 
 log = logging.getLogger(__name__)
 
 all_helpers = {}
 prettify_cache = {}
+# TTL cache for expensive group operations
+_memberstates_cache = {'data': None, 'timestamp': 0}
+_initiatives_cache = {'data': None, 'timestamp': 0}
+_GROUPS_CACHE_TTL = 300  # 5 minutes
+
 DEFAULT_LANG = None
 
 
@@ -1835,29 +1841,35 @@ def schemingdcat_check_valid_url(url):
     except ValueError:
         return False
 
+def _get_memberstates_cached():
+    """Cached version of memberstates lookup with TTL."""
+    current_time = time.time()
+    if (_memberstates_cache['data'] is not None and 
+        current_time - _memberstates_cache['timestamp'] < _GROUPS_CACHE_TTL):
+        return _memberstates_cache['data']
+    
+    data_dict = {'id': 'member-states', 'include_groups': True, 'all_fields': True}
+    memberstates = _safe_call_action('group_show', data_dict=data_dict)
+    result = []
+    if memberstates:
+        groups = memberstates.get('groups', []) or []
+        result = [item['name'] for item in groups
+                  if item.get('state', 'active') == 'active' and item.get('name')]
+    
+    _memberstates_cache['data'] = result
+    _memberstates_cache['timestamp'] = current_time
+    return result
+
+
 @helper
 def get_memberstates():
     """
-    Get the list of member states groups.
+    Get the list of member states groups (cached with TTL).
     
     Returns:
         list: List of group names. Empty list if the group does not exist or cannot be read.
     """
-    data_dict = {
-        'id': 'member-states',
-        'include_groups': True,
-        'all_fields': True
-    }
-    memberstates = _safe_call_action('group_show', data_dict=data_dict)
-    if not memberstates:
-        return []
-
-    groups = memberstates.get('groups', []) or []
-    return [
-        item['name']
-        for item in groups
-        if item.get('state', 'active') == 'active' and item.get('name')
-    ]
+    return _get_memberstates_cached()
 
 @helper
 def schemingdcat_get_current_user():
@@ -1880,33 +1892,50 @@ def schemingdcat_get_current_user():
     except Exception:
         return None
 
-@helper
-def get_initiatives():
-    """
-    Get the list of initiative groups by excluding member states groups.
+def _get_initiatives_cached():
+    """Cached version of initiatives lookup with TTL."""
+    current_time = time.time()
+    if (_initiatives_cache['data'] is not None and 
+        current_time - _initiatives_cache['timestamp'] < _GROUPS_CACHE_TTL):
+        return _initiatives_cache['data']
     
-    Returns:
-        list: List of initiative group names. Empty list if no initiatives are available.
-    """
-    memberstate_names = set(get_memberstates())
+    memberstate_names = set(_get_memberstates_cached())
     memberstate_names.add('member-states')
 
     available_groups = ckan_helpers.groups_available()
+    result = []
     if available_groups:
-        initiatives = [
+        result = [
             group['name'] if isinstance(group, dict) else group.name
             for group in available_groups
             if (group.get('name') if isinstance(group, dict) else getattr(group, 'name', None)) not in memberstate_names
         ]
-        if initiatives:
-            return initiatives
+        if result:
+            _initiatives_cache['data'] = result
+            _initiatives_cache['timestamp'] = current_time
+            return result
 
     groups = _safe_call_action('group_list', data_dict={'all_fields': False}) or []
-    return [
+    result = [
         group_name
         for group_name in groups
         if group_name not in memberstate_names
     ]
+    
+    _initiatives_cache['data'] = result
+    _initiatives_cache['timestamp'] = current_time
+    return result
+
+
+@helper
+def get_initiatives():
+    """
+    Get the list of initiative groups by excluding member states groups (cached with TTL).
+    
+    Returns:
+        list: List of initiative group names. Empty list if no initiatives are available.
+    """
+    return _get_initiatives_cached()
 
 @helper
 def get_all_memberstates_groups():
