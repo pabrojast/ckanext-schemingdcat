@@ -10,6 +10,7 @@ from ckanext.dcat.utils import CONTENT_TYPES
 import yaml
 from yaml.loader import SafeLoader
 from pathlib import Path
+import threading
 
 try:
     from paste.reloader import watch_file
@@ -22,6 +23,7 @@ _facets_dict = None
 _public_dirs = None
 _files_hash = []
 _dirs_hash = []
+_public_dirs_lock = threading.Lock()
 
 # TTL cache for facets_dict
 _facets_dict_timestamp = 0
