@@ -2058,3 +2058,20 @@ def safe_localised_filesize(size_value):
         return ckan_localised_filesize(size_value)
     except (ValueError, TypeError):
         return ''
+
+
+@helper
+def schemingdcat_is_plugin_enabled(plugin_name):
+    """
+    Check if a CKAN plugin is enabled.
+    
+    Args:
+        plugin_name: The name of the plugin to check
+        
+    Returns:
+        bool: True if the plugin is enabled, False otherwise
+    """
+    try:
+        return p.plugin_loaded(plugin_name)
+    except Exception:
+        return False
