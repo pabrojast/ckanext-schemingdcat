@@ -18,6 +18,71 @@ import urllib.error
 log = logging.getLogger(__name__)
 
 
+def _metadata_extraction_limits():
+    """
+    Read metadata extraction limits from config.
+    - schemingdcat.metadata_extraction.max_field_bytes (default 50000)
+    - schemingdcat.metadata_extraction.drop_fields (comma/space separated)
+    """
+    try:
+        from ckan.common import config
+        from ckanext.schemingdcat import config as sdct_config
+        default_max = getattr(sdct_config, 'metadata_extraction_default_max_field_bytes', 50000)
+        default_drop = getattr(sdct_config, 'metadata_extraction_default_drop_fields', [])
+
+        raw_max = config.get('schemingdcat.metadata_extraction.max_field_bytes', default_max)
+        max_bytes = int(raw_max) if str(raw_max).strip() != '' else int(default_max)
+
+        raw_drop = config.get('schemingdcat.metadata_extraction.drop_fields', None)
+        if raw_drop is None:
+            drop_fields = set(default_drop)
+        else:
+            raw_drop = str(raw_drop).strip()
+            if raw_drop.lower() in ('none', 'false', '0'):
+                drop_fields = set()
+            elif raw_drop == '':
+                drop_fields = set(default_drop)
+            else:
+                drop_fields = {f.strip() for f in raw_drop.replace(',', ' ').split() if f.strip()}
+        return max_bytes, drop_fields
+    except Exception:
+        from ckanext.schemingdcat import config as sdct_config
+        return getattr(sdct_config, 'metadata_extraction_default_max_field_bytes', 50000), set(
+            getattr(sdct_config, 'metadata_extraction_default_drop_fields', [])
+        )
+
+
+def _prune_metadata_fields(metadata, log_ref=None):
+    """
+    Drop oversized metadata fields to avoid huge resource extras.
+    """
+    if not metadata:
+        return metadata
+
+    max_bytes, drop_fields = _metadata_extraction_limits()
+    if not max_bytes or max_bytes <= 0:
+        return metadata
+
+    pruned = {}
+    dropped = []
+    for key, value in metadata.items():
+        if key in drop_fields:
+            dropped.append(f"{key}(drop_fields)")
+            continue
+        try:
+            size = len(json.dumps(value, ensure_ascii=True, default=str))
+        except Exception:
+            size = len(str(value))
+        if size > max_bytes:
+            dropped.append(f"{key}({size})")
+            continue
+        pruned[key] = value
+
+    if dropped:
+        _job_log('warning', f"Skipping oversized metadata fields: {dropped}", log_ref or log)
+    return pruned
+
+
 def _merge_geojson_geometries(existing_geojson, new_geojson):
     """
     Merge two GeoJSON geometries into a single GeometryCollection or MultiPolygon.
@@ -622,6 +687,7 @@ def extract_comprehensive_metadata_job(job_data):
                                 
                                 # Analyze the downloaded file
                                 metadata = analyzer.analyze_file(tmp_file.name)
+                                metadata = _prune_metadata_fields(metadata, log)
                                 if metadata:
                                     _job_log('info', f"Extracted metadata: {list(metadata.keys())}", log)
                                 else:
@@ -733,8 +799,9 @@ def extract_comprehensive_metadata_job(job_data):
                         metadata_fields['spatial_extent'] = extent
                 
                 # Add projection/CRS info
-                if metadata.get('crs'):
-                    metadata_fields['projection'] = metadata['crs']
+                crs_value = metadata.get('spatial_crs') or metadata.get('crs')
+                if crs_value:
+                    metadata_fields['spatial_crs'] = crs_value
                 
                 if metadata.get('crs_wkt'):
                     metadata_fields['crs_wkt'] = metadata['crs_wkt']
@@ -757,6 +824,10 @@ def extract_comprehensive_metadata_job(job_data):
                 # Add geometry type
                 if metadata.get('geometry_type'):
                     metadata_fields['geometry_type'] = metadata['geometry_type']
+
+                # Add spatial resolution (raster)
+                if metadata.get('spatial_resolution'):
+                    metadata_fields['spatial_resolution'] = metadata['spatial_resolution']
                 
                 # Add attribute info
                 if metadata.get('attributes'):
@@ -781,8 +852,10 @@ def extract_comprehensive_metadata_job(job_data):
                     metadata_fields['raster_nodata'] = str(metadata['raster_nodata'])
                 
                 # Add file-level metadata
-                if metadata.get('file_size'):
-                    metadata_fields['size'] = str(metadata['file_size'])
+                file_size_bytes = metadata.get('file_size_bytes') or metadata.get('file_size')
+                if file_size_bytes:
+                    metadata_fields['file_size_bytes'] = str(file_size_bytes)
+                    metadata_fields['size'] = str(file_size_bytes)
                 
                 _job_log('info', f"Prepared metadata fields for resource update: {list(metadata_fields.keys())}", log)
                 

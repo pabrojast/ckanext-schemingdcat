@@ -27,6 +27,23 @@ field_mapping_extras_prefix_symbol = '_'
 batch_upload_enabled = True
 batch_upload_max_file_size = 500 * 1024 * 1024  # 500MB default
 
+# Metadata extraction defaults (resource extras)
+metadata_extraction_default_max_field_bytes = 50000
+metadata_extraction_default_drop_fields = [
+    'text_content_info',
+    'data_fields',
+    'data_statistics',
+    'data_domains',
+    'compression_info',
+    'file_integrity',
+    'format_version',
+    'document_pages',
+    'spreadsheet_sheets',
+    'content_type_detected',
+    'geographic_coverage',
+    'administrative_boundaries',
+]
+
 # Spatial auto-fill configuration
 # When True, the dataset's spatial and spatial_uri fields are automatically 
 # populated from the first resource's extracted spatial extent

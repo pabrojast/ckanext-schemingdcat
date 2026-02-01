@@ -570,6 +570,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             "resource_create": self.resource_create,
             "resource_update": self.resource_update,
             "package_patch": self.package_patch,
+            "package_search": self.package_search,
         })
         return actions
 
@@ -584,6 +585,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
         self._normalize_pdf_resource_format(context, result)
+        try:
+            self._prune_oversized_metadata_fields(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not prune oversized metadata fields after resource_create: {e}")
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -601,6 +606,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
         self._normalize_pdf_resource_format(context, result)
+        try:
+            self._prune_oversized_metadata_fields(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not prune oversized metadata fields after resource_update: {e}")
         try:
             self._trigger_metadata_extraction(result)
         except Exception as e:
@@ -631,6 +640,32 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         log.info(f"[SchemingDCATPlugin.package_patch] groups AFTER processing: {groups_after}")
         
         return next_action(context, data_dict)
+
+    @toolkit.chained_action
+    def package_search(self, next_action, context, data_dict):
+        """
+        Chained action for package_search to prevent huge resource extras
+        from bloating /dataset responses.
+        """
+        result = next_action(context, data_dict)
+        try:
+            if not self._metadata_prune_search_results_enabled():
+                return result
+
+            results = result.get('results') or []
+            if not results:
+                return result
+
+            max_bytes = self._metadata_max_field_bytes()
+            drop_fields = self._metadata_drop_fields()
+            for pkg in results:
+                resources = pkg.get('resources') or []
+                for res in resources:
+                    self._prune_resource_metadata_dict(res, max_bytes, drop_fields)
+        except Exception as e:
+            log.warning(f"⚠️ [SEARCH] Could not prune resource metadata in package_search: {e}")
+
+        return result
 
     # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
     def get_auth_functions(self):
@@ -799,6 +834,138 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         # RETURN IMMEDIATELY - don't wait for jobs
         return resource
 
+    def _metadata_extraction_enabled(self):
+        from ckan.common import config
+        try:
+            return toolkit.asbool(config.get('schemingdcat.metadata_extraction.enabled', True))
+        except Exception:
+            return True
+
+    def _metadata_max_field_bytes(self):
+        from ckan.common import config
+        try:
+            default_max = getattr(sdct_config, 'metadata_extraction_default_max_field_bytes', 50000)
+            raw_value = config.get('schemingdcat.metadata_extraction.max_field_bytes', default_max)
+            return int(raw_value) if str(raw_value).strip() != '' else int(default_max)
+        except Exception:
+            return getattr(sdct_config, 'metadata_extraction_default_max_field_bytes', 50000)
+
+    def _metadata_drop_fields(self):
+        from ckan.common import config
+        default_fields = getattr(sdct_config, 'metadata_extraction_default_drop_fields', [])
+        try:
+            raw_value = config.get('schemingdcat.metadata_extraction.drop_fields', None)
+        except Exception:
+            raw_value = None
+
+        if raw_value is None:
+            return set(default_fields)
+
+        raw_value = str(raw_value).strip()
+        if raw_value.lower() in ('none', 'false', '0'):
+            return set()
+        if raw_value == '':
+            return set(default_fields)
+
+        return {f.strip() for f in raw_value.replace(',', ' ').split() if f.strip()}
+
+    def _metadata_prune_search_results_enabled(self):
+        from ckan.common import config
+        try:
+            return toolkit.asbool(config.get('schemingdcat.metadata_extraction.prune_search_results', True))
+        except Exception:
+            return True
+
+    def _prune_resource_metadata_dict(self, resource, max_bytes=None, drop_fields=None):
+        if not resource:
+            return resource
+
+        if max_bytes is None:
+            max_bytes = self._metadata_max_field_bytes()
+        if drop_fields is None:
+            drop_fields = self._metadata_drop_fields()
+
+        for key in list(resource.keys()):
+            if key in drop_fields:
+                resource.pop(key, None)
+                continue
+
+            value = resource.get(key)
+            if value is None:
+                continue
+
+            try:
+                size = len(json.dumps(value, ensure_ascii=True, default=str))
+            except Exception:
+                size = len(str(value))
+
+            if max_bytes and max_bytes > 0 and size > max_bytes:
+                resource.pop(key, None)
+
+        return resource
+
+    def _prune_oversized_metadata_fields(self, context, resource):
+        """
+        Clear auto-generated metadata fields that exceed the configured size limit.
+        This prevents huge blobs from bloating resource extras and slowing /dataset.
+        """
+        try:
+            resource_id = resource.get('id')
+            if not resource_id:
+                return
+
+            max_bytes = self._metadata_max_field_bytes()
+            drop_fields = self._metadata_drop_fields()
+            if (not max_bytes or max_bytes <= 0) and not drop_fields:
+                return
+
+            metadata_fields_to_check = set(drop_fields) | {
+                'data_fields', 'data_statistics', 'data_domains',
+                'geographic_coverage', 'administrative_boundaries',
+                'compression_info', 'format_version', 'file_integrity',
+                'content_type_detected', 'document_pages', 'spreadsheet_sheets',
+                'text_content_info', 'file_size_bytes'
+            }
+
+            fields_to_clear = {}
+            for field_name in metadata_fields_to_check:
+                field_value = resource.get(field_name)
+                if field_value is None:
+                    continue
+                if field_name in drop_fields:
+                    fields_to_clear[field_name] = None
+                    continue
+                try:
+                    size = len(json.dumps(field_value, ensure_ascii=True, default=str))
+                except Exception:
+                    size = len(str(field_value))
+                if max_bytes and max_bytes > 0 and size > max_bytes:
+                    fields_to_clear[field_name] = None
+
+            if fields_to_clear:
+                system_context = {
+                    'model': context['model'],
+                    'session': context['session'],
+                    'ignore_auth': True,
+                    'user': '',
+                    'api_version': 3,
+                    'defer_commit': False,
+                    '_schemingdcat_metadata_job': True,
+                }
+
+                patch_data = {'id': resource_id}
+                patch_data.update(fields_to_clear)
+                toolkit.get_action('resource_patch')(system_context, patch_data)
+
+                log.warning(
+                    f"[METADATA] Cleared oversized metadata fields for resource {resource_id}: "
+                    f"{list(fields_to_clear.keys())}"
+                )
+        except Exception as e:
+            log.warning(
+                f"Error pruning oversized metadata fields for resource {resource.get('id', 'unknown')}: {e}"
+            )
+
     def _trigger_metadata_extraction(self, resource):
         """
         Centralized trigger for metadata extraction that can be called from hooks or chained actions.
@@ -807,6 +974,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         We use threading-based extraction directly which is more reliable.
         """
         resource_id = resource.get('id', 'unknown')
+        if not self._metadata_extraction_enabled():
+            log.info(f"⏭️ [TRIGGER] Metadata extraction disabled by config for resource {resource_id}")
+            return
         needs_extraction = resource.get('_needs_metadata_extraction') or self._should_extract_metadata(resource)
 
         if not needs_extraction:
