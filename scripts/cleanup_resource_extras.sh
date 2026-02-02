@@ -11,6 +11,8 @@ DROP_KEYS="text_content_info,data_fields,data_statistics,data_domains,compressio
 NAMESPACE="ckan"
 POD=""
 USE_K8S=0
+KUBECONFIG_PATH=""
+KUBE_CONTEXT=""
 
 usage() {
   cat <<EOF
@@ -22,6 +24,8 @@ Options:
   --no-size-prune         Do not prune by size (only drop keys)
   --drop-keys "k1,k2"     Comma-separated keys to drop (default: curated list)
   --k8s                   Run inside Kubernetes (auto-pick a ckan-* pod)
+  --kubeconfig PATH       Path to kubeconfig file (optional)
+  --context NAME          Kubernetes context name (optional)
   --namespace NS          Kubernetes namespace (default: ckan)
   --pod POD               Kubernetes pod name (overrides auto-pick)
   -h, --help              Show this help
@@ -49,6 +53,16 @@ while [[ $# -gt 0 ]]; do
     --k8s)
       USE_K8S=1
       shift
+      ;;
+    --kubeconfig)
+      KUBECONFIG_PATH="${2:-}"
+      USE_K8S=1
+      shift 2
+      ;;
+    --context)
+      KUBE_CONTEXT="${2:-}"
+      USE_K8S=1
+      shift 2
       ;;
     --namespace)
       NAMESPACE="${2:-}"
@@ -98,6 +112,25 @@ run_psql_k8s() {
     echo "kubectl not found in PATH" >&2
     exit 1
   fi
+
+  if [[ -n "$KUBECONFIG_PATH" ]]; then
+    export KUBECONFIG="$KUBECONFIG_PATH"
+  fi
+  if [[ -n "$KUBE_CONTEXT" ]]; then
+    kubectl config use-context "$KUBE_CONTEXT" >/dev/null
+  fi
+
+  if ! kubectl version --request-timeout=5s >/dev/null 2>&1; then
+    echo "kubectl cannot reach the cluster. Check kubeconfig/context." >&2
+    if kubectl config current-context >/dev/null 2>&1; then
+      echo "Current context: $(kubectl config current-context)" >&2
+    fi
+    if [[ -n "${KUBECONFIG:-}" ]]; then
+      echo "KUBECONFIG: ${KUBECONFIG}" >&2
+    fi
+    exit 1
+  fi
+
   if [[ -z "$POD" ]]; then
     POD="$(pick_pod)"
   fi
@@ -105,13 +138,13 @@ run_psql_k8s() {
     echo "No running ckan-* pod found in namespace $NAMESPACE" >&2
     exit 1
   fi
-  kubectl -n "$NAMESPACE" exec "$POD" -- \
-    psql "\$CKAN_SQLALCHEMY_URL" \
-      -v apply="$APPLY" \
-      -v max_bytes="$MAX_BYTES" \
-      -v prune_by_size="$PRUNE_BY_SIZE" \
-      -v drop_keys="$DROP_KEYS" \
-      -f "/app/src/ckanext-schemingdcat/scripts/cleanup_resource_extras.sql"
+  kubectl -n "$NAMESPACE" exec "$POD" -- sh -c \
+    "psql \"\$CKAN_SQLALCHEMY_URL\" \
+      -v apply=$APPLY \
+      -v max_bytes=$MAX_BYTES \
+      -v prune_by_size=$PRUNE_BY_SIZE \
+      -v drop_keys=\"$DROP_KEYS\" \
+      -f /app/src/ckanext-schemingdcat/scripts/cleanup_resource_extras.sql"
 }
 
 if [[ "$USE_K8S" -eq 1 ]]; then
