@@ -585,6 +585,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
         self._normalize_pdf_resource_format(context, result)
+        self._disable_external_pdf_views(context, result)
         try:
             self._prune_oversized_metadata_fields(context, result)
         except Exception as e:
@@ -606,6 +607,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
         self._normalize_pdf_resource_format(context, result)
+        self._disable_external_pdf_views(context, result)
         try:
             self._prune_oversized_metadata_fields(context, result)
         except Exception as e:
@@ -1045,11 +1047,25 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         return False
 
+    def _external_pdf_as_url_enabled(self):
+        from ckan.common import config
+        try:
+            return toolkit.asbool(config.get('schemingdcat.external_pdf_as_url', True))
+        except Exception:
+            return True
+
     def _normalize_pdf_resource_format(self, context, resource):
         if not resource or not resource.get('id'):
             return resource
 
-        if not self._resource_looks_pdf(resource):
+        looks_pdf = self._resource_looks_pdf(resource)
+        if not looks_pdf:
+            return resource
+
+        # For external links, prefer treating PDF URLs as plain links to avoid
+        # broken previews. Allow uploads to keep PDF normalization.
+        url_type = (resource.get('url_type') or '').lower()
+        if url_type != 'upload' and self._external_pdf_as_url_enabled():
             return resource
 
         fmt = (resource.get('format') or '').strip()
@@ -1085,6 +1101,38 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning(f"⚠️ [FORMAT] Could not normalize PDF format for resource {resource.get('id')}: {e}")
 
         return resource
+
+    def _disable_external_pdf_views(self, context, resource):
+        if not resource or not resource.get('id'):
+            return
+        if not self._external_pdf_as_url_enabled():
+            return
+
+        url_type = (resource.get('url_type') or '').lower()
+        if url_type == 'upload':
+            return
+
+        if not self._resource_looks_pdf(resource):
+            return
+
+        try:
+            system_context = dict(context)
+            system_context.update({
+                'ignore_auth': True,
+                'api_version': 3,
+                'defer_commit': False,
+            })
+            views = toolkit.get_action('resource_view_list')(system_context, {'id': resource['id']}) or []
+            removed = 0
+            for view in views:
+                view_type = (view.get('view_type') or '').lower()
+                if 'pdf' in view_type:
+                    toolkit.get_action('resource_view_delete')(system_context, {'id': view['id']})
+                    removed += 1
+            if removed:
+                log.info(f"🧹 [VIEWS] Removed {removed} PDF view(s) for external resource {resource.get('id')}")
+        except Exception as e:
+            log.warning(f"⚠️ [VIEWS] Could not remove PDF views for resource {resource.get('id')}: {e}")
 
     def _resource_looks_pdf(self, resource):
         fmt = resource.get('format') or ''

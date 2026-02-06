@@ -1578,6 +1578,7 @@
           if (urlParts.length > 1) {
               var ext = urlParts[urlParts.length - 1].toLowerCase();
               var extUpper = ext.toUpperCase();
+              var isPdfLink = extUpper === 'PDF';
                 
                 // Auto-fill format field
                 var form = wrapper.closest('form') || document;
@@ -1613,7 +1614,11 @@
                 'SLD': 'SLD'
               };
               
-              formatField.value = formatMap[extUpper] || extUpper;
+              if (isPdfLink) {
+                formatField.value = 'URL';
+              } else {
+                formatField.value = formatMap[extUpper] || extUpper;
+              }
               // Trigger change event
               var event = new Event('change', { bubbles: true });
               formatField.dispatchEvent(event);
@@ -1628,7 +1633,7 @@
               }
             });
             
-            if (mimetypeField && !mimetypeField.value) {
+            if (mimetypeField && !mimetypeField.value && !isPdfLink) {
               getMimeTypeForExtension(ext, function(mimeType) {
                 if (mimeType) {
                   mimetypeField.value = mimeType;
@@ -1648,7 +1653,7 @@
               }
             });
             
-            if (encodingField && !encodingField.value) {
+            if (encodingField && !encodingField.value && !isPdfLink) {
               var currentFormat = formatField ? formatField.value : '';
               getCharsetForFormat(ext, currentFormat, function(charset) {
                 if (charset) {

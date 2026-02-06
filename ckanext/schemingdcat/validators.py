@@ -899,6 +899,13 @@ def schemingdcat_if_empty_guess_format(field, schema):
     def validator(key, data, errors, context):
         value = data[key]
         resource_id = data.get(key[:-1] + ('id',))
+
+        def external_pdf_as_url_enabled():
+            try:
+                raw = config.get('schemingdcat.external_pdf_as_url', True)
+                return str(raw).strip().lower() not in ('false', '0', 'no')
+            except Exception:
+                return True
         
         # if resource_id then an update
         if (not value or value is missing) and not resource_id:
@@ -914,6 +921,9 @@ def schemingdcat_if_empty_guess_format(field, schema):
 
             mimetype, encoding = mimetypes.guess_type(url)
             if mimetype:
+                if mimetype.lower() == 'application/pdf' and external_pdf_as_url_enabled():
+                    data[key] = 'URL'
+                    return
                 data[key] = mimetype.split('/')[-1].upper()
                 data[key[:-1] + ('mimetype',)] = f"{mimetype_base_uri}/{mimetype}"
                 data[key[:-1] + ('encoding',)] = encoding or OGC2CKAN_HARVESTER_MD_CONFIG["encoding"]

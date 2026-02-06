@@ -25,7 +25,7 @@ ckan.module('schemingdcat-autofill-format', function ($) {
       }
       
       // Función para actualizar el formato basado en la extensión
-      function updateFormat(filename) {
+      function updateFormat(filename, source) {
         if (!filename || formatField.val()) return; // No sobrescribir si ya hay un valor
         
         var extension = getFileExtension(filename);
@@ -59,26 +59,29 @@ ckan.module('schemingdcat-autofill-format', function ($) {
           };
           
           var format = formatMap[extension] || extension;
+          if (source === 'url' && extension === 'PDF') {
+            format = 'URL';
+          }
           formatField.val(format).trigger('change');
         }
       }
       
       // Escuchar cambios en el campo URL
       urlField.on('change blur', function() {
-        updateFormat($(this).val());
+        updateFormat($(this).val(), 'url');
       });
       
       // Escuchar cambios en el campo de upload
       uploadField.on('change', function() {
         var files = this.files;
         if (files && files.length > 0) {
-          updateFormat(files[0].name);
+          updateFormat(files[0].name, 'upload');
         }
       });
       
       // También verificar si ya hay un valor en URL al cargar
       if (urlField.val() && !formatField.val()) {
-        updateFormat(urlField.val());
+        updateFormat(urlField.val(), 'url');
       }
     }
   };

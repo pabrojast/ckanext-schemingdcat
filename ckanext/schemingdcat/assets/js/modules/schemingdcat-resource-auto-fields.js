@@ -328,7 +328,11 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
       try {
         var filename = this.getFilenameFromUrl(url);
         if (filename.indexOf('.') === -1) return '';
-        return filename.split('.').pop().toUpperCase();
+        var ext = filename.split('.').pop().toUpperCase();
+        if (ext === 'PDF') {
+          return 'URL';
+        }
+        return ext;
       } catch (e) {
         return '';
       }
