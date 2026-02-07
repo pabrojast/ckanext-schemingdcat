@@ -121,6 +121,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      */
     showDoiFilesNotification: function(doiData) {
       var self = this;
+      this.currentDoiData = doiData || null;
       // Normalize files (infer names / formats from URL when missing)
       var files = (doiData.files || []).map(function(file) {
         var normalized = $.extend({}, file);
@@ -236,7 +237,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         var file = $item.data('file');
         
         if (file) {
-          self.applyDoiFileToForm(file.url, file.filename || '', file.format || '');
+          self.applyDoiFileToForm(file.url, file.filename || '', file.format || '', doiData);
           $item.addClass('used');
           $(this).html('<i class="fa fa-check"></i> Applied to form');
         }
@@ -859,7 +860,7 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
      * @param {string} filename - Original filename
      * @param {string} format - File format
      */
-    applyDoiFileToForm: function(url, filename, format) {
+    applyDoiFileToForm: function(url, filename, format, doiData) {
       // Infer missing bits from URL to avoid "undefined" resources
       if (!filename) {
         filename = this.getFilenameFromUrl(url);
@@ -880,7 +881,18 @@ this.ckan.module('schemingdcat-resource-auto-fields', function ($) {
         if ($nameField.length) {
           // Clean filename for display
           var displayName = filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-          $nameField.val(displayName).trigger('change');
+          if (displayName && displayName.trim() !== '') {
+            $nameField.val(displayName).trigger('change');
+          }
+        }
+      }
+
+      // If name is still empty, fall back to DOI title
+      var $nameFieldFallback = this.form.find('input[name="name"]');
+      if ($nameFieldFallback.length && (!$nameFieldFallback.val() || $nameFieldFallback.val().trim() === '')) {
+        var doiTitle = (doiData && doiData.title) || (this.currentDoiData && this.currentDoiData.title) || '';
+        if (doiTitle) {
+          $nameFieldFallback.val(doiTitle).trigger('change');
         }
       }
       

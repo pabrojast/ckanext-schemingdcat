@@ -365,7 +365,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       // Populate preview fields
       this.$preview.find('.preview-title').text(data.title || '-');
       this.$preview.find('.preview-year').text(data.publication_year || '-');
-      this.$preview.find('.preview-publisher').text(data.publisher || '-');
+      this.$preview.find('.preview-publisher').text(this._normalizeListValue(data.publisher) || '-');
       this.$preview.find('.preview-type').text(this._formatDocumentType(data.document_type) || '-');
       
       // Format authors
@@ -455,6 +455,23 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
     },
 
     /**
+     * Normalize array values into a human-friendly string
+     * @param {*} value - Value that may be an array
+     * @returns {*} Normalized value
+     */
+    _normalizeListValue: function(value) {
+      if (!Array.isArray(value)) {
+        return value;
+      }
+      return value.map(function(item) {
+        if (item === null || item === undefined) return '';
+        if (typeof item === 'string') return item;
+        if (item.name) return item.name;
+        return String(item);
+      }).filter(Boolean).join('; ');
+    },
+
+    /**
      * Handle apply button click
      */
     _onApplyClick: function() {
@@ -540,6 +557,9 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
         
         var value = data[sourceField];
         if (value === undefined || value === null || value === '') return;
+        if (Array.isArray(value) && sourceField !== 'authors' && sourceField !== 'keywords') {
+          value = self._normalizeListValue(value);
+        }
         
         targetFields.forEach(function(targetField) {
           self._setFieldValue(targetField, value, sourceField, overwrite);
@@ -667,6 +687,7 @@ this.ckan.module('schemingdcat-doi-autofill', function($, _) {
       var year = data.publication_year || '';
       var title = data.title || '';
       var publisher = data.publisher || data.publisher_name || '';
+      publisher = this._normalizeListValue(publisher);
       var doiUrl = data.doi ? ('https://doi.org/' + data.doi) : '';
 
       var pieces = [];

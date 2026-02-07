@@ -43,13 +43,13 @@
      data-module-default-mode="{{ default_mode }}">
 
   <div class="doi-mode-switch" role="group" aria-label="{{ _('DOI workflow') }}">
-    <button type="button" class="btn btn-default doi-mode-btn" data-doi-mode="doi" aria-pressed="false">
-      <i class="fa fa-bolt"></i>
-      <span>{{ _('Use DOI to auto-fill') }}</span>
-    </button>
     <button type="button" class="btn btn-default doi-mode-btn" data-doi-mode="manual" aria-pressed="false">
       <i class="fa fa-pencil"></i>
-      <span>{{ _('No DOI (manual entry)') }}</span>
+      <span>{{ _('Manual Upload (no DOI)') }}</span>
+    </button>
+    <button type="button" class="btn btn-default doi-mode-btn" data-doi-mode="doi" aria-pressed="false">
+      <i class="fa fa-bolt"></i>
+      <span>{{ _('Automatic Upload (with DOI)') }}</span>
     </button>
   </div>
 
