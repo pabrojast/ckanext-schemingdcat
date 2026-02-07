@@ -1,0 +1,23 @@
+{# Custom resource help text for IHP-WINS document/data uploads #}
+{% set current_type = dataset_type or (pkg.type if pkg is defined and pkg else '') %}
+<section class="module module-narrow module-shallow">
+  {% if current_type == 'documents' %}
+    <p class="text-muted small">{{ _('A screenshot of a computer') }}</p>
+    <p class="text-muted small">{{ _('AI-generated content may be incorrect.') }}</p>
+    <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('Document Upload Form') }}</h2>
+    <div class="module-content">
+      <p>
+        {{ _('Here you can add documents to your organization\'s database on IHP-WINS. Documents can be reports, publications, scientific papers and books. Depending on the type of document, you have different upload or share options. Documents can be either added as PDF, or referenced from other online repositories as web links (URL).') }}
+      </p>
+    </div>
+  {% else %}
+    <p class="text-muted small">{{ _('A screenshot of a computer') }}</p>
+    <p class="text-muted small">{{ _('AI-generated content may be incorrect.') }}</p>
+    <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('Data Upload Form') }}</h2>
+    <div class="module-content">
+      <p>
+        {{ _('Here you can add datasets to your organization\'s database on IHP-WINS. Data can be numerical or spatial datasets in various formats, such as comma-separated values (CSV), vector files such as Shapefiles (SHP), raster files such as GeoTIFFs, among others. Data can be either added directly or referenced from other online repositories as web links (URL).') }}
+      </p>
+    </div>
+  {% endif %}
+</section>
