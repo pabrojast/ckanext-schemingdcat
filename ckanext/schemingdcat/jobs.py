@@ -13,6 +13,7 @@ import json
 import tempfile
 import urllib.request
 import urllib.error
+from contextlib import contextmanager
 
 
 log = logging.getLogger(__name__)
@@ -300,6 +301,54 @@ def _job_log(level, msg, log_ref=None):
     sys.stderr.flush()
 
 
+@contextmanager
+def _maybe_push_flask_request_context(log_ref=None):
+    """
+    Push a Flask request context if the current execution has none.
+
+    Some CKAN extensions call ``flash_*`` helpers from dataset update hooks.
+    Background jobs and worker threads usually run without an active request,
+    which raises ``RuntimeError: Working outside of request context``.
+    """
+    if log_ref is None:
+        log_ref = log
+
+    pushed_context = None
+    has_request = False
+
+    try:
+        from flask import has_request_context  # type: ignore
+        has_request = has_request_context()
+    except Exception:
+        has_request = False
+
+    if not has_request:
+        try:
+            from ckan.lib.helpers import _get_auto_flask_context
+            auto_context = _get_auto_flask_context()
+            if auto_context is not None:
+                # Reusing a single shared context object is not thread-safe.
+                pushed_context = auto_context.copy() if hasattr(auto_context, 'copy') else auto_context
+                pushed_context.push()
+        except Exception as e:
+            try:
+                log_ref.debug(f"Could not push Flask request context: {e}")
+            except Exception:
+                pass
+
+    try:
+        yield
+    finally:
+        if pushed_context is not None:
+            try:
+                pushed_context.pop()
+            except Exception as e:
+                try:
+                    log_ref.debug(f"Could not pop Flask request context: {e}")
+                except Exception:
+                    pass
+
+
 def _add_member_state_to_package(package_id, member_state_uri, context, log_ref, spatial_extent=None):
     """
     Add a member state (country group) to a package based on the detected spatial extent.
@@ -488,7 +537,8 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
         # Update the package
         package_patch_action = get_action('package_patch')
         _job_log('info', f"Patching package {package_id} with fields: {list(patch_data.keys())}", log_ref)
-        package_patch_action(context, patch_data)
+        with _maybe_push_flask_request_context(log_ref):
+            package_patch_action(context, patch_data)
         _job_log('info', f"Successfully updated package {package_id} with member states and spatial info", log_ref)
         
         return True
@@ -883,7 +933,8 @@ def extract_comprehensive_metadata_job(job_data):
                             else:
                                 safe_patch_data[k] = v
                         
-                        result = resource_patch_action(context, safe_patch_data)
+                        with _maybe_push_flask_request_context(log):
+                            result = resource_patch_action(context, safe_patch_data)
                         _job_log('info', f"Resource_patch call completed successfully!", log)
                         _job_log('info', f"Successfully updated comprehensive metadata for resource {resource_id}. Updated {len(fields_to_update)} fields.", log)
                         log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
