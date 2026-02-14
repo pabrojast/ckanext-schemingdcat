@@ -1,4 +1,4 @@
-from ckan.common import request
+from flask import request
 import json
 import ckan.plugins as plugins
 import ckanext.schemingdcat.config as sdct_config

@@ -1,5 +1,5 @@
 import ckan.plugins as plugins
-from ckan.common import request
+from flask import request
 import ckanext.schemingdcat.config as sdct_config
 from ckanext.schemingdcat.utils import get_facets_dict
 import logging

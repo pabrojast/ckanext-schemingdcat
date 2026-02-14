@@ -1,5 +1,10 @@
 <h1 align="center">ckanext-schemingdcat. LOD/INSPIRE metadata enhancement for ckanext-scheming</h1>
 <p align="center">
+<a href="https://www.repostatus.org/#active"><img src="https://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active"></a>
+<a href="https://opensource.org/licenses/AGPL-3.0"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License: AGPL v3"></a>
+<a href="https://docs.ckan.org/en/2.10/"><img src="https://img.shields.io/badge/CKAN-2.9%20%7C%202.10-brightgreen" alt="CKAN 2.9 | 2.10"></a>
+<a href="#"><img src="https://img.shields.io/badge/Python-3.7%2B-blue" alt="Python 3.7+"></a>
+</p>
 
 <p align="center">
     <a href="#overview">Overview</a> •
@@ -45,7 +50,16 @@ This extension includes automatic spatial extent extraction from geospatial file
 For more details, see [SPATIAL_EXTENT_EXTRACTION.md](SPATIAL_EXTENT_EXTRACTION.md).
 
 ## Requirements
-This plugin is compatible with CKAN 2.9 or later and needs the following plugins to work properly:
+This plugin is compatible with **CKAN 2.9 or later** (including **CKAN 2.10**) and needs the following plugins to work properly:
+
+> [!NOTE]
+> For CKAN 2.10 compatibility details, see [CKAN_2.10_COMPATIBILITY.md](CKAN_2.10_COMPATIBILITY.md) or [ANALISIS_CKAN_2.10.md](ANALISIS_CKAN_2.10.md) (Spanish).
+
+### Python Requirements
+- **Python 3.7+** (required for CKAN 2.10)
+- **Python 3.6+** (minimum for CKAN 2.9)
+
+### Required CKAN Extensions
 
   ```sh
   # Install latest stable release of:

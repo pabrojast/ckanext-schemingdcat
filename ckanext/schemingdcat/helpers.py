@@ -1,4 +1,5 @@
-from ckan.common import json, c, request, is_flask_request
+import json
+from flask import request, g as flask_g
 from ckan.lib import helpers as ckan_helpers
 import ckan.logic as logic
 from ckan import model
@@ -205,11 +206,7 @@ def schemingdcat_get_facet_items_dict(
             if not len(facet_item["name"].strip()):
                 continue
 
-            params_items = (
-                request.params.items(multi=True)
-                if is_flask_request()
-                else request.params.items()
-            )
+            params_items = request.params.items(multi=True)
 
             if not (facet, facet_item["name"]) in params_items:
                 items.append(dict(active=False, **facet_item))
@@ -236,9 +233,9 @@ def schemingdcat_get_facet_items_dict(
         else:
             items.sort(key=lambda it: (-it["count"], it["label"].lower()))
 
-        if hasattr(c, "search_facets_limits"):
-            if c.search_facets_limits and limit is None:
-                limit = c.search_facets_limits.get(facet)
+        if hasattr(flask_g, "search_facets_limits"):
+            if flask_g.search_facets_limits and limit is None:
+                limit = flask_g.search_facets_limits.get(facet)
         # zero treated as infinite for hysterical raisins
         if limit is not None and limit > 0:
             return items[:limit]
@@ -266,8 +263,8 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
     if not extras:
         extras = {}
 
-    controller = getattr(c, "controller", False) or request.blueprint
-    action = getattr(c, "action", False) or p.toolkit.get_endpoint()[1]
+    controller = getattr(flask_g, "controller", False) or request.blueprint
+    action = getattr(flask_g, "action", False) or p.toolkit.get_endpoint()[1]
     url = ckan_helpers.url_for(controller=controller, action=action, **extras)
 
     if len(order_lst):
@@ -280,11 +277,7 @@ def schemingdcat_new_order_url(facet_name, order_concept, extras=None):
 
     new_order = order_mapping.get(order_concept, {}).get(old_order)
 
-    params_items = (
-        request.params.items(multi=True)
-        if is_flask_request()
-        else request.params.items()
-    )
+    params_items = request.params.items(multi=True)
     params_nopage = [(k, v) for k, v in params_items if k != order_param]
 
     if new_order:
