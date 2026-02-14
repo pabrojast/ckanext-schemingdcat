@@ -1,8 +1,7 @@
 ﻿# encoding: utf-8
 import ckan.model as model
-import ckan.lib.base as base
 import ckan.logic as logic
-from flask import Blueprint, request, redirect, url_for, jsonify
+from flask import Blueprint, request, redirect, url_for, jsonify, abort
 from ckan.logic import ValidationError
 from ckan.plugins.toolkit import render, g, h, _, config as tk_config
 import tempfile
@@ -53,7 +52,7 @@ def index(id):
         pkg = context[u'package']
         schema = get_action(u'package_show')(context, data_dict)
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
+        return abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
 
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
@@ -77,7 +76,7 @@ def geospatial_metadata(id):
         pkg_dict = get_action(u'package_show')(context, data_dict)
         pkg = context[u'package']
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
+        return abort(404, _(u'Dataset {dataset_id} not found').format(dataset_id=id))
 
     return render('schemingdcat/custom_data/index.html',extra_vars={
             u'pkg_dict': pkg_dict,
@@ -127,10 +126,10 @@ def handle_malformed_snippet_url(snippet_path):
             return render('ajax_snippets/scd_api_info.html', extra_vars=extra_vars)
         except Exception as e:
             logger.error(f"Error rendering scd_api_info template: {str(e)}")
-            return base.abort(404, _('Template not found'))
+            return abort(404, _('Template not found'))
     
     # For other templates, just pass through to the standard CKAN handler
-    return base.abort(404, _('Template not found'))
+    return abort(404, _('Template not found'))
 
 def is_module_available(module_name):
     """Check if a module is available for import without raising an exception."""

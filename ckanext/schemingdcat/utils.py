@@ -1,4 +1,4 @@
-from ckan.common import config
+from ckan.plugins.toolkit import config
 import ckan.logic as logic
 from ckanext.schemingdcat import config as sdct_config
 import logging
