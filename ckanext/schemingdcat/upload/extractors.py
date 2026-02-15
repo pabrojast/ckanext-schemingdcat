@@ -208,7 +208,13 @@ class SpatialExtentExtractor:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                    zip_ref.extractall(temp_dir)
+                    # Validate and extract safe members only (Zip Slip prevention)
+                    for member in zip_ref.namelist():
+                        member_path = os.path.realpath(os.path.join(temp_dir, member))
+                        if not member_path.startswith(os.path.realpath(temp_dir) + os.sep):
+                            log.warning("Skipping suspicious path in zip: %s", member)
+                            continue
+                        zip_ref.extract(member, temp_dir)
                 
                 shp_file = None
                 for root, dirs, files in os.walk(temp_dir):
@@ -286,8 +292,8 @@ class SpatialExtentExtractor:
                 
                 try:
                     os.unlink(tmp_file.name)
-                except OSError:
-                    pass
+                except OSError as e:
+                    log.warning("Failed to clean up temp file %s: %s", tmp_file.name, e)
                 
                 return extent
                 

@@ -606,7 +606,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                                     'names/ids (i.e. strings)')
 
             # Check if default groups exist
-            context = {'model': model, 'user': p.toolkit.c.user}
+            context = {'model': model, 'user': getattr(p.toolkit.g, 'user', '')}
             config_obj['default_group_dicts'] = []
             for group_name_or_id in config_obj['default_groups']:
                 try:
@@ -625,7 +625,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
         if 'user' in config_obj:
             # Check if user exists
-            context = {'model': model, 'user': p.toolkit.c.user}
+            context = {'model': model, 'user': getattr(p.toolkit.g, 'user', '')}
             try:
                 get_action('user_show')(
                     context, {'id': config_obj.get('user')})
@@ -757,7 +757,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
                     content_dicts['datasets'] = self._read_remote_sheet(remote_sheet_download_url, dataset_sheetname, self._storage_type )
                 except RemoteResourceError as e:
                     self._save_gather_error('Error reading the remote Excel datasets sheet: {0}'.format(e), harvest_job)
-                    return False
+                    return []
                 
                 if distribution_sheetname:
                     content_dicts['distributions'] = self._read_remote_sheet(remote_sheet_download_url, distribution_sheetname, self._storage_type, harvest_job)
@@ -779,7 +779,7 @@ class SchemingDCATXLSHarvester(SchemingDCATHarvester):
 
             except Exception as e:
                 self._save_gather_error('Could not read remote sheet file: %s' % str(e), harvest_job)
-                return False
+                return []
         
         # Check if the content_dicts colnames correspond to the local schema
         try:

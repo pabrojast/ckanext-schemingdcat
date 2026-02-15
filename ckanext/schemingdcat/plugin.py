@@ -39,7 +39,6 @@ class SchemingDCATPlugin(
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IFacets)
-    plugins.implements(plugins.IPackageController)
     plugins.implements(plugins.ITranslation)
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IBlueprint)
@@ -584,8 +583,14 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if context.get('_schemingdcat_metadata_job'):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
-        self._normalize_pdf_resource_format(context, result)
-        self._disable_external_pdf_views(context, result)
+        try:
+            self._normalize_pdf_resource_format(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not normalize PDF format after resource_create: {e}")
+        try:
+            self._disable_external_pdf_views(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not disable external PDF views after resource_create: {e}")
         try:
             self._prune_oversized_metadata_fields(context, result)
         except Exception as e:
@@ -606,8 +611,14 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if context.get('_schemingdcat_metadata_job'):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
-        self._normalize_pdf_resource_format(context, result)
-        self._disable_external_pdf_views(context, result)
+        try:
+            self._normalize_pdf_resource_format(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not normalize PDF format after resource_update: {e}")
+        try:
+            self._disable_external_pdf_views(context, result)
+        except Exception as e:
+            log.warning(f"⚠️ [ACTION] Could not disable external PDF views after resource_update: {e}")
         try:
             self._prune_oversized_metadata_fields(context, result)
         except Exception as e:

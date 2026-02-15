@@ -24,13 +24,13 @@
     {% block facets %}
     <div class="filters">
         <div>
-        {% for facet in c.facet_titles %}
+        {% for facet in g.facet_titles %}
             {% if facet =='owner_org' %}
             {% set label_function = h.schemingdcat_organization_name %}
             {% else %}
             {% set label_function = None %}
             {% endif %}
-            {{ h.snippet('schemingdcat/snippets/schemingdcat_facet_list.html', title=c.facet_titles[facet], name=facet, search_facets=search_facets, alternative_url=h.url_for('{0}.search'.format(c.dataset_type))) }}
+            {{ h.snippet('schemingdcat/snippets/schemingdcat_facet_list.html', title=g.facet_titles[facet], name=facet, search_facets=search_facets, alternative_url=h.url_for('{0}.search'.format(g.dataset_type))) }}
         {% endfor %}
         </div>
         <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">_('Close')</span></a>

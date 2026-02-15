@@ -5,6 +5,7 @@ API endpoints for spatial extent extraction and Azure direct upload.
 
 import logging
 import importlib
+import os
 from datetime import datetime, timedelta
 from flask import request, jsonify
 import ckan.plugins.toolkit as toolkit
@@ -281,6 +282,11 @@ def get_azure_upload_url_endpoint():
         
         # If resource_id is provided, check permissions
         if resource_id and resource_id.strip():
+            if not getattr(toolkit.g, 'user', None):
+                return jsonify({
+                    'success': False,
+                    'error': 'Authentication required'
+                }), 401
             try:
                 # This will raise NotAuthorized if user doesn't have permission
                 toolkit.check_access('resource_update', {'user': toolkit.g.user}, {'id': resource_id})
@@ -291,13 +297,14 @@ def get_azure_upload_url_endpoint():
                 }), 403
             
             # Generate the blob path for existing resource
-            blob_path = storage.path_from_filename(resource_id, filename)
+            blob_path = storage.path_from_filename(resource_id, os.path.basename(filename))
         else:
             # For new resources, generate a temporary path
             # We'll use a temp directory with a UUID to avoid conflicts
             is_temp = True
             temp_id = str(uuid.uuid4())
-            blob_path = f"temp/{temp_id}/{filename}"
+            safe_filename = os.path.basename(filename)
+            blob_path = f"temp/{temp_id}/{safe_filename}"
             log.info(f"Generated temporary blob path for new resource: {blob_path}")
         
         # Generate SAS token with write permissions

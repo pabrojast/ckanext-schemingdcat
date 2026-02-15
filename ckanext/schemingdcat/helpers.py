@@ -332,7 +332,7 @@ def schemingdcat_get_facet_label(facet):
     Returns:
         str: The label for the given facet.
     """
-    return get_facets_dict[facet]
+    return get_facets_dict().get(facet, facet)
 
 
 @helper
@@ -406,9 +406,11 @@ def schemingdcat_get_facet_items_dict(
             "count": ("count", False),
             "count_r": ("count", True),
         }
-        if sorts.get(order):
+        sort_config = sorts.get(order)
+        if sort_config:
+            sort_key, sort_reverse = sort_config
             items.sort(
-                key=lambda it: (it[sorts.get(order)[0]]), reverse=sorts.get(order)[1]
+                key=lambda it: (it[sort_key]), reverse=sort_reverse
             )
         else:
             items.sort(key=lambda it: (-it["count"], it["label"].lower()))
@@ -756,7 +758,9 @@ def format_eli_label(parsed_url):
         str: The formatted label.
     """
     segments = parsed_url.path.split('/')
-    eli_index = next(i for i, segment in enumerate(segments) if segment == 'eli')
+    eli_index = next((i for i, segment in enumerate(segments) if segment == 'eli'), None)
+    if eli_index is None:
+        return parsed_url.path
     return '/'.join(segments[eli_index + 1:]).upper()
 
 @helper
@@ -810,7 +814,7 @@ def schemingdcat_prettify_url_name(url):
         return prettified_url_name
 
     except (URLError, ValueError) as e:
-        print(f"Error while prettifying URL: {e}")
+        log.debug(f"Error while prettifying URL: {e}")
         return url
 
 @helper
@@ -1360,7 +1364,10 @@ def schemingdcat_package_list_for_source(source_id):
     It calls the package_list snippet and the pager.
     '''
     limit = 20
-    page = int(request.args.get('page', 1))
+    try:
+        page = int(request.args.get('page', 1))
+    except (ValueError, TypeError):
+        page = 1
     fq = '+harvest_source_id:"{0}"'.format(source_id)
     search_dict = {
         'fq': fq,

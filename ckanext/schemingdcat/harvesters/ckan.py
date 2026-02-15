@@ -61,6 +61,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
 
         try:
             http_request = requests.get(url, headers=headers)
+            http_request.raise_for_status()
         except HTTPError as e:
             raise ContentFetchError(
                 "HTTP error: %s %s" % (e.response.status_code, e.request.url)
@@ -352,6 +353,7 @@ class SchemingDCATCKANHarvester(SchemingDCATHarvester):
             return object_ids
         except Exception as e:
             self._save_gather_error("%r" % e, harvest_job)
+            return []
 
     def _search_for_datasets(self, remote_ckan_base_url, fq_terms=None):
         """Does a dataset search on a remote CKAN and returns the results.

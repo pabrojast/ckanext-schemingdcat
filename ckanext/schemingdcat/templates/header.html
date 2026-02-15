@@ -18,7 +18,7 @@
 {% endblock %}
 
 {%- block header_debug %} {%- if g.debug and not g.debug_supress_header %}
-        <div class="custom-debug"><strong>Debug info:</strong><br>Controller : {{ c.controller }}<br/>Action : {{ c.action }}</div>
+        <div class="custom-debug"><strong>Debug info:</strong><br>Controller : {{ g.controller }}<br/>Action : {{ g.action }}</div>
 {%- endif %} {%- endblock %}
 
 {% block header_logo %}

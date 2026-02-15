@@ -1,8 +1,7 @@
 # encoding: utf-8
 import ckan.model as model
-import ckan.lib.base as base
 import ckan.logic as logic
-from flask import Blueprint, request, redirect, jsonify
+from flask import Blueprint, request, redirect, jsonify, abort
 from ckan.plugins.toolkit import render, g, h, _
 import re
 
@@ -64,7 +63,7 @@ def index(id):
     try:
         pkg_dict = get_action(u'package_show')(context, data_dict)
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(
+        return abort(
             404,
             _(u'Dataset {dataset_id} not found').format(dataset_id=id)
         )
@@ -93,7 +92,7 @@ def geospatial_metadata(id):
     try:
         pkg_dict = get_action(u'package_show')(context, data_dict)
     except (logic.NotFound, logic.NotAuthorized):
-        return base.abort(
+        return abort(
             404,
             _(u'Dataset {dataset_id} not found').format(dataset_id=id)
         )
@@ -114,6 +113,9 @@ def verify_captcha():
     redirect_url = request.form.get(
         'redirect_url', h.url_for('dataset.search')
     )
+    # Validate redirect URL is internal to prevent open redirect
+    if redirect_url and not redirect_url.startswith('/'):
+        redirect_url = h.url_for('dataset.search')
 
     if rate_limiter.verify_captcha(captcha_answer):
         # Captcha verified successfully
@@ -156,10 +158,10 @@ def handle_malformed_snippet_url(snippet_path):
             return render('ajax_snippets/scd_api_info.html', extra_vars=extra_vars)
         except Exception as e:
             logger.error(f"Error rendering scd_api_info template: {str(e)}")
-            return base.abort(404, _('Template not found'))
+            return abort(404, _('Template not found'))
 
     # For other templates, just pass through to the standard CKAN handler
-    return base.abort(404, _('Template not found'))
+    return abort(404, _('Template not found'))
 
 
 @schemingdcat.route('/api/extract-spatial-extent', methods=['POST'])

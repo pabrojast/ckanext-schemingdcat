@@ -279,7 +279,7 @@ COMMON_DATE_FORMATS = [
 SCHEMINGDCAT_DEFAULT_DATASET_SCHEMA_NAME: typing.Final[str] = "dataset"
 SCHEMINGDCAT_INSPIRE_THEMES_VOCAB: typing.Final[str] = "theme"
 SCHEMINGDCAT_DCAT_THEMES_VOCAB: typing.Final[list] = ["theme_es", "theme_eu"]
-SCHEMINGDCAT_ISO19115_TOPICS_VOCAB: typing.Final[list] = "topic"
+SCHEMINGDCAT_ISO19115_TOPICS_VOCAB: typing.Final[str] = "topic"
 
 
 # Clean ckan names

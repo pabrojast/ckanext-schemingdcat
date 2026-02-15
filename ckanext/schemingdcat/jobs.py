@@ -294,7 +294,7 @@ def _job_log(level, msg, log_ref=None):
             log_ref.warning(msg)
         elif level == 'debug':
             log_ref.debug(msg)
-    except:
+    except Exception:
         pass
     # Always also print to stderr for worker visibility
     print(f"[METADATA JOB] [{level.upper()}] {msg}", file=sys.stderr)
@@ -523,7 +523,7 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
                 # Use the first URI (best match) as the primary value
                 # For schemas that expect a single value, use the first one
                 # For schemas that support multiple, they can parse the full list
-                patch_data['spatial_uri'] = all_uris[0] if len(all_uris) == 1 else all_uris[0]
+                patch_data['spatial_uri'] = all_uris[0] if len(all_uris) == 1 else all_uris
                 has_updates = True
                 _job_log('info', f"Will add spatial_uri for package {package_id}: {new_uris}", log_ref)
             else:
@@ -582,7 +582,7 @@ def extract_comprehensive_metadata_job(job_data):
     try:
         for handler in logging.root.handlers:
             handler.flush()
-    except:
+    except Exception:
         pass
     
     try:
@@ -595,7 +595,7 @@ def extract_comprehensive_metadata_job(job_data):
         for handler in logging.root.handlers:
             try:
                 handler.flush()
-            except:
+            except Exception:
                 pass
         
     except Exception as early_log_error:
@@ -821,7 +821,7 @@ def extract_comprehensive_metadata_job(job_data):
                 try:
                     model.Session.close()
                     model.Session.remove()
-                except:
+                except Exception:
                     pass
                 
                 # Get fresh context
@@ -948,7 +948,7 @@ def extract_comprehensive_metadata_job(job_data):
                                 if isinstance(extent_for_package, str):
                                     try:
                                         extent_for_package = json.loads(extent_for_package)
-                                    except:
+                                    except (json.JSONDecodeError, ValueError, TypeError):
                                         pass
                                 _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
                             except Exception as group_error:
@@ -969,7 +969,7 @@ def extract_comprehensive_metadata_job(job_data):
                             if isinstance(extent_for_package, str):
                                 try:
                                     extent_for_package = json.loads(extent_for_package)
-                                except:
+                                except (json.JSONDecodeError, ValueError, TypeError):
                                     pass
                             _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
                         except Exception as group_error:
@@ -980,7 +980,7 @@ def extract_comprehensive_metadata_job(job_data):
                 log.error(f"Error preparing update for resource {resource_id}: {e}", exc_info=True)
                 try:
                     model.Session.rollback()
-                except:
+                except Exception:
                     pass
                 return False
                 
@@ -1002,7 +1002,7 @@ def extract_comprehensive_metadata_job(job_data):
             import ckan.model as model
             model.Session.close()
             log.debug("Database session closed")
-        except:
+        except Exception:
             pass
         
         # Final completion log

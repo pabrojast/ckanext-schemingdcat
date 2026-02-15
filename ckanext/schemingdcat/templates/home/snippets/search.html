@@ -1,9 +1,9 @@
-{% set tags = h.get_facet_items_dict('tags', c.search_facets, limit=6
+{% set tags = h.get_facet_items_dict('tags', g.search_facets, limit=6
 
 ) %}
 {% set placeholder = _('E.g. environment') %}
 
-{% set heading_title = c.site_title or _('Open Data Catalog')%}
+{% set heading_title = g.site_title or _('Open Data Catalog')%}
 
 <div class="module module-search module-narrow module-shallow box">
   <form class="module-content search-form" method="get" action="{% url_for 'dataset.search' %}">

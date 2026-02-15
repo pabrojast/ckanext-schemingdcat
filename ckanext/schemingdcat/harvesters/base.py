@@ -188,7 +188,7 @@ class SchemingDCATHarvester(HarvesterBase):
                     )
 
                 # Check if default groups exist
-                context = {"model": model, "user": p.toolkit.c.user}
+                context = {"model": model, "user": getattr(p.toolkit.g, 'user', '')}
                 config_obj["default_group_dicts"] = []
                 for group_name_or_id in config_obj["default_groups"]:
                     try:
@@ -210,7 +210,7 @@ class SchemingDCATHarvester(HarvesterBase):
 
             if "user" in config_obj:
                 # Check if user exists
-                context = {"model": model, "user": p.toolkit.c.user}
+                context = {"model": model, "user": getattr(p.toolkit.g, 'user', '')}
                 try:
                     logic.get_action("user_show")(
                         context, {"id": config_obj.get("user")}
@@ -1003,7 +1003,7 @@ class SchemingDCATHarvester(HarvesterBase):
             self._save_gather_error(msg, harvest_job)
             return None, None
 
-        return True
+        return content, content_type
 
     # TODO: Implement this method
     def _load_datadictionaries(self, harvest_job, datadictionaries):
@@ -1071,7 +1071,7 @@ class SchemingDCATHarvester(HarvesterBase):
                 package = self._find_existing_package_by_field_name(
                     package_dict, field_name
                 )
-                if package["results"] and package["results"][0]:
+                if package and package.get("results") and package["results"][0]:
                     return package["results"][0]
 
         # If no existing package was found after checking all fields, return None

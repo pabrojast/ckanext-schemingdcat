@@ -36,7 +36,7 @@ class Faceted():
                        facets_dict,
                        package_type):
 
-        lang_code = request.environ['CKAN_LANG']
+        lang_code = request.environ.get('CKAN_LANG', sdct_config.default_locale)
 
         _facets_dict = {}
         for facet in self.facet_list:

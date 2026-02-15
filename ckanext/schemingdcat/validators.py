@@ -190,7 +190,7 @@ def schemingdcat_multiple_text(field, schema):
                         element = element.decode('utf-8')
                         element = element.strip()
                     except UnicodeDecodeError:
-                        errors[key]. append(_('invalid encoding for "%s" value')
+                        errors[key].append(_('invalid encoding for "%s" value')
                                             % element)
                         continue
 
@@ -232,12 +232,17 @@ def schemingdcat_valid_url(field, schema):
 
     """
     def validator(key, data, errors, context):
-        value = data[key].strip()
+        value = data[key]
         
         if value is missing or value is None or value == '':
             data[key] = value
             return validator
-        elif not isinstance(value, six.string_types):
+        
+        if isinstance(value, str):
+            value = value.strip()
+            data[key] = value
+        
+        if not isinstance(value, six.string_types):
             errors[key].append(_('URL must be a string'))
         elif not value.startswith('http'):
             errors[key].append(_('Please provide a valid URL'))
@@ -275,6 +280,9 @@ def name_identifier_validator(field, schema):
     """
     def validator(key, data, errors, context):        
         value = data[key]
+        
+        if not value or not isinstance(value, str):
+            return
                 
         if value.startswith('http'):
             data[key] = value.split('-')[-1].strip()
@@ -419,7 +427,7 @@ def schemingdcat_fluent_text(field, schema):
         # Extract any extras from the data dictionary that match the prefix
         try:
             extras = data.get(key[:-1] + ('__extras',), {})
-        except:
+        except Exception:
             extras = None
 
         # Extract the last character of the key and append a hyphen to it
@@ -464,7 +472,7 @@ def schemingdcat_fluent_text(field, schema):
                         value[lang] = text if six.PY3 else text.decode(
                             'utf-8')
                     except UnicodeDecodeError:
-                        errors[key]. append(_('invalid encoding for "%s" value')
+                        errors[key].append(_('invalid encoding for "%s" value')
                             % lang)
 
             for lang in required_langs:
@@ -561,7 +569,10 @@ def schemingdcat_if_empty_same_as_title(field, schema):
         pkg_type = data.get(key[:-1] + ('type',), {})
         
         extras = schemingdcat_get_extras(key, data, pkg_type)
-        output = json.loads(extras.get(fallback_key, '{}')).get(lang, '')
+        try:
+            output = json.loads(extras.get(fallback_key, '{}')).get(lang, '')
+        except (json.JSONDecodeError, ValueError):
+            output = ''
 
         data[key] = output
         #log.debug('schemingdcat_if_empty_same_as_title | output: {0}'.format(output))
@@ -791,7 +802,7 @@ def schemingdcat_dataset_scope(field, schema):
     """
     schema_data = helpers.schemingdcat_get_dataset_schema()
     dcat_type_field = next((f for f in schema_data['dataset_fields'] if f['field_name'] == 'dcat_type'), None)
-    choices = dcat_type_field['choices'] if dcat_type_field else []
+    choices = dcat_type_field.get('choices', []) if dcat_type_field else []
     choices_dict = {item["value"]: item.get('dataset_scope', 'non_spatial_dataset') for item in choices}
 
     def validator(key, data, errors, context):
@@ -945,12 +956,17 @@ def schemingdcat_valid_email(field, schema):
     """
     
     def validator(key, data, errors, context):
-        value = data[key].strip()
+        value = data[key]
         
         if value is missing or value is None or value == '':
             data[key] = value
             return validator
-        elif "@" not in value or "." not in value.split("@")[-1]:
+        
+        if isinstance(value, str):
+            value = value.strip()
+            data[key] = value
+        
+        if "@" not in value or "." not in value.split("@")[-1]:
             errors[key].append(_('Expecting valid email: "user@example.org"'))
             
         data[key] = value
