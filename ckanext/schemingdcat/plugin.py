@@ -854,6 +854,29 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         except Exception:
             return True
 
+    def _metadata_use_jobs_queue(self):
+        from ckan.common import config
+        try:
+            return toolkit.asbool(config.get('schemingdcat.metadata_extraction.use_jobs_queue', True))
+        except Exception:
+            return True
+
+    def _metadata_thread_fallback_enabled(self):
+        from ckan.common import config
+        try:
+            return toolkit.asbool(config.get('schemingdcat.metadata_extraction.thread_fallback', False))
+        except Exception:
+            return False
+
+    def _metadata_job_timeout(self):
+        from ckan.common import config
+        raw_timeout = config.get('schemingdcat.metadata_extraction.job_timeout', 600)
+        try:
+            timeout = int(raw_timeout)
+            return timeout if timeout > 0 else 600
+        except Exception:
+            return 600
+
     def _metadata_max_field_bytes(self):
         from ckan.common import config
         try:
@@ -964,6 +987,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     'api_version': 3,
                     'defer_commit': False,
                     '_schemingdcat_metadata_job': True,
+                    '_skip_doi_update': True,
                 }
 
                 patch_data = {'id': resource_id}
@@ -982,9 +1006,6 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def _trigger_metadata_extraction(self, resource):
         """
         Centralized trigger for metadata extraction that can be called from hooks or chained actions.
-        
-        Note: RQ background worker in CKAN 2.10 has known issues with job execution.
-        We use threading-based extraction directly which is more reliable.
         """
         resource_id = resource.get('id', 'unknown')
         if not self._metadata_extraction_enabled():
@@ -996,10 +1017,47 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.info(f"⏭️ [TRIGGER] Resource {resource_id} doesn't need metadata extraction")
             return
 
-        # Use threading-based extraction directly (more reliable than RQ in CKAN 2.10)
-        # RQ worker has known issues where jobs complete without executing the function
-        log.info(f"🚀 [TRIGGER] Starting metadata extraction for resource {resource_id}")
-        self._fallback_metadata_extraction(resource)
+        metadata_data = {
+            'resource_id': resource.get('id'),
+            'resource_url': resource.get('url'),
+            'resource_format': resource.get('format'),
+            'package_id': resource.get('package_id'),
+        }
+
+        if self._metadata_use_jobs_queue():
+            try:
+                from ckan.lib import jobs
+                job = jobs.enqueue(
+                    extract_comprehensive_metadata_job,
+                    [metadata_data],
+                    title=f"schemingdcat metadata extraction {resource_id}",
+                    queue='default',
+                    rq_kwargs={'timeout': self._metadata_job_timeout()},
+                )
+                log.info(
+                    f"🚀 [TRIGGER] Enqueued metadata extraction job {job.id} for resource {resource_id}"
+                )
+                if self._metadata_thread_fallback_enabled():
+                    self._start_job_watchdog(job, resource, delay_seconds=60)
+                return
+            except Exception as e:
+                log.error(
+                    f"❌ [TRIGGER] Could not enqueue metadata extraction job for resource {resource_id}: {e}",
+                    exc_info=True,
+                )
+                if not self._metadata_thread_fallback_enabled():
+                    return
+
+        if self._metadata_thread_fallback_enabled():
+            log.warning(
+                f"⚠️ [TRIGGER] Running thread fallback metadata extraction for resource {resource_id}"
+            )
+            self._fallback_metadata_extraction(resource)
+        else:
+            log.warning(
+                f"⚠️ [TRIGGER] Metadata extraction skipped for resource {resource_id} "
+                "because queue enqueue failed and thread fallback is disabled"
+            )
 
     def _start_job_watchdog(self, job, resource, delay_seconds=60):
         """
@@ -1103,6 +1161,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 'api_version': 3,
                 'defer_commit': False,
                 '_schemingdcat_metadata_job': True,
+                '_skip_doi_update': True,
             })
             toolkit.get_action('resource_patch')(system_context, patch_data)
             for key, value in patch_data.items():

@@ -833,6 +833,7 @@ def extract_comprehensive_metadata_job(job_data):
                     'ignore_auth': True,
                     'defer_commit': False,
                     '_schemingdcat_metadata_job': True,  # Prevent re-triggering extraction
+                    '_skip_doi_update': True,  # Prevent DOI network calls on internal metadata patches
                 }
                 
                 resource_patch_action = get_action('resource_patch')
