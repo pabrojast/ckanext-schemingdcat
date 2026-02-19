@@ -1188,10 +1188,23 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     self._start_job_watchdog(job, resource, delay_seconds=60)
                 return
             except Exception as e:
-                log.error(
-                    f"❌ [TRIGGER] Could not enqueue metadata extraction job for resource {resource_id}: {e}",
-                    exc_info=True,
-                )
+                error_text = str(e).lower()
+                redis_url = toolkit.config.get('ckan.redis.url', 'undefined')
+                if 'read only replica' in error_text or 'readonly' in error_text:
+                    log.error(
+                        "❌ [TRIGGER] Could not enqueue metadata extraction job for resource %s: %s. "
+                        "Redis endpoint is read-only. Configure ckan.redis.url to redis-master. "
+                        "Current ckan.redis.url=%s",
+                        resource_id,
+                        e,
+                        redis_url,
+                        exc_info=True,
+                    )
+                else:
+                    log.error(
+                        f"❌ [TRIGGER] Could not enqueue metadata extraction job for resource {resource_id}: {e}",
+                        exc_info=True,
+                    )
                 if not self._metadata_thread_fallback_enabled():
                     return
 
