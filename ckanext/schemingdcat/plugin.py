@@ -375,6 +375,18 @@ class SchemingDCATPlugin(
 
 
 class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
+    _RESOURCE_UPDATE_BACKFILL_FIELDS = frozenset({
+        'contact_email',
+        'dcat_type',
+        'identifier',
+        'language',
+        'topic',
+    })
+    _DEFAULT_DCAT_TYPE = 'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset'
+    _DEFAULT_LANGUAGE = 'http://publications.europa.eu/resource/authority/language/ENG'
+    _DEFAULT_TOPIC = 'http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment'
+    _DEFAULT_CONTACT_EMAIL = 'noreply@ihp-wins.unesco.org'
+
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IConfigurable)
     plugins.implements(plugins.ITemplateHelpers)
@@ -546,6 +558,128 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         log.info("[SchemingDCATPlugin.before_dataset_update] CALLED")
         return self._ensure_memberstate_groups(context, data_dict)
 
+    @staticmethod
+    def _is_missing_value(value):
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return value.strip() == ''
+        if isinstance(value, (list, tuple, dict, set)):
+            return len(value) == 0
+        return False
+
+    def _missing_required_fields_from_validation_error(self, err):
+        error_dict = getattr(err, 'error_dict', None) or {}
+        missing_fields = set()
+        for field in self._RESOURCE_UPDATE_BACKFILL_FIELDS:
+            messages = error_dict.get(field)
+            if not messages:
+                continue
+            if not isinstance(messages, (list, tuple, set)):
+                messages = [messages]
+            combined = ' '.join(str(m) for m in messages).lower()
+            if 'missing value' in combined or 'required' in combined:
+                missing_fields.add(field)
+        return missing_fields
+
+    def _read_package_for_resource_update(self, context, data_dict):
+        resource_id = data_dict.get('id')
+        if not resource_id:
+            return None
+
+        read_context = dict(context or {})
+        read_context.pop('schema', None)
+
+        resource_dict = toolkit.get_action('resource_show')(read_context, {'id': resource_id})
+        package_id = (
+            data_dict.get('package_id')
+            or resource_dict.get('package_id')
+        )
+        if not package_id:
+            return None
+
+        return toolkit.get_action('package_show')(read_context, {'id': package_id})
+
+    def _pick_dataset_value(self, package_dict, key):
+        value = package_dict.get(key)
+        if not self._is_missing_value(value):
+            return value
+
+        for extra in package_dict.get('extras', []):
+            if extra.get('key') == key and not self._is_missing_value(extra.get('value')):
+                return extra.get('value')
+        return None
+
+    def _build_missing_fields_patch(self, package_dict, missing_fields):
+        package_id = package_dict.get('id')
+        if not package_id:
+            return None
+
+        patch_data = {'id': package_id}
+
+        if 'identifier' in missing_fields:
+            patch_data['identifier'] = (
+                self._pick_dataset_value(package_dict, 'identifier')
+                or package_id
+            )
+
+        if 'dcat_type' in missing_fields:
+            patch_data['dcat_type'] = (
+                self._pick_dataset_value(package_dict, 'dcat_type')
+                or toolkit.config.get('schemingdcat.default_dcat_type')
+                or self._DEFAULT_DCAT_TYPE
+            )
+
+        if 'language' in missing_fields:
+            patch_data['language'] = (
+                self._pick_dataset_value(package_dict, 'language')
+                or toolkit.config.get('schemingdcat.default_language')
+                or self._DEFAULT_LANGUAGE
+            )
+
+        if 'topic' in missing_fields:
+            patch_data['topic'] = (
+                self._pick_dataset_value(package_dict, 'topic')
+                or toolkit.config.get('schemingdcat.default_topic')
+                or self._DEFAULT_TOPIC
+            )
+
+        if 'contact_email' in missing_fields:
+            patch_data['contact_email'] = (
+                self._pick_dataset_value(package_dict, 'contact_email')
+                or package_dict.get('maintainer_email')
+                or package_dict.get('author_email')
+                or toolkit.config.get('schemingdcat.default_contact_email')
+                or toolkit.config.get('ckanext.doi.email')
+                or self._DEFAULT_CONTACT_EMAIL
+            )
+
+        return patch_data if len(patch_data) > 1 else None
+
+    def _backfill_missing_dataset_fields_for_resource_update(self, context, data_dict, missing_fields):
+        package_dict = self._read_package_for_resource_update(context, data_dict)
+        if not package_dict:
+            log.warning('[RESOURCE UPDATE] Could not resolve package for missing-field backfill')
+            return False
+
+        patch_data = self._build_missing_fields_patch(package_dict, missing_fields)
+        if not patch_data:
+            log.warning('[RESOURCE UPDATE] Could not build patch data for missing-field backfill')
+            return False
+
+        patch_context = dict(context or {})
+        patch_context.pop('schema', None)
+        patch_context['_skip_doi_update'] = True
+        patch_context['_schemingdcat_metadata_job'] = True
+
+        toolkit.get_action('package_patch')(patch_context, patch_data)
+        log.warning(
+            '[RESOURCE UPDATE] Auto-filled missing required dataset fields %s for package %s',
+            sorted(missing_fields),
+            patch_data['id'],
+        )
+        return True
+
     def get_uploader(self, upload_to, old_filename=None):
         """Fallback to CKAN's default uploader for non-resource uploads.
 
@@ -606,9 +740,22 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         Chained action for updates; triggers extraction if a new upload/format warrants it.
         """
-        result = next_action(context, data_dict)
+        try:
+            result = next_action(context, data_dict)
+        except toolkit.ValidationError as e:
+            missing_fields = self._missing_required_fields_from_validation_error(e)
+            if not missing_fields or (context or {}).get('_schemingdcat_backfill_attempted'):
+                raise
+
+            if not self._backfill_missing_dataset_fields_for_resource_update(context, data_dict, missing_fields):
+                raise
+
+            retry_context = dict(context or {})
+            retry_context['_schemingdcat_backfill_attempted'] = True
+            result = next_action(retry_context, data_dict)
+
         # Skip if this is a metadata job update (prevent infinite loop)
-        if context.get('_schemingdcat_metadata_job'):
+        if (context or {}).get('_schemingdcat_metadata_job'):
             log.debug(f"⏭️ [ACTION] Skipping extraction trigger - metadata job context")
             return result
         try:

@@ -108,6 +108,29 @@ def _safe_call_action(action_name, data_dict=None, allow_ignore_auth=True):
         log.debug('Action %s not authorized for user %s', action_name, getattr(c, 'user', ''))
     return None
 
+
+@lru_cache(maxsize=2048)
+def _cached_organization_display_name(org_identifier):
+    """
+    Resolve an organization display name by id/slug and cache the result.
+    """
+    if not org_identifier:
+        return None
+
+    org_dict = _safe_call_action(
+        'organization_show',
+        data_dict={'id': org_identifier},
+        allow_ignore_auth=True,
+    )
+    if not isinstance(org_dict, dict):
+        return None
+
+    return (
+        org_dict.get('display_name')
+        or org_dict.get('title')
+        or org_dict.get('name')
+    )
+
 @lru_cache(maxsize=None)
 def get_scheming_dataset_schemas():
     """
@@ -304,22 +327,35 @@ def schemingdcat_organization_name(org_id):
     Returns:
         str: The name of the organization, or None if the organization cannot be found.
     """
-    org_name = None
-    try:
-        org_dic = ckan_helpers.get_organization(org_id["display_name"])
-        if org_dic is not None:
-            org_name = org_dic["display_name"]
-        else:
-            log.warning(
-                "Could not find the name of the organization with ID {0}".format(
-                    org_id["display_name"]
-                )
-            )
-    except Exception as e:
-        log.error(
-            "Exception while trying to find the name of the organization: {0}".format(e)
-        )
-    return org_name
+    candidates = []
+
+    if isinstance(org_id, dict):
+        for key in ('name', 'id', 'display_name', 'value'):
+            value = org_id.get(key)
+            if value and isinstance(value, str):
+                candidates.append(value)
+    elif isinstance(org_id, str):
+        candidates.append(org_id)
+    else:
+        for attr in ('name', 'id', 'display_name'):
+            value = getattr(org_id, attr, None)
+            if value and isinstance(value, str):
+                candidates.append(value)
+
+    seen = set()
+    fallback = None
+    for candidate in candidates:
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        if fallback is None:
+            fallback = candidate
+
+        resolved = _cached_organization_display_name(candidate)
+        if resolved:
+            return resolved
+
+    return fallback
 
 
 @helper
