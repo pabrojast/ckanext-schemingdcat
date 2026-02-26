@@ -11,6 +11,12 @@ schema_title: GeoDCAT-AP
 schema_description: Geospatial extension for the DCAT application profile for data portals in Europe (GeoDCAT-AP)
 schema_form_groups:
   # Basic Info parties form_page (#1)
+  - form_group_id: doi_lookup
+    label:
+      en: Quick start
+      es: Inicio rápido
+      fr: Démarrage rapide
+    fa_icon: fa-rocket
   - form_group_id: title
     label:
       en: Title
@@ -113,6 +119,42 @@ schema_form_groups:
 #--Dataset (dcat:Dataset) fields--#
 dataset_fields:
 
+# Document DOI for auto-fill (O)
+# Enter a DOI to automatically fetch and fill metadata from DataCite/CrossRef/Zenodo
+- field_name: document_doi
+  label:
+    en: Document DOI
+    es: DOI del documento
+    fr: DOI du document
+  form_snippet: schemingdcat/form_snippets/doi_autofill.html
+  display_snippet: schemingdcat/display_snippets/doi_link.html
+  display_property: dct:identifier
+  validators: ignore_missing schemingdcat_valid_doi
+  form_placeholder:
+    en: e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example
+    es: ej. 10.5281/zenodo.1234567 o https://doi.org/10.1234/example
+    fr: p. ex. 10.5281/zenodo.1234567 ou https://doi.org/10.1234/example
+  help_text:
+    en: "Enter a DOI to auto-fill document metadata from <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, or <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Click 'Fetch' to retrieve and preview metadata before applying. If you do not have a DOI, leave this empty and continue with manual metadata."
+    es: "Ingrese un DOI para auto-rellenar los metadatos del documento desde <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, o <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Haga clic en 'Buscar' para obtener y previsualizar los metadatos antes de aplicarlos. Si no tiene DOI, deje este campo en blanco y continúe con los metadatos manuales."
+    fr: "Entrez un DOI pour auto-remplir les métadonnées du document depuis <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, ou <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Cliquez sur 'Rechercher' pour récupérer et prévisualiser les métadonnées avant de les appliquer. Si vous n'avez pas de DOI, laissez ce champ vide et continuez avec les métadonnées manuelles."
+  help_allow_html: True
+  default_no_doi: true
+  no_doi_help_text:
+    en: "No DOI? Skip the fetch step and fill the document metadata manually. You can upload a file in the Add data step or paste a link."
+    es: "Si no tiene DOI, omita la búsqueda y complete los metadatos manualmente. Puede subir el archivo en el paso de Añadir datos o pegar un enlace."
+    fr: "Si vous n'avez pas de DOI, ignorez la recherche et complétez les métadonnées manuellement. Vous pourrez téléverser le fichier à l'étape Ajouter des données ou coller un lien."
+  form_group_id: doi_lookup
+  field_mapping:
+    title: title_translated
+    abstract: notes_translated
+    publication_year: publication_year
+    publisher: publisher_name
+    document_type: document_type
+    keywords: tag_string
+    authors:
+      - authors_json
+
 # Dataset title translated (M)
 - field_name: title_translated
   label: 
@@ -150,42 +192,6 @@ dataset_fields:
     es: Resumen por defecto del documento {document}.
     fr: Résumé par défaut du document {document}.
   form_group_id: notes
-
-# Document DOI for auto-fill (O)
-# Enter a DOI to automatically fetch and fill metadata from DataCite/CrossRef/Zenodo
-- field_name: document_doi
-  label:
-    en: Document DOI
-    es: DOI del documento
-    fr: DOI du document
-  form_snippet: schemingdcat/form_snippets/doi_autofill.html
-  display_snippet: schemingdcat/display_snippets/doi_link.html
-  display_property: dct:identifier
-  validators: ignore_missing schemingdcat_valid_doi
-  form_placeholder:
-    en: e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example
-    es: ej. 10.5281/zenodo.1234567 o https://doi.org/10.1234/example
-    fr: p. ex. 10.5281/zenodo.1234567 ou https://doi.org/10.1234/example
-  help_text:
-    en: "Enter a DOI to auto-fill document metadata from <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, or <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Click 'Fetch' to retrieve and preview metadata before applying. If you do not have a DOI, leave this empty and continue with manual metadata."
-    es: "Ingrese un DOI para auto-rellenar los metadatos del documento desde <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, o <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Haga clic en 'Buscar' para obtener y previsualizar los metadatos antes de aplicarlos. Si no tiene DOI, deje este campo en blanco y continúe con los metadatos manuales."
-    fr: "Entrez un DOI pour auto-remplir les métadonnées du document depuis <a href='https://datacite.org' target='_blank'>DataCite</a>, <a href='https://www.crossref.org' target='_blank'>CrossRef</a>, ou <a href='https://zenodo.org' target='_blank'>Zenodo</a>. Cliquez sur 'Rechercher' pour récupérer et prévisualiser les métadonnées avant de les appliquer. Si vous n'avez pas de DOI, laissez ce champ vide et continuez avec les métadonnées manuelles."
-  help_allow_html: True
-  default_no_doi: true
-  no_doi_help_text:
-    en: "No DOI? Skip the fetch step and fill the document metadata manually. You can upload a file in the Add data step or paste a link."
-    es: "Si no tiene DOI, omita la búsqueda y complete los metadatos manualmente. Puede subir el archivo en el paso de Añadir datos o pegar un enlace."
-    fr: "Si vous n'avez pas de DOI, ignorez la recherche et complétez les métadonnées manuellement. Vous pourrez téléverser le fichier à l'étape Ajouter des données ou coller un lien."
-  form_group_id: identification
-  field_mapping:
-    title: title_translated
-    abstract: notes_translated
-    publication_year: publication_year
-    publisher: publisher_name
-    document_type: document_type
-    keywords: tag_string
-    authors:
-      - authors_json
 
 # Custom DOI (optional, keeps the fetched DOI URL or lets users enter one manually)
 - field_name: custom_doi
