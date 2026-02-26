@@ -1218,3 +1218,16 @@ msgstr "External link"
 
 msgid "Opens an external URL; the file is not stored in the portal."
 msgstr "Opens an external URL; the file is not stored in the portal."
+
+# Documents sidebar info
+msgid "What are documents?"
+msgstr "What are documents?"
+
+msgid ""
+"A document is a publication such as a report, paper, or study,\n"
+"          together with its metadata. Documents are what users see when\n"
+"          browsing the document catalog."
+msgstr ""
+"A document is a publication such as a report, paper, or study,\n"
+"          together with its metadata. Documents are what users see when\n"
+"          browsing the document catalog."

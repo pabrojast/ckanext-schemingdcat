@@ -1,0 +1,20 @@
+{% ckan_extends %}
+
+{% block info_module %}
+  {% if dataset_type == 'documents' %}
+    <section class="module module-narrow module-shallow">
+      <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('What are documents?') }}</h2>
+      <div class="module-content">
+        <p>
+          {% trans %}
+          A document is a publication such as a report, paper, or study,
+          together with its metadata. Documents are what users see when
+          browsing the document catalog.
+          {% endtrans %}
+        </p>
+      </div>
+    </section>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
