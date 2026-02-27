@@ -101,6 +101,8 @@ schema_form_groups:
       fr: Rapports PHI-IX
     fa_icon: fa-flag
     
+  # [DEPRECATED] Legacy form group - unesdoc featured fields are no longer used.
+  # Kept for backward compatibility. Only visible to sysadmins.
   - form_group_id: unesdoc
     label:
       en: Featured Dataset for UNESDOC
@@ -1696,6 +1698,9 @@ dataset_fields:
   form_group_id: purpose
 
 
+
+# [DEPRECATED] Legacy unesdoc featured fields - kept for backward compatibility.
+# Only visible to sysadmins in both form and display views.
 
 # Related resources (O)
 - field_name: unesdocurl
