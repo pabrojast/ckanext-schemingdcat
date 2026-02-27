@@ -462,7 +462,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         Make sure selected member states (via group multiselect or spatial_uri)
         end up in the dataset's groups list before create/update.
+
+        For non-sysadmin users, groups are deferred to after_dataset_create/update
+        hooks to avoid 403 errors from CKAN's member_create auth checks.
         """
+        # Prevent double processing (e.g., package_patch → package_update chain)
+        if context.get('_memberstate_groups_processed'):
+            return data_dict
+        context['_memberstate_groups_processed'] = True
+
         log.info("[_ensure_memberstate_groups] ENTRY")
         
         # Import helpers - if this fails, log and continue without spatial_uri resolution
@@ -545,18 +553,91 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         log.info(f"[_ensure_memberstate_groups] unique_group_names final: {unique_group_names}")
 
         if unique_group_names:
-            data_dict['groups'] = [{'name': n} for n in unique_group_names]
-            log.info(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
+            # Check if user is sysadmin
+            user = context.get('user')
+            is_sysadmin = False
+            if user:
+                try:
+                    from ckan import authz
+                    is_sysadmin = authz.is_sysadmin(user)
+                except Exception:
+                    pass
+
+            if is_sysadmin:
+                # Sysadmin: set groups directly (CKAN auth will pass)
+                data_dict['groups'] = [{'name': n} for n in unique_group_names]
+                log.info(f"[_ensure_memberstate_groups] set data_dict['groups'] to: {data_dict['groups']}")
+            else:
+                # Non-sysadmin: defer group processing to after hooks
+                # to avoid 403 from CKAN's member_create auth check
+                context['_pending_memberstate_groups'] = unique_group_names
+                data_dict.pop('groups', None)
+                # Clean up groups__X__id fields
+                for key in list(data_dict.keys()):
+                    key_name = key
+                    if isinstance(key, tuple) and key:
+                        key_name = key[-1]
+                    if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                        del data_dict[key]
+                log.info(f"[_ensure_memberstate_groups] deferred {len(unique_group_names)} groups for non-sysadmin user")
 
         return data_dict
 
+    def _apply_pending_groups(self, context, pkg_dict):
+        """Apply pending group memberships using site_user to bypass auth."""
+        pending_groups = context.pop('_pending_memberstate_groups', None)
+        if not pending_groups:
+            return
+
+        package_id = pkg_dict.get('id')
+        if not package_id:
+            return
+
+        log.info(f"[_apply_pending_groups] Applying {len(pending_groups)} groups to package {package_id}")
+
+        try:
+            import ckan.model as model
+            site_user = toolkit.get_action('get_site_user')(
+                {'ignore_auth': True}, {}
+            )
+
+            for group_name in pending_groups:
+                try:
+                    group = model.Group.get(group_name)
+                    if not group:
+                        log.warning(f"[_apply_pending_groups] Group not found: {group_name}")
+                        continue
+
+                    toolkit.get_action('member_create')(
+                        {'user': site_user['name'], 'ignore_auth': True},
+                        {
+                            'id': group.id,
+                            'object': package_id,
+                            'object_type': 'package',
+                            'capacity': 'public',
+                        },
+                    )
+                    log.info(f"[_apply_pending_groups] Added package {package_id} to group {group_name}")
+                except Exception as e:
+                    log.warning(f"[_apply_pending_groups] Error adding to group {group_name}: {e}")
+        except Exception as e:
+            log.warning(f"[_apply_pending_groups] Error processing pending groups: {e}")
+
     def before_dataset_create(self, context, data_dict):
-        log.info("[SchemingDCATPlugin.before_dataset_create] CALLED")
+        log.info("[SchemingDCATDatasetsPlugin.before_dataset_create] CALLED")
         return self._ensure_memberstate_groups(context, data_dict)
 
     def before_dataset_update(self, context, data_dict):
-        log.info("[SchemingDCATPlugin.before_dataset_update] CALLED")
+        log.info("[SchemingDCATDatasetsPlugin.before_dataset_update] CALLED")
         return self._ensure_memberstate_groups(context, data_dict)
+
+    def after_dataset_create(self, context, data_dict):
+        log.info("[SchemingDCATDatasetsPlugin.after_dataset_create] CALLED")
+        self._apply_pending_groups(context, data_dict)
+
+    def after_dataset_update(self, context, data_dict):
+        log.info("[SchemingDCATDatasetsPlugin.after_dataset_update] CALLED")
+        self._apply_pending_groups(context, data_dict)
 
     @staticmethod
     def _is_missing_value(value):
@@ -779,25 +860,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     @toolkit.chained_action
     def package_patch(self, next_action, context, data_dict):
         """
-        Chained action for package_patch to ensure groups are processed correctly
-        in multi-page forms.
+        Chained action for package_patch.
+        Group processing is handled by before_dataset_update/after_dataset_update
+        hooks (called inside package_update, which package_patch delegates to).
         """
         log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
-        
-        # Log the incoming groups data for debugging
-        groups_before = data_dict.get('groups', 'NOT_PRESENT')
-        log.info(f"[SchemingDCATPlugin.package_patch] groups BEFORE processing: {groups_before}")
-        
-        # Log any groups__X__id fields
-        groups_fields = {k: v for k, v in data_dict.items() 
-                        if isinstance(k, str) and k.startswith('groups__') and k.endswith('__id')}
-        log.info(f"[SchemingDCATPlugin.package_patch] groups__X__id fields: {groups_fields}")
-        
-        # Process groups__X__id fields before the patch
-        data_dict = self._ensure_memberstate_groups(context, data_dict)
-        
-        groups_after = data_dict.get('groups', 'NOT_PRESENT')
-        log.info(f"[SchemingDCATPlugin.package_patch] groups AFTER processing: {groups_after}")
         
         return next_action(context, data_dict)
 
