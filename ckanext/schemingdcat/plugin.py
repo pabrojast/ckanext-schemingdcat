@@ -393,6 +393,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     plugins.implements(plugins.IDatasetForm, inherit=True)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IValidators)
+    plugins.implements(plugins.IAuthFunctions)
     # Add cloudstorage support
     plugins.implements(plugins.IUploader)
     plugins.implements(plugins.IResourceController, inherit=True)
@@ -894,11 +895,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         return result
 
-    # IAuthFunctions - don't register cloudstorage auth functions to avoid conflicts
+    # IAuthFunctions
     def get_auth_functions(self):
-        # cloudstorage auth functions are provided by the cloudstorage plugin
-        # We don't need to register them here to avoid conflicts
-        return {}
+        from ckanext.schemingdcat.auth import (
+            schemingdcat_package_create,
+            schemingdcat_package_update,
+        )
+        return {
+            'package_create': schemingdcat_package_create,
+            'package_update': schemingdcat_package_update,
+        }
 
     # IResourceController - handle resource deletion
     def before_delete(self, context, resource, resources):
