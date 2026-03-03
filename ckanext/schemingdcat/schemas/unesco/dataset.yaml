@@ -94,12 +94,6 @@ schema_form_groups:
       fr: Objectif du jeu de données
     fa_icon: fa-question-circle
 
-  - form_group_id: ihpix
-    label:
-      en: IHP-IX Reporting
-      es: Reportes IHP-IX
-      fr: Rapports PHI-IX
-    fa_icon: fa-flag
     
   # [DEPRECATED] Legacy form group - unesdoc featured fields are no longer used.
   # Kept for backward compatibility. Only visible to sysadmins.
@@ -5255,96 +5249,6 @@ dataset_fields:
     fr: Spécifiez la résolution spatiale comme distance en mètres
   form_group_id: inspire
 
-
-# IHP-IX Reporting fields
-- field_name: ihpix_priority_area
-  label:
-    en: IHP-IX Priority Area
-    es: Área Prioritaria IHP-IX
-    fr: Domaine prioritaire PHI-IX
-  help_text:
-    en: Select the IHP-IX Priority Area this dataset relates to
-    es: Seleccione el Área Prioritaria del IHP-IX relacionada con este dataset
-    fr: Sélectionnez le domaine prioritaire du PHI-IX lié à ce jeu de données
-  preset: select
-  choices:
-  - label:
-      en: "PA1: Water-related disasters and hydrological change"
-      es: "AP1: Desastres relacionados con el agua y cambio hidrológico"
-      fr: "DP1: Catastrophes liées à l'eau et changement hydrologique"
-    value: PA1
-  - label:
-      en: "PA2: Groundwater in a changing environment"
-      es: "AP2: Aguas subterráneas en un entorno cambiante"
-      fr: "DP2: Eaux souterraines dans un environnement en mutation"
-    value: PA2
-  - label:
-      en: "PA3: Water scarcity and water quality"
-      es: "AP3: Escasez de agua y calidad del agua"
-      fr: "DP3: Pénurie d'eau et qualité de l'eau"
-    value: PA3
-  - label:
-      en: "PA4: Water and human settlements of the future"
-      es: "AP4: El agua y los asentamientos humanos del futuro"
-      fr: "DP4: L'eau et les établissements humains du futur"
-    value: PA4
-  - label:
-      en: "PA5: Ecohydrology, engineering harmony for a sustainable world"
-      es: "AP5: Ecohidrología, ingeniería armónica para un mundo sostenible"
-      fr: "DP5: Écohydrologie, ingénierie harmonieuse pour un monde durable"
-    value: PA5
-  form_group_id: ihpix
-
-- field_name: ihpix_output
-  label:
-    en: IHP-IX Output
-    es: Producto IHP-IX
-    fr: Résultat PHI-IX
-  help_text:
-    en: Select the specific IHP-IX Output this dataset contributes to
-    es: Seleccione el Producto IHP-IX específico al que contribuye este dataset
-    fr: Sélectionnez le résultat PHI-IX spécifique auquel contribue ce jeu de données
-  preset: select
-  choices:
-  - label: {en: "O1.1: Risk assessment", es: "P1.1: Evaluación de riesgos", fr: "R1.1: Évaluation des risques"}
-    value: O1.1
-  - label: {en: "O1.2: Early warning systems", es: "P1.2: Sistemas de alerta temprana", fr: "R1.2: Systèmes d'alerte précoce"}
-    value: O1.2
-  - label: {en: "O1.3: Flood management", es: "P1.3: Gestión de inundaciones", fr: "R1.3: Gestion des inondations"}
-    value: O1.3
-  - label: {en: "O1.4: Drought management", es: "P1.4: Gestión de sequías", fr: "R1.4: Gestion de la sécheresse"}
-    value: O1.4
-  - label: {en: "O1.5: Climate change impact on water cycle", es: "P1.5: Impacto del cambio climático en el ciclo del agua", fr: "R1.5: Impact du changement climatique sur le cycle de l'eau"}
-    value: O1.5
-  - label: {en: "O2.1: Groundwater assessment", es: "P2.1: Evaluación de aguas subterráneas", fr: "R2.1: Évaluation des eaux souterraines"}
-    value: O2.1
-  - label: {en: "O2.2: Groundwater governance", es: "P2.2: Gobernanza de aguas subterráneas", fr: "R2.2: Gouvernance des eaux souterraines"}
-    value: O2.2
-  - label: {en: "O2.3: Transboundary aquifer management", es: "P2.3: Gestión de acuíferos transfronterizos", fr: "R2.3: Gestion des aquifères transfrontaliers"}
-    value: O2.3
-  - label: {en: "O2.4: Managed aquifer recharge", es: "P2.4: Recarga gestionada de acuíferos", fr: "R2.4: Recharge gérée des aquifères"}
-    value: O2.4
-  - label: {en: "O3.1: Water scarcity assessment", es: "P3.1: Evaluación de escasez de agua", fr: "R3.1: Évaluation de la pénurie d'eau"}
-    value: O3.1
-  - label: {en: "O3.2: Water quality monitoring", es: "P3.2: Monitoreo de calidad del agua", fr: "R3.2: Surveillance de la qualité de l'eau"}
-    value: O3.2
-  - label: {en: "O3.3: Non-conventional water resources", es: "P3.3: Recursos hídricos no convencionales", fr: "R3.3: Ressources en eau non conventionnelles"}
-    value: O3.3
-  - label: {en: "O3.4: IWRM implementation", es: "P3.4: Implementación de GIRH", fr: "R3.4: Mise en œuvre de la GIRE"}
-    value: O3.4
-  - label: {en: "O4.1: Urban water management", es: "P4.1: Gestión urbana del agua", fr: "R4.1: Gestion urbaine de l'eau"}
-    value: O4.1
-  - label: {en: "O4.2: Water-sensitive urban design", es: "P4.2: Diseño urbano sensible al agua", fr: "R4.2: Conception urbaine sensible à l'eau"}
-    value: O4.2
-  - label: {en: "O4.3: Water and rural settlements", es: "P4.3: Agua y asentamientos rurales", fr: "R4.3: Eau et établissements ruraux"}
-    value: O4.3
-  - label: {en: "O5.1: Ecohydrology principles", es: "P5.1: Principios de ecohidrología", fr: "R5.1: Principes d'écohydrologie"}
-    value: O5.1
-  - label: {en: "O5.2: Nature-based solutions", es: "P5.2: Soluciones basadas en la naturaleza", fr: "R5.2: Solutions fondées sur la nature"}
-    value: O5.2
-  - label: {en: "O5.3: Ecosystem services", es: "P5.3: Servicios ecosistémicos", fr: "R5.3: Services écosystémiques"}
-    value: O5.3
-  form_group_id: ihpix
 
 
 
