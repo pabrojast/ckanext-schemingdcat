@@ -52,6 +52,8 @@ prettify_cache = {}
 # TTL cache for expensive group operations
 _memberstates_cache = {'data': None, 'timestamp': 0}
 _initiatives_cache = {'data': None, 'timestamp': 0}
+_all_memberstates_groups_cache = {'data': None, 'timestamp': 0}
+_all_initiatives_groups_cache = {'data': None, 'timestamp': 0}
 _GROUPS_CACHE_TTL = 300  # 5 minutes
 
 DEFAULT_LANG = None
@@ -1984,56 +1986,119 @@ def get_initiatives():
 def get_all_memberstates_groups():
     """
     Get all member state groups with full details (id, name, title) for display in forms.
-    Uses ignore_auth to ensure all users can see all member states.
+    Uses a direct DB query instead of group_show to avoid N+1 query overhead.
+    Results are cached with TTL.
     
     Returns:
         list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
     """
-    data_dict = {
-        'id': 'member-states',
-        'include_groups': True,
-        'all_fields': True
-    }
-    memberstates = _safe_call_action('group_show', data_dict=data_dict)
-    if not memberstates:
-        return []
+    current_time = time.time()
+    if (_all_memberstates_groups_cache['data'] is not None and
+        current_time - _all_memberstates_groups_cache['timestamp'] < _GROUPS_CACHE_TTL):
+        return _all_memberstates_groups_cache['data']
 
-    groups = memberstates.get('groups', []) or []
-    return [
-        {
-            'id': item.get('id'),
-            'name': item.get('name'),
-            'title': item.get('title') or item.get('name')
+    try:
+        ms_group = model.Group.get('member-states')
+        if not ms_group:
+            _all_memberstates_groups_cache['data'] = []
+            _all_memberstates_groups_cache['timestamp'] = current_time
+            return []
+
+        members = (
+            model.Session.query(model.Group.id, model.Group.name, model.Group.title)
+            .join(model.Member, model.Member.table_id == model.Group.id)
+            .filter(
+                model.Member.group_id == ms_group.id,
+                model.Member.state == 'active',
+                model.Member.table_name == 'group',
+                model.Group.state == 'active',
+            )
+            .order_by(model.Group.title)
+            .all()
+        )
+
+        result = [
+            {'id': g.id, 'name': g.name, 'title': g.title or g.name}
+            for g in members
+            if g.name
+        ]
+    except Exception:
+        log.warning('get_all_memberstates_groups: falling back to group_show')
+        data_dict = {
+            'id': 'member-states',
+            'include_groups': True,
+            'all_fields': True
         }
-        for item in groups
-        if item.get('state', 'active') == 'active' and item.get('name')
-    ]
+        memberstates = _safe_call_action('group_show', data_dict=data_dict)
+        if not memberstates:
+            result = []
+        else:
+            groups = memberstates.get('groups', []) or []
+            result = [
+                {
+                    'id': item.get('id'),
+                    'name': item.get('name'),
+                    'title': item.get('title') or item.get('name')
+                }
+                for item in groups
+                if item.get('state', 'active') == 'active' and item.get('name')
+            ]
+
+    _all_memberstates_groups_cache['data'] = result
+    _all_memberstates_groups_cache['timestamp'] = current_time
+    return result
 
 @helper
 def get_all_initiatives_groups():
     """
     Get all initiative groups with full details (id, name, title) for display in forms.
-    Uses ignore_auth to ensure all users can see all initiatives.
+    Uses a direct DB query instead of group_list(all_fields=True) to avoid N+1 query overhead.
+    Results are cached with TTL.
     
     Returns:
         list: List of group dicts with 'id', 'name', 'title' keys. Empty list if none found.
     """
+    current_time = time.time()
+    if (_all_initiatives_groups_cache['data'] is not None and
+        current_time - _all_initiatives_groups_cache['timestamp'] < _GROUPS_CACHE_TTL):
+        return _all_initiatives_groups_cache['data']
+
     memberstate_names = set(get_memberstates())
     memberstate_names.add('member-states')
 
-    # Get all groups with full details using ignore_auth
-    all_groups = _safe_call_action('group_list', data_dict={'all_fields': True}) or []
-    
-    return [
-        {
-            'id': group.get('id'),
-            'name': group.get('name'),
-            'title': group.get('title') or group.get('name')
-        }
-        for group in all_groups
-        if group.get('state', 'active') == 'active' 
-        and group.get('name') not in memberstate_names
-    ]
+    try:
+        groups = (
+            model.Session.query(model.Group.id, model.Group.name, model.Group.title)
+            .filter(
+                model.Group.type == 'group',
+                model.Group.state == 'active',
+                ~model.Group.name.in_(memberstate_names) if memberstate_names else True,
+            )
+            .order_by(model.Group.title)
+            .all()
+        )
+
+        result = [
+            {'id': g.id, 'name': g.name, 'title': g.title or g.name}
+            for g in groups
+        ]
+    except Exception:
+        log.warning('get_all_initiatives_groups: falling back to group_list')
+        all_groups = _safe_call_action('group_list', data_dict={'all_fields': True}) or []
+        result = [
+            {
+                'id': group.get('id'),
+                'name': group.get('name'),
+                'title': group.get('title') or group.get('name')
+            }
+            for group in all_groups
+            if group.get('state', 'active') == 'active'
+            and group.get('name') not in memberstate_names
+        ]
+
+    _all_initiatives_groups_cache['data'] = result
+    _all_initiatives_groups_cache['timestamp'] = current_time
+    return result
 
 @helper
 def schemingdcat_spatial_extent_available():
