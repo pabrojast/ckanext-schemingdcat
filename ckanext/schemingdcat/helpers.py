@@ -2,6 +2,7 @@ from ckan.common import json, c, request
 from ckan.lib import helpers as ckan_helpers
 import ckan.logic as logic
 from ckan import model
+from sqlalchemy import or_ as sa_or_
 from ckan.lib.i18n import get_available_locales, get_lang
 import ckan.plugins as p
 import six
@@ -1673,11 +1674,26 @@ def schemingdcat_find_member_state_group(member_state_uri: str, context: Optiona
         except Exception:
             log.debug(f"Candidate member state group '{candidate_slug}' not found")
 
-    # Load member-states parent to limit the search scope
+    # Load member-states children via direct DB query to avoid N+1
     member_children = []
     try:
-        parent = toolkit.get_action('group_show')(ctx, {'id': 'member-states', 'include_groups': True})
-        member_children = parent.get('groups', []) or []
+        ms_group = model.Group.get('member-states')
+        if ms_group:
+            children = (
+                model.Session.query(model.Group.name, model.Group.title)
+                .join(model.Member, model.Member.table_id == model.Group.id)
+                .filter(
+                    model.Member.group_id == ms_group.id,
+                    model.Member.state == 'active',
+                    model.Member.table_name == 'group',
+                    model.Group.state == 'active',
+                )
+                .all()
+            )
+            member_children = [
+                {'name': g.name, 'display_name': g.title or g.name, 'title': g.title or g.name}
+                for g in children if g.name
+            ]
     except Exception as e:
         log.debug(f"Could not load member-states group: {e}")
 
@@ -1718,19 +1734,32 @@ def schemingdcat_find_member_state_group(member_state_uri: str, context: Optiona
             log.debug(f"Member state group matched child by display_name/title: {name}")
             return name
 
-    # Last fallback: search by label text
+    # Last fallback: search by label text using direct DB query
     if label_text:
         try:
-            matches = toolkit.get_action('group_list')(ctx, {'q': label_text, 'all_fields': True, 'limit': 20})
+            search_term = f'%{label_text}%'
+            matches = (
+                model.Session.query(model.Group.name, model.Group.title)
+                .filter(
+                    model.Group.type == 'group',
+                    model.Group.state == 'active',
+                    sa_or_(
+                        model.Group.name.ilike(search_term),
+                        model.Group.title.ilike(search_term),
+                    ),
+                )
+                .limit(20)
+                .all()
+            )
             for g in matches or []:
-                name = g.get('name')
-                disp = g.get('display_name') or g.get('title')
+                name = g.name
+                disp = g.title or g.name
                 disp_norm = _normalize_slug(disp) if disp else None
                 if normalized_label and (name == normalized_label or disp_norm == normalized_label):
-                    log.debug(f"Member state group matched via group_list search: {name}")
+                    log.debug(f"Member state group matched via DB search: {name}")
                     return name
         except Exception as e:
-            log.debug(f"group_list search failed for '{label_text}': {e}")
+            log.debug(f"DB group search failed for '{label_text}': {e}")
 
     return None
 
@@ -1893,13 +1922,33 @@ def _get_memberstates_cached():
         current_time - _memberstates_cache['timestamp'] < _GROUPS_CACHE_TTL):
         return _memberstates_cache['data']
     
-    data_dict = {'id': 'member-states', 'include_groups': True, 'all_fields': True}
-    memberstates = _safe_call_action('group_show', data_dict=data_dict)
-    result = []
-    if memberstates:
-        groups = memberstates.get('groups', []) or []
-        result = [item['name'] for item in groups
-                  if item.get('state', 'active') == 'active' and item.get('name')]
+    # Direct DB query to avoid N+1 from group_show(include_groups=True)
+    try:
+        ms_group = model.Group.get('member-states')
+        if ms_group:
+            members = (
+                model.Session.query(model.Group.name)
+                .join(model.Member, model.Member.table_id == model.Group.id)
+                .filter(
+                    model.Member.group_id == ms_group.id,
+                    model.Member.state == 'active',
+                    model.Member.table_name == 'group',
+                    model.Group.state == 'active',
+                )
+                .all()
+            )
+            result = [g.name for g in members if g.name]
+        else:
+            result = []
+    except Exception:
+        log.warning('_get_memberstates_cached: falling back to group_show')
+        data_dict = {'id': 'member-states', 'include_groups': True, 'all_fields': True}
+        memberstates = _safe_call_action('group_show', data_dict=data_dict)
+        result = []
+        if memberstates:
+            groups = memberstates.get('groups', []) or []
+            result = [item['name'] for item in groups
+                      if item.get('state', 'active') == 'active' and item.get('name')]
     
     _memberstates_cache['data'] = result
     _memberstates_cache['timestamp'] = current_time
