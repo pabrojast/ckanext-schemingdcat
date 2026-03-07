@@ -1086,6 +1086,67 @@ def fluent_form_languages(field=None, entity_type=None, object_type=None, schema
     return langs
 
 @helper
+def schemingdcat_fluent_form_value(data, field, lang, schema=None):
+    """
+    Return the value to render for a fluent form input.
+
+    Prefer explicit per-language form data first, then stored translated values.
+    For legacy datasets that only have the core field populated, fall back to
+    the non-translated value only for the primary required language.
+    """
+    if not data or not field:
+        return ""
+
+    field_name = field.get("field_name")
+    if not field_name:
+        return ""
+
+    explicit_value = data.get(field_name + "-" + lang)
+    if explicit_value not in (None, ""):
+        return explicit_value
+
+    translated_value = data.get(field_name, {})
+    if isinstance(translated_value, str):
+        translated_value = parse_json(translated_value, {})
+    if isinstance(translated_value, dict):
+        value = translated_value.get(lang)
+        if value not in (None, ""):
+            return value
+
+    if not field_name.endswith("_translated"):
+        return ""
+
+    required_lang = field.get("required_language")
+    if isinstance(required_lang, list):
+        primary_lang = required_lang[0] if required_lang else None
+    else:
+        primary_lang = required_lang
+
+    if not primary_lang and schema:
+        schema_required_lang = schema.get("required_language")
+        if isinstance(schema_required_lang, list):
+            primary_lang = schema_required_lang[0] if schema_required_lang else None
+        else:
+            primary_lang = schema_required_lang
+
+    if not primary_lang:
+        primary_lang = schemingdcat_get_default_lang()
+
+    if lang != primary_lang:
+        return ""
+
+    legacy_field_name = field_name[:-len("_translated")]
+    legacy_value = data.get(legacy_field_name, "")
+    if isinstance(legacy_value, dict):
+        return legacy_value.get(lang) or legacy_value.get(primary_lang) or ""
+
+    parsed_legacy = parse_json(legacy_value, legacy_value)
+    if isinstance(parsed_legacy, dict):
+        return parsed_legacy.get(lang) or parsed_legacy.get(primary_lang) or ""
+
+    return legacy_value or ""
+
+@helper
 def schemingdcat_fluent_form_label(field, lang):
     """Returns a label for the input field in the specified language.
 

@@ -382,6 +382,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         'language',
         'topic',
     })
+    _PACKAGE_UPDATE_BACKFILL_FIELDS = _RESOURCE_UPDATE_BACKFILL_FIELDS
     _DEFAULT_DCAT_TYPE = 'http://inspire.ec.europa.eu/metadata-codelist/ResourceType/dataset'
     _DEFAULT_LANGUAGE = 'http://publications.europa.eu/resource/authority/language/ENG'
     _DEFAULT_TOPIC = 'http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment'
@@ -430,6 +431,282 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
     def resource_form(self):
         return "schemingdcat/package/snippets/resource_form.html"
+
+    @staticmethod
+    def _dedupe_preserving_order(values):
+        seen = set()
+        ordered = []
+        for value in values:
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            ordered.append(value)
+        return ordered
+
+    def _get_raw_group_identifiers_from_request(self):
+        try:
+            from ckan.common import request
+            form = getattr(request, 'form', None)
+        except Exception:
+            return []
+        if not form:
+            return []
+
+        identifiers = []
+        for key in form.keys():
+            if not (key.startswith('groups__') and key.endswith('__id')):
+                continue
+            values = form.getlist(key) if hasattr(form, 'getlist') else [form.get(key)]
+            identifiers.extend([value for value in values if value])
+        return identifiers
+
+    def _extract_group_identifiers(self, data_dict):
+        identifiers = self._get_raw_group_identifiers_from_request()
+        if identifiers:
+            return self._dedupe_preserving_order(identifiers)
+
+        groups = data_dict.get('groups') or []
+        if isinstance(groups, dict):
+            groups = [groups]
+
+        for group in groups:
+            if isinstance(group, dict):
+                identifiers.append(group.get('name') or group.get('id'))
+            elif isinstance(group, str):
+                identifiers.append(group)
+
+        for key, value in list(data_dict.items()):
+            key_name = key[-1] if isinstance(key, tuple) and key else key
+            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                identifiers.append(value)
+
+        return self._dedupe_preserving_order(identifiers)
+
+    def _extract_spatial_uris(self, data_dict):
+        spatial_val = data_dict.get('spatial_uri')
+        if not spatial_val:
+            return []
+
+        if isinstance(spatial_val, str):
+            try:
+                parsed = json.loads(spatial_val)
+            except Exception:
+                parsed = spatial_val
+        else:
+            parsed = spatial_val
+
+        if isinstance(parsed, list):
+            values = parsed
+        else:
+            values = [parsed]
+
+        return self._dedupe_preserving_order([
+            value for value in values
+            if isinstance(value, str) and value.strip()
+        ])
+
+    def _resolve_group_names(self, identifiers):
+        import ckan.model as model
+
+        resolved = []
+        for identifier in identifiers:
+            if not identifier:
+                continue
+            group = model.Group.get(identifier)
+            if group and getattr(group, 'name', None):
+                resolved.append(group.name)
+            elif isinstance(identifier, str):
+                resolved.append(identifier)
+
+        return self._dedupe_preserving_order(resolved)
+
+    def _resolve_spatial_memberstate_groups(self, context, data_dict):
+        memberstate_groups = []
+        for uri in self._extract_spatial_uris(data_dict):
+            try:
+                group_slug = helpers.schemingdcat_find_member_state_group(uri, context)
+            except Exception as err:
+                log.info("Could not resolve member state group for %s: %s", uri, err)
+                group_slug = None
+            if group_slug:
+                memberstate_groups.append(group_slug)
+        return self._dedupe_preserving_order(memberstate_groups)
+
+    def _read_package_for_dataset_update(self, context, data_dict):
+        package_id = data_dict.get('id') or data_dict.get('name')
+        if not package_id:
+            return None
+
+        read_context = dict(context or {})
+        read_context.pop('schema', None)
+        read_context['ignore_auth'] = True
+        try:
+            return toolkit.get_action('package_show')(read_context, {'id': package_id})
+        except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
+            return None
+
+    def _current_group_names_for_package(self, package_dict):
+        return self._dedupe_preserving_order([
+            group.get('name')
+            for group in (package_dict or {}).get('groups', [])
+            if isinstance(group, dict) and group.get('name')
+        ])
+
+    def _managed_form_group_names(self):
+        managed = {
+            group.get('name')
+            for group in helpers.get_all_memberstates_groups()
+            if group.get('name')
+        }
+        managed.update({
+            group.get('name')
+            for group in helpers.get_all_initiatives_groups()
+            if group.get('name')
+        })
+        return managed
+
+    def _stage_requested_group_memberships(self, context, data_dict):
+        if (context or {}).get('_schemingdcat_internal_backfill_patch'):
+            return
+
+        if context.get('_schemingdcat_group_memberships_staged'):
+            return
+        context['_schemingdcat_group_memberships_staged'] = True
+
+        package_dict = self._read_package_for_dataset_update(context, data_dict)
+        current_group_names = self._current_group_names_for_package(package_dict)
+        requested_group_names = self._resolve_group_names(self._extract_group_identifiers(data_dict))
+        requested_group_names.extend(self._resolve_spatial_memberstate_groups(context, data_dict))
+        requested_group_names = self._dedupe_preserving_order(requested_group_names)
+
+        context['_schemingdcat_requested_group_memberships'] = {
+            'requested_group_names': requested_group_names,
+            'current_group_names': current_group_names,
+            'package_id': (package_dict or {}).get('id'),
+        }
+
+        # Preserve the current memberships during the core save; we apply the
+        # requested diff explicitly afterwards with site_user privileges.
+        data_dict['groups'] = [{'name': name} for name in current_group_names]
+
+        for key in list(data_dict.keys()):
+            key_name = key[-1] if isinstance(key, tuple) and key else key
+            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                del data_dict[key]
+
+    def _apply_requested_group_memberships(self, context, pkg_dict):
+        staged = (context or {}).pop('_schemingdcat_requested_group_memberships', None)
+        if not staged:
+            return
+
+        package_id = staged.get('package_id')
+        if not package_id:
+            if isinstance(pkg_dict, str):
+                package_id = pkg_dict
+            elif isinstance(pkg_dict, dict):
+                package_id = pkg_dict.get('id')
+        if not package_id:
+            return
+
+        read_context = dict(context or {})
+        read_context.pop('schema', None)
+        read_context['ignore_auth'] = True
+        package_dict = toolkit.get_action('package_show')(read_context, {'id': package_id})
+
+        current_group_names = self._current_group_names_for_package(package_dict)
+        managed_group_names = self._managed_form_group_names()
+        desired_managed_names = [
+            name for name in staged.get('requested_group_names', [])
+            if name in managed_group_names
+        ]
+        preserved_group_names = [
+            name for name in current_group_names
+            if name not in managed_group_names
+        ]
+        target_group_names = self._dedupe_preserving_order(
+            preserved_group_names + desired_managed_names
+        )
+
+        current_group_set = set(current_group_names)
+        target_group_set = set(target_group_names)
+        if current_group_set == target_group_set:
+            return
+
+        import ckan.model as model
+
+        try:
+            site_user = toolkit.get_action('get_site_user')({'ignore_auth': True}, {})
+        except Exception as err:
+            log.warning("[group-memberships] Could not resolve site user: %s", err)
+            return
+        member_context = {
+            'ignore_auth': True,
+            'user': site_user['name'],
+        }
+
+        for group_name in current_group_names:
+            if group_name in target_group_set:
+                continue
+            group = model.Group.get(group_name)
+            if not group:
+                log.warning("[group-memberships] Group not found for delete: %s", group_name)
+                continue
+            try:
+                toolkit.get_action('member_delete')(
+                    member_context,
+                    {
+                        'id': group.id,
+                        'object': package_id,
+                        'object_type': 'package',
+                    },
+                )
+            except Exception as err:
+                log.warning("[group-memberships] Could not remove %s from %s: %s", package_id, group_name, err)
+
+        for group_name in target_group_names:
+            if group_name in current_group_set:
+                continue
+            group = model.Group.get(group_name)
+            if not group:
+                log.warning("[group-memberships] Group not found for add: %s", group_name)
+                continue
+            try:
+                toolkit.get_action('member_create')(
+                    member_context,
+                    {
+                        'id': group.id,
+                        'object': package_id,
+                        'object_type': 'package',
+                        'capacity': 'public',
+                    },
+                )
+            except Exception as err:
+                log.warning("[group-memberships] Could not add %s to %s: %s", package_id, group_name, err)
+
+    def _backfill_missing_dataset_fields_for_package_update(self, context, data_dict, missing_fields):
+        package_dict = self._read_package_for_dataset_update(context, data_dict)
+        if not package_dict:
+            log.warning('[PACKAGE UPDATE] Could not resolve package for missing-field backfill')
+            return False
+
+        patch_data = self._build_missing_fields_patch(package_dict, missing_fields)
+        if not patch_data:
+            log.warning('[PACKAGE UPDATE] Could not build patch data for missing-field backfill')
+            return False
+
+        patch_context = dict(context or {})
+        patch_context.pop('schema', None)
+        patch_context['_skip_doi_update'] = True
+        patch_context['_schemingdcat_backfill_attempted'] = True
+        patch_context['_schemingdcat_internal_backfill_patch'] = True
+
+        toolkit.get_action('package_patch')(patch_context, patch_data)
+        log.warning(
+            '[PACKAGE UPDATE] Auto-filled missing required dataset fields %s for package %s',
+            sorted(missing_fields),
+            patch_data['id'],
+        )
+        return True
 
     def get_helpers(self):
         # Merge schemingdcat helpers with cloudstorage helpers
@@ -650,10 +927,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return len(value) == 0
         return False
 
-    def _missing_required_fields_from_validation_error(self, err):
+    def _missing_required_fields_from_validation_error(self, err, fields=None):
         error_dict = getattr(err, 'error_dict', None) or {}
         missing_fields = set()
-        for field in self._RESOURCE_UPDATE_BACKFILL_FIELDS:
+        for field in (fields or self._RESOURCE_UPDATE_BACKFILL_FIELDS):
             messages = error_dict.get(field)
             if not messages:
                 continue
@@ -782,6 +1059,8 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         }
         # Wrap resource_create/resource_update to ensure metadata extraction is triggered even if IResourceController hooks are skipped
         actions.update({
+            "package_create": self.package_create,
+            "package_update": self.package_update,
             "resource_create": self.resource_create,
             "resource_update": self.resource_update,
             "package_patch": self.package_patch,
@@ -859,11 +1138,42 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         return result
 
     @toolkit.chained_action
+    def package_create(self, next_action, context, data_dict):
+        self._stage_requested_group_memberships(context, data_dict)
+        result = next_action(context, data_dict)
+        self._apply_requested_group_memberships(context, result)
+        return result
+
+    @toolkit.chained_action
+    def package_update(self, next_action, context, data_dict):
+        self._stage_requested_group_memberships(context, data_dict)
+
+        try:
+            result = next_action(context, data_dict)
+        except toolkit.ValidationError as e:
+            missing_fields = self._missing_required_fields_from_validation_error(
+                e,
+                fields=self._PACKAGE_UPDATE_BACKFILL_FIELDS,
+            )
+            if not missing_fields or (context or {}).get('_schemingdcat_backfill_attempted'):
+                raise
+
+            if not self._backfill_missing_dataset_fields_for_package_update(context, data_dict, missing_fields):
+                raise
+
+            retry_context = dict(context or {})
+            retry_context['_schemingdcat_backfill_attempted'] = True
+            result = next_action(retry_context, data_dict)
+
+        self._apply_requested_group_memberships(context, result)
+        return result
+
+    @toolkit.chained_action
     def package_patch(self, next_action, context, data_dict):
         """
         Chained action for package_patch.
-        Group processing is handled by before_dataset_update/after_dataset_update
-        hooks (called inside package_update, which package_patch delegates to).
+        Group normalization/backfill is handled in package_update after
+        package_patch delegates to it.
         """
         log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
         
