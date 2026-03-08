@@ -68,6 +68,40 @@ def test_stage_requested_group_memberships_preserves_initiatives_for_spatial_pat
     assert data_dict['groups'] == [{'name': 'chile'}, {'name': 'climwar'}]
 
 
+def test_stage_requested_group_memberships_ignores_inherited_spatial_uri_for_group_patch(monkeypatch):
+    subject = plugin.SchemingDCATDatasetsPlugin()
+    context = {
+        '_schemingdcat_package_patch_payload_keys': {'id', 'groups__0__id', 'groups__1__id'},
+    }
+    data_dict = {
+        'groups': [{'name': 'chile'}, {'name': 'climwar'}],
+        'groups__0__id': 'argentina',
+        'groups__1__id': 'climwar',
+        'spatial_uri': '["http://publications.europa.eu/resource/authority/country/CHL"]',
+    }
+
+    monkeypatch.setattr(
+        subject,
+        '_read_package_for_dataset_update',
+        lambda ctx, payload: {
+            'id': 'pkg-1',
+            'groups': [{'name': 'chile'}, {'name': 'climwar'}],
+        },
+    )
+    monkeypatch.setattr(subject, '_get_raw_group_identifiers_from_request', lambda: [])
+    monkeypatch.setattr(subject, '_resolve_group_names', lambda values: list(values))
+    monkeypatch.setattr(subject, '_resolve_spatial_memberstate_groups', lambda ctx, payload: ['chile'])
+
+    subject._stage_requested_group_memberships(context, data_dict)
+
+    assert context['_schemingdcat_requested_group_memberships'] == {
+        'requested_group_names': ['argentina', 'climwar'],
+        'current_group_names': ['chile', 'climwar'],
+        'package_id': 'pkg-1',
+    }
+    assert data_dict['groups'] == [{'name': 'chile'}, {'name': 'climwar'}]
+
+
 def test_extract_group_identifiers_prefers_explicit_fields_over_existing_groups(monkeypatch):
     subject = plugin.SchemingDCATDatasetsPlugin()
 

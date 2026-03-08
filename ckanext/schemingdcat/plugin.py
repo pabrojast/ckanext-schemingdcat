@@ -589,13 +589,19 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         current_group_names = self._current_group_names_for_package(package_dict)
         patch_payload_keys = (context or {}).get('_schemingdcat_package_patch_payload_keys')
         include_groups_list = True
+        include_spatial_uris = True
         if patch_payload_keys is not None and 'groups' not in patch_payload_keys:
             include_groups_list = False
+        if patch_payload_keys is not None and 'spatial_uri' not in patch_payload_keys:
+            include_spatial_uris = False
 
         requested_group_names = self._resolve_group_names(
             self._extract_group_identifiers(data_dict, include_groups_list=include_groups_list)
         )
-        spatial_group_names = self._resolve_spatial_memberstate_groups(context, data_dict)
+        spatial_group_names = (
+            self._resolve_spatial_memberstate_groups(context, data_dict)
+            if include_spatial_uris else []
+        )
 
         if requested_group_names:
             requested_group_names.extend(spatial_group_names)
