@@ -460,7 +460,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             identifiers.extend([value for value in values if value])
         return identifiers
 
-    def _extract_group_identifiers(self, data_dict):
+    def _extract_group_identifiers(self, data_dict, include_groups_list=True):
         identifiers = self._get_raw_group_identifiers_from_request()
         if identifiers:
             return self._dedupe_preserving_order(identifiers)
@@ -474,15 +474,16 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if flattened_identifiers:
             return self._dedupe_preserving_order(flattened_identifiers)
 
-        groups = data_dict.get('groups') or []
-        if isinstance(groups, dict):
-            groups = [groups]
+        if include_groups_list:
+            groups = data_dict.get('groups') or []
+            if isinstance(groups, dict):
+                groups = [groups]
 
-        for group in groups:
-            if isinstance(group, dict):
-                identifiers.append(group.get('name') or group.get('id'))
-            elif isinstance(group, str):
-                identifiers.append(group)
+            for group in groups:
+                if isinstance(group, dict):
+                    identifiers.append(group.get('name') or group.get('id'))
+                elif isinstance(group, str):
+                    identifiers.append(group)
 
         return self._dedupe_preserving_order(identifiers)
 
@@ -569,6 +570,13 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         })
         return managed
 
+    def _initiative_group_names(self):
+        return {
+            group.get('name')
+            for group in helpers.get_all_initiatives_groups()
+            if group.get('name')
+        }
+
     def _stage_requested_group_memberships(self, context, data_dict):
         if (context or {}).get('_schemingdcat_internal_backfill_patch'):
             return
@@ -579,8 +587,33 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         package_dict = self._read_package_for_dataset_update(context, data_dict)
         current_group_names = self._current_group_names_for_package(package_dict)
-        requested_group_names = self._resolve_group_names(self._extract_group_identifiers(data_dict))
-        requested_group_names.extend(self._resolve_spatial_memberstate_groups(context, data_dict))
+        patch_payload_keys = (context or {}).get('_schemingdcat_package_patch_payload_keys')
+        include_groups_list = True
+        if patch_payload_keys is not None and 'groups' not in patch_payload_keys:
+            include_groups_list = False
+
+        requested_group_names = self._resolve_group_names(
+            self._extract_group_identifiers(data_dict, include_groups_list=include_groups_list)
+        )
+        spatial_group_names = self._resolve_spatial_memberstate_groups(context, data_dict)
+
+        if requested_group_names:
+            requested_group_names.extend(spatial_group_names)
+        else:
+            managed_group_names = self._managed_form_group_names()
+            if spatial_group_names:
+                initiative_group_names = self._initiative_group_names()
+                requested_group_names = [
+                    name for name in current_group_names
+                    if name in initiative_group_names
+                ]
+                requested_group_names.extend(spatial_group_names)
+            else:
+                requested_group_names = [
+                    name for name in current_group_names
+                    if name in managed_group_names
+                ]
+
         requested_group_names = self._dedupe_preserving_order(requested_group_names)
 
         context['_schemingdcat_requested_group_memberships'] = {
@@ -1182,8 +1215,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         package_patch delegates to it.
         """
         log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
-        
-        return next_action(context, data_dict)
+        payload_keys = {
+            key[-1] if isinstance(key, tuple) and key else key
+            for key in data_dict.keys()
+        }
+        context['_schemingdcat_package_patch_payload_keys'] = payload_keys
+        try:
+            return next_action(context, data_dict)
+        finally:
+            context.pop('_schemingdcat_package_patch_payload_keys', None)
 
     @toolkit.chained_action
     def package_search(self, next_action, context, data_dict):
