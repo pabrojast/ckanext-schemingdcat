@@ -465,6 +465,15 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if identifiers:
             return self._dedupe_preserving_order(identifiers)
 
+        flattened_identifiers = []
+        for key, value in list(data_dict.items()):
+            key_name = key[-1] if isinstance(key, tuple) and key else key
+            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
+                flattened_identifiers.append(value)
+
+        if flattened_identifiers:
+            return self._dedupe_preserving_order(flattened_identifiers)
+
         groups = data_dict.get('groups') or []
         if isinstance(groups, dict):
             groups = [groups]
@@ -474,11 +483,6 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                 identifiers.append(group.get('name') or group.get('id'))
             elif isinstance(group, str):
                 identifiers.append(group)
-
-        for key, value in list(data_dict.items()):
-            key_name = key[-1] if isinstance(key, tuple) and key else key
-            if isinstance(key_name, str) and key_name.startswith('groups__') and key_name.endswith('__id'):
-                identifiers.append(value)
 
         return self._dedupe_preserving_order(identifiers)
 
@@ -1139,6 +1143,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
     @toolkit.chained_action
     def package_create(self, next_action, context, data_dict):
+        toolkit.check_access('package_create', context, data_dict)
         self._stage_requested_group_memberships(context, data_dict)
         result = next_action(context, data_dict)
         self._apply_requested_group_memberships(context, result)
@@ -1146,6 +1151,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
     @toolkit.chained_action
     def package_update(self, next_action, context, data_dict):
+        toolkit.check_access('package_update', context, data_dict)
         self._stage_requested_group_memberships(context, data_dict)
 
         try:

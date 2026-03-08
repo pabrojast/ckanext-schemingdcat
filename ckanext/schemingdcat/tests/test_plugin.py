@@ -34,6 +34,22 @@ def test_stage_requested_group_memberships_preserves_current_groups(monkeypatch)
     assert data_dict['groups'] == [{'name': 'argentina'}, {'name': 'climwar'}]
 
 
+def test_extract_group_identifiers_prefers_explicit_fields_over_existing_groups(monkeypatch):
+    subject = plugin.SchemingDCATDatasetsPlugin()
+
+    monkeypatch.setattr(subject, '_get_raw_group_identifiers_from_request', lambda: [])
+
+    identifiers = subject._extract_group_identifiers(
+        {
+            'groups': [{'name': 'argentina'}, {'name': 'climwar'}],
+            'groups__0__id': 'chile',
+            'groups__1__id': 'climwar',
+        }
+    )
+
+    assert identifiers == ['chile', 'climwar']
+
+
 def test_apply_requested_group_memberships_replaces_managed_groups(monkeypatch):
     subject = plugin.SchemingDCATDatasetsPlugin()
     context = {
