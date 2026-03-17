@@ -944,69 +944,51 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         except Exception as e:
             log.warning(f"[_apply_pending_groups] Error processing pending groups: {e}")
 
-    def before_dataset_update(self, context, data_dict):
-        log.info("[SchemingDCATDatasetsPlugin.before_dataset_update] CALLED")
-        self._remove_extras_conflicting_with_schema(data_dict)
-        return self._ensure_memberstate_groups(context, data_dict)
+    # ── Schema overrides ─────────────────────────────────────────────
+    # CKAN 2.10 added ``extra_key_not_in_root_schema`` to the default
+    # extras validators.  ckanext-scheming stores custom schema fields
+    # via ``convert_to_extras`` / ``convert_from_extras``, so
+    # ``package_show`` output always carries those keys in *both*
+    # top-level fields and ``extras[]``.  When that dict round-trips
+    # through ``package_update`` (e.g. via ``resource_patch``), the
+    # validator rejects them with HTTP 409 "There is a schema field
+    # with the same name".  We strip the validator from the extras
+    # schema to prevent this false positive.
 
-    def before_dataset_create(self, context, data_dict):
-        log.info("[SchemingDCATDatasetsPlugin.before_dataset_create] CALLED")
-        self._remove_extras_conflicting_with_schema(data_dict)
-        return self._ensure_memberstate_groups(context, data_dict)
+    def update_package_schema(self):
+        schema = super().update_package_schema()
+        self._strip_extras_root_schema_validator(schema)
+        return schema
+
+    def create_package_schema(self):
+        schema = super().create_package_schema()
+        self._strip_extras_root_schema_validator(schema)
+        return schema
+
+    @staticmethod
+    def _strip_extras_root_schema_validator(schema):
+        from ckan.logic.validators import extra_key_not_in_root_schema
+        extras = schema.get('extras', {})
+        key_validators = extras.get('key', [])
+        extras['key'] = [
+            v for v in key_validators
+            if v is not extra_key_not_in_root_schema
+        ]
+
+    # ── IDatasetForm validate hook ────────────────────────────────────
+
+    def validate(self, context, data_dict, schema, action):
+        if action in ('package_create', 'package_update'):
+            self._ensure_memberstate_groups(context, data_dict)
+        return super().validate(context, data_dict, schema, action)
+
+    # ── IPackageController hooks ──────────────────────────────────────
 
     def after_dataset_create(self, context, data_dict):
-        log.info("[SchemingDCATDatasetsPlugin.after_dataset_create] CALLED")
         self._apply_pending_groups(context, data_dict)
 
     def after_dataset_update(self, context, data_dict):
-        log.info("[SchemingDCATDatasetsPlugin.after_dataset_update] CALLED")
         self._apply_pending_groups(context, data_dict)
-
-    def _remove_extras_conflicting_with_schema(self, data_dict):
-        """Remove extras whose keys conflict with scheming dataset schema fields.
-
-        In CKAN 2.10+, ckanext-scheming stores custom fields using
-        ``convert_to_extras`` / ``convert_from_extras``.  When
-        ``package_show`` is called the output validators convert those
-        extras back into top-level keys **but also leave them in the
-        ``extras`` list**.  If the resulting dict is later passed to
-        ``package_update`` (e.g. via ``resource_update``), the core
-        validator ``extra_key_not_in_root_schema`` rejects extras whose
-        key matches a schema field.
-
-        This method strips those conflicting extras from ``data_dict``
-        before validation so that the round-trip works cleanly.
-        """
-        extras = data_dict.get('extras')
-        if not extras:
-            return
-
-        try:
-            schema_info = toolkit.get_action('scheming_dataset_schema_show')(
-                {'ignore_auth': True},
-                {'type': data_dict.get('type', 'dataset')},
-            )
-            schema_field_names = {
-                f['field_name']
-                for f in schema_info.get('dataset_fields', [])
-            }
-        except Exception:
-            return
-
-        if not schema_field_names:
-            return
-
-        original_count = len(extras)
-        data_dict['extras'] = [
-            e for e in extras
-            if e.get('key') not in schema_field_names
-        ]
-        removed = original_count - len(data_dict['extras'])
-        if removed:
-            log.debug(
-                "[SchemingDCATDatasetsPlugin] Removed %d extras conflicting "
-                "with schema fields from data_dict", removed,
-            )
 
     @staticmethod
     def _is_missing_value(value):
