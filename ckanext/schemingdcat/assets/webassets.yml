@@ -48,6 +48,14 @@ schemingdcat-auto-contact:
   contents:
     - js/modules/schemingdcat-auto-contact.js
 
+schemingdcat-org-autofill:
+  output: ckanext-schemingdcat/%(version)s-schemingdcat_org_autofill.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/modules/schemingdcat-org-autofill.js
+
 schemingdcat-metadata-sidebar:
   output: ckanext-schemingdcat/%(version)s-schemingdcat_metadata_sidebar.js
   extra:

@@ -187,7 +187,10 @@ class PackageController():
         # Limpiar el modo del formulario si es necesario
         if 'form_mode' in data_dict:
             del data_dict['form_mode']
-        
+
+        # Auto-fill author from organization if author is empty
+        self._autofill_author_from_org(context, data_dict)
+
         return data_dict
 
     def after_dataset_update(self, context, data_dict):
@@ -195,6 +198,44 @@ class PackageController():
         Hook que se ejecuta después de actualizar un dataset.
         """
         return data_dict
+
+    def _autofill_author_from_org(self, context, data_dict):
+        """Set the legacy 'author' field from the owning organization title
+        when it is empty.  This acts as a server-side safety net for the
+        client-side org-autofill module."""
+        author = data_dict.get('author')
+        if author:
+            return
+
+        owner_org = data_dict.get('owner_org')
+        if not owner_org:
+            return
+
+        try:
+            org = toolkit.get_action('organization_show')(
+                {'ignore_auth': True},
+                {'id': owner_org},
+            )
+            org_title = org.get('title') or org.get('name', '')
+        except Exception:
+            log.debug('[_autofill_author_from_org] Could not resolve org %s', owner_org)
+            return
+
+        if not org_title:
+            return
+
+        try:
+            toolkit.get_action('package_patch')(
+                {'ignore_auth': True, 'user': context.get('user')},
+                {'id': data_dict['id'], 'author': org_title},
+            )
+            log.info(
+                '[_autofill_author_from_org] Set author to "%s" for dataset %s',
+                org_title,
+                data_dict.get('id'),
+            )
+        except Exception as e:
+            log.warning('[_autofill_author_from_org] Failed to patch author: %s', e)
 
     def after_dataset_delete(self, context, data_dict):
         return data_dict
