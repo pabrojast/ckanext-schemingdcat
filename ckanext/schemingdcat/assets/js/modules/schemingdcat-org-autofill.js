@@ -7,13 +7,29 @@
  * Behaviour:
  *  - Only active on dataset *creation* forms (not edit).
  *  - On page load: waits a short tick so that auto-contact /
- *    autofill-responsible-party run first, then overrides the author field
+ *    autofill-responsible-party run first, then overrides the author fields
  *    with the currently selected org title.
- *  - On owner_org change: updates the author field with the new org title.
+ *  - On owner_org change: updates the author fields with the new org title.
  *  - Publisher and maintainer fields are intentionally NOT modified.
+ *
+ * DOI creator priority (ckanext-doi):
+ *  1. "authors" repeating subfield (enhanced) — authors-<index>-name
+ *  2. "author" legacy field — fallback only when "authors" is empty
+ *
+ * Scheming repeating-subfield naming conventions (both supported):
+ *  - authors-<index>-<subfield>    (scheming 3.x hyphen format)
+ *  - authors__<index>__<subfield>  (older double-underscore format)
  */
 ckan.module('schemingdcat-org-autofill', function ($) {
   'use strict';
+
+  // Selectors for the first "name" input inside the authors repeating subfield
+  // covering both scheming naming conventions.
+  var AUTHORS_NAME_SELECTORS = [
+    'input[name^="authors-"][name$="-name"]',
+    'input[name^="authors__"][name$="__name"]',
+    'input[name^="authors_json"][name$="name"]'
+  ].join(', ');
 
   return {
     initialize: function () {
@@ -48,11 +64,11 @@ ckan.module('schemingdcat-org-autofill', function ($) {
         return;
       }
 
-      // Legacy author field (admin-only, but harmless if absent)
-      this._setField('input[name="author"]', orgTitle);
-
-      // First entry of the "authors" repeating subfield (DOI Author Information)
+      // 1) Enhanced "authors" repeating subfield — primary DOI creator source
       this._setFirstAuthorsName(orgTitle);
+
+      // 2) Legacy author field (admin-only, but acts as fallback for DOI)
+      this._setField('input[name="author"]', orgTitle);
     },
 
     /**
@@ -78,17 +94,18 @@ ckan.module('schemingdcat-org-autofill', function ($) {
 
     /**
      * Sets the "name" sub-field of the first authors repeating entry.
-     * The naming convention used by ckanext-scheming repeating subfields is
-     * authors__<index-or-uuid>__name.
+     * Supports both scheming naming conventions:
+     *   authors-0-name      (scheming 3.x)
+     *   authors__0__name    (older format)
      */
     _setFirstAuthorsName: function (orgTitle) {
-      var $nameInputs = $('input[name^="authors__"][name$="__name"]');
-      if ($nameInputs.length) {
-        var $first = $nameInputs.first();
-        if (!$first.val()) {
-          $first.val(orgTitle).trigger('change');
-        }
+      var $nameInputs = $(AUTHORS_NAME_SELECTORS);
+      if (!$nameInputs.length) {
+        return;
       }
+      var $first = $nameInputs.first();
+      // Always set on org change in create mode; the org IS the dataset creator
+      $first.val(orgTitle).trigger('change');
     }
   };
 });
