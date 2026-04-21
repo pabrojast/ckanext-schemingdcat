@@ -187,7 +187,10 @@ class PackageController():
         # Limpiar el modo del formulario si es necesario
         if 'form_mode' in data_dict:
             del data_dict['form_mode']
-        
+
+        # Auto-fill author from organization if author is empty
+        self._autofill_author_from_org(context, data_dict)
+
         return data_dict
 
     def after_dataset_update(self, context, data_dict):
@@ -195,6 +198,82 @@ class PackageController():
         Hook que se ejecuta después de actualizar un dataset.
         """
         return data_dict
+
+    def _autofill_author_from_org(self, context, data_dict):
+        """Set 'author' (legacy) and the first entry of the 'authors'
+        repeating subfield from the owning organization title when they
+        are empty.  This acts as a server-side safety net for the
+        client-side org-autofill module.
+
+        DOI creator priority (ckanext-doi):
+          1. 'authors' repeating subfield  (enhanced)
+          2. 'author' field                (legacy fallback)
+        """
+        owner_org = data_dict.get('owner_org')
+        if not owner_org:
+            return
+
+        # Check if both author sources already have meaningful content
+        author = data_dict.get('author')
+        authors = data_dict.get('authors')
+        authors_has_name = False
+        if isinstance(authors, list):
+            authors_has_name = any(
+                (entry.get('name') or '').strip()
+                for entry in authors
+                if isinstance(entry, dict)
+            )
+
+        if author and authors_has_name:
+            return
+
+        try:
+            org = toolkit.get_action('organization_show')(
+                {'ignore_auth': True},
+                {'id': owner_org},
+            )
+            org_title = org.get('title') or org.get('name', '')
+        except Exception:
+            log.debug(
+                '[_autofill_author_from_org] Could not resolve org %s',
+                owner_org,
+            )
+            return
+
+        if not org_title:
+            return
+
+        patch_data = {'id': data_dict['id']}
+
+        if not author:
+            patch_data['author'] = org_title
+
+        if not authors_has_name:
+            if isinstance(authors, list) and authors:
+                # Fill the name of the first (blank) entry
+                first = dict(authors[0])
+                first['name'] = org_title
+                patch_data['authors'] = [first] + authors[1:]
+            else:
+                patch_data['authors'] = [{'name': org_title}]
+
+        if len(patch_data) <= 1:
+            return
+
+        try:
+            toolkit.get_action('package_patch')(
+                {'ignore_auth': True, 'user': context.get('user')},
+                patch_data,
+            )
+            log.info(
+                '[_autofill_author_from_org] Set author to "%s" for dataset %s',
+                org_title,
+                data_dict.get('id'),
+            )
+        except Exception as e:
+            log.warning(
+                '[_autofill_author_from_org] Failed to patch author: %s', e,
+            )
 
     def after_dataset_delete(self, context, data_dict):
         return data_dict

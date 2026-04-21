@@ -25,6 +25,7 @@
 {% asset 'ckanext-schemingdcat/schemingdcat-autofill-today' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-autofill-responsible-party' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-auto-contact' %}
+{% asset 'ckanext-schemingdcat/schemingdcat-org-autofill' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-toggle-optional' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-publisher-uri' %}
 {% asset 'ckanext-schemingdcat/schemingdcat-simple-navigation' %}
@@ -39,6 +40,8 @@
 <input type="hidden" id="current-user-data"
        value="{{ h.dump_json(h.schemingdcat_get_current_user()) }}"
        data-module="auto-contact" />
+{# Auto-fill author from selected organization #}
+<div data-module="schemingdcat-org-autofill"></div>
 {# Añadir este div para el botón toggle #}
 <div data-module="toggle-optional"></div>
 {# Añadir módulo para manejar navegación del formulario #}
