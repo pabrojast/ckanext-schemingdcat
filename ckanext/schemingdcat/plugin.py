@@ -1262,6 +1262,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             context.pop('_schemingdcat_package_patch_payload_keys', None)
 
     @toolkit.chained_action
+    @toolkit.side_effect_free
     def package_search(self, next_action, context, data_dict):
         """
         Chained action for package_search to prevent huge resource extras
