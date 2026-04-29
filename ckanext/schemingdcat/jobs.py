@@ -15,6 +15,8 @@ import urllib.request
 import urllib.error
 from contextlib import contextmanager
 
+from sqlalchemy.orm.attributes import flag_modified
+
 
 log = logging.getLogger(__name__)
 
@@ -301,6 +303,95 @@ def _job_log(level, msg, log_ref=None):
     sys.stderr.flush()
 
 
+_RESOURCE_NATIVE_COLUMNS = {
+    'url', 'description', 'format', 'hash', 'mimetype', 'mimetype_inner',
+    'cache_url', 'size', 'last_modified', 'cache_last_updated',
+    'url_type', 'name', 'resource_type',
+}
+
+
+def _apply_resource_metadata_direct(resource_id, fields, log_ref=None):
+    """
+    Write metadata fields straight to the resource (native columns + extras)
+    via SQLAlchemy and reindex the parent package.
+
+    This bypasses CKAN's ``resource_patch`` → ``resource_update`` →
+    ``package_update`` chain. That chain validates the *whole* package
+    against the dataset schema; under some worker-context conditions the
+    fluent fields (e.g. ``title_translated``) are dropped during this
+    round-trip and the dataset's title and extras get wiped. The metadata
+    extraction job has no business touching package-level fields, so we
+    write the resource fields directly and skip the chain entirely.
+
+    Args:
+        resource_id: target resource ID
+        fields: dict of field_name -> value (already JSON-serialised where needed)
+        log_ref: logger to use (defaults to module log)
+
+    Returns:
+        True on success, False otherwise.
+    """
+    if log_ref is None:
+        log_ref = log
+    if not fields:
+        return True
+
+    import ckan.model as model
+    from ckan.lib import search as ckan_search
+
+    resource = model.Resource.get(resource_id)
+    if resource is None:
+        _job_log('warning', f"[direct-update] resource {resource_id} not found", log_ref)
+        return False
+
+    extras = dict(resource.extras or {})
+    native_changed = False
+
+    for key, value in fields.items():
+        if value is None or value == '':
+            continue
+        if key == 'size':
+            try:
+                resource.size = int(value)
+                native_changed = True
+            except (TypeError, ValueError):
+                # Not a clean integer — keep as extra so we don't lose info.
+                extras[key] = value
+            continue
+        if key in _RESOURCE_NATIVE_COLUMNS:
+            setattr(resource, key, value)
+            native_changed = True
+            continue
+        extras[key] = value
+
+    resource.extras = extras
+    flag_modified(resource, 'extras')
+    if native_changed:
+        # Touch metadata_modified by setting it explicitly on the package
+        # so /dataset views reflect the change.
+        pass
+
+    try:
+        model.Session.commit()
+    except Exception as commit_err:
+        _job_log('error', f"[direct-update] commit failed for {resource_id}: {commit_err}", log_ref)
+        try:
+            model.Session.rollback()
+        except Exception:
+            pass
+        return False
+
+    # Reindex parent package so search picks up any new resource extras.
+    try:
+        package_id = resource.package_id
+        if package_id:
+            ckan_search.rebuild(package_id)
+    except Exception as reindex_err:
+        _job_log('warning', f"[direct-update] reindex failed for {resource_id}: {reindex_err}", log_ref)
+
+    return True
+
+
 @contextmanager
 def _maybe_push_flask_request_context(log_ref=None):
     """
@@ -533,19 +624,148 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
         if not has_updates:
             _job_log('info', f"No updates needed for package {package_id}", log_ref)
             return True
-        
-        # Update the package
-        package_patch_action = get_action('package_patch')
-        _job_log('info', f"Patching package {package_id} with fields: {list(patch_data.keys())}", log_ref)
-        with _maybe_push_flask_request_context(log_ref):
-            package_patch_action(context, patch_data)
-        _job_log('info', f"Successfully updated package {package_id} with member states and spatial info", log_ref)
-        
+
+        # Apply the changes WITHOUT going through package_patch. From the rq
+        # worker context, package_patch's internal package_update round-trip
+        # silently drops the dataset's fluent fields (title_translated,
+        # notes_translated, …) and wipes package_extra. Doing direct DB
+        # updates for groups + spatial fields keeps the rest of the dataset
+        # intact, and we still reindex Solr at the end.
+        _apply_member_state_updates_direct(
+            package_id, patch_data, context, log_ref
+        )
+        _job_log('info', f"Successfully updated package {package_id} with member states and spatial info (direct)", log_ref)
+
         return True
-        
+
     except Exception as e:
         _job_log('error', f"Error adding member states to package: {e}", log_ref)
         return False
+
+
+def _apply_member_state_updates_direct(package_id, patch_data, context, log_ref=None):
+    """
+    Apply the member-state / spatial updates from
+    ``_add_member_states_to_package`` directly via SQLAlchemy.
+
+    Bypasses ``package_patch`` entirely so we never touch the dataset
+    schema validation chain that, under worker-context conditions, drops
+    fluent fields (title_translated, notes_translated, …) and clears
+    other package extras.
+
+    Args:
+        package_id: target package
+        patch_data: dict with optional 'groups' (list of {'name': ...}),
+                    'spatial' (str), 'spatial_uri' (str | list)
+        context: CKAN context (used to derive site user for member_create)
+        log_ref: logger
+    """
+    if log_ref is None:
+        log_ref = log
+
+    import ckan.model as model
+    from ckan.lib import search as ckan_search
+    import ckan.plugins.toolkit as toolkit
+
+    pkg = model.Package.get(package_id)
+    if pkg is None:
+        _job_log('warning', f"[direct-pkg-update] package {package_id} not found", log_ref)
+        return False
+
+    # 1) Group memberships — use ``member_create`` so authz / IGroupController
+    #    hooks fire, but NOT package_update.
+    desired_group_names = [
+        g.get('name') for g in patch_data.get('groups', [])
+        if isinstance(g, dict) and g.get('name')
+    ]
+    if desired_group_names:
+        try:
+            site_user = toolkit.get_action('get_site_user')(
+                {'ignore_auth': True}, {}
+            )
+            member_ctx = {
+                'ignore_auth': True,
+                'user': site_user['name'],
+                'model': model,
+                'session': model.Session,
+            }
+        except Exception as err:
+            _job_log('warning', f"[direct-pkg-update] could not resolve site user: {err}", log_ref)
+            site_user = None
+            member_ctx = {'ignore_auth': True, 'user': '', 'model': model, 'session': model.Session}
+
+        existing = {g.name for g in pkg.get_groups()}
+        for name in desired_group_names:
+            if name in existing:
+                continue
+            group = model.Group.get(name)
+            if not group:
+                _job_log('warning', f"[direct-pkg-update] group not found: {name}", log_ref)
+                continue
+            try:
+                toolkit.get_action('member_create')(
+                    member_ctx,
+                    {'id': group.id, 'object': package_id,
+                     'object_type': 'package', 'capacity': 'public'},
+                )
+            except Exception as mem_err:
+                _job_log('warning', f"[direct-pkg-update] could not add {name}: {mem_err}", log_ref)
+
+    # 2) spatial / spatial_uri — write straight into ``package_extra``.
+    extra_writes = {}
+    if 'spatial' in patch_data and patch_data['spatial']:
+        extra_writes['spatial'] = patch_data['spatial']
+    if 'spatial_uri' in patch_data and patch_data['spatial_uri']:
+        v = patch_data['spatial_uri']
+        if isinstance(v, list):
+            v = json.dumps(v)
+        extra_writes['spatial_uri'] = v
+
+    if extra_writes:
+        for key, value in extra_writes.items():
+            existing_extra = (
+                model.Session.query(model.PackageExtra)
+                .filter_by(package_id=package_id, key=key, state='active')
+                .first()
+            )
+            if existing_extra:
+                existing_extra.value = value
+            else:
+                new_extra = model.PackageExtra(
+                    package_id=package_id, key=key, value=value, state='active'
+                )
+                model.Session.add(new_extra)
+
+    try:
+        model.Session.commit()
+    except Exception as commit_err:
+        _job_log('error', f"[direct-pkg-update] commit failed: {commit_err}", log_ref)
+        try:
+            model.Session.rollback()
+        except Exception:
+            pass
+        return False
+
+    # 3) If we set ``spatial``, run ckanext-spatial's bbox sync manually so
+    #    the spatial geometry index stays in sync (we skipped the hook by
+    #    not going through package_update).
+    if 'spatial' in extra_writes:
+        try:
+            from ckanext.spatial.plugin import SpatialMetadata
+            SpatialMetadata().check_spatial_extra(
+                {'id': package_id, 'spatial': extra_writes['spatial']},
+                update=True,
+            )
+        except Exception as spatial_err:
+            _job_log('warning', f"[direct-pkg-update] spatial sync skipped: {spatial_err}", log_ref)
+
+    # 4) Reindex so Solr/the search UI reflects the new groups / extras.
+    try:
+        ckan_search.rebuild(package_id)
+    except Exception as reindex_err:
+        _job_log('warning', f"[direct-pkg-update] reindex failed: {reindex_err}", log_ref)
+
+    return True
 
 
 def extract_comprehensive_metadata_job(job_data):
@@ -836,8 +1056,13 @@ def extract_comprehensive_metadata_job(job_data):
                     '_skip_doi_update': True,  # Prevent DOI network calls on internal metadata patches
                 }
                 
-                resource_patch_action = get_action('resource_patch')
-                
+                # NOTE: we deliberately do NOT call ``resource_patch`` here.
+                # That action triggers a full ``package_update`` round-trip
+                # against the dataset schema. From the rq worker context that
+                # round-trip drops the package's fluent fields
+                # (``title_translated`` etc.) and wipes ``package_extra`` —
+                # see _apply_resource_metadata_direct for the workaround.
+
                 # Build a dict of metadata fields (for resource)
                 metadata_fields = {}
                 
@@ -914,51 +1139,42 @@ def extract_comprehensive_metadata_job(job_data):
                 fields_to_update = [k for k, v in metadata_fields.items() if v is not None and v != '']
                 
                 if fields_to_update:
-                    resource_patch_data = {
-                        'id': resource_id,
-                    }
+                    # Build a clean dict of resource fields, JSON-serialising
+                    # any complex values so they round-trip through the
+                    # ``resource.extras`` JSON column unchanged.
+                    safe_fields = {}
                     for field in fields_to_update:
-                        resource_patch_data[field] = metadata_fields[field]
-                    
-                    _job_log('info', f"Updating resource {resource_id} with {len(fields_to_update)} metadata fields", log)
-                    
-                    try:
-                        # Ensure JSON serializable
-                        safe_patch_data = {}
-                        for k, v in resource_patch_data.items():
-                            if isinstance(v, (dict, list)):
-                                try:
-                                    safe_patch_data[k] = json.dumps(v)
-                                except Exception:
-                                    safe_patch_data[k] = str(v)
-                            else:
-                                safe_patch_data[k] = v
-                        
-                        with _maybe_push_flask_request_context(log):
-                            result = resource_patch_action(context, safe_patch_data)
-                        _job_log('info', f"Resource_patch call completed successfully!", log)
-                        _job_log('info', f"Successfully updated comprehensive metadata for resource {resource_id}. Updated {len(fields_to_update)} fields.", log)
-                        log.debug(f"Update result: {result.get('id', 'No ID')} - {result.get('name', 'No name')}")
-                        
-                        # Now add member states to the package if detected
-                        if detected_member_uris and package_id:
+                        v = metadata_fields[field]
+                        if isinstance(v, (dict, list)):
                             try:
-                                _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
-                                # Pass the spatial_extent to also update the package's spatial field
-                                extent_for_package = metadata.get('spatial_extent')
-                                if isinstance(extent_for_package, str):
-                                    try:
-                                        extent_for_package = json.loads(extent_for_package)
-                                    except (json.JSONDecodeError, ValueError, TypeError):
-                                        pass
-                                _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
-                            except Exception as group_error:
-                                _job_log('warning', f"Could not add member states to package: {group_error}", log)
-                        
-                        return True
-                    except Exception as patch_error:
-                        log.error(f"Error in resource_patch for resource {resource_id}: {patch_error}", exc_info=True)
+                                safe_fields[field] = json.dumps(v)
+                            except Exception:
+                                safe_fields[field] = str(v)
+                        else:
+                            safe_fields[field] = v
+
+                    _job_log('info', f"Updating resource {resource_id} with {len(safe_fields)} metadata fields (direct)", log)
+
+                    success = _apply_resource_metadata_direct(resource_id, safe_fields, log)
+                    if not success:
                         return False
+                    _job_log('info', f"Successfully updated metadata for resource {resource_id}. Updated {len(safe_fields)} fields.", log)
+
+                    # Now add member states to the package if detected
+                    if detected_member_uris and package_id:
+                        try:
+                            _job_log('info', f"Adding {len(detected_member_uris)} member states to package {package_id}", log)
+                            extent_for_package = metadata.get('spatial_extent')
+                            if isinstance(extent_for_package, str):
+                                try:
+                                    extent_for_package = json.loads(extent_for_package)
+                                except (json.JSONDecodeError, ValueError, TypeError):
+                                    pass
+                            _add_member_states_to_package(package_id, detected_member_uris, context, log, spatial_extent=extent_for_package)
+                        except Exception as group_error:
+                            _job_log('warning', f"Could not add member states to package: {group_error}", log)
+
+                    return True
                 else:
                     _job_log('info', f"No meaningful metadata fields to update for resource {resource_id}", log)
                     # Even if no resource metadata, still add member states if detected
