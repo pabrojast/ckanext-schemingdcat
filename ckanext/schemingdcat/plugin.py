@@ -651,17 +651,42 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if not package_id:
             return
 
-        read_context = dict(context or {})
-        read_context.pop('schema', None)
-        read_context['ignore_auth'] = True
-        package_dict = toolkit.get_action('package_show')(read_context, {'id': package_id})
-
-        current_group_names = self._current_group_names_for_package(package_dict)
         managed_group_names = self._managed_form_group_names()
+        staged_current_group_names = list(staged.get('current_group_names', []) or [])
         desired_managed_names = [
             name for name in staged.get('requested_group_names', [])
             if name in managed_group_names
         ]
+        preserved_staged_group_names = [
+            name for name in staged_current_group_names
+            if name not in managed_group_names
+        ]
+        staged_target_group_names = self._dedupe_preserving_order(
+            preserved_staged_group_names + desired_managed_names
+        )
+
+        # Most dataset creates/updates do not actually change member-state or
+        # initiative memberships. In those no-op cases we can skip the reload
+        # entirely, which avoids failing package_create on unrelated
+        # `package_show` issues in downstream action filters.
+        if set(staged_current_group_names) == set(staged_target_group_names):
+            return
+
+        read_context = dict(context or {})
+        read_context.pop('schema', None)
+        read_context['ignore_auth'] = True
+        try:
+            package_dict = toolkit.get_action('package_show')(read_context, {'id': package_id})
+            current_group_names = self._current_group_names_for_package(package_dict)
+        except (toolkit.ObjectNotFound, toolkit.NotAuthorized) as err:
+            log.warning(
+                "[group-memberships] Could not reload package %s after save; "
+                "falling back to staged memberships: %s",
+                package_id,
+                err,
+            )
+            current_group_names = staged_current_group_names
+
         preserved_group_names = [
             name for name in current_group_names
             if name not in managed_group_names

@@ -136,6 +136,7 @@ def test_apply_requested_group_memberships_replaces_managed_groups(monkeypatch):
     context = {
         '_schemingdcat_requested_group_memberships': {
             'requested_group_names': ['chile', 'climwar'],
+            'current_group_names': ['argentina', 'climwar'],
             'package_id': 'pkg-1',
         }
     }
@@ -157,6 +158,80 @@ def test_apply_requested_group_memberships_replaces_managed_groups(monkeypatch):
                 'id': 'pkg-1',
                 'groups': [{'name': 'argentina'}, {'name': 'climwar'}],
             }
+        if name == 'get_site_user':
+            return lambda ctx, payload: {'name': 'site-user'}
+        if name == 'member_delete':
+            return lambda ctx, payload: deleted.append(payload)
+        if name == 'member_create':
+            return lambda ctx, payload: created.append(payload)
+        raise AssertionError('Unexpected action {}'.format(name))
+
+    monkeypatch.setattr(toolkit, 'get_action', fake_get_action)
+
+    subject._apply_requested_group_memberships(context, {'id': 'pkg-1'})
+
+    assert deleted == [
+        {
+            'id': 'group-argentina',
+            'object': 'pkg-1',
+            'object_type': 'package',
+        }
+    ]
+    assert created == [
+        {
+            'id': 'group-chile',
+            'object': 'pkg-1',
+            'object_type': 'package',
+            'capacity': 'public',
+        }
+    ]
+
+
+def test_apply_requested_group_memberships_skips_reload_when_memberships_do_not_change(monkeypatch):
+    subject = plugin.SchemingDCATDatasetsPlugin()
+    context = {
+        '_schemingdcat_requested_group_memberships': {
+            'requested_group_names': [],
+            'current_group_names': [],
+            'package_id': 'pkg-1',
+        }
+    }
+
+    monkeypatch.setattr(subject, '_managed_form_group_names', lambda: {'argentina', 'chile', 'climwar'})
+
+    def fake_get_action(name):
+        raise AssertionError('No action should be called for a no-op membership update')
+
+    monkeypatch.setattr(toolkit, 'get_action', fake_get_action)
+
+    subject._apply_requested_group_memberships(context, {'id': 'pkg-1'})
+
+
+def test_apply_requested_group_memberships_falls_back_to_staged_groups_when_reload_fails(monkeypatch):
+    subject = plugin.SchemingDCATDatasetsPlugin()
+    context = {
+        '_schemingdcat_requested_group_memberships': {
+            'requested_group_names': ['chile'],
+            'current_group_names': ['argentina'],
+            'package_id': 'pkg-1',
+        }
+    }
+    created = []
+    deleted = []
+
+    monkeypatch.setattr(subject, '_managed_form_group_names', lambda: {'argentina', 'chile'})
+
+    groups = {
+        'argentina': SimpleNamespace(id='group-argentina', name='argentina'),
+        'chile': SimpleNamespace(id='group-chile', name='chile'),
+    }
+    monkeypatch.setattr(model.Group, 'get', lambda identifier: groups.get(identifier))
+
+    def fake_get_action(name):
+        if name == 'package_show':
+            def _package_show(ctx, payload):
+                raise toolkit.ObjectNotFound()
+            return _package_show
         if name == 'get_site_user':
             return lambda ctx, payload: {'name': 'site-user'}
         if name == 'member_delete':
