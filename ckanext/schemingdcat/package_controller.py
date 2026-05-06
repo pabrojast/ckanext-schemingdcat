@@ -213,6 +213,45 @@ class PackageController():
         if not owner_org:
             return
 
+        # Skip when the dataset's schema does not declare `author` /
+        # `authors`.  The autofill issues a `package_patch` and CKAN
+        # `package_patch` runs the full schema validators; if the target
+        # schema rejects those fields as `__junk`, the ValidationError
+        # rolls back the SQLAlchemy session — including the
+        # `package_create` that just inserted this dataset.  That has been
+        # observed with the `documents` schema (used by ckanext-pages
+        # water publications), where the create silently disappears and
+        # the activity-subscription `assert pkg` then crashes.  Detecting
+        # the schema up front lets the patch be skipped instead of having
+        # to recover from a half-rolled-back transaction.
+        dataset_type = data_dict.get('type') or 'dataset'
+        schema = None
+        try:
+            schema = toolkit.h.scheming_get_dataset_schema(dataset_type)
+        except Exception:
+            try:
+                from ckanext.scheming.helpers import (
+                    scheming_get_dataset_schema as _sgds,
+                )
+                schema = _sgds(dataset_type)
+            except Exception:
+                schema = None
+        if schema:
+            field_names = {
+                f.get('field_name')
+                for f in (schema.get('dataset_fields') or [])
+                if isinstance(f, dict)
+            }
+            schema_has_author = bool(field_names & {'author', 'authors'})
+            if not schema_has_author:
+                log.debug(
+                    '[_autofill_author_from_org] Schema %s declares no '
+                    'author/authors field; skipping autofill to avoid '
+                    'rolling back package_create.',
+                    dataset_type,
+                )
+                return
+
         # Check if both author sources already have meaningful content
         author = data_dict.get('author')
         authors = data_dict.get('authors')
