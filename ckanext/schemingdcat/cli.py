@@ -203,3 +203,197 @@ def delete_iso_topic_tags():
         sdct_config.SCHEMINGDCAT_DEFAULT_DATASET_SCHEMA_NAME,
         delete=True
     )
+
+
+# Formats that the spatial analyser knows how to inspect (SHP/TIF/etc.).
+# Mirrors the candidate list used at upload time in
+# SchemingDCATPlugin._should_extract_metadata.
+_SPATIAL_FORMATS = {
+    'shp', 'zip', 'tif', 'tiff', 'geotiff',
+    'kml', 'kmz', 'geojson', 'gpkg',
+}
+
+
+def _resource_spatial_candidate(resource):
+    """Return True if the resource looks like a spatial file we can analyse."""
+    import os
+    fmt = (resource.get('format') or '').lower().strip()
+    if fmt in _SPATIAL_FORMATS:
+        return True
+    url = resource.get('url') or ''
+    if not url:
+        return False
+    clean_url = url.split('?')[0].split('#')[0]
+    ext = os.path.splitext(clean_url)[1].lower().lstrip('.')
+    return ext in _SPATIAL_FORMATS
+
+
+@schemingdcat.command()
+@click.option('-d', '--dataset-id', 'dataset_id', default=None,
+              help='Run only on this dataset (id or name). Repeat for several.',
+              multiple=True)
+@click.option('-o', '--organization', 'organization', default=None,
+              help='Restrict to datasets belonging to this organization (id or name).')
+@click.option('--limit', type=int, default=None,
+              help='Process at most this many datasets.')
+@click.option('--skip-with-member-states/--include-with-member-states',
+              default=True,
+              help='Skip datasets that already have at least one member-state '
+                   'group assigned. Defaults to skipping. New countries are '
+                   'always merged with existing memberships when included.')
+@click.option('--sync/--queue', default=False,
+              help='Run the extraction synchronously in this process (default) '
+                   'or enqueue it on the CKAN jobs queue (--queue).')
+@click.option('--dry-run', is_flag=True, default=False,
+              help='List the datasets/resources that would be processed and exit.')
+def assign_member_states(dataset_id, organization, limit,
+                         skip_with_member_states, sync, dry_run):
+    """Retroactively detect and assign member-state groups from existing
+    SHP/TIF (and other spatial) resources.
+
+    Existing group memberships and spatial extents are preserved: the
+    underlying job merges newly detected countries/geometries with what
+    the dataset already has, it never removes them.
+    """
+    import time
+    user = tk.get_action('get_site_user')({'ignore_auth': True}, {})
+    context = {'user': user['name'], 'ignore_auth': True}
+
+    package_search = tk.get_action('package_search')
+    package_show = tk.get_action('package_show')
+
+    org_filter = None
+    if organization:
+        try:
+            org = tk.get_action('organization_show')(context, {'id': organization})
+            org_filter = org['name']
+        except Exception as err:
+            raise click.ClickException(
+                f"Organization '{organization}' not found: {err}"
+            )
+
+    def _iter_packages():
+        if dataset_id:
+            for ident in dataset_id:
+                try:
+                    yield package_show(context, {'id': ident})
+                except Exception as err:
+                    click.echo(f"  ! could not load dataset '{ident}': {err}",
+                               err=True)
+            return
+
+        rows = 200
+        start = 0
+        fq_parts = ['+state:active']
+        if org_filter:
+            fq_parts.append(f'+organization:{org_filter}')
+        fq = ' '.join(fq_parts)
+
+        while True:
+            result = package_search(context, {
+                'q': '*:*',
+                'fq': fq,
+                'rows': rows,
+                'start': start,
+                'include_private': True,
+            })
+            results = result.get('results') or []
+            if not results:
+                return
+            for pkg in results:
+                # package_search results omit some extras (e.g. groups list
+                # may be truncated); refetch full package_show payload so we
+                # can reliably inspect groups + resources.
+                try:
+                    yield package_show(context, {'id': pkg['id']})
+                except Exception as err:
+                    click.echo(f"  ! could not load dataset '{pkg.get('name')}': {err}",
+                               err=True)
+            start += len(results)
+            if start >= result.get('count', 0):
+                return
+
+    # Resolve job function lazily so the CLI loads even if jobs.py has
+    # optional spatial deps missing at import time.
+    from ckanext.schemingdcat.jobs import extract_comprehensive_metadata_job
+
+    processed_pkgs = 0
+    processed_resources = 0
+    skipped_with_groups = 0
+    enqueued = 0
+
+    for pkg in _iter_packages():
+        if limit is not None and processed_pkgs >= limit:
+            break
+
+        groups = pkg.get('groups') or []
+        if skip_with_member_states and groups:
+            # Heuristic: any existing group counts as "already classified".
+            # Users can override with --include-with-member-states; the job
+            # itself will still only add missing countries.
+            skipped_with_groups += 1
+            continue
+
+        spatial_resources = [
+            r for r in (pkg.get('resources') or [])
+            if _resource_spatial_candidate(r) and r.get('url')
+        ]
+        if not spatial_resources:
+            continue
+
+        processed_pkgs += 1
+        click.echo(
+            f"[{processed_pkgs}] {pkg.get('name')} "
+            f"({len(spatial_resources)} spatial resource(s))"
+        )
+
+        for resource in spatial_resources:
+            resource_id = resource.get('id')
+            click.echo(
+                f"    - {resource.get('format') or '?':<8} "
+                f"{resource_id} :: {resource.get('name') or resource.get('url')}"
+            )
+            if dry_run:
+                continue
+
+            job_payload = {
+                'resource_id': resource_id,
+                'resource_url': resource.get('url'),
+                'resource_format': resource.get('format'),
+                'package_id': pkg.get('id'),
+            }
+
+            if sync:
+                try:
+                    extract_comprehensive_metadata_job(job_payload)
+                    processed_resources += 1
+                except Exception as err:
+                    click.echo(f"      ! extraction failed: {err}", err=True)
+                # Small pause to avoid hammering remote storage when many
+                # resources share the same backend.
+                time.sleep(0.1)
+            else:
+                try:
+                    from ckan.lib import jobs
+                    job = jobs.enqueue(
+                        extract_comprehensive_metadata_job,
+                        [job_payload],
+                        title=f"schemingdcat retroactive member-state {resource_id}",
+                        queue='default',
+                        rq_kwargs={'timeout': 600},
+                    )
+                    click.echo(f"      -> queued as job {job.id}")
+                    enqueued += 1
+                except Exception as err:
+                    click.echo(f"      ! could not enqueue job: {err}", err=True)
+
+    click.echo("")
+    click.echo("Done.")
+    click.echo(f"  Datasets processed:        {processed_pkgs}")
+    click.echo(f"  Datasets skipped (have groups): {skipped_with_groups}")
+    if dry_run:
+        click.echo("  (dry-run, no changes applied)")
+    elif sync:
+        click.echo(f"  Resources analysed inline: {processed_resources}")
+    else:
+        click.echo(f"  Resources enqueued:        {enqueued}")
