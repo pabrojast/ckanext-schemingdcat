@@ -152,7 +152,7 @@ class FileAnalyzer:
         """Extract metadata from tabular files (CSV, Excel)."""
         try:
             import pandas as pd
-            
+
             ext = os.path.splitext(file_path)[1].lower().strip('.')
             if ext == 'csv':
                 df = pd.read_csv(file_path, nrows=1000)
@@ -160,7 +160,7 @@ class FileAnalyzer:
                 df = pd.read_excel(file_path, nrows=1000)
                 xl_file = pd.ExcelFile(file_path)
                 metadata['spreadsheet_sheets'] = str(len(xl_file.sheet_names))
-            
+
             fields = []
             for col in df.columns:
                 fields.append({
@@ -168,15 +168,176 @@ class FileAnalyzer:
                     'type': str(df[col].dtype)
                 })
             metadata['data_fields'] = json.dumps(fields)
-            
+
             stats = {
                 'row_count': len(df),
                 'column_count': len(df.columns)
             }
             metadata['data_statistics'] = json.dumps(stats)
-            
+
+            # Tabular spatial extent: only emit when no other extractor has
+            # already produced one (vector/raster paths win). Computes the
+            # bbox by streaming the whole file, not the 1000-row sample.
+            if 'spatial_extent' not in metadata:
+                self._extract_tabular_spatial_extent(file_path, ext, metadata)
+
         except Exception as e:
             log.warning(f"Could not extract tabular metadata: {str(e)}")
+
+    # Column-name patterns we accept as latitude / longitude. Matched after
+    # lowercasing and stripping non-alphanumerics, so "Lat (DD)", "lat_dd",
+    # "LATITUDE" and "latitud" all collapse to the same form.
+    _LAT_COLUMN_NAMES = {
+        'lat', 'latitude', 'latitud', 'latitudes',
+        'latdd', 'latitudedd', 'latdeg', 'latitudedeg',
+        'latdecimal', 'latitudedecimal',
+        'ycoord', 'ycoordinate', 'ylat', 'latitudey',
+    }
+    _LON_COLUMN_NAMES = {
+        'lon', 'long', 'lng', 'longitude', 'longitud', 'longitudes',
+        'londd', 'longdd', 'lngdd', 'longitudedd',
+        'londeg', 'longdeg', 'longitudedeg',
+        'londecimal', 'longdecimal', 'longitudedecimal',
+        'xcoord', 'xcoordinate', 'xlon', 'longitudex',
+    }
+
+    @classmethod
+    def _normalise_column_name(cls, name):
+        return ''.join(c for c in str(name).strip().lower() if c.isalnum())
+
+    @classmethod
+    def _detect_latlon_columns(cls, columns):
+        """Return (lat_col, lon_col) or (None, None) if not found.
+
+        Strict matching by name only — we deliberately do *not* fall back
+        to bare 'x' / 'y' because those collide with too many unrelated
+        datasets. If multiple matches exist, the first column wins.
+        """
+        lat_col = None
+        lon_col = None
+        for col in columns:
+            norm = cls._normalise_column_name(col)
+            if lat_col is None and norm in cls._LAT_COLUMN_NAMES:
+                lat_col = col
+            elif lon_col is None and norm in cls._LON_COLUMN_NAMES:
+                lon_col = col
+            if lat_col is not None and lon_col is not None:
+                break
+        return lat_col, lon_col
+
+    def _extract_tabular_spatial_extent(self, file_path: str, ext: str,
+                                        metadata: Dict[str, Any]):
+        """Build a polygon GeoJSON bbox from lat/lon columns if present.
+
+        Strategy:
+        1. Read column headers first (cheap) to decide whether the file
+           even has lat/lon columns.
+        2. If yes, stream the file in chunks so we cover every row without
+           buffering the whole table in RAM.
+        3. Validate each value: skip NaN, require lat ∈ [-90, 90] and
+           lon ∈ [-180, 180]. If after streaming we have <2 valid rows we
+           abort silently — the bbox would be a degenerate point/line.
+        """
+        try:
+            import pandas as pd
+        except Exception:
+            return
+
+        try:
+            if ext == 'csv':
+                headers = pd.read_csv(file_path, nrows=0).columns
+            elif ext in ('xls', 'xlsx'):
+                headers = pd.read_excel(file_path, nrows=0).columns
+            else:
+                return
+        except Exception as header_err:
+            log.warning(
+                f"Could not read headers for lat/lon detection: {header_err}"
+            )
+            return
+
+        lat_col, lon_col = self._detect_latlon_columns(headers)
+        if lat_col is None or lon_col is None:
+            return
+
+        min_lat = min_lon = float('inf')
+        max_lat = max_lon = float('-inf')
+        count = 0
+
+        try:
+            if ext == 'csv':
+                iterator = pd.read_csv(
+                    file_path,
+                    usecols=[lat_col, lon_col],
+                    chunksize=20000,
+                    iterator=True,
+                )
+            else:
+                # Excel can't stream — read once, full sheet.
+                single = pd.read_excel(file_path, usecols=[lat_col, lon_col])
+                iterator = [single]
+        except Exception as read_err:
+            log.warning(
+                f"Could not stream lat/lon columns "
+                f"({lat_col!r}, {lon_col!r}): {read_err}"
+            )
+            return
+
+        try:
+            for chunk in iterator:
+                lats = pd.to_numeric(chunk[lat_col], errors='coerce')
+                lons = pd.to_numeric(chunk[lon_col], errors='coerce')
+                mask = (
+                    lats.between(-90, 90)
+                    & lons.between(-180, 180)
+                    & lats.notna()
+                    & lons.notna()
+                )
+                if not mask.any():
+                    continue
+                lats = lats[mask]
+                lons = lons[mask]
+                min_lat = min(min_lat, float(lats.min()))
+                max_lat = max(max_lat, float(lats.max()))
+                min_lon = min(min_lon, float(lons.min()))
+                max_lon = max(max_lon, float(lons.max()))
+                count += int(mask.sum())
+        except Exception as iter_err:
+            log.warning(
+                f"Error scanning lat/lon values in {file_path}: {iter_err}"
+            )
+            return
+
+        if count < 2 or min_lat == float('inf'):
+            log.info(
+                f"lat/lon columns found ({lat_col!r}, {lon_col!r}) but "
+                f"insufficient valid rows for bbox (count={count})"
+            )
+            return
+
+        if min_lat == max_lat and min_lon == max_lon:
+            # All points coincide — emit a Point instead of a degenerate
+            # polygon so the spatial index still picks it up.
+            geom = {'type': 'Point', 'coordinates': [min_lon, min_lat]}
+        else:
+            geom = {
+                'type': 'Polygon',
+                'coordinates': [[
+                    [min_lon, min_lat],
+                    [max_lon, min_lat],
+                    [max_lon, max_lat],
+                    [min_lon, max_lat],
+                    [min_lon, min_lat],
+                ]],
+            }
+
+        metadata['spatial_extent'] = json.dumps(geom)
+        metadata.setdefault('spatial_crs', 'EPSG:4326')
+        log.info(
+            f"Derived spatial_extent from CSV lat/lon columns "
+            f"({lat_col!r}, {lon_col!r}): {count} points, "
+            f"bbox=[{min_lon:.4f},{min_lat:.4f},{max_lon:.4f},{max_lat:.4f}]"
+        )
     
     def _extract_pdf_metadata(self, file_path: str, metadata: Dict[str, Any]):
         """Extract metadata from PDF files."""

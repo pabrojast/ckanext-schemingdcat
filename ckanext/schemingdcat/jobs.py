@@ -234,8 +234,10 @@ def _merge_geojson_geometries(existing_geojson, new_geojson):
     unique_new_geoms = [g for g in new_geoms if geometry_key(g) not in existing_keys]
     
     if not unique_new_geoms:
-        # No new geometries to add
-        return existing_geojson
+        # No new geometries to add — but the existing one may be invalid
+        # (e.g. a self-intersecting polygon left by an earlier extraction
+        # pass). Repair it so the next reindex stops failing.
+        return _ensure_valid_geometry(existing_geojson, log)
     
     # Combine all geometries
     all_geoms = existing_geoms + unique_new_geoms

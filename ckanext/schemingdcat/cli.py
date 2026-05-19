@@ -205,12 +205,15 @@ def delete_iso_topic_tags():
     )
 
 
-# Formats that the spatial analyser knows how to inspect (SHP/TIF/etc.).
+# Formats that the spatial analyser knows how to inspect.
 # Mirrors the candidate list used at upload time in
-# SchemingDCATPlugin._should_extract_metadata.
+# SchemingDCATPlugin._should_extract_metadata. CSV/XLS(X) are included
+# because the tabular extractor now derives a bounding box from
+# latitude/longitude columns when present.
 _SPATIAL_FORMATS = {
     'shp', 'zip', 'tif', 'tiff', 'geotiff',
     'kml', 'kmz', 'geojson', 'gpkg',
+    'csv', 'xls', 'xlsx',
 }
 
 
