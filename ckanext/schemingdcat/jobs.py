@@ -86,6 +86,77 @@ def _prune_metadata_fields(metadata, log_ref=None):
     return pruned
 
 
+def _ensure_valid_geometry(geom, log_ref=None):
+    """Return a valid GeoJSON geometry equivalent to ``geom``.
+
+    If shapely confirms the input is already valid, it is returned
+    untouched. If it is invalid we try ``shapely.validation.make_valid``
+    first, then fall back to ``buffer(0)``. When neither helper produces
+    a valid result (or shapely itself is unavailable) the original
+    geometry is returned unchanged so we never silently destroy data.
+
+    This protects ckanext-spatial's Solr indexing from self-intersecting
+    polygons that arrived from earlier extraction passes or hand-edited
+    package extras.
+    """
+    if not isinstance(geom, dict):
+        return geom
+    try:
+        from shapely.geometry import shape as shapely_shape, mapping as shapely_mapping
+    except Exception:
+        return geom
+
+    try:
+        shp = shapely_shape(geom)
+    except Exception as parse_err:
+        if log_ref is not None:
+            _job_log('warning',
+                     f"Could not parse geometry for validation: {parse_err}",
+                     log_ref)
+        return geom
+
+    if shp.is_valid:
+        return geom
+
+    cleaned = None
+    try:
+        from shapely.validation import make_valid
+        cleaned = make_valid(shp)
+    except Exception:
+        try:
+            cleaned = shp.buffer(0)
+        except Exception as buf_err:
+            if log_ref is not None:
+                _job_log('warning',
+                         f"Geometry repair failed (buffer(0)): {buf_err}",
+                         log_ref)
+            return geom
+
+    if cleaned is None or cleaned.is_empty or not cleaned.is_valid:
+        if log_ref is not None:
+            _job_log('warning',
+                     "Geometry repair produced empty/invalid result; "
+                     "leaving original geometry untouched",
+                     log_ref)
+        return geom
+
+    try:
+        repaired = shapely_mapping(cleaned)
+    except Exception as map_err:
+        if log_ref is not None:
+            _job_log('warning',
+                     f"Could not serialise repaired geometry: {map_err}",
+                     log_ref)
+        return geom
+
+    if log_ref is not None:
+        _job_log('info',
+                 f"Repaired invalid geometry (input type={geom.get('type')}, "
+                 f"output type={repaired.get('type')})",
+                 log_ref)
+    return repaired
+
+
 def _merge_geojson_geometries(existing_geojson, new_geojson):
     """
     Merge two GeoJSON geometries into a single GeometryCollection or MultiPolygon.
@@ -173,23 +244,23 @@ def _merge_geojson_geometries(existing_geojson, new_geojson):
         return new_geojson or existing_geojson
     
     if len(all_geoms) == 1:
-        return all_geoms[0]
-    
+        return _ensure_valid_geometry(all_geoms[0], log)
+
     # Check if all are Polygons - then create MultiPolygon
     all_polygons = all(g.get('type') == 'Polygon' for g in all_geoms)
     if all_polygons:
         # Combine into MultiPolygon
         coordinates = [g.get('coordinates', []) for g in all_geoms]
-        return {
-            'type': 'MultiPolygon',
-            'coordinates': coordinates
-        }
-    
+        return _ensure_valid_geometry(
+            {'type': 'MultiPolygon', 'coordinates': coordinates},
+            log,
+        )
+
     # Otherwise create GeometryCollection
-    return {
-        'type': 'GeometryCollection',
-        'geometries': all_geoms
-    }
+    return _ensure_valid_geometry(
+        {'type': 'GeometryCollection', 'geometries': all_geoms},
+        log,
+    )
 
 
 
