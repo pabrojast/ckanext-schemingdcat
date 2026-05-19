@@ -1229,3 +1229,24 @@ msgstr ""
 
 msgid "Opens an external URL; the file is not stored in the portal."
 msgstr ""
+
+#: ckanext/schemingdcat/templates/source/new_source_form.html
+msgid "Save"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html
+msgid "Loading form..."
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/snippets/search_form.html
+msgid "Error"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/home/snippets/promoted.html
+msgid "Placeholder"
+msgstr ""
+
+#: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html
+#: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_ui.html
+msgid "Upload cancelled"
+msgstr ""

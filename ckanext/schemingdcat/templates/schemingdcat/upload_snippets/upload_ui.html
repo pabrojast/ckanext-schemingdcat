@@ -735,7 +735,7 @@
       // Show temporary cancellation notification
       var notification = document.createElement('div');
       notification.className = 'upload-cancelled-notification';
-      notification.innerHTML = '<i class="fa fa-check-circle"></i> ' + 'Upload cancelled';
+      notification.innerHTML = '<i class="fa fa-check-circle"></i> ' + {{ _('Upload cancelled') | tojson }};
       dropzone.appendChild(notification);
       
       setTimeout(function() {

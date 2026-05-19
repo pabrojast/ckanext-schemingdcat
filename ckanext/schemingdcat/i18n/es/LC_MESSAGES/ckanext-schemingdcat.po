@@ -1243,3 +1243,24 @@ msgstr ""
 "Un documento es una publicación como un informe, artículo o estudio,\n"
 "          junto con sus metadatos. Los documentos son lo que los usuarios ven\n"
 "          cuando navegan por el catálogo de documentos."
+
+#: ckanext/schemingdcat/templates/source/new_source_form.html
+msgid "Save"
+msgstr "Guardar"
+
+#: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html
+msgid "Loading form..."
+msgstr "Cargando formulario..."
+
+#: ckanext/schemingdcat/templates/schemingdcat/snippets/search_form.html
+msgid "Error"
+msgstr "Error"
+
+#: ckanext/schemingdcat/templates/home/snippets/promoted.html
+msgid "Placeholder"
+msgstr "Marcador de posición"
+
+#: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html
+#: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_ui.html
+msgid "Upload cancelled"
+msgstr "Subida cancelada"
