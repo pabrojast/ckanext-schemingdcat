@@ -5357,6 +5357,54 @@ resource_fields:
   help_allow_html: True
   form_group_id: resource_lineage
 
+# Bibliographic citation per resource (O)
+- field_name: resource_citation
+  label:
+    en: Citation
+    es: Citación
+    fr: Citation
+  form_snippet: markdown.html
+  display_property: dct:bibliographicCitation
+  form_placeholder:
+    en: Author (Year). Resource title. Publisher / Source.
+    es: Autor (Año). Título del recurso. Editor / Fuente.
+    fr: Auteur (Année). Titre de la ressource. Éditeur / Source.
+  help_text:
+    en: How to cite this specific resource. Use when the resource originates from a different source than the parent dataset (e.g. a dataset that bundles resources from several publications).
+    es: Cómo citar este recurso en concreto. Útil cuando el recurso proviene de una fuente distinta al dataset (p. ej. un dataset que reúne recursos de varias publicaciones).
+    fr: Comment citer cette ressource. Utile quand la ressource provient d'une source différente de celle du jeu de données (p. ex. un jeu de données qui regroupe des ressources issues de plusieurs publications).
+  form_group_id: resource_lineage
+
+# Source URL for the resource (O)
+- field_name: resource_source_url
+  label:
+    en: Source URL
+    es: URL de la fuente
+    fr: URL de la source
+  display_property: dct:source
+  display_snippet: schemingdcat/display_snippets/link.html
+  form_placeholder: https://example.org/original-publication
+  help_text:
+    en: URL of the original publication, dataset, paper or service this resource was derived from.
+    es: URL de la publicación, dataset, artículo o servicio original del que se derivó este recurso.
+    fr: URL de la publication, du jeu de données, de l'article ou du service d'origine dont cette ressource a été dérivée.
+  form_group_id: resource_lineage
+
+# DOI of the original source for the resource (O)
+- field_name: resource_source_doi
+  label:
+    en: Source DOI
+    es: DOI de la fuente
+    fr: DOI de la source
+  display_property: dct:identifier
+  display_snippet: schemingdcat/display_snippets/link.html
+  form_placeholder: https://doi.org/10.xxxx/xxxxx
+  help_text:
+    en: Persistent identifier (DOI) of the source publication or dataset this resource is derived from.
+    es: Identificador persistente (DOI) de la publicación o dataset de origen del que deriva este recurso.
+    fr: Identifiant persistant (DOI) de la publication ou du jeu de données d'origine dont cette ressource est dérivée.
+  form_group_id: resource_lineage
+
 # Resource format (O)
 - field_name: format
   label:
