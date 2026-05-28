@@ -1617,25 +1617,57 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
                     fields_to_clear[field_name] = None
 
             if fields_to_clear:
-                system_context = {
-                    'model': context['model'],
-                    'session': context['session'],
-                    'ignore_auth': True,
-                    'user': '',
-                    'api_version': 3,
-                    'defer_commit': False,
-                    '_schemingdcat_metadata_job': True,
-                    '_skip_doi_update': True,
-                }
+                # Write directly via SQLAlchemy. resource_patch would invoke
+                # the resource_update → package_update chain, which under
+                # certain conditions drops the dataset's fluent fields
+                # (title_translated, notes_translated, …) and lets
+                # if_empty_same_as(name) clobber the title with the URL slug.
+                # See jobs._apply_resource_metadata_direct for the same
+                # rationale.
+                import ckan.model as model
+                from sqlalchemy.orm.attributes import flag_modified
+                from ckan.lib import search as ckan_search
 
-                patch_data = {'id': resource_id}
-                patch_data.update(fields_to_clear)
-                toolkit.get_action('resource_patch')(system_context, patch_data)
+                db_resource = model.Resource.get(resource_id)
+                if db_resource is None:
+                    log.warning(
+                        f"[METADATA] Resource {resource_id} not found for direct prune"
+                    )
+                else:
+                    extras_dict = dict(db_resource.extras or {})
+                    removed = []
+                    for field_name in fields_to_clear.keys():
+                        if field_name in extras_dict:
+                            extras_dict.pop(field_name, None)
+                            removed.append(field_name)
+                    db_resource.extras = extras_dict
+                    flag_modified(db_resource, 'extras')
 
-                log.warning(
-                    f"[METADATA] Cleared oversized metadata fields for resource {resource_id}: "
-                    f"{list(fields_to_clear.keys())}"
-                )
+                    try:
+                        model.Session.commit()
+                    except Exception as commit_err:
+                        log.warning(
+                            f"[METADATA] Direct prune commit failed for "
+                            f"{resource_id}: {commit_err}"
+                        )
+                        try:
+                            model.Session.rollback()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            package_id = db_resource.package_id
+                            if package_id:
+                                ckan_search.rebuild(package_id)
+                        except Exception as reindex_err:
+                            log.warning(
+                                f"[METADATA] Reindex after direct prune failed "
+                                f"for {resource_id}: {reindex_err}"
+                            )
+                        log.warning(
+                            f"[METADATA] Cleared oversized metadata fields for "
+                            f"resource {resource_id} (direct): {removed}"
+                        )
         except Exception as e:
             log.warning(
                 f"Error pruning oversized metadata fields for resource {resource.get('id', 'unknown')}: {e}"
