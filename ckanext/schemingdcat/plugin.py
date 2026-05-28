@@ -762,6 +762,23 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning('[PACKAGE UPDATE] Could not build patch data for missing-field backfill')
             return False
 
+        # The inner ``package_patch`` triggers a full ``package_update`` which
+        # re-validates the whole dataset against the schema. For datasets that
+        # pre-date later-required scheming fields (dcat_type, language, topic,
+        # …), the merged dict from ``package_show`` won't carry them, so the
+        # inner update fails with "Missing value" for fields that were actually
+        # populated in the user's form submission. Forward those values from
+        # data_dict (and fall back to whatever is already on the package) so
+        # the inner update sees a complete dict.
+        for required_field in self._PACKAGE_UPDATE_BACKFILL_FIELDS:
+            if required_field in patch_data:
+                continue
+            v = data_dict.get(required_field)
+            if v in (None, ''):
+                v = self._pick_dataset_value(package_dict, required_field)
+            if v not in (None, ''):
+                patch_data[required_field] = v
+
         patch_context = dict(context or {})
         patch_context.pop('schema', None)
         patch_context['_skip_doi_update'] = True
@@ -770,9 +787,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
         toolkit.get_action('package_patch')(patch_context, patch_data)
         log.warning(
-            '[PACKAGE UPDATE] Auto-filled missing required dataset fields %s for package %s',
+            '[PACKAGE UPDATE] Auto-filled missing required dataset fields %s for package %s (patch keys: %s)',
             sorted(missing_fields),
             patch_data['id'],
+            sorted(k for k in patch_data.keys() if k != 'id'),
         )
         return True
 
