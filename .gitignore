@@ -57,3 +57,4 @@ ckanext/schemingdcat/public/images/icons/spatial_uri/country/eur - copia.svgZ
 *.whl
 *ckan-2.10.0.tar.gz
 _db-backup-ghana/
+_retro-404/
