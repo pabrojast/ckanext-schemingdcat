@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+import json
+
 import ckantoolkit as tk
 import click
 import logging
@@ -400,3 +402,300 @@ def assign_member_states(dataset_id, organization, limit,
         click.echo(f"  Resources analysed inline: {processed_resources}")
     else:
         click.echo(f"  Resources enqueued:        {enqueued}")
+
+
+# Scheming fields stored as package extras via convert_to_extras that
+# package_show must promote to the top level. If any of them shows up inside a
+# dataset's cached ``extras`` list, the Solr ``validated_data_dict`` is the
+# unpromoted/corrupted form that drives the metadata-wipe-on-resource-update bug.
+_UNPROMOTED_MARKER_FIELDS = ('title_translated', 'notes_translated', 'dcat_type',
+                             'language', 'topic')
+
+
+def _cached_validated_data_dict(name_or_id):
+    """Return the Solr-cached validated_data_dict for a dataset, or None."""
+    from ckan.lib import search
+    try:
+        result = search.show(name_or_id)
+    except Exception:
+        return None
+    raw = (result or {}).get('validated_data_dict')
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+
+
+def _is_unpromoted_cache(vdd):
+    """True when the cached validated_data_dict has scheming fields stranded in extras."""
+    if not vdd:
+        return False
+    extra_keys = {e.get('key') for e in (vdd.get('extras') or []) if isinstance(e, dict)}
+    return any(f in extra_keys for f in _UNPROMOTED_MARKER_FIELDS)
+
+
+@schemingdcat.command()
+@click.option('-d', '--dataset', 'datasets', default=None, multiple=True,
+              help='Repair only this dataset (id or name). Repeat for several. '
+                   'When omitted, scans all active datasets.')
+@click.option('--apply/--dry-run', default=False,
+              help='Apply the reindex (--apply) or only list affected datasets '
+                   '(--dry-run, the default).')
+@click.option('--limit', type=int, default=None,
+              help='Process at most this many affected datasets.')
+def repair_unpromoted_cache(datasets, apply, limit):
+    """Heal datasets whose Solr cache holds an *unpromoted* validated_data_dict.
+
+    Such datasets return their scheming fields (title_translated, dcat_type, …)
+    inside ``extras`` instead of at the top level, which makes a later
+    package_update wipe them. This command re-reads each affected dataset fresh
+    (use_cache=False, which promotes the fields correctly) and re-indexes it so
+    the cached data is correct again. It never writes to the package row, only
+    to the search index.
+    """
+    from ckan.lib import search
+    from ckan import model
+
+    user = tk.get_action('get_site_user')({'ignore_auth': True}, {})
+    base_ctx = {'user': user['name'], 'ignore_auth': True, 'use_cache': False}
+    package_show = tk.get_action('package_show')
+
+    def _iter_names():
+        if datasets:
+            for ident in datasets:
+                yield ident
+            return
+        q = (model.Session.query(model.Package.name)
+             .filter(model.Package.state == 'active')
+             .filter(model.Package.type == 'dataset'))
+        for (name,) in q.yield_per(500):
+            yield name
+
+    pkg_index = search.index_for(model.Package)
+
+    scanned = 0
+    affected = 0
+    repaired = 0
+    for name in _iter_names():
+        scanned += 1
+        if not _is_unpromoted_cache(_cached_validated_data_dict(name)):
+            continue
+        if limit is not None and affected >= limit:
+            break
+        affected += 1
+        click.echo(f"[unpromoted] {name}")
+        if not apply:
+            continue
+        try:
+            # use_cache=False forces a fresh, validated (promoted) read.
+            promoted = package_show(dict(base_ctx), {'id': name})
+            pkg_index.update_dict(promoted, defer_commit=False)
+            repaired += 1
+        except Exception as err:
+            click.echo(f"  ! could not repair '{name}': {err}", err=True)
+
+    if apply:
+        try:
+            search.commit()
+        except Exception:
+            pass
+
+    click.echo("")
+    click.echo("Done.")
+    click.echo(f"  Datasets scanned:  {scanned}")
+    click.echo(f"  Unpromoted cache:  {affected}")
+    if apply:
+        click.echo(f"  Reindexed:         {repaired}")
+    else:
+        click.echo("  (dry-run, no changes applied; pass --apply to reindex)")
+
+
+def _slug_norm(value):
+    """Normalise a string for slug comparison (lowercase, only alnum)."""
+    if not value:
+        return ''
+    return ''.join(ch for ch in str(value).lower() if ch.isalnum())
+
+
+def _fluent_en(value):
+    """Best-effort 'en' text from a fluent value (dict or JSON string)."""
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped[:1] == '{':
+            try:
+                value = json.loads(stripped)
+            except (ValueError, TypeError):
+                return stripped
+        else:
+            return stripped
+    if isinstance(value, dict):
+        return value.get('en') or next((v for v in value.values() if v), '') or ''
+    return ''
+
+
+def _title_is_clobbered(pkg):
+    """True when the dataset title is just its URL slug (wiped)."""
+    name = pkg.get('name') or ''
+    title_en = _fluent_en(pkg.get('title_translated')) or pkg.get('title') or ''
+    return bool(name) and _slug_norm(title_en) == _slug_norm(name)
+
+
+def _parse_pycsw_xml(path):
+    """Parse a ckan2pycsw ISO-19139 XML -> (dataset_keys, title, abstract).
+
+    dataset_keys is the set of dataset id/slug tokens found in embedded
+    ``/dataset/<token>/`` URLs, used to match the record to a CKAN dataset.
+    """
+    import re
+    import xml.etree.ElementTree as ET
+
+    try:
+        tree = ET.parse(path)
+    except Exception:
+        return set(), '', ''
+    root = tree.getroot()
+
+    def _local(tag):
+        return tag.split('}')[-1]
+
+    title = ''
+    abstract = ''
+    for el in root.iter():
+        ln = _local(el.tag)
+        if ln in ('title', 'abstract'):
+            cs = next((c.text for c in el.iter() if _local(c.tag) == 'CharacterString' and c.text), None)
+            if cs:
+                if ln == 'title' and not title:
+                    title = cs.strip()
+                elif ln == 'abstract' and not abstract:
+                    abstract = cs.strip()
+
+    raw = ''
+    try:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+            raw = fh.read()
+    except Exception:
+        raw = ''
+    keys = set(re.findall(r'/dataset/([0-9a-fA-F-]{36}|[a-z0-9][a-z0-9_-]+)/', raw))
+    return keys, title, abstract
+
+
+@schemingdcat.command()
+@click.option('--metadata-dir', default=None,
+              help='Path to a local copy of the ckan2pycsw /app/metadata ISO-XML '
+                   'directory (e.g. via `kubectl cp`). When omitted, the command '
+                   'only lists clobbered datasets without attempting recovery.')
+@click.option('-d', '--dataset', 'datasets', default=None, multiple=True,
+              help='Limit to these datasets (id or name). Repeat for several.')
+@click.option('--apply/--dry-run', default=False,
+              help='Apply the recovery via package_patch (--apply) or preview '
+                   '(--dry-run, the default).')
+@click.option('--limit', type=int, default=None,
+              help='Process at most this many clobbered datasets.')
+def recover_clobbered_metadata(metadata_dir, datasets, apply, limit):
+    """List datasets whose title was overwritten with the URL slug and, when a
+    ckan2pycsw XML directory is provided, restore the real title/abstract via
+    ``package_patch`` (which preserves every other field).
+
+    Recovery is best-effort: a title is only restored when the XML holds a real
+    human title (different from the slug); the abstract is restored into
+    ``notes_translated.en`` when the dataset's notes are empty. Always preview
+    with --dry-run first.
+    """
+    import os
+
+    user = tk.get_action('get_site_user')({'ignore_auth': True}, {})
+    ctx = {'user': user['name'], 'ignore_auth': True, 'use_cache': False}
+    package_show = tk.get_action('package_show')
+    package_patch = tk.get_action('package_patch')
+
+    # Build the recovery index from the ckan2pycsw XML directory, keyed by
+    # every dataset id/slug token embedded in the record.
+    recovery = {}
+    if metadata_dir:
+        if not os.path.isdir(metadata_dir):
+            raise click.ClickException(f"--metadata-dir not found: {metadata_dir}")
+        files = [os.path.join(metadata_dir, f) for f in os.listdir(metadata_dir)
+                 if f.lower().endswith('.xml')]
+        for path in files:
+            keys, title, abstract = _parse_pycsw_xml(path)
+            for key in keys:
+                recovery.setdefault(key, (title, abstract))
+        click.echo(f"Loaded {len(files)} XML record(s) -> {len(recovery)} dataset key(s).")
+
+    from ckan import model
+
+    def _iter_names():
+        if datasets:
+            for ident in datasets:
+                yield ident
+            return
+        q = (model.Session.query(model.Package.name)
+             .filter(model.Package.state == 'active')
+             .filter(model.Package.type == 'dataset'))
+        for (name,) in q.yield_per(500):
+            yield name
+
+    clobbered = 0
+    recovered = 0
+    for name in _iter_names():
+        try:
+            pkg = package_show(dict(ctx), {'id': name})
+        except Exception:
+            continue
+        if not _title_is_clobbered(pkg):
+            continue
+        if limit is not None and clobbered >= limit:
+            break
+        clobbered += 1
+
+        src = recovery.get(pkg.get('id')) or recovery.get(pkg.get('name'))
+        new_title = ''
+        new_notes = ''
+        if src:
+            cand_title, cand_abstract = src
+            # Only restore a title that is a real one (not the slug again).
+            if cand_title and _slug_norm(cand_title) != _slug_norm(pkg.get('name')):
+                new_title = cand_title
+            # Restore abstract only when current notes are empty.
+            if cand_abstract and not _fluent_en(pkg.get('notes_translated')) and not (pkg.get('notes') or '').strip():
+                new_notes = cand_abstract
+
+        status = []
+        if new_title:
+            status.append(f"title='{new_title}'")
+        if new_notes:
+            status.append(f"notes(+{len(new_notes)} chars)")
+        if not status:
+            status.append('no recovery source' if metadata_dir else 'clobbered')
+        click.echo(f"[clobbered] {pkg.get('name')} :: {'; '.join(status)}")
+
+        if not apply or not (new_title or new_notes):
+            continue
+
+        patch = {'id': pkg['id']}
+        if new_title:
+            tt = pkg.get('title_translated')
+            tt = dict(tt) if isinstance(tt, dict) else {}
+            tt['en'] = new_title
+            patch['title_translated'] = tt
+        if new_notes:
+            nt = pkg.get('notes_translated')
+            nt = dict(nt) if isinstance(nt, dict) else {}
+            nt['en'] = new_notes
+            patch['notes_translated'] = nt
+        try:
+            package_patch(dict(ctx), patch)
+            recovered += 1
+        except Exception as err:
+            click.echo(f"  ! could not patch '{pkg.get('name')}': {err}", err=True)
+
+    click.echo("")
+    click.echo("Done.")
+    click.echo(f"  Clobbered titles found: {clobbered}")
+    if apply:
+        click.echo(f"  Recovered (patched):    {recovered}")
+    else:
+        click.echo("  (dry-run, no changes applied; pass --apply with --metadata-dir to recover)")

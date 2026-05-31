@@ -1155,6 +1155,95 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         )
         return True
 
+    def _dataset_schema_field_names(self, data_dict):
+        """Return the set of dataset-level field names for the dataset's schema."""
+        dataset_type = data_dict.get('type') or 'dataset'
+        try:
+            schema = toolkit.get_action('scheming_dataset_schema_show')(
+                {'ignore_auth': True}, {'type': dataset_type}
+            )
+        except Exception as e:
+            log.debug('[PROMOTE EXTRAS] Could not load schema for type %s: %s', dataset_type, e)
+            return set()
+        return {
+            f.get('field_name')
+            for f in (schema.get('dataset_fields') or [])
+            if f.get('field_name')
+        }
+
+    @staticmethod
+    def _is_group_form_artifact_key(key):
+        """True for leaked group multiselect form keys like ``groups__0__id``."""
+        return (
+            isinstance(key, str)
+            and key.startswith('groups__')
+            and key.endswith('__id')
+        )
+
+    @staticmethod
+    def _coerce_extra_value(value):
+        """Parse JSON-looking extra values (fluent dicts, multi-value lists)."""
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped[:1] in ('{', '['):
+                try:
+                    return json.loads(stripped)
+                except (ValueError, TypeError):
+                    return value
+        return value
+
+    def _promote_extras_schema_fields(self, context, data_dict):
+        """
+        Promote scheming schema fields that arrive only inside the raw ``extras``
+        list (instead of as top-level keys) back to the top level so the
+        ``package_update`` round-trip preserves them instead of wiping them.
+
+        This is the defensive counterpart to forcing ``use_cache=False`` on the
+        resource round-trip: it neutralises the metadata wipe that happens when
+        ``package_update`` receives an *unpromoted* dataset dict from any caller
+        (e.g. a stale Solr ``validated_data_dict`` cache where scheming's
+        ``convert_from_extras`` never ran, or a raw API payload). Only fields
+        ABSENT at the top level are promoted, so legitimate field clears via the
+        edit form (key present but empty) are left untouched. Leaked group
+        multiselect form keys (``groups__N__id``) are dropped from extras.
+        """
+        # Avoid interfering with our own internal backfill patches (those carry
+        # no ``extras`` list anyway) and background metadata jobs.
+        if context.get('_schemingdcat_internal_backfill_patch'):
+            return
+
+        extras = data_dict.get('extras')
+        if not isinstance(extras, list) or not extras:
+            return
+
+        field_names = self._dataset_schema_field_names(data_dict)
+
+        promoted = []
+        kept_extras = []
+        for extra in extras:
+            if not isinstance(extra, dict):
+                kept_extras.append(extra)
+                continue
+            key = extra.get('key')
+            # Drop leaked group multiselect form artifacts outright.
+            if self._is_group_form_artifact_key(key):
+                continue
+            # Promote schema fields that are missing at the top level.
+            if key in field_names and key not in data_dict:
+                data_dict[key] = self._coerce_extra_value(extra.get('value'))
+                promoted.append(key)
+                continue
+            kept_extras.append(extra)
+
+        if len(kept_extras) != len(extras):
+            data_dict['extras'] = kept_extras
+        if promoted:
+            log.warning(
+                '[PROMOTE EXTRAS] Restored unpromoted schema fields %s to top level for %s',
+                sorted(promoted),
+                data_dict.get('id') or data_dict.get('name'),
+            )
+
     def get_uploader(self, upload_to, old_filename=None):
         """Fallback to CKAN's default uploader for non-resource uploads.
 
@@ -1189,6 +1278,17 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         Chained action to ensure metadata extraction triggers even if IResourceController is skipped.
         """
+        # CKAN core resource_create reads the parent package via
+        # ``package_show(dict(context, for_update=True))`` and feeds it straight
+        # into ``package_update``. With the default ``use_cache=True`` that read
+        # comes from the Solr ``validated_data_dict`` cache, which for some
+        # datasets is *unpromoted* (scheming fields stranded in ``extras``
+        # instead of top-level). package_update then sees them as missing and
+        # wipes them (title -> slug, required fields -> backfill defaults).
+        # Forcing a fresh, validated read makes scheming promote the fields so
+        # the round-trip preserves the real metadata.
+        if not context.get('_schemingdcat_metadata_job'):
+            context['use_cache'] = False
         result = next_action(context, data_dict)
         # Skip if this is a metadata job update (prevent infinite loop)
         if context.get('_schemingdcat_metadata_job'):
@@ -1217,6 +1317,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         """
         Chained action for updates; triggers extraction if a new upload/format warrants it.
         """
+        # See resource_create: force a fresh package read so the internal
+        # package_update round-trip receives promoted scheming fields and does
+        # not wipe the dataset metadata from a stale Solr cache.
+        if not context.get('_schemingdcat_metadata_job'):
+            context['use_cache'] = False
         try:
             result = next_action(context, data_dict)
         except toolkit.ValidationError as e:
@@ -1256,6 +1361,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     @toolkit.chained_action
     def package_create(self, next_action, context, data_dict):
         toolkit.check_access('package_create', context, data_dict)
+        self._promote_extras_schema_fields(context, data_dict)
         self._stage_requested_group_memberships(context, data_dict)
         result = next_action(context, data_dict)
         self._apply_requested_group_memberships(context, result)
@@ -1264,6 +1370,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     @toolkit.chained_action
     def package_update(self, next_action, context, data_dict):
         toolkit.check_access('package_update', context, data_dict)
+        self._promote_extras_schema_fields(context, data_dict)
         self._stage_requested_group_memberships(context, data_dict)
 
         try:
