@@ -491,6 +491,10 @@ def repair_unpromoted_cache(datasets, apply, limit):
         try:
             # use_cache=False forces a fresh, validated (promoted) read.
             promoted = package_show(dict(base_ctx), {'id': name})
+            # A fully-promoted dict may omit the now-empty ``extras`` key, but
+            # scheming's show-validate inside index_package does
+            # ``data_dict['extras']`` directly -> KeyError. Guarantee the key.
+            promoted.setdefault('extras', [])
             pkg_index.update_dict(promoted, defer_commit=False)
             repaired += 1
         except Exception as err:
@@ -536,10 +540,16 @@ def _fluent_en(value):
 
 
 def _title_is_clobbered(pkg):
-    """True when the dataset title is just its URL slug (wiped)."""
+    """True when the dataset title is the URL slug verbatim (wiped).
+
+    ``if_empty_same_as(name)`` sets the title to the slug *verbatim* when the
+    fluent value is empty, so the precise signature is literal equality with the
+    name. A real, human-cased title that merely normalises to the same slug
+    (e.g. "TerriaJS Map Catalog in JSON Format") is intentionally NOT flagged.
+    """
     name = pkg.get('name') or ''
-    title_en = _fluent_en(pkg.get('title_translated')) or pkg.get('title') or ''
-    return bool(name) and _slug_norm(title_en) == _slug_norm(name)
+    title_en = (_fluent_en(pkg.get('title_translated')) or pkg.get('title') or '').strip()
+    return bool(name) and title_en == name
 
 
 def _parse_pycsw_xml(path):
