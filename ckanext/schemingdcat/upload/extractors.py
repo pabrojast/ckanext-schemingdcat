@@ -35,6 +35,15 @@ except ImportError:
     PYPROJ_AVAILABLE = False
     log.warning("PyProj not available - CRS transformation limited")
 
+try:
+    from shapely.geometry import shape as _shapely_shape
+    from shapely.validation import make_valid as _shapely_make_valid
+    SHAPELY_AVAILABLE = True
+except ImportError:
+    SHAPELY_AVAILABLE = False
+    log.warning("Shapely not available - member-state detection falls back to "
+                "bounding boxes (less precise, may match neighbouring countries)")
+
 
 class SpatialExtentExtractor:
     """Extract spatial extent from geospatial files."""
@@ -531,6 +540,44 @@ class MemberStateDetector:
         minx2, miny2, maxx2, maxy2 = contained
         
         return minx1 <= minx2 and miny1 <= miny2 and maxx1 >= maxx2 and maxy1 >= maxy2
+
+    def _to_shapely(self, geojson):
+        """Build a validated shapely geometry from a GeoJSON dict, or None.
+
+        Returns None when shapely isn't installed or the geometry is invalid,
+        so callers transparently fall back to bounding-box matching.
+        """
+        if not SHAPELY_AVAILABLE or not geojson:
+            return None
+        try:
+            geom = _shapely_shape(geojson)
+            if not geom.is_valid:
+                geom = _shapely_make_valid(geom)
+            return None if geom.is_empty else geom
+        except Exception as e:
+            log.debug(f"[MemberStateDetector] Could not build geometry: {e}")
+            return None
+
+    def _country_geom(self, country):
+        """Return a cached shapely geometry for a country choice, or None."""
+        if '_geom' not in country:
+            country['_geom'] = self._to_shapely(country.get('spatial'))
+        return country['_geom']
+
+    def _geom_overlap_percentage(self, extent_geom, country_geom):
+        """Percentage of the extent's area that lies inside the country polygon."""
+        try:
+            inter = extent_geom.intersection(country_geom)
+            if inter.is_empty:
+                return 0.0
+            extent_area = extent_geom.area
+            if extent_area <= 0:
+                # Degenerate extent (point/line): match only if it lies inside.
+                return 100.0 if country_geom.contains(extent_geom.centroid) else 0.0
+            return (inter.area / extent_area) * 100.0
+        except Exception as e:
+            log.debug(f"[MemberStateDetector] geom overlap error: {e}")
+            return 0.0
     
     def _calculate_overlap_percentage(self, bounds1: Tuple[float, float, float, float], 
                                        bounds2: Tuple[float, float, float, float]) -> float:
@@ -577,6 +624,8 @@ class MemberStateDetector:
             return None
         
         log.info(f"[MemberStateDetector] Extent bounds: {extent_bounds}")
+        # Build a precise geometry for the extent (None if shapely unavailable).
+        extent_geom = self._to_shapely(extent_geojson)
         
         country_choices = self._get_country_choices()
         if not country_choices:
@@ -595,12 +644,32 @@ class MemberStateDetector:
             if not country_bounds:
                 continue
             
-            # Check if extent is fully contained within country
-            if self._bounds_contains(country_bounds, extent_bounds):
+            # Cheap bbox pre-filter: skip countries whose bbox can't touch the
+            # extent, then use precise geometry when shapely is available.
+            if not (self._bounds_overlap(country_bounds, extent_bounds)
+                    or self._bounds_contains(country_bounds, extent_bounds)):
+                continue
+
+            country_geom = self._country_geom(country) if extent_geom is not None else None
+            if extent_geom is not None and country_geom is not None:
+                # True polygon containment / area overlap. Stops neighbouring
+                # countries (whose bounding boxes overlap at the border) from
+                # matching, e.g. Northern Kenya no longer hits Ethiopia.
+                try:
+                    contained = bool(country_geom.contains(extent_geom)
+                                     or country_geom.contains(extent_geom.centroid))
+                except Exception:
+                    contained = False
+                overlap = self._geom_overlap_percentage(extent_geom, country_geom)
+            else:
+                contained = self._bounds_contains(country_bounds, extent_bounds)
+                overlap = (self._calculate_overlap_percentage(extent_bounds, country_bounds)
+                           if self._bounds_overlap(country_bounds, extent_bounds) else 0.0)
+
+            if contained:
                 fully_contained_matches.append(country)
-                log.info(f"[MemberStateDetector] Extent fully contained in: {country.get('value')}")
-            elif self._bounds_overlap(country_bounds, extent_bounds):
-                overlap = self._calculate_overlap_percentage(extent_bounds, country_bounds)
+                log.info(f"[MemberStateDetector] Extent contained in: {country.get('value')}")
+            if overlap > 0:
                 overlapping_countries.append({'value': country.get('value'), 'overlap': overlap})
                 if overlap > best_overlap:
                     best_overlap = overlap
@@ -655,21 +724,35 @@ class MemberStateDetector:
         if not country_choices:
             return []
         
+        extent_geom = self._to_shapely(extent_geojson)
         matches = []
-        
+
         for country in country_choices:
             country_bounds = country.get('bounds')
             if not country_bounds:
                 continue
-            
-            if self._bounds_overlap(country_bounds, extent_bounds):
+
+            # Cheap bbox pre-filter, then precise geometry test when available.
+            if not self._bounds_overlap(country_bounds, extent_bounds):
+                continue
+
+            country_geom = self._country_geom(country) if extent_geom is not None else None
+            if extent_geom is not None and country_geom is not None:
+                try:
+                    contained = bool(country_geom.contains(extent_geom))
+                except Exception:
+                    contained = False
+                overlap = self._geom_overlap_percentage(extent_geom, country_geom)
+            else:
+                contained = self._bounds_contains(country_bounds, extent_bounds)
                 overlap = self._calculate_overlap_percentage(extent_bounds, country_bounds)
-                if overlap >= min_overlap_percentage:
-                    matches.append({
-                        'value': country['value'],
-                        'overlap': overlap,
-                        'contained': self._bounds_contains(country_bounds, extent_bounds)
-                    })
+
+            if overlap >= min_overlap_percentage:
+                matches.append({
+                    'value': country['value'],
+                    'overlap': overlap,
+                    'contained': contained
+                })
         
         # Sort by: fully contained first, then by overlap percentage
         matches.sort(key=lambda x: (-x['contained'], -x['overlap']))

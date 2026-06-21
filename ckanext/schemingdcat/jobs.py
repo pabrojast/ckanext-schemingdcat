@@ -661,9 +661,12 @@ def _add_member_states_to_package(package_id, member_state_uris, context, log_re
         elif not auto_fill_spatial:
             _job_log('info', f"Spatial auto-fill is disabled (schemingdcat.spatial.auto_fill_dataset=False)", log_ref)
         
-        # Update spatial_uri field - add new URIs if not already present
+        # Update spatial_uri field. Only auto-fill when the field is EMPTY so a
+        # user's manual edit is never overwritten (and a country the user removed
+        # is not silently re-added on the next save). Detection precision is
+        # handled in MemberStateDetector (geometry-based).
         current_spatial_uri = package_data.get('spatial_uri', '')
-        if auto_fill_spatial and member_state_uris:
+        if auto_fill_spatial and member_state_uris and not current_spatial_uri:
             # Parse existing spatial_uri (could be a single URI, comma-separated list, or actual list)
             existing_uris = set()
             if current_spatial_uri:
