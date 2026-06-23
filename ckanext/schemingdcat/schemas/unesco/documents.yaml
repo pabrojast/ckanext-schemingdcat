@@ -525,14 +525,31 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
-# - field_name: groups__0__id
-#   label:
-#     en: Group
-#     es: Grupo
-#     fr: Grappe
-#   required: FalseW
-#   preset: dataset_group
-#   form_group_id: general_info
+- field_name: groups__0__id
+  label:
+    en: Member States
+    es: Estados Miembros
+    fr: États membres
+  required: False
+  preset: dataset_group
+  form_group_id: general_info
+  help_text:
+    en: "Select all applicable Member States. Hold Ctrl/Cmd to choose more than one."
+    es: "Selecciona todos los Estados Miembros aplicables. Usa Ctrl/Cmd para elegir más de uno."
+    fr: "Sélectionnez tous les États membres concernés. Utilisez Ctrl/Cmd pour en choisir plusieurs."
+
+- field_name: groups__1__id
+  label:
+    en: Initiatives
+    es: Iniciativas
+    fr: Initiatives
+  required: False
+  preset: dataset_group2
+  form_group_id: general_info
+  help_text:
+    en: "Select every Initiative that applies. Use Ctrl/Cmd for multiple values."
+    es: "Selecciona todas las iniciativas que correspondan. Usa Ctrl/Cmd para múltiples valores."
+    fr: "Sélectionnez toutes les initiatives concernées. Utilisez Ctrl/Cmd pour plusieurs valeurs."
 
 # Graphic overview (O)
 - field_name: graphic_overview

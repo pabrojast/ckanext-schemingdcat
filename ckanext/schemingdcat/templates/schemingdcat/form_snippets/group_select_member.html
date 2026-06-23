@@ -9,6 +9,9 @@
   {% if group.id %}{% do existing_identifiers.append(group.id) %}{% endif %}
 {% endfor %}
 
+{# Pre-select the group passed via ?group= (e.g. "Add Document" from a group page) #}
+{% if data.group_id %}{% do existing_identifiers.append(data.group_id) %}{% endif %}
+
 {% for ms_group in all_memberstate_groups %}
   {% if ms_group.name in existing_identifiers or ms_group.id in existing_identifiers %}
     {% do selected_member_names.append(ms_group.name) %}
