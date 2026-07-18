@@ -525,6 +525,25 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
+# Data sharing level (ckanext-datashare). Enforced: search visibility,
+# resource access and downloads are gated according to its value.
+- field_name: access_level
+  label:
+    en: Data sharing level
+    es: Nivel de acceso a los datos
+    fr: Niveau de partage des données
+  preset: select
+  choices_helper: datashare_access_level_choices
+  validators: ignore_missing datashare_access_level_validator
+  form_include_blank_choice: False
+  required: False
+  default: public
+  help_text:
+    en: 'Controls who can find, view and download this document''s files. "Public" keeps the current open behaviour.'
+    es: 'Controla quién puede encontrar, ver y descargar los archivos de este documento. "Público" mantiene el comportamiento abierto actual.'
+    fr: 'Contrôle qui peut trouver, consulter et télécharger les fichiers de ce document. « Public » conserve le comportement ouvert actuel.'
+  form_group_id: general_info
+
 - field_name: groups__0__id
   label:
     en: Member States
