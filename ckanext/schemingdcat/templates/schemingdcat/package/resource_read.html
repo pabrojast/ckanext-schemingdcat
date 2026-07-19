@@ -36,6 +36,12 @@
   {% endblock action_manage %}
 {% if res.url and h.is_url(res.url) %}
 <li>
+  {% if 'datashare_can_download' in h and not h.datashare_can_download(pkg, res) %}
+    <span class="btn btn-default disabled datashare-download-locked"
+          title="{{ _('Downloading is not permitted by this dataset\'s data sharing level') }}">
+      <i class="fa fa-lock"></i> {{ _('Download restricted') }}
+    </span>
+  {% else %}
   {% if res.datastore_active %}
     <li>{% snippet 'schemingdcat/package/snippets/data_api_button.html', resource=res %}</li>
 {% endif %}
@@ -57,6 +63,7 @@
       {% snippet "schemingdcat/package/snippets/download_datastore_formats.html", res=res %}
     {% endif %}
   {% endblock %}
+  {% endif %}
 </li>
 {% endif %}
 {% endblock %}

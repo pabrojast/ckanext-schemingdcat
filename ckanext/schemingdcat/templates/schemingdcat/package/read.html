@@ -6,6 +6,11 @@
   {% asset 'ckanext-schemingdcat/schemingdcat-email-protect' %}
   {{ super() }}
   {% block package_description %}
+    {# Access-level banner (ckanext-datashare); no-op when the plugin is
+       off or the dataset is public #}
+    {% if 'datashare_access' in h %}
+      {% snippet 'package/snippets/datashare_banner.html', pkg=pkg %}
+    {% endif %}
     <div class="dataset-badges">
       {% if pkg.private %}
         <span class="dataset-private badge pull-left">
