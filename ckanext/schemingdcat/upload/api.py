@@ -22,6 +22,25 @@ def is_module_available(module_name):
         return False
 
 
+def _require_login():
+    """Return a 401 JSON response when the caller is not authenticated.
+
+    Every endpoint in this module either makes the server fetch a
+    caller-supplied URL or mints a storage credential, so none of them may be
+    reachable anonymously. ``toolkit.g.user`` is ``''`` for anonymous requests
+    in CKAN 2.10, so plain truthiness is the correct test.
+    """
+    if not getattr(toolkit.g, 'user', None):
+        return jsonify({
+            'success': False,
+            'error': 'Authentication required',
+            'extent': None,
+            'spatial_uri': None,
+            'spatial_uris': []
+        }), 401
+    return None
+
+
 def extract_spatial_extent_endpoint():
     """
     API endpoint to extract spatial extent from uploaded geospatial files.
@@ -42,6 +61,10 @@ def extract_spatial_extent_endpoint():
         - error: Error message if failed
     """
     try:
+        unauthenticated = _require_login()
+        if unauthenticated is not None:
+            return unauthenticated
+
         if not is_module_available('ckanext.schemingdcat.upload'):
             return jsonify({
                 'success': False,
@@ -52,7 +75,7 @@ def extract_spatial_extent_endpoint():
             }), 400
 
         from ckanext.schemingdcat.upload import extent_extractor, member_state_detector
-        
+
         # Check if it's a direct file upload
         if 'file' in request.files:
             file = request.files['file']
@@ -143,6 +166,13 @@ def extract_spatial_extent_from_resource_endpoint():
         - error: Error message if failed
     """
     try:
+        # This endpoint downloads a caller-supplied URL from inside the CKAN
+        # pod, so anonymous access would be a server-side request forgery
+        # vector against cluster-internal services.
+        unauthenticated = _require_login()
+        if unauthenticated is not None:
+            return unauthenticated
+
         if not is_module_available('ckanext.schemingdcat.upload'):
             return jsonify({
                 'success': False,
@@ -153,7 +183,7 @@ def extract_spatial_extent_from_resource_endpoint():
             }), 400
 
         from ckanext.schemingdcat.upload import extent_extractor, member_state_detector
-        
+
         data = request.get_json()
         if not data:
             return jsonify({
@@ -279,14 +309,19 @@ def get_azure_upload_url_endpoint():
             }), 400
         
         is_temp = False
-        
+
+        # Authentication is required for EVERY branch: this endpoint mints a
+        # write SAS token for the storage container, so an anonymous caller
+        # sending only a filename must never reach the signing code below.
+        # g.user is '' for anonymous requests in CKAN 2.10.
+        if not getattr(toolkit.g, 'user', None):
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required'
+            }), 401
+
         # If resource_id is provided, check permissions
         if resource_id and resource_id.strip():
-            if not getattr(toolkit.g, 'user', None):
-                return jsonify({
-                    'success': False,
-                    'error': 'Authentication required'
-                }), 401
             try:
                 # This will raise NotAuthorized if user doesn't have permission
                 toolkit.check_access('resource_update', {'user': toolkit.g.user}, {'id': resource_id})
@@ -295,7 +330,7 @@ def get_azure_upload_url_endpoint():
                     'success': False,
                     'error': 'Not authorized to upload to this resource'
                 }), 403
-            
+
             # Generate the blob path for existing resource
             blob_path = storage.path_from_filename(resource_id, os.path.basename(filename))
         else:
@@ -305,7 +340,10 @@ def get_azure_upload_url_endpoint():
             temp_id = str(uuid.uuid4())
             safe_filename = os.path.basename(filename)
             blob_path = f"temp/{temp_id}/{safe_filename}"
-            log.info(f"Generated temporary blob path for new resource: {blob_path}")
+            log.info(
+                "Generated temporary blob path for new resource: %s (user: %s)",
+                blob_path, toolkit.g.user
+            )
         
         # Generate SAS token with write permissions
         from azure.storage.blob import BlobServiceClient, BlobSasPermissions, generate_blob_sas
