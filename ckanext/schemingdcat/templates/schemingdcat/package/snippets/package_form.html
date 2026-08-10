@@ -2,7 +2,7 @@
 
 {% set exclude_fields = [] %}
 {% set user_is_admin = h.check_access('sysadmin') %}
-{% set admin_only_form_groups = ['author', 'unesdoc'] %}
+{% set admin_only_form_groups = ['author'] %}
 
 {% block secondary %}
 <aside class="secondary col-sm-3">
@@ -225,6 +225,20 @@
         {%- endif -%}
       {%- endif -%}
     {%- endfor -%}
+
+    {# Dataset visibility — Public listed first so new datasets default to public #}
+    {%- if not pages or active_page == 1 -%}
+      <div class="form-group control-medium">
+        <label for="field-private" class="control-label">{{ _('Visibility') }}</label>
+        <div class="controls">
+          <select id="field-private" name="private" class="form-control">
+            {%- for option in [('False', _('Public')), ('True', _('Private'))] %}
+            <option value="{{ option[0] }}"{% if option[0] == data.private|trim %} selected="selected"{% endif %}>{{ option[1] }}</option>
+            {%- endfor %}
+          </select>
+        </div>
+      </div>
+    {%- endif -%}
   </div>
 
   {# Render hidden input based on whether pages are defined #}
