@@ -7,9 +7,11 @@
  * Behaviour:
  *  - Only active on dataset *creation* forms (not edit).
  *  - On page load: waits a short tick so that auto-contact /
- *    autofill-responsible-party run first, then overrides the author fields
+ *    autofill-responsible-party run first, then fills the author fields
  *    with the currently selected org title.
  *  - On owner_org change: updates the author fields with the new org title.
+ *  - NEVER overwrites a value typed by the user: a field is only filled when
+ *    it is empty or still holds the value this module previously set.
  *  - Publisher and maintainer fields are intentionally NOT modified.
  *
  * DOI creator priority (ckanext-doi):
@@ -37,6 +39,10 @@ ckan.module('schemingdcat-org-autofill', function ($) {
       if (isEditMode) {
         return;
       }
+
+      // Last value this module wrote; a field holding anything else was
+      // edited by the user and must not be overwritten.
+      this._lastAutofill = null;
 
       this.$orgSelect = $('select[name="owner_org"]');
       if (!this.$orgSelect.length) {
@@ -69,6 +75,17 @@ ckan.module('schemingdcat-org-autofill', function ($) {
 
       // 2) Legacy author field (admin-only, but acts as fallback for DOI)
       this._setField('input[name="author"]', orgTitle);
+
+      this._lastAutofill = orgTitle;
+    },
+
+    /**
+     * A field may be autofilled only while it is empty or still holds the
+     * value this module set on a previous org change.
+     */
+    _canAutofill: function ($field) {
+      var current = ($field.val() || '').trim();
+      return !current || current === this._lastAutofill;
     },
 
     /**
@@ -83,11 +100,11 @@ ckan.module('schemingdcat-org-autofill', function ($) {
     },
 
     /**
-     * Sets a form field value (always overrides on org change in create mode).
+     * Sets a form field value, unless the user already typed their own.
      */
     _setField: function (selector, value) {
       var $field = $(selector);
-      if ($field.length) {
+      if ($field.length && this._canAutofill($field.first())) {
         $field.val(value).trigger('change');
       }
     },
@@ -104,8 +121,10 @@ ckan.module('schemingdcat-org-autofill', function ($) {
         return;
       }
       var $first = $nameInputs.first();
-      // Always set on org change in create mode; the org IS the dataset creator
-      $first.val(orgTitle).trigger('change');
+      // Only prefill while untouched; a user-typed author always wins
+      if (this._canAutofill($first)) {
+        $first.val(orgTitle).trigger('change');
+      }
     }
   };
 });
