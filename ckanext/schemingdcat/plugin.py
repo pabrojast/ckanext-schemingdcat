@@ -1033,6 +1033,66 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def after_dataset_update(self, context, data_dict):
         self._apply_pending_groups(context, data_dict)
 
+    def after_dataset_show(self, context, data_dict):
+        """Heal *unpromoted* package dicts served from the Solr cache.
+
+        ``package_show`` returns the indexed ``validated_data_dict`` verbatim
+        when the Solr cache is fresh. For some datasets that cached dict still
+        carries its scheming fields inside ``extras`` instead of at the top
+        level ("unpromoted"). Any consumer that round-trips such a dict into
+        ``package_update`` — the edit form GET/POST, ``package_patch``'s merge
+        base (used by the paged edit form, which builds its own show context so
+        the ``use_cache=False`` guard on resource ops cannot reach it), or the
+        resource_create/update round-trip — sees those fields as missing and
+        wipes them.
+
+        This hook runs on every ``package_show`` (cached or not), so promoting
+        the stranded fields here heals every consumer at once. Fields already
+        present at the top level are never touched, and true free-form extras
+        are not schema fields, so the pass is a cheap no-op for healthy dicts.
+        """
+        try:
+            self._promote_stranded_show_fields(data_dict)
+        except Exception as e:
+            # Never break package_show over a healing pass.
+            log.warning('[after_dataset_show] Promotion pass failed for %s: %s',
+                        data_dict.get('id') if isinstance(data_dict, dict) else None, e)
+        return data_dict
+
+    def _promote_stranded_show_fields(self, data_dict):
+        if not isinstance(data_dict, dict):
+            return
+        extras = data_dict.get('extras')
+        if not isinstance(extras, list) or not extras:
+            return
+
+        stranded = [
+            extra for extra in extras
+            if isinstance(extra, dict) and extra.get('key') not in data_dict
+        ]
+        if not stranded:
+            return
+
+        field_names = self._dataset_schema_field_names(data_dict)
+        if not field_names:
+            return
+
+        promoted = []
+        for extra in stranded:
+            key = extra.get('key')
+            if key in field_names:
+                data_dict[key] = self._coerce_extra_value(extra.get('value'))
+                promoted.append(key)
+
+        if promoted:
+            log.warning(
+                '[after_dataset_show] Promoted unpromoted schema fields %s for %s '
+                '(stale Solr validated_data_dict; run `ckan schemingdcat '
+                'repair-unpromoted-cache --apply` to fix the index)',
+                sorted(promoted),
+                data_dict.get('id') or data_dict.get('name'),
+            )
+
     @staticmethod
     def _is_missing_value(value):
         if value is None:
