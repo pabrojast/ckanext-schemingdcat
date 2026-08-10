@@ -53,6 +53,12 @@ schema_form_groups:
       es: Información de vocabularios
       fr: Informations sur les vocabulaires
     fa_icon: fa-database
+  - form_group_id: license_info
+    label:
+      en: License and restrictions
+      es: Licencia y restricciones
+      fr: Licence et restrictions
+    fa_icon: fa-lock
   - form_group_id: contact
     label:
       en: Contact information
@@ -410,6 +416,98 @@ dataset_fields:
     fr: "Sélectionnez le thème principal lié à l'eau selon les domaines thématiques du PIH de l'UNESCO."
   form_group_id: vocabs
 
+# ISO 19115 topic category (O) - optional for documents, unlike dataset
+- field_name: topic
+  label:
+    en: ISO 19115 topic category
+    es: Categoría temática ISO 19115
+    fr: Catégorie thématique ISO 19115
+  preset: select
+  display_property: dcat:keyword
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  form_include_blank_choice: False
+  required: False
+  sorted_choices: True
+  choices:
+  - label: biota
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/biota
+  - label: boundaries
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/boundaries
+  - label: climatologyMeteorologyAtmosphere
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/climatologyMeteorologyAtmosphere
+  - label: economy
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/economy
+  - label: elevation
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/elevation
+  - label: environment
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment
+  - label: farming
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/farming
+  - label: geoscientificInformation
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/geoscientificInformation
+  - label: health
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/health
+  - label: imageryBaseMapsEarthCover
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/imageryBaseMapsEarthCover
+  - label: inlandWaters
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/inlandWaters
+  - label: intelligenceMilitary
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/intelligenceMilitary
+  - label: location
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/location
+  - label: oceans
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/oceans
+  - label: planningCadastre
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/planningCadastre
+  - label: society
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/society
+  - label: structure
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/structure
+  - label: transportation
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/transportation
+  - label: utilitiesCommunication
+    value: http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/utilitiesCommunication
+  default: "http://inspire.ec.europa.eu/metadata-codelist/TopicCategory/environment"
+  help_text:
+    en: 'e.g. Labels from <a href="http://inspire.ec.europa.eu/metadata-codelist" target="_blank" rel="noopener">Metadata code list register</a> (INSPIRE)'
+    es: 'ej: Etiquetas del <a href="http://inspire.ec.europa.eu/metadata-codelist/TopicCategory" target="_blank" rel="noopener">Registro de listas controladas de metadatos</a> (INSPIRE)'
+    fr: 'p. ex. Étiquettes du <a href="http://inspire.ec.europa.eu/metadata-codelist/TopicCategory" target="_blank" rel="noopener">Registre des listes de codes de métadonnées</a> (INSPIRE)'
+  help_allow_html: True
+  form_group_id: vocabs
+
+# Keyword value (R)
+- field_name: tag_string
+  label:
+    en: Keywords
+    es: Palabras clave
+    fr: Mots-clés
+  preset: tag_string_autocomplete
+  display_property: dct:subject
+  form_placeholder: 'water security'
+  help_text:
+    en: 'Free keywords describing the document. Start typing to autocomplete from existing tags.'
+    es: 'Palabras clave libres que describen el documento. Empiece a escribir para autocompletar con etiquetas existentes.'
+    fr: 'Mots-clés libres décrivant le document. Commencez à taper pour compléter automatiquement avec les étiquettes existantes.'
+  form_group_id: vocabs
+
+# Keyword URI (O)
+## TODO: Improve form_snippet to generate tag_uri auto from tag_string
+## TODO: Add as scheming_datastore_choices (helpers.py/#102) http://github.com/ckan/ckanext-scheming/issues/270
+## Only for ckanext-dcat profiles.py
+- field_name: tag_uri
+  label:
+    en: Keyword URIs
+    es: URI de palabras clave
+    fr: URI des mots-clés
+  preset: multiple_text
+  display_snippet: schemingdcat/display_snippets/list_keywords.html
+  form_placeholder: 'http://inspire.ec.europa.eu/metadata-codelist/IACSData/gsaa'
+  help_text:
+    en: 'e.g. Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    es: 'ej: Registro de listas controladas de metadatos (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
+    fr: 'p. ex. Registre des listes de codes de métadonnées (INSPIRE) : http://inspire.ec.europa.eu/metadata-codelist'
+  form_group_id: vocabs
+
 # Publication Year (R)
 - field_name: publication_year
   label:
@@ -523,25 +621,6 @@ dataset_fields:
     es: Entidad (organización) responsable de publicar el conjunto de datos.
     fr: Entité (organisation) responsable de la mise à disposition du jeu de données.
   preset: dataset_organization
-  form_group_id: general_info
-
-# Data sharing level (ckanext-datashare). Enforced: search visibility,
-# resource access and downloads are gated according to its value.
-- field_name: access_level
-  label:
-    en: Data sharing level
-    es: Nivel de acceso a los datos
-    fr: Niveau de partage des données
-  preset: select
-  choices_helper: datashare_access_level_choices
-  validators: ignore_missing datashare_access_level_validator
-  form_include_blank_choice: False
-  required: False
-  default: public
-  help_text:
-    en: 'Controls who can find, view and download this document''s files. "Public" keeps the current open behaviour.'
-    es: 'Controla quién puede encontrar, ver y descargar los archivos de este documento. "Público" mantiene el comportamiento abierto actual.'
-    fr: 'Contrôle qui peut trouver, consulter et télécharger les fichiers de ce document. « Public » conserve le comportement ouvert actuel.'
   form_group_id: general_info
 
 - field_name: groups__0__id
@@ -766,6 +845,104 @@ dataset_fields:
   form_group_id: general_info
   default: "http://publications.europa.eu/resource/authority/language/ENG"
 
+# License URI (M)
+- field_name: license_id
+  label:
+    en: License
+    es: Licencia
+    fr: Licence
+  form_snippet: license.html
+  display_property: dct:license
+  help_text:
+    en: 'License definitions and additional information can be found at: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+    es: 'Las definiciones de las licencias y la información adicional pueden encontrarse en: <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+    fr: 'Les définitions des licences et les informations supplémentaires sont disponibles sur : <a href="http://opendefinition.org/" target="_blank" rel="noopener">Open Definition</a>'
+  help_allow_html: True
+  form_group_id: license_info
+  default: cc-by-sa
+
+# Conditions for access and use and limitations on public access (M)
+- field_name: access_rights
+  label:
+    en: Access Rights
+    es: Derechos de acceso
+    fr: Droits d'accès
+  preset: select
+  display_snippet: schemingdcat/display_snippets/link_schema.html
+  display_property: dct:accessRights
+  form_include_blank_choice: False
+  choices:
+  - label:
+      en: No limitations to public access
+      es: No hay limitaciones al acceso del público
+      fr: Aucune limitation à l'accès public
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations
+  - label:
+      en: Public access limited according to Article 13(1)(a) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(a) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(a) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1a
+  - label:
+      en: Public access limited according to Article 13(1)(b) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(b) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(b) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1b
+  - label:
+      en: Public access limited according to Article 13(1)(c) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(c) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(c) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1c
+  - label:
+      en: Public access limited according to Article 13(1)(d) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(d) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(d) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1d
+  - label:
+      en: Public access limited according to Article 13(1)(e) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(e) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(e) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1e
+  - label:
+      en: Public access limited according to Article 13(1)(f) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(f) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(f) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1f
+  - label:
+      en: Public access limited according to Article 13(1)(g) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(g) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(g) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1g
+  - label:
+      en: Public access limited according to Article 13(1)(h) of the INSPIRE Directive
+      es: Acceso público limitado según el artículo 13(1)(h) de la Directiva INSPIRE
+      fr: Accès public limité selon l'article 13(1)(h) de la directive INSPIRE
+    value: http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/INSPIRE_Directive_Article13_1h
+  help_text:
+    en: 'Conditions for access and use and <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitations on public access</a> (INSPIRE)'
+    es: 'Condiciones de acceso y utilización y <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitaciones de acceso público</a> (INSPIRE)'
+    fr: "Conditions d'accès et d'utilisation et <a href='http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess' target='_blank' rel='noopener'>limitations à l'accès public</a> (INSPIRE)"
+  help_allow_html: True
+  form_group_id: license_info
+
+# Data sharing level (ckanext-datashare). Enforced: search visibility,
+# resource access and downloads are gated according to its value.
+- field_name: access_level
+  label:
+    en: Data sharing level
+    es: Nivel de acceso a los datos
+    fr: Niveau de partage des données
+  preset: select
+  choices_helper: datashare_access_level_choices
+  validators: ignore_missing datashare_access_level_validator
+  form_include_blank_choice: False
+  required: False
+  default: public
+  help_text:
+    en: 'Controls who can find, view and download this document''s files. "Public" keeps the current open behaviour.'
+    es: 'Controla quién puede encontrar, ver y descargar los archivos de este documento. "Público" mantiene el comportamiento abierto actual.'
+    fr: 'Contrôle qui peut trouver, consulter et télécharger les fichiers de ce document. « Public » conserve le comportement ouvert actuel.'
+  form_group_id: license_info
+
 # Metadata file identifier (M)
 ## Unique resource identifier (UUID)  (Mandatory). If it does not exist, CKAN creates a UUID (Metadata file identifier 'package_id')
 - field_name: identifier
@@ -800,24 +977,6 @@ dataset_fields:
     fr: Titre de l'URL du jeu de données
   form_slug_related: identifier
   form_group_id: identification
-
-# Keyword URI (M)
-## TODO: Improve form_snippet to generate tag_uri auto from tag_string
-## TODO: Add as scheming_datastore_choices (helpers.py/#102) http://github.com/ckan/ckanext-scheming/issues/270
-## Only for ckanext-dcat profiles.py
-- field_name: tag_uri
-  label: 
-    en: Keyword URIs
-    es: URI de palabras clave
-    fr: URI des mots-clés
-  preset: multiple_text
-  display_snippet: schemingdcat/display_snippets/list_keywords.html
-  form_placeholder: 'http://inspire.ec.europa.eu/metadata-codelist/IACSData/gsaa'
-  help_text:
-    en: 'e.g. Metadata code list register (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
-    es: 'ej: Registro de listas controladas de metadatos (INSPIRE): http://inspire.ec.europa.eu/metadata-codelist'
-    fr: 'p. ex. Registre des listes de codes de métadonnées (INSPIRE) : http://inspire.ec.europa.eu/metadata-codelist'
-  form_group_id: general_info
 
 # TODO: Probably better include contact_role and contact_organization (boolean) to distinguish between vcard:Individual and vcard:Organizationto use in ckanext-dcat/profiles.py
 # Metadata point of contact URI (M)
