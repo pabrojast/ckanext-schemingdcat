@@ -95,15 +95,6 @@ schema_form_groups:
     fa_icon: fa-question-circle
 
     
-  # [DEPRECATED] Legacy form group - unesdoc featured fields are no longer used.
-  # Kept for backward compatibility. Only visible to sysadmins.
-  - form_group_id: unesdoc
-    label:
-      en: Featured Dataset for UNESDOC
-      es: Conjunto de datos destacado para UNESDOC
-      fr: Ensemble de données en vedette pour UNESDOC
-    fa_icon: fa-question-circle
-
   - form_group_id: license_info
     label:
       en: License and restrictions
@@ -1022,7 +1013,7 @@ dataset_fields:
 
 
 # Publisher name (M)
-  field_name: publisher_name
+- field_name: publisher_name
   label:
     en: Name of the publisher
     es: Nombre del publicador
@@ -1376,7 +1367,7 @@ dataset_fields:
 
 
 # Other identifier (O)
-  field_name: alternate_identifier
+- field_name: alternate_identifier
   label: 
     en: Other identifier
     es: Identificador alternativo
@@ -1693,38 +1684,6 @@ dataset_fields:
 
 
 
-# [DEPRECATED] Legacy unesdoc featured fields - kept for backward compatibility.
-# Only visible to sysadmins in both form and display views.
-
-# Related resources (O)
-- field_name: unesdocurl
-  label: 
-    en: URL
-    es: URL
-    fr: URL
-  display_property: dct:source
-  display_snippet: schemingdcat/display_snippets/link_name.html
-  form_placeholder: https://unesdoc.unesco.org/ark:/48223/pf0000373781
-  help_text:
-    en: The UNESCO URL that leads to the document.
-    es: La URL de unesco que lleva al documento.
-    fr: L'URL de l'UNESCO qui mène au document.
-  form_group_id: unesdoc
-  
-- field_name: unesdocimage
-  label: 
-    en: Image URL
-    es: URL de Imagen 
-    fr: URL de l'image
-  display_property: dct:source
-  display_snippet: schemingdcat/display_snippets/link_name.html
-  form_placeholder:  https://unesdoc.unesco.org/in/rest/Thumb/image?id=p%3A%3Ausmarcdef_0000373781&isbn=9789231003851&author=Verbist%2C+Koen&title=A+stress+test+for+climate+change+impacts+on+water+security%3A+case+study+from+the+Limar%C3%AD+watershed+in+Chile&year=2020&publisher=UNESCO&TypeOfDocument=UnescoPhysicalDocument&mat=BKS&ct=true&size=256&isPhysical=1&siteId=mainSite
-  help_text:
-    en: The UNESCO URL that leads to the document.
-    es: La URL de unesco que lleva al documento.
-    fr: L'URL de l'UNESCO qui mène au document.
-  form_group_id: unesdoc  
-  
 # Character encoding (C)
 - field_name: encoding
   label:
@@ -1742,7 +1701,7 @@ dataset_fields:
 
 
 # License URI (M)
-  field_name: license_id
+- field_name: license_id
   label: 
     en: License
     es: Licencia

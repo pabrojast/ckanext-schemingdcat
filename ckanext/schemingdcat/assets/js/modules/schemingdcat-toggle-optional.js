@@ -79,8 +79,6 @@ ckan.module('toggle-optional', function ($) {
         '[name="purpose-es"]',
         '[name="purpose-en"]',
         '[name="purpose-fr"]',
-        '[name="unesdocurl"]',
-        '[name="unesdocimage"]',
         '[name="encoding"]',
         '[name="license_id"]',
         '[name="access_rights"]',
@@ -126,7 +124,6 @@ ckan.module('toggle-optional', function ($) {
         '.lineage-group.card2.mb-3',
         '.temporal_info-group.card2.mb-3',
         '.purpose-group.card2.mb-3',
-        '.unesdoc-group.card2.mb-3',
         '.license_info-group.card2.mb-3',
         '.version_notes-group.card2.mb-3',
         // Nuevos grupos de metadatos comprensivos (se ocultan por defecto)

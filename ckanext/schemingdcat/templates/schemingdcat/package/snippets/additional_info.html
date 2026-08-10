@@ -23,14 +23,6 @@
   'reference',
   ] %}
 
-{# Legacy fields only visible to sysadmins (unesdoc featured fields are deprecated) #}
-{% set sysadmin_only_fields = ['unesdocurl', 'unesdocimage'] %}
-{% set user_is_sysadmin = h.check_access('sysadmin') %}
-{% if not user_is_sysadmin %}
-  {% do exclude_fields.extend(sysadmin_only_fields) %}
-{% endif %}
-
-
   {#
     basic_info: Sublist
   #}
