@@ -278,6 +278,28 @@ dataset_fields:
   preset: dataset_organization
   form_group_id: general_info
 
+# Data sharing level (ckanext-datashare). Unlike access_rights (descriptive
+# DCAT metadata), this field is ENFORCED: search visibility, resource access
+# and downloads are gated according to its value. It sits next to the
+# organization because it is THE visibility control of the form: CKAN's own
+# public/private select is gone and `private` is derived from this value.
+- field_name: access_level
+  label:
+    en: Data sharing level
+    es: Nivel de acceso a los datos
+    fr: Niveau de partage des données
+  preset: select
+  choices_helper: datashare_access_level_choices
+  validators: ignore_missing datashare_access_level_validator
+  form_include_blank_choice: False
+  required: True
+  default: public
+  help_text:
+    en: 'Controls who can find, view and download this dataset''s data. "Public" keeps the current open behaviour; other levels limit search visibility, data access or downloads. Requires the datashare plugin.'
+    es: 'Controla quién puede encontrar, ver y descargar los datos de este conjunto. "Público" mantiene el comportamiento abierto actual; los demás niveles limitan la visibilidad en búsquedas, el acceso a los datos o su descarga. Requiere el plugin datashare.'
+    fr: 'Contrôle qui peut trouver, consulter et télécharger les données de ce jeu. « Public » conserve le comportement ouvert actuel ; les autres niveaux limitent la visibilité dans la recherche, l''accès aux données ou leur téléchargement. Nécessite le plugin datashare.'
+  form_group_id: general_info
+
 - field_name: groups__0__id
   label:
     en: Member States
@@ -1777,26 +1799,6 @@ dataset_fields:
     es: 'Condiciones de acceso y utilización y <a href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess" target="_blank" rel="noopener">limitaciones de acceso público</a> (INSPIRE)'
     fr: "Conditions d'accès et d'utilisation et <a href='http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess' target='_blank' rel='noopener'>limitations à l'accès public</a> (INSPIRE)"
   help_allow_html: True
-  form_group_id: license_info
-
-# Data sharing level (ckanext-datashare). Unlike access_rights (descriptive
-# DCAT metadata), this field is ENFORCED: search visibility, resource access
-# and downloads are gated according to its value.
-- field_name: access_level
-  label:
-    en: Data sharing level
-    es: Nivel de acceso a los datos
-    fr: Niveau de partage des données
-  preset: select
-  choices_helper: datashare_access_level_choices
-  validators: ignore_missing datashare_access_level_validator
-  form_include_blank_choice: False
-  required: False
-  default: public
-  help_text:
-    en: 'Controls who can find, view and download this dataset''s data. "Public" keeps the current open behaviour; other levels limit search visibility, data access or downloads. Requires the datashare plugin.'
-    es: 'Controla quién puede encontrar, ver y descargar los datos de este conjunto. "Público" mantiene el comportamiento abierto actual; los demás niveles limitan la visibilidad en búsquedas, el acceso a los datos o su descarga. Requiere el plugin datashare.'
-    fr: 'Contrôle qui peut trouver, consulter et télécharger les données de ce jeu. « Public » conserve le comportement ouvert actuel ; les autres niveaux limitent la visibilité dans la recherche, l''accès aux données ou leur téléchargement. Nécessite le plugin datashare.'
   form_group_id: license_info
 
 # Version number (O)

@@ -1,0 +1,18 @@
+{% ckan_extends %}
+
+{#
+  Este portal tiene UN solo control de visibilidad: el campo `access_level`
+  ("Data sharing level") de ckanext-datashare, que se pinta junto a
+  Organization desde el propio schema y del que se deriva el flag core
+  `private`.
+
+  Pintar además el select Public/Private de CKAN dejaba DOS
+  <select name="private"> en el mismo <form>: parse_params devolvía
+  ['False','False'] y boolean_validator reventaba con
+  "AttributeError: 'list' object has no attribute 'lower'".
+
+  Vaciamos sólo el bloque de visibilidad: el selector de organización y el
+  <div data-module="dataset-visibility"> que lo envuelve siguen intactos (el
+  JS core hace $('#field-private') sobre un conjunto vacío y no hace nada).
+#}
+{% block package_metadata_fields_visibility %}{% endblock %}
