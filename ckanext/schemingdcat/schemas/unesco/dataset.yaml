@@ -1701,7 +1701,7 @@ dataset_fields:
     en: 'Summary of the intentions for which the dataset was developed (ISO 19115).'
     es: 'Resumen de las intenciones para las que se desarrolló el conjunto de datos (ISO 19115).'
     fr: "Résumé des intentions pour lesquelles l'ensemble de données a été développé (ISO 19115)."
-    form_languages: ["en", "es", "fr"]
+  form_languages: ["en", "es", "fr"]
   form_group_id: purpose
 
 

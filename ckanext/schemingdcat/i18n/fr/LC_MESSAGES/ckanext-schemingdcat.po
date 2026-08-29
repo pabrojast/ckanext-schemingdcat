@@ -1,73 +1,76 @@
-# English translations for ckanext-schemingdcat.
-# Copyright (C) 2023 ORGANIZATION
+# French translations for ckanext-schemingdcat.
+# Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the
 # ckanext-schemingdcat
 # project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ckanext-schemingdcat 0.0.1\n"
+"Project-Id-Version: ckanext-schemingdcat 3.1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-08-28 18:54+0000\n"
-"PO-Revision-Date: 2024-03-01 18:52+0100\n"
-"Last-Translator: \n"
-"Language-Team: en <LL@li.org>\n"
-"Language: en\n"
+"PO-Revision-Date: 2026-08-28 18:54+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: fr <LL@li.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Generated-By: Babel 2.7.0\n"
-"X-Generator: Poedit 3.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Generated-By: Babel 2.10.3\n"
 
 #: ckanext/schemingdcat/auth.py:57
 #, python-format
 msgid "User %s not authorized to create packages"
-msgstr ""
+msgstr "L'utilisateur %s n'est pas autorisé à créer des jeux de données"
 
 #: ckanext/schemingdcat/auth.py:71
 #, python-format
 msgid "User %s not authorized to add dataset to this organization"
 msgstr ""
+"L'utilisateur %s n'est pas autorisé à ajouter un jeu de données à cette "
+"organisation"
 
 #: ckanext/schemingdcat/auth.py:117
 #, python-format
 msgid "User %s not authorized to edit package %s"
-msgstr ""
+msgstr "L'utilisateur %s n'est pas autorisé à modifier le jeu de données %s"
 
 #: ckanext/schemingdcat/blueprint.py:68 ckanext/schemingdcat/blueprint.py:97
 msgid "Dataset {dataset_id} not found"
-msgstr ""
+msgstr "Jeu de données {dataset_id} introuvable"
 
 #: ckanext/schemingdcat/blueprint.py:123
 msgid "Verification successful. You can continue searching."
-msgstr ""
+msgstr "Vérification réussie. Vous pouvez poursuivre votre recherche."
 
 #: ckanext/schemingdcat/blueprint.py:161 ckanext/schemingdcat/blueprint.py:164
 msgid "Template not found"
-msgstr ""
+msgstr "Modèle introuvable"
 
 #: ckanext/schemingdcat/blueprint.py:210 ckanext/schemingdcat/blueprint.py:266
 msgid "DOI is required"
-msgstr ""
+msgstr "Le DOI est obligatoire"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:245
 #: ckanext/schemingdcat/blueprint.py:220
 #: ckanext/schemingdcat/validators.py:1011
 msgid "Invalid DOI format. Expected format: 10.xxxx/xxxxx"
-msgstr ""
+msgstr "Format de DOI non valide. Format attendu : 10.xxxx/xxxxx"
 
 #: ckanext/schemingdcat/blueprint.py:234
 msgid ""
 "Could not resolve DOI. The DOI may not exist or the metadata service is "
 "unavailable."
 msgstr ""
+"Impossible de résoudre le DOI. Il n'existe peut-être pas ou le service de "
+"métadonnées est indisponible."
 
 #: ckanext/schemingdcat/helpers.py:1280
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:6
 msgid "Dataset"
-msgstr ""
+msgstr "Jeu de données"
 
 #: ckanext/schemingdcat/helpers.py:1281
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:20
@@ -76,241 +79,246 @@ msgstr ""
 #: ckanext/schemingdcat/templates/source/read.html:5
 #: ckanext/schemingdcat/templates/source/read_base.html:17
 msgid "Datasets"
-msgstr "Datasets"
+msgstr "Jeux de données"
 
 #: ckanext/schemingdcat/helpers.py:1284 ckanext/schemingdcat/helpers.py:1288
 #: ckanext/schemingdcat/helpers.py:1292
 msgid "Document"
-msgstr ""
+msgstr "Document"
 
 #: ckanext/schemingdcat/helpers.py:1285 ckanext/schemingdcat/helpers.py:1289
 #: ckanext/schemingdcat/helpers.py:1293
 msgid "Documents"
-msgstr ""
+msgstr "Documents"
 
 #: ckanext/schemingdcat/helpers.py:1296 ckanext/schemingdcat/helpers.py:1297
 msgid "Software"
-msgstr ""
+msgstr "Logiciel"
 
 #: ckanext/schemingdcat/helpers.py:1307
 msgid "s"
-msgstr ""
+msgstr "s"
 
-#: ckanext/schemingdcat/validators.py:90 ckanext/schemingdcat/validators.py:178
+#: ckanext/schemingdcat/validators.py:90
+#: ckanext/schemingdcat/validators.py:178
 #: ckanext/schemingdcat/validators.py:706
 msgid "expecting list of strings"
-msgstr ""
+msgstr "liste de chaînes attendue"
 
 #: ckanext/schemingdcat/validators.py:106
 #: ckanext/schemingdcat/validators.py:722
 #, python-format
 msgid "unexpected choice \"%s\""
-msgstr ""
+msgstr "choix inattendu « %s »"
 
 #: ckanext/schemingdcat/validators.py:115
 #: ckanext/schemingdcat/validators.py:731
 msgid "Select at least one"
-msgstr ""
+msgstr "Sélectionnez au moins un élément"
 
 #: ckanext/schemingdcat/validators.py:133
 msgid "Unsupported value for JSON field: {}"
-msgstr ""
+msgstr "Valeur non prise en charge pour le champ JSON : {}"
 
 #: ckanext/schemingdcat/validators.py:138
 msgid "Invalid JSON string: {}"
-msgstr ""
+msgstr "Chaîne JSON non valide : {}"
 
 #: ckanext/schemingdcat/validators.py:144
 msgid "Invalid JSON object: {}"
-msgstr ""
+msgstr "Objet JSON non valide : {}"
 
 #: ckanext/schemingdcat/validators.py:147
 msgid "Unsupported type for JSON field: {}"
-msgstr ""
+msgstr "Type non pris en charge pour le champ JSON : {}"
 
 #: ckanext/schemingdcat/validators.py:185
 #, python-format
 msgid "invalid type for repeating text: %r"
-msgstr ""
+msgstr "type non valide pour un texte répété : %r"
 
 #: ckanext/schemingdcat/validators.py:193
 #: ckanext/schemingdcat/validators.py:475
 #, python-format
 msgid "invalid encoding for \"%s\" value"
-msgstr ""
+msgstr "encodage non valide pour la valeur « %s »"
 
 #: ckanext/schemingdcat/validators.py:212
 #: ckanext/schemingdcat/validators.py:512
 #: ckanext/schemingdcat/validators.py:535
 msgid "Missing value"
-msgstr ""
+msgstr "Valeur manquante"
 
 #: ckanext/schemingdcat/validators.py:246
 msgid "URL must be a string"
-msgstr ""
+msgstr "L'URL doit être une chaîne de caractères"
 
 #: ckanext/schemingdcat/validators.py:248
 msgid "Please provide a valid URL"
-msgstr ""
+msgstr "Veuillez saisir une URL valide"
 
 #: ckanext/schemingdcat/validators.py:448
 msgid "Failed to decode JSON string"
-msgstr ""
+msgstr "Impossible de décoder la chaîne JSON"
 
 #: ckanext/schemingdcat/validators.py:451
 msgid "Invalid encoding for JSON string"
-msgstr ""
+msgstr "Encodage non valide pour la chaîne JSON"
 
 #: ckanext/schemingdcat/validators.py:454
 msgid "expecting JSON object"
-msgstr ""
+msgstr "objet JSON attendu"
 
 #: ckanext/schemingdcat/validators.py:461
 #, python-format
 msgid "invalid type for language code: %r"
-msgstr ""
+msgstr "type non valide pour le code de langue : %r"
 
 #: ckanext/schemingdcat/validators.py:465
 #: ckanext/schemingdcat/validators.py:501
 #, python-format
 msgid "invalid language code: \"%s\""
-msgstr ""
+msgstr "code de langue non valide : « %s »"
 
 #: ckanext/schemingdcat/validators.py:468
 #, python-format
 msgid "invalid type for \"%s\" value"
-msgstr ""
+msgstr "type non valide pour la valeur « %s »"
 
 #: ckanext/schemingdcat/validators.py:482
 #, python-format
 msgid "Required language \"%s\" missing"
-msgstr ""
+msgstr "La langue obligatoire « %s » est manquante"
 
 #: ckanext/schemingdcat/validators.py:970
 msgid "Expecting valid email: \"user@example.org\""
-msgstr ""
+msgstr "Adresse e-mail valide attendue : « utilisateur@exemple.org »"
 
 #: ckanext/schemingdcat/validators.py:1046
 msgid "Invalid ORCID format. Expected format: 0000-0000-0000-0000"
-msgstr ""
+msgstr "Format ORCID non valide. Format attendu : 0000-0000-0000-0000"
 
 #: ckanext/schemingdcat/validators.py:1064
 msgid "Invalid ORCID check digit"
-msgstr ""
+msgstr "Chiffre de contrôle ORCID non valide"
 
 #: ckanext/schemingdcat/views.py:98
 #, python-format
 msgid ""
 "You have %(remaining)d searches remaining before verification is required."
 msgstr ""
+"Il vous reste %(remaining)d recherches avant qu'une vérification ne soit "
+"requise."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:240
 msgid "Please enter a DOI"
-msgstr ""
+msgstr "Veuillez saisir un DOI"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:285
 msgid "Could not resolve DOI"
-msgstr ""
+msgstr "Impossible de résoudre le DOI"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:297
 msgid "Error fetching DOI metadata"
-msgstr ""
+msgstr "Erreur lors de la récupération des métadonnées du DOI"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:302
 msgid "Request timed out. Please try again."
-msgstr ""
+msgstr "La requête a expiré. Veuillez réessayer."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:304
 msgid "DOI API endpoint not found. Please contact administrator."
-msgstr ""
+msgstr "Point d'accès de l'API DOI introuvable. Contactez l'administrateur."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:306
 msgid "Network error. Please check your connection."
-msgstr ""
+msgstr "Erreur réseau. Vérifiez votre connexion."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:439
 msgid "Scientific Paper"
-msgstr ""
+msgstr "Article scientifique"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:440
 msgid "Technical Report"
-msgstr ""
+msgstr "Rapport technique"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:441
 msgid "Book"
-msgstr ""
+msgstr "Livre"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:442
 msgid "Book Chapter"
-msgstr ""
+msgstr "Chapitre d'ouvrage"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:443
 msgid "Conference Paper"
-msgstr ""
+msgstr "Communication de conférence"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:444
 msgid "Thesis/Dissertation"
-msgstr ""
+msgstr "Thèse ou mémoire"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:445
 msgid "Preprint"
-msgstr ""
+msgstr "Prépublication"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:446
 msgid "Dataset Documentation"
-msgstr ""
+msgstr "Documentation de jeu de données"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:447
 msgid "Software Documentation"
-msgstr ""
+msgstr "Documentation de logiciel"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:448
 msgid "Policy Brief"
-msgstr ""
+msgstr "Note d'orientation"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:449
 msgid "Poster"
-msgstr ""
+msgstr "Affiche"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:450
 msgid "Presentation"
-msgstr ""
+msgstr "Présentation"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:451
 msgid "Other"
-msgstr ""
+msgstr "Autre"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-doi-autofill.js:494
 msgid "Metadata applied successfully"
-msgstr ""
+msgstr "Métadonnées appliquées"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-email-protect.js:60
 msgid "Email copied to clipboard"
-msgstr ""
+msgstr "Adresse e-mail copiée dans le presse-papiers"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-email-protect.js:89
 msgid "Copy not supported. Email revealed below."
-msgstr ""
+msgstr "Copie non prise en charge. L'adresse e-mail est affichée ci-dessous."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:29
 msgid "Upload a graphic overview image"
-msgstr ""
+msgstr "Envoyez une image d'aperçu"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:35
 msgid "Drag an image here or click to upload"
-msgstr ""
+msgstr "Glissez une image ici ou cliquez pour l'envoyer"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:36
 msgid "The asset URL will be stored in “Graphic overview of the dataset”."
 msgstr ""
+"L'URL du fichier sera enregistrée dans « Aperçu graphique du jeu de données "
+"»."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:51
 msgid "Graphic overview preview"
-msgstr ""
+msgstr "Aperçu de l'image de présentation"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:54
 msgid "Replace"
-msgstr ""
+msgstr "Remplacer"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:57
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/multiple_text.html:14
@@ -318,39 +326,38 @@ msgstr ""
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:61
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:61
 msgid "Remove"
-msgstr "Remove"
+msgstr "Supprimer"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:60
 msgid "Open"
-msgstr ""
+msgstr "Ouvrir"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:77
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:161
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:168
 msgid "Upload failed. Please try again."
-msgstr ""
+msgstr "Échec de l'envoi. Veuillez réessayer."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:110
 msgid "Please choose an image file."
-msgstr ""
+msgstr "Veuillez choisir un fichier image."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:115
 msgid "Image is too large (max 10MB)."
-msgstr ""
+msgstr "L'image est trop volumineuse (10 Mo maximum)."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-graphic-overview-upload.js:127
 msgid "Uploading {name}..."
-msgstr ""
+msgstr "Envoi de {name}..."
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-table-collapsible-rows.js:31
 msgid "Show more"
-msgstr ""
+msgstr "Afficher plus"
 
 #: ckanext/schemingdcat/assets/js/modules/schemingdcat-table-collapsible-rows.js:32
 msgid "Hide"
-msgstr ""
+msgstr "Masquer"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/header.html:6
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:7
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:12
@@ -359,178 +366,191 @@ msgstr ""
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:38
 #: ckanext/schemingdcat/templates/schemingdcat/package/read.html:35
 msgid "Metadata templates"
-msgstr "Metadata templates"
+msgstr "Modèles de métadonnées"
 
 #: ckanext/schemingdcat/templates/header.html:13
 msgid "Harvest metadata"
-msgstr "Harvest metadata"
+msgstr "Moissonner les métadonnées"
 
 #: ckanext/schemingdcat/templates/admin/config.html:6
 msgid "CKAN config options"
-msgstr ""
+msgstr "Options de configuration de CKAN"
 
 #: ckanext/schemingdcat/templates/admin/config.html:14
 msgid "Frontpage intro text"
-msgstr "Frontpage intro text"
+msgstr "Texte d'introduction de la page d'accueil"
 
 #: ckanext/schemingdcat/templates/admin/config.html:15
 msgid "Intro Text"
-msgstr ""
+msgstr "Texte d'introduction"
 
 #: ckanext/schemingdcat/templates/admin/config.html:16
 msgid "If this text is set, it will appear as intro text on the Homepage, see"
-msgstr "If this text is set, it will appear as intro text on the Homepage, see"
+msgstr ""
+"Si ce texte est renseigné, il apparaîtra en introduction sur la page "
+"d'accueil, voir"
 
 #: ckanext/schemingdcat/templates/admin/config.html:18
 #: ckanext/schemingdcat/templates/admin/config.html:54
 msgid "Homepage"
-msgstr ""
+msgstr "Page d'accueil"
 
 #: ckanext/schemingdcat/templates/admin/config.html:21
 msgid "Multilang intro text"
-msgstr "Multilang intro text"
+msgstr "Texte d'introduction multilingue"
 
 #: ckanext/schemingdcat/templates/admin/config.html:21
 msgid ""
 "Add the tag with the lang code: <code>[#{iso639-1}#]</code> before the "
 "introductory text. Add as many tags as you want for each language."
 msgstr ""
-"Add the tag with the lang code: <code>[#{iso639-1}#]</code> before the "
-"introductory text. Add as many tags as you want for each language."
+"Ajoutez la balise avec le code de langue : <code>[#{iso639-1}#]</code> avant"
+" le texte d'introduction. Ajoutez autant de balises que de langues "
+"souhaitées."
 
 #: ckanext/schemingdcat/templates/admin/config.html:23
 msgid "ISO 639-1 codes"
-msgstr "ISO 639-1 codes"
+msgstr "Codes ISO 639-1"
 
 #: ckanext/schemingdcat/templates/admin/config.html:40
 msgid "Standard CKAN settings"
-msgstr "Standard CKAN settings"
+msgstr "Paramètres CKAN standard"
 
 #: ckanext/schemingdcat/templates/admin/config.html:41
 msgid "Site Title"
-msgstr ""
+msgstr "Titre du site"
 
 #: ckanext/schemingdcat/templates/admin/config.html:42
 msgid ""
 "This is the title of this CKAN instance. It appears in various places "
 "throughout CKAN."
 msgstr ""
-"This is the title of this CKAN instance. It appears in various places "
-"throughout CKAN."
+"Il s'agit du titre de cette instance CKAN. Il apparaît à divers endroits du "
+"site."
 
 #: ckanext/schemingdcat/templates/admin/config.html:43
 msgid "Style"
-msgstr ""
+msgstr "Style"
 
 #: ckanext/schemingdcat/templates/admin/config.html:44
 msgid ""
 "Choose from a list of simple variations of the main colour scheme to get a "
 "very quick custom theme working."
 msgstr ""
-"Choose from a list of simple variations of the main colour scheme to get a "
-"very quick custom theme working."
+"Choisissez parmi une liste de variantes simples de la palette principale "
+"pour obtenir rapidement un thème personnalisé."
 
 #: ckanext/schemingdcat/templates/admin/config.html:46
 msgid "Site Tag Logo"
-msgstr ""
+msgstr "Logo du site"
 
 #: ckanext/schemingdcat/templates/admin/config.html:47
 msgid ""
 "This is the logo that appears in the header of all the CKAN instance "
 "templates."
 msgstr ""
-"This is the logo that appears in the header of all the CKAN instance "
-"templates."
+"Il s'agit du logo affiché dans l'en-tête de tous les gabarits de cette "
+"instance CKAN."
 
 #: ckanext/schemingdcat/templates/admin/config.html:48
 #: ckanext/schemingdcat/templates/home/about.html:3
 #: ckanext/schemingdcat/templates/home/about.html:6
 #: ckanext/schemingdcat/templates/home/about.html:17
 msgid "About"
-msgstr "About"
+msgstr "À propos"
 
 #: ckanext/schemingdcat/templates/admin/config.html:49
 msgid "This text will appear on this CKAN instances, see "
-msgstr "This text will appear on this CKAN instances, see "
+msgstr "Ce texte apparaîtra sur cette instance CKAN, voir "
 
 #: ckanext/schemingdcat/templates/admin/config.html:50
 msgid "About page"
-msgstr ""
+msgstr "Page « À propos »"
 
 #: ckanext/schemingdcat/templates/admin/config.html:51
 msgid "Custom CSS"
-msgstr ""
+msgstr "CSS personnalisé"
 
 #: ckanext/schemingdcat/templates/admin/config.html:52
 msgid "This can be used for custom CSS on a CKAN site."
-msgstr ""
+msgstr "Permet d'ajouter du CSS personnalisé à un site CKAN."
 
 #: ckanext/schemingdcat/templates/admin/config.html:55
 msgid ""
-"This is for choosing a predefined layout for the modules that appear on your "
-"homepage."
+"This is for choosing a predefined layout for the modules that appear on your"
+" homepage."
 msgstr ""
-"This is for choosing a predefined layout for the modules that appear on your "
-"homepage."
+"Permet de choisir une disposition prédéfinie pour les modules de la page "
+"d'accueil."
 
 #: ckanext/schemingdcat/templates/admin/trash.html:13
 msgid "Are you sure you want to purge everything?"
-msgstr ""
+msgstr "Voulez-vous vraiment tout purger ?"
 
 #: ckanext/schemingdcat/templates/admin/trash.html:14
 msgid "Purge all"
-msgstr ""
+msgstr "Tout purger"
 
 #: ckanext/schemingdcat/templates/admin/trash.html:28
 msgid "Trash"
-msgstr ""
+msgstr "Corbeille"
 
 #: ckanext/schemingdcat/templates/admin/trash.html:32
 msgid ""
 "Purge deleted datasets, organizations or groups forever and irreversibly."
 msgstr ""
+"Purge définitivement et irréversiblement les jeux de données, organisations "
+"ou groupes supprimés."
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:21
 msgid "CKAN Data API"
-msgstr ""
+msgstr "API de données CKAN"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:25
 msgid "Access resource data via a web API with powerful query support"
 msgstr ""
+"Accédez aux données des ressources via une API web dotée de puissantes "
+"capacités de requête"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:26
 msgid ""
-"Further information in the <a href=\"http://docs.ckan.org/en/latest/"
-"maintaining/datastore.html\" target=\"_blank\">main CKAN Data API and "
-"DataStore documentation</a>.</p>"
+"Further information in the <a "
+"href=\"http://docs.ckan.org/en/latest/maintaining/datastore.html\" "
+"target=\"_blank\">main CKAN Data API and DataStore documentation</a>.</p>"
 msgstr ""
+"Plus d'informations dans la <a "
+"href=\"http://docs.ckan.org/en/latest/maintaining/datastore.html\" "
+"target=\"_blank\">documentation de l'API de données et du DataStore de "
+"CKAN</a>.</p>"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:35
 msgid "Endpoints"
-msgstr ""
+msgstr "Points d'accès"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:39
 msgid ""
 "The Data API can be accessed via the following actions of the CKAN action "
 "API."
 msgstr ""
+"L'API de données est accessible via les actions suivantes de l'API d'actions"
+" de CKAN."
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:44
 msgid "Create"
-msgstr ""
+msgstr "Créer"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:48
 msgid "Update / Insert"
-msgstr ""
+msgstr "Mettre à jour / insérer"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:52
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:68
 msgid "Query"
-msgstr ""
+msgstr "Interroger"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:56
 msgid "Query (via SQL)"
-msgstr ""
+msgstr "Interroger (via SQL)"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:72
 #: ckanext/schemingdcat/templates/api_examples/curl.html:10
@@ -538,7 +558,7 @@ msgstr ""
 #: ckanext/schemingdcat/templates/api_examples/python.html:17
 #: ckanext/schemingdcat/templates/api_examples/r.html:12
 msgid "Query example (first 5 results)"
-msgstr ""
+msgstr "Exemple de requête (5 premiers résultats)"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:77
 #: ckanext/schemingdcat/templates/api_examples/curl.html:29
@@ -546,7 +566,7 @@ msgstr ""
 #: ckanext/schemingdcat/templates/api_examples/python.html:40
 #: ckanext/schemingdcat/templates/api_examples/r.html:37
 msgid "Query example (results containing 'medio-ambiente')"
-msgstr "Query example (results containing 'medio-ambiente')"
+msgstr "Exemple de requête (résultats contenant « medio-ambiente »)"
 
 #: ckanext/schemingdcat/templates/ajax_snippets/scd_api_info.html:82
 #: ckanext/schemingdcat/templates/api_examples/curl.html:51
@@ -554,147 +574,150 @@ msgstr "Query example (results containing 'medio-ambiente')"
 #: ckanext/schemingdcat/templates/api_examples/python.html:66
 #: ckanext/schemingdcat/templates/api_examples/r.html:63
 msgid "Query example (via SQL statement)"
-msgstr ""
+msgstr "Exemple de requête (via une instruction SQL)"
 
 #: ckanext/schemingdcat/templates/api_examples/curl.html:3
 msgid "Example: curl"
-msgstr ""
+msgstr "Exemple : curl"
 
 #: ckanext/schemingdcat/templates/api_examples/javascript.html:3
 msgid "Example: Javascript"
-msgstr ""
+msgstr "Exemple : Javascript"
 
 #: ckanext/schemingdcat/templates/api_examples/python.html:5
 msgid "Example: Python"
-msgstr ""
+msgstr "Exemple : Python"
 
 #: ckanext/schemingdcat/templates/api_examples/r.html:5
 msgid "Example: R"
-msgstr ""
+msgstr "Exemple : R"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:12
 msgid "Enhanced upload interface is enabled"
-msgstr ""
+msgstr "L'interface d'envoi améliorée est activée"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:14
 msgid ""
 "Azure Direct Upload: Files will be uploaded directly to Azure Blob Storage"
 msgstr ""
+"Envoi direct vers Azure : les fichiers seront transférés directement vers "
+"Azure Blob Storage"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:58
 msgid "Preparing upload..."
-msgstr ""
+msgstr "Préparation de l'envoi..."
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:171
 msgid "File uploaded"
-msgstr ""
+msgstr "Fichier envoyé"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:171
 msgid "Auto-generated description"
-msgstr ""
+msgstr "Description générée automatiquement"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:302
 msgid "Requesting Azure upload URL..."
-msgstr ""
+msgstr "Demande de l'URL d'envoi Azure..."
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:333
 msgid "Uploading to Azure Blob Storage..."
-msgstr ""
+msgstr "Envoi vers Azure Blob Storage..."
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:347
 msgid "Upload completed successfully!"
-msgstr ""
+msgstr "Envoi terminé avec succès !"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:397
 msgid "Upload failed:"
-msgstr ""
+msgstr "Échec de l'envoi :"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:440
 msgid "Uploading to Azure..."
-msgstr ""
+msgstr "Envoi vers Azure..."
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:446
 msgid "Upload completed!"
-msgstr ""
+msgstr "Envoi terminé !"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:483
 msgid "File ready. Click Save to upload"
-msgstr ""
+msgstr "Fichier prêt. Cliquez sur Enregistrer pour l'envoyer"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:619
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:650
 msgid "CloudStorage Ready"
-msgstr ""
+msgstr "CloudStorage prêt"
 
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:620
 #: ckanext/schemingdcat/templates/cloudstorage/snippets/multipart_module.html:651
 msgid "Files will be uploaded with real-time progress tracking"
 msgstr ""
+"Les fichiers seront envoyés avec un suivi de progression en temps réel"
 
 #: ckanext/schemingdcat/templates/group/index.html:4
 msgid "Search groups..."
-msgstr ""
+msgstr "Rechercher des groupes..."
 
 #: ckanext/schemingdcat/templates/group/index.html:4
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:27
 #: ckanext/schemingdcat/templates/organization/index.html:4
 #: ckanext/schemingdcat/templates/organization/read.html:13
 msgid "Name Ascending"
-msgstr "Name Ascending"
+msgstr "Nom croissant"
 
 #: ckanext/schemingdcat/templates/group/index.html:4
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:28
 #: ckanext/schemingdcat/templates/organization/index.html:4
 #: ckanext/schemingdcat/templates/organization/read.html:14
 msgid "Name Descending"
-msgstr "Name Descending"
+msgstr "Nom décroissant"
 
 #: ckanext/schemingdcat/templates/group/read.html:12
 #: ckanext/schemingdcat/templates/organization/read.html:12
 msgid "Relevance"
-msgstr "Relevance"
+msgstr "Pertinence"
 
 #: ckanext/schemingdcat/templates/group/read.html:13
 msgid "Name ascending"
-msgstr "Name ascending"
+msgstr "Nom croissant"
 
 #: ckanext/schemingdcat/templates/group/read.html:14
 msgid "Name descending"
-msgstr "Name descending"
+msgstr "Nom décroissant"
 
 #: ckanext/schemingdcat/templates/group/read.html:15
 msgid "Last modified"
-msgstr "Last modified"
+msgstr "Dernière modification"
 
 #: ckanext/schemingdcat/templates/group/read.html:16
 #: ckanext/schemingdcat/templates/organization/read.html:16
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:65
 msgid "Popular"
-msgstr "Popular"
+msgstr "Populaire"
 
 #: ckanext/schemingdcat/templates/group/read.html:18
 #: ckanext/schemingdcat/templates/organization/read.html:18
 msgid "Search datasets..."
-msgstr "Search datasets..."
+msgstr "Rechercher des jeux de données..."
 
 #: ckanext/schemingdcat/templates/group/read.html:31
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:112
 #: ckanext/schemingdcat/templates/organization/read.html:30
 msgid "Search config"
-msgstr "Search config"
+msgstr "Configuration de la recherche"
 
 #: ckanext/schemingdcat/templates/group/read.html:41
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:122
 #: ckanext/schemingdcat/templates/organization/read.html:40
 msgid "Close"
-msgstr "Close"
+msgstr "Fermer"
 
 #: ckanext/schemingdcat/templates/group/snippets/group_item.html:41
 #: ckanext/schemingdcat/templates/group/snippets/group_item.html:42
 #: ckanext/schemingdcat/templates/schemingdcat/custom_data/snippets/custom_data_item.html:29
 #: ckanext/schemingdcat/templates/schemingdcat/custom_data/snippets/custom_data_item.html:31
 msgid "View {name}"
-msgstr ""
+msgstr "Voir {name}"
 
 #: ckanext/schemingdcat/templates/group/snippets/info.html:13
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:81
@@ -703,7 +726,7 @@ msgstr ""
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:19
 #: ckanext/schemingdcat/templates/snippets/source_item.html:33
 msgid "Draft"
-msgstr "Draft"
+msgstr "Brouillon"
 
 #: ckanext/schemingdcat/templates/group/snippets/info.html:19
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:83
@@ -713,145 +736,168 @@ msgstr "Draft"
 #: ckanext/schemingdcat/templates/snippets/source_item.html:35
 #: ckanext/schemingdcat/templates/source/new_source_form.html:90
 msgid "Deleted"
-msgstr "Deleted"
+msgstr "Supprimé"
 
 #: ckanext/schemingdcat/templates/group/snippets/info.html:32
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/organization.html:32
 #: ckanext/schemingdcat/templates/source/read_base.html:10
 msgid "read more"
-msgstr "read more"
+msgstr "en savoir plus"
 
 #: ckanext/schemingdcat/templates/home/index.html:4
 msgid "Welcome"
-msgstr ""
+msgstr "Bienvenue"
 
 #: ckanext/schemingdcat/templates/home/snippets/about_text.html:1
 msgid ""
-"<p>CKAN is the world’s leading open-source data portal platform.</p> <p>CKAN "
-"is a complete out-of-the-box software solution that makes data accessible "
+"<p>CKAN is the world’s leading open-source data portal platform.</p> <p>CKAN"
+" is a complete out-of-the-box software solution that makes data accessible "
 "and usable – by providing tools to streamline publishing, sharing, finding "
 "and using data (including storage of data and provision of robust data "
 "APIs). CKAN is aimed at data publishers (national and regional governments, "
-"companies and organizations) wanting to make their data open and available.</"
-"p> <p>CKAN is used by governments and user groups worldwide and powers a "
-"variety of official and community data portals including portals for local, "
-"national and international government, such as the UK’s <a href=\"http://"
-"data.gov.uk\">data.gov.uk</a> and the European Union’s <a href=\"http://"
-"publicdata.eu/\">publicdata.eu</a>, the Brazilian <a href=\"http://"
-"dados.gov.br/\">dados.gov.br</a>, Dutch and Netherland government portals, "
-"as well as city and municipal sites in the US, UK, Argentina, Finland and "
-"elsewhere.</p> <p>CKAN: <a href=\"http://ckan.org/\">http://ckan.org/</"
-"a><br /> CKAN Tour: <a href=\"http://ckan.org/tour/\">http://ckan.org/tour/</"
-"a><br /> Features overview: <a href=\"http://ckan.org/features/\">http://"
-"ckan.org/features/</a></p>"
+"companies and organizations) wanting to make their data open and "
+"available.</p> <p>CKAN is used by governments and user groups worldwide and "
+"powers a variety of official and community data portals including portals "
+"for local, national and international government, such as the UK’s <a "
+"href=\"http://data.gov.uk\">data.gov.uk</a> and the European Union’s <a "
+"href=\"http://publicdata.eu/\">publicdata.eu</a>, the Brazilian <a "
+"href=\"http://dados.gov.br/\">dados.gov.br</a>, Dutch and Netherland "
+"government portals, as well as city and municipal sites in the US, UK, "
+"Argentina, Finland and elsewhere.</p> <p>CKAN: <a "
+"href=\"http://ckan.org/\">http://ckan.org/</a><br /> CKAN Tour: <a "
+"href=\"http://ckan.org/tour/\">http://ckan.org/tour/</a><br /> Features "
+"overview: <a "
+"href=\"http://ckan.org/features/\">http://ckan.org/features/</a></p>"
 msgstr ""
+"<p>CKAN est la principale plateforme open source de portails de données au "
+"monde.</p> <p>CKAN est une solution logicielle complète et prête à l'emploi "
+"qui rend les données accessibles et exploitables, en fournissant des outils "
+"qui simplifient la publication, le partage, la recherche et l'utilisation "
+"des données (y compris le stockage des données et la mise à disposition "
+"d'API robustes). CKAN s'adresse aux producteurs de données (gouvernements "
+"nationaux et régionaux, entreprises et organisations) souhaitant ouvrir et "
+"diffuser leurs données.</p> <p>CKAN est utilisé par des gouvernements et des"
+" communautés d'utilisateurs dans le monde entier et fait fonctionner de "
+"nombreux portails de données officiels et communautaires, notamment des "
+"portails d'administrations locales, nationales et internationales, tels que "
+"le britannique <a href=\"http://data.gov.uk\">data.gov.uk</a> et l'européen "
+"<a href=\"http://publicdata.eu/\">publicdata.eu</a>, le brésilien <a "
+"href=\"http://dados.gov.br/\">dados.gov.br</a>, les portails gouvernementaux"
+" néerlandais, ainsi que des sites municipaux aux États-Unis, au Royaume-Uni,"
+" en Argentine, en Finlande et ailleurs.</p> <p>CKAN : <a "
+"href=\"http://ckan.org/\">http://ckan.org/</a><br /> Visite guidée de CKAN :"
+" <a href=\"http://ckan.org/tour/\">http://ckan.org/tour/</a><br /> Aperçu "
+"des fonctionnalités : <a "
+"href=\"http://ckan.org/features/\">http://ckan.org/features/</a></p>"
 
 #: ckanext/schemingdcat/templates/home/snippets/endpoints.html:5
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:11
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:76
 msgid "Catalog endpoints"
-msgstr "Catalog endpoints"
+msgstr "Points d'accès du catalogue"
 
 #: ckanext/schemingdcat/templates/home/snippets/promoted.html:8
 msgid "Welcome to CKAN"
-msgstr ""
+msgstr "Bienvenue sur CKAN"
 
 #: ckanext/schemingdcat/templates/home/snippets/promoted.html:10
 msgid ""
 "This is a nice introductory paragraph about CKAN or the site in general. We "
 "don't have any copy to go here yet but soon we will"
 msgstr ""
+"Voici un paragraphe d'introduction sur CKAN ou sur le site en général. Nous "
+"n'avons pas encore de texte définitif, mais cela viendra bientôt"
 
 #: ckanext/schemingdcat/templates/home/snippets/promoted.html:19
 msgid "This is a featured section"
-msgstr ""
+msgstr "Ceci est une section à la une"
 
 #: ckanext/schemingdcat/templates/home/snippets/promoted.html:22
 msgid "Placeholder"
-msgstr ""
+msgstr "Texte indicatif"
 
 #: ckanext/schemingdcat/templates/home/snippets/search.html:4
 msgid "E.g. environment"
-msgstr ""
+msgstr "P. ex. environnement"
 
 #: ckanext/schemingdcat/templates/home/snippets/search.html:6
 msgid "Open Data Catalog"
-msgstr "Open Data Catalog"
+msgstr "Catalogue de données ouvertes"
 
 #: ckanext/schemingdcat/templates/home/snippets/search.html:12
 msgid "Search datasets"
-msgstr ""
+msgstr "Rechercher des jeux de données"
 
 #: ckanext/schemingdcat/templates/home/snippets/search.html:15
 msgid "Search"
-msgstr "Search"
+msgstr "Rechercher"
 
 #: ckanext/schemingdcat/templates/home/snippets/search.html:20
 msgid "Popular tags"
-msgstr ""
+msgstr "Mots-clés populaires"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:5
 msgid "{0} statistics"
-msgstr ""
+msgstr "Statistiques de {0}"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:12
 msgid "dataset"
-msgstr ""
+msgstr "jeu de données"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:12
 msgid "datasets"
-msgstr ""
+msgstr "jeux de données"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:18
 msgid "organization"
-msgstr ""
+msgstr "organisation"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:18
 msgid "organizations"
-msgstr ""
+msgstr "organisations"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:24
 msgid "group"
-msgstr ""
+msgstr "groupe"
 
 #: ckanext/schemingdcat/templates/home/snippets/stats.html:24
 msgid "groups"
-msgstr ""
+msgstr "groupes"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:3
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:11
 msgid "Edit datasets"
-msgstr ""
+msgstr "Modifier les jeux de données"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:16
 msgid " found for \"{query}\""
-msgstr " found for \"{query}\""
+msgstr " trouvés pour « {query} »"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:18
 msgid "Sorry no datasets found for \"{query}\""
-msgstr ""
+msgstr "Aucun jeu de données trouvé pour « {query} »"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:29
 #: ckanext/schemingdcat/templates/organization/read.html:15
 msgid "Last Modified"
-msgstr "Last Modified"
+msgstr "Dernière modification"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:48
 msgid "Make public"
-msgstr ""
+msgstr "Rendre public"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:52
 msgid "Make private"
-msgstr ""
+msgstr "Rendre privé"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:58
 #: ckanext/schemingdcat/templates/source/new_source_form.html:103
 msgid "Delete"
-msgstr "Delete"
+msgstr "Supprimer"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:76
 msgid "Edit"
-msgstr "Edit"
+msgstr "Modifier"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:86
 #: ckanext/schemingdcat/templates/schemingdcat/package/read.html:18
@@ -859,71 +905,73 @@ msgstr "Edit"
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:30
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:46
 msgid "Private"
-msgstr ""
+msgstr "Privé"
 
 #: ckanext/schemingdcat/templates/organization/bulk_process.html:99
 msgid "This organization has no datasets associated to it"
-msgstr ""
+msgstr "Aucun jeu de données n'est associé à cette organisation"
 
 #: ckanext/schemingdcat/templates/organization/index.html:4
 msgid "Search organizations..."
-msgstr ""
+msgstr "Rechercher des organisations..."
 
 #: ckanext/schemingdcat/templates/organization/snippets/organization_item.html:17
 #: ckanext/schemingdcat/templates/organization/snippets/organization_item.html:18
 msgid "View {organization_name}"
-msgstr ""
+msgstr "Voir {organization_name}"
 
-# Documents sidebar info
 #: ckanext/schemingdcat/templates/package/base_form_page.html:6
 msgid "What are documents?"
-msgstr "What are documents?"
+msgstr "Que sont les documents ?"
 
 #: ckanext/schemingdcat/templates/package/base_form_page.html:9
 msgid ""
-"A document is a publication such as a report, paper, or study, together with "
-"its metadata. Documents are what users see when browsing the document "
+"A document is a publication such as a report, paper, or study, together with"
+" its metadata. Documents are what users see when browsing the document "
 "catalog."
 msgstr ""
+"Un document est une publication — rapport, article ou étude — accompagnée de"
+" ses métadonnées. Les documents sont ce que les utilisateurs consultent en "
+"parcourant le catalogue de documents."
 
 #: ckanext/schemingdcat/templates/package/group_list.html:4
 msgid "Groups"
-msgstr "Groups"
+msgstr "Groupes"
 
 #: ckanext/schemingdcat/templates/package/group_list.html:14
 msgid "Associate this group with this dataset"
-msgstr ""
+msgstr "Associer ce groupe à ce jeu de données"
 
 #: ckanext/schemingdcat/templates/package/group_list.html:14
 msgid "Add to group"
-msgstr ""
+msgstr "Ajouter au groupe"
 
 #: ckanext/schemingdcat/templates/package/group_list.html:24
 msgid "There are no groups associated with this dataset"
-msgstr ""
+msgstr "Aucun groupe n'est associé à ce jeu de données"
 
 #: ckanext/schemingdcat/templates/package/search.html:18
 #, python-format
 msgid "Add %(label)s"
-msgstr ""
+msgstr "Ajouter %(label)s"
 
 #: ckanext/schemingdcat/templates/package/snippets/package_form.html:4
 msgid "Next Category"
-msgstr ""
+msgstr "Catégorie suivante"
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:5
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:14
 msgid "A screenshot of a computer"
-msgstr ""
+msgstr "Capture d'écran d'un ordinateur"
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:6
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:15
 msgid "AI-generated content may be incorrect."
-msgstr ""
+msgstr "Le contenu généré par IA peut comporter des erreurs."
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:7
 msgid "Document Upload Form"
-msgstr ""
+msgstr "Formulaire de dépôt de documents"
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:10
 msgid ""
@@ -933,10 +981,15 @@ msgid ""
 "options. Documents can be either added as PDF, or referenced from other "
 "online repositories as web links (URL)."
 msgstr ""
+"Vous pouvez ici ajouter des documents à la base de votre organisation sur "
+"IHP-WINS. Il peut s'agir de rapports, de publications, d'articles "
+"scientifiques ou d'ouvrages. Selon le type de document, différentes options "
+"de dépôt ou de partage sont proposées : ajout d'un PDF ou référencement "
+"depuis d'autres dépôts en ligne au moyen d'une URL."
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:16
 msgid "Data Upload Form"
-msgstr ""
+msgstr "Formulaire de dépôt de données"
 
 #: ckanext/schemingdcat/templates/package/snippets/resource_help.html:19
 msgid ""
@@ -946,40 +999,50 @@ msgid ""
 "such as GeoTIFFs, among others. Data can be either added directly or "
 "referenced from other online repositories as web links (URL)."
 msgstr ""
+"Vous pouvez ici ajouter des jeux de données à la base de votre organisation "
+"sur IHP-WINS. Il peut s'agir de données numériques ou spatiales dans divers "
+"formats : valeurs séparées par des virgules (CSV), fichiers vectoriels tels "
+"que les Shapefiles (SHP), fichiers raster tels que les GeoTIFF, entre "
+"autres. Les données peuvent être ajoutées directement ou référencées depuis "
+"d'autres dépôts en ligne au moyen d'une URL."
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:3
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:6
 msgid "Rate Limit"
-msgstr ""
+msgstr "Limite de requêtes"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:13
 msgid "Search Rate Limit Reached"
-msgstr ""
+msgstr "Limite de recherches atteinte"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:22
 msgid "Too Many Requests"
-msgstr ""
+msgstr "Trop de requêtes"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:23
 msgid ""
 "You have exceeded the maximum number of searches allowed. Please wait a few "
 "minutes before trying again."
 msgstr ""
+"Vous avez dépassé le nombre maximal de recherches autorisées. Patientez "
+"quelques minutes avant de réessayer."
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:28
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:38
 msgid "Go to Homepage"
-msgstr ""
+msgstr "Aller à la page d'accueil"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:34
 msgid "Why am I seeing this?"
-msgstr ""
+msgstr "Pourquoi ce message ?"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:35
 msgid ""
 "This rate limiting system helps protect our service from automated bots and "
 "ensures fair access for all users."
 msgstr ""
+"Ce système de limitation protège le service contre les robots automatisés et"
+" garantit un accès équitable à tous les utilisateurs."
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:37
 #, python-format
@@ -987,84 +1050,88 @@ msgid ""
 "Unauthenticated users are limited to %(limit)s searches within %(window)s "
 "minutes"
 msgstr ""
+"Les utilisateurs non authentifiés sont limités à %(limit)s recherches par "
+"tranche de %(window)s minutes"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:39
 #, python-format
 msgid "After %(count)s searches, you need to solve a simple math problem"
 msgstr ""
+"Au bout de %(count)s recherches, vous devrez résoudre un calcul simple"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:40
 msgid "Registered users have higher limits - consider"
 msgstr ""
+"Les utilisateurs inscrits bénéficient de limites plus élevées : pensez à"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:41
 msgid "logging in"
-msgstr ""
+msgstr "vous connecter"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:51
 msgid "Tips"
-msgstr ""
+msgstr "Conseils"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:55
 msgid "Use more specific search terms"
-msgstr ""
+msgstr "Utilisez des termes de recherche plus précis"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:56
 msgid "Try different search filters"
-msgstr ""
+msgstr "Essayez d'autres filtres de recherche"
 
 #: ckanext/schemingdcat/templates/schemingdcat/rate_limited.html:57
 msgid "Login for unlimited searches"
-msgstr ""
+msgstr "Connectez-vous pour des recherches illimitées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/custom_data/index.html:5
 msgid "Custom Data"
-msgstr ""
+msgstr "Données personnalisées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/custom_data/snippets/custom_data_item.html:35
 msgid "Definition"
-msgstr "Definition"
+msgstr "Définition"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/doi_link.html:16
 msgid "Digital Object Identifier"
-msgstr ""
+msgstr "Identifiant d'objet numérique"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/doi_link.html:21
 msgid "Open DOI in new tab"
-msgstr ""
+msgstr "Ouvrir le DOI dans un nouvel onglet"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/doi_link.html:27
 msgid "Copy DOI to clipboard"
-msgstr ""
+msgstr "Copier le DOI dans le presse-papiers"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/last_update.html:6
 msgid "Show changelog"
-msgstr "Show changelog"
+msgstr "Afficher le journal des modifications"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/spatial_extent.html:6
 msgid "Spatial Extent:"
-msgstr ""
+msgstr "Emprise spatiale :"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/spatial_extent.html:12
 msgid "Copy Coordinates"
-msgstr ""
+msgstr "Copier les coordonnées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/display_snippets/spatial_extent.html:95
 msgid "Copied!"
-msgstr ""
+msgstr "Copié !"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/header_endpoints.html:29
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:42
 msgid "{endpoint_type} Endpoint"
-msgstr "{endpoint_type} Endpoint"
+msgstr "Point d'accès {endpoint_type}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/header_endpoints.html:43
 msgid "Conjuntos de datos"
-msgstr ""
+msgstr "Jeux de données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:18
 msgid "What are Endpoints?"
-msgstr "What are Endpoints?"
+msgstr "Que sont les points d'accès ?"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:21
 msgid ""
@@ -1072,29 +1139,31 @@ msgid ""
 "different software systems. In the context of CKAN, endpoints are essential "
 "for enabling access to the data and metadata stored on the platform."
 msgstr ""
-"Endpoints are access points to an API that allow interaction between "
-"different software systems. In the context of CKAN, endpoints are essential "
-"for enabling access to the data and metadata stored on the platform."
+"Les points d'accès sont des points d'entrée d'une API qui permettent "
+"l'interaction entre différents systèmes logiciels. Dans CKAN, ils sont "
+"essentiels pour accéder aux données et métadonnées stockées sur la "
+"plateforme."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:22
 msgid "We have several endpoints available on our CKAN instance:"
-msgstr "We have several endpoints available on our CKAN instance:"
+msgstr "Plusieurs points d'accès sont disponibles sur notre instance CKAN :"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:24
 msgid "Geographic Metadata (CSW INSPIRE)"
-msgstr "Geographic Metadata (CSW INSPIRE)"
+msgstr "Métadonnées géographiques (CSW INSPIRE)"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:24
 msgid ""
 "This endpoint allows access to geographic metadata in accordance with the "
 "INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
 msgstr ""
-"This endpoint allows access to geographic metadata in accordance with the "
-"INSPIRE regulations, through the CSW (Catalog Service for the Web) standard."
+"Ce point d'accès permet de consulter les métadonnées géographiques "
+"conformément à la réglementation INSPIRE, via la norme CSW (Catalog Service "
+"for the Web)."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:25
 msgid "CKAN API"
-msgstr "CKAN API"
+msgstr "API CKAN"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:25
 msgid ""
@@ -1102,135 +1171,138 @@ msgid ""
 "functionality, allowing for operations like data search, package creation, "
 "and more."
 msgstr ""
-"This endpoint provides programmatic access to the CKAN instance's data and "
-"functionality, allowing for operations like data search, package creation, "
-"and more."
+"Ce point d'accès offre un accès programmatique aux données et "
+"fonctionnalités de l'instance CKAN : recherche de données, création de jeux "
+"de données, etc."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:26
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:27
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:28
 msgid "Open Data in"
-msgstr "Open Data in"
+msgstr "Données ouvertes en"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:26
 msgid ""
 "This endpoint allows access to data in RDF (Resource Description Framework) "
 "format, a standard for data exchange on the web."
 msgstr ""
-"This endpoint allows access to data in RDF (Resource Description Framework) "
-"format, a standard for data exchange on the web."
+"Ce point d'accès permet de consulter les données au format RDF (Resource "
+"Description Framework), une norme d'échange de données sur le web."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:27
 msgid ""
 "This endpoint provides data in Turtle format, a compact and easy-to-read "
 "syntax for RDF."
 msgstr ""
-"This endpoint provides data in Turtle format, a compact and easy-to-read "
-"syntax for RDF."
+"Ce point d'accès fournit les données au format Turtle, une syntaxe RDF "
+"compacte et lisible."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:28
 msgid ""
-"This endpoint offers data in JSON-LD format, a representation of RDF data in "
-"JSON that allows interoperability between different data services."
+"This endpoint offers data in JSON-LD format, a representation of RDF data in"
+" JSON that allows interoperability between different data services."
 msgstr ""
-"This endpoint offers data in JSON-LD format, a representation of RDF data in "
-"JSON that allows interoperability between different data services."
+"Ce point d'accès fournit les données au format JSON-LD, une représentation "
+"RDF en JSON qui facilite l'interopérabilité entre services de données."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:30
 msgid "SPARQL Endpoint"
-msgstr "SPARQL Endpoint"
+msgstr "Point d'accès SPARQL"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:30
 msgid ""
 "This endpoint allows querying of RDF data using the SPARQL query language. "
 "It enables complex queries over the data."
 msgstr ""
-"This endpoint allows querying of RDF data using the SPARQL query language. "
-"It enables complex queries over the data."
+"Ce point d'accès permet d'interroger les données RDF avec le langage SPARQL,"
+" ce qui autorise des requêtes complexes."
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:63
 msgid "Geospatial Metadata"
-msgstr "Geospatial Metadata"
+msgstr "Métadonnées géospatiales"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:64
 msgid "CKAN"
-msgstr ""
+msgstr "CKAN"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:65
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:61
 msgid "Linked Data"
-msgstr "Linked Data"
+msgstr "Données liées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/endpoints/index.html:86
 msgid "Endpoint"
-msgstr ""
+msgstr "Point d'accès"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:33
 msgid "e.g. 10.5281/zenodo.1234567 or https://doi.org/10.1234/example"
-msgstr ""
+msgstr "p. ex. 10.5281/zenodo.1234567 ou https://doi.org/10.1234/exemple"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:36
 msgid ""
-"No DOI? Skip the fetch step and fill the metadata manually. You can upload a "
-"file after saving this step or paste a link."
+"No DOI? Skip the fetch step and fill the metadata manually. You can upload a"
+" file after saving this step or paste a link."
 msgstr ""
+"Pas de DOI ? Passez l'étape de récupération et saisissez les métadonnées "
+"manuellement. Vous pourrez envoyer un fichier après avoir enregistré cette "
+"étape, ou coller un lien."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:45
 msgid "DOI workflow"
-msgstr ""
+msgstr "Procédure avec DOI"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:48
 msgid "Manual Upload (no DOI)"
-msgstr ""
+msgstr "Dépôt manuel (sans DOI)"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:52
 msgid "Automatic Upload (with DOI)"
-msgstr ""
+msgstr "Dépôt automatique (avec DOI)"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:59
 msgid "Document DOI (auto-fill)"
-msgstr ""
+msgstr "DOI du document (remplissage automatique)"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:74
 msgid "Fetch metadata from DOI"
-msgstr ""
+msgstr "Récupérer les métadonnées à partir du DOI"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:76
 msgid "Fetch"
-msgstr ""
+msgstr "Récupérer"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:83
 msgid "Valid DOI format"
-msgstr ""
+msgstr "Format de DOI valide"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:86
 msgid "Invalid DOI format"
-msgstr ""
+msgstr "Format de DOI non valide"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:94
 msgid "Fetching metadata from DOI providers..."
-msgstr ""
+msgstr "Récupération des métadonnées auprès des fournisseurs de DOI..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:109
 msgid "Metadata Preview"
-msgstr ""
+msgstr "Aperçu des métadonnées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:116
 #: ckanext/schemingdcat/templates/source/new_source_form.html:17
 msgid "Title"
-msgstr "Title"
+msgstr "Titre"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:119
 msgid "Authors"
-msgstr ""
+msgstr "Auteurs"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:122
 msgid "Year"
-msgstr ""
+msgstr "Année"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:125
 msgid "Publisher"
-msgstr ""
+msgstr "Éditeur"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:128
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_datadictionary_info.html:23
@@ -1239,81 +1311,87 @@ msgstr "Type"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:131
 msgid "Abstract"
-msgstr ""
+msgstr "Résumé"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:134
 msgid "Keywords"
-msgstr ""
+msgstr "Mots-clés"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:143
 msgid "Overwrite existing values"
-msgstr ""
+msgstr "Écraser les valeurs existantes"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:150
 msgid "Apply Metadata"
-msgstr ""
+msgstr "Appliquer les métadonnées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:153
 msgid "Cancel"
-msgstr ""
+msgstr "Annuler"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/doi_autofill.html:166
 msgid "Continue without DOI"
-msgstr ""
+msgstr "Continuer sans DOI"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/group_select.html:20
 msgid "No group"
-msgstr ""
+msgstr "Aucun groupe"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/group_select_iniciatives.html:43
-msgid "Add every Initiative that applies. Use Ctrl/Cmd for multiple selection."
+msgid ""
+"Add every Initiative that applies. Use Ctrl/Cmd for multiple selection."
 msgstr ""
+"Ajoutez toutes les initiatives concernées. Utilisez Ctrl/Cmd pour en "
+"sélectionner plusieurs."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/group_select_iniciatives.html:46
 msgid "No Initiative selected yet."
-msgstr ""
+msgstr "Aucune initiative sélectionnée pour l'instant."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/group_select_member.html:43
 msgid ""
 "Select all applicable Member States. Hold Ctrl/Cmd to pick more than one."
 msgstr ""
+"Sélectionnez tous les États membres concernés. Maintenez Ctrl/Cmd pour en "
+"choisir plusieurs."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/group_select_member.html:46
 msgid "No Member State selected yet."
-msgstr ""
+msgstr "Aucun État membre sélectionné pour l'instant."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/multiple_text.html:45
 msgid "Add"
-msgstr "Add"
+msgstr "Ajouter"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:42
 msgid "Data"
-msgstr ""
+msgstr "Données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:47
 msgid "Upload a file on your computer"
-msgstr ""
+msgstr "Envoyez un fichier depuis votre ordinateur"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:51
 msgid "Upload"
-msgstr ""
+msgstr "Envoyer"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:54
 msgid "Link to a URL on the internet (you can also link to an API)"
 msgstr ""
+"Renseignez une URL sur internet (vous pouvez aussi pointer vers une API)"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:58
 msgid "Link"
-msgstr ""
+msgstr "Lien"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:77
 msgid "Clear Upload"
-msgstr ""
+msgstr "Annuler l'envoi"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:78
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:90
 msgid "File"
-msgstr ""
+msgstr "Fichier"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/resource_upload_field.html:107
 #: ckanext/schemingdcat/templates/snippets/source_item.html:52
@@ -1327,132 +1405,131 @@ msgid ""
 "(SHP, TIF, GeoJSON, etc.). You can also manually edit the spatial extent if "
 "needed."
 msgstr ""
+"Ce champ est renseigné automatiquement lors de l'envoi de fichiers "
+"géospatiaux (SHP, TIF, GeoJSON, etc.). Vous pouvez aussi modifier l'emprise "
+"spatiale manuellement si nécessaire."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:22
 msgid "Preview Extent"
-msgstr ""
+msgstr "Prévisualiser l'emprise"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:24
 msgid "Clear spatial extent"
-msgstr ""
+msgstr "Effacer l'emprise spatiale"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:25
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_spatial_query.html:19
 msgid "Clear"
-msgstr "Clear"
+msgstr "Effacer"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:85
 msgid "Spatial extent preview:"
-msgstr ""
+msgstr "Aperçu de l'emprise spatiale :"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:88
 msgid "Invalid spatial extent format"
-msgstr ""
+msgstr "Format d'emprise spatiale non valide"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/spatial_extent.html:97
 msgid "Are you sure you want to clear the spatial extent?"
-msgstr ""
+msgstr "Voulez-vous vraiment effacer l'emprise spatiale ?"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:21
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:21
 msgid "Current file:"
-msgstr ""
+msgstr "Fichier actuel :"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:25
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:25
 msgid "Replace existing file"
-msgstr ""
+msgstr "Remplacer le fichier existant"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:32
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:32
 msgid "Upload file"
-msgstr ""
+msgstr "Envoyer un fichier"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:38
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:38
 msgid "Drag and drop a file here"
-msgstr ""
+msgstr "Glissez-déposez un fichier ici"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:39
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:39
 msgid "or"
-msgstr ""
+msgstr "ou"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:41
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:41
 msgid "Browse File"
-msgstr ""
+msgstr "Parcourir les fichiers"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:49
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:49
 msgid "Supported formats: CSV, XLS, JSON, XML, PDF, and more"
-msgstr ""
+msgstr "Formats pris en charge : CSV, XLS, JSON, XML, PDF, et d'autres"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:60
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:60
 msgid "Remove file and cancel upload"
-msgstr ""
+msgstr "Supprimer le fichier et annuler l'envoi"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:68
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:68
 msgid "Processing..."
-msgstr ""
+msgstr "Traitement en cours..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:75
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/facet_search_operator.html:53
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:75
 msgid "OR"
-msgstr "OR"
+msgstr "OU"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:81
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:81
 msgid "Link to a file"
-msgstr ""
+msgstr "Lier un fichier"
 
 #: ckanext/schemingdcat/templates/schemingdcat/form_snippets/upload.html:87
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_base.html:87
 msgid "https://example.com/data.csv"
-msgstr ""
+msgstr "https://exemple.com/donnees.csv"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:27
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:53
 msgid "No metadata templates available"
-msgstr "No metadata templates available"
+msgstr "Aucun modèle de métadonnées disponible"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:27
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:53
 msgid "To retrieve them, use an identifier that includes the following"
-msgstr "To retrieve them, use an identifier that includes the following"
+msgstr ""
+"Pour les récupérer, utilisez un identifiant contenant les éléments suivants"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:34
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:60
 msgid "\"*\" means any character"
-msgstr "\"*\" means any character"
+msgstr "« * » désigne n'importe quel caractère"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:40
 msgid "About the templates"
-msgstr "About the templates"
+msgstr "À propos des modèles"
 
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:43
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:19
 msgid ""
-"The metadata templates allow large numbers of datasets to be created in CKAN "
-"in a simple and standardised way. They are all compatible with the metadata "
-"schema of the catalogue:"
+"The metadata templates allow large numbers of datasets to be created in CKAN"
+" in a simple and standardised way. They are all compatible with the metadata"
+" schema of the catalogue:"
 msgstr ""
-"The metadata templates allow large numbers of datasets to be created in CKAN "
-"in a simple and standardised way. They are all compatible with the metadata "
-"schema of the catalogue:"
+"Les modèles de métadonnées permettent de créer dans CKAN un grand nombre de "
+"jeux de données de façon simple et normalisée. Ils sont tous compatibles "
+"avec le schéma de métadonnées du catalogue :"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:45
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:21
 msgid "CKAN schema"
-msgstr "CKAN schema"
+msgstr "Schéma CKAN"
 
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html:49
 #: ckanext/schemingdcat/templates/schemingdcat/metadata_templates/index.html:23
@@ -1460,75 +1537,75 @@ msgid ""
 "Specifically, the extension that adds the metadata harvester using tabular "
 "files is:"
 msgstr ""
-"Specifically, the extension that adds the metadata harvester using tabular "
-"files is:"
+"Plus précisément, l'extension qui ajoute le moissonneur de métadonnées à "
+"partir de fichiers tabulaires est :"
 
-# ckanext/schemingdcat/templates/schemingdcat/metadata_templates/header_metadata_templates.html
 #: ckanext/schemingdcat/templates/schemingdcat/package/read.html:36
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:21
 msgid "Metadata template"
-msgstr "Metadata template"
+msgstr "Modèle de métadonnées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:32
 msgid "Edit resource"
-msgstr ""
+msgstr "Modifier la ressource"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:34
 msgid "Views"
-msgstr ""
+msgstr "Vues"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:41
 msgid "Downloading is not permitted by this dataset's data sharing level"
 msgstr ""
+"Le niveau de partage des données de ce jeu ne permet pas le téléchargement"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:42
 msgid "Download restricted"
-msgstr ""
+msgstr "Téléchargement restreint"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:50
 msgid "View"
-msgstr ""
+msgstr "Consulter"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:52
 msgid "API Endpoint"
-msgstr ""
+msgstr "Point d'accès de l'API"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:54
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:58
 msgid "Go to resource"
-msgstr ""
+msgstr "Accéder à la ressource"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:56
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:4
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:38
 msgid "Download"
-msgstr ""
+msgstr "Télécharger"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:75
 msgid "External link"
-msgstr "External link"
+msgstr "Lien externe"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:76
 msgid "Opens an external URL; the file is not stored in the portal."
-msgstr "Opens an external URL; the file is not stored in the portal."
+msgstr "Ouvre une URL externe ; le fichier n'est pas stocké sur le portail."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:90
 msgid "Distribution metadata"
-msgstr "Distribution metadata"
+msgstr "Métadonnées de la distribution"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/resource_read.html:100
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:44
 msgid "Basic information"
-msgstr "Basic information"
+msgstr "Informations générales"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:139
 msgid "Additional info"
-msgstr "Additional info"
+msgstr "Informations complémentaires"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:170
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:127
 msgid "Spatial information"
-msgstr "Spatial information"
+msgstr "Informations spatiales"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:198
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:186
@@ -1537,11 +1614,11 @@ msgstr "Provenance"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:218
 msgid "Lineage"
-msgstr "Lineage"
+msgstr "Généalogie des données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:236
 msgid "Temporal extent"
-msgstr "Temporal extent"
+msgstr "Étendue temporelle"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:253
 msgid "Version"
@@ -1550,140 +1627,140 @@ msgstr "Version"
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:271
 #: ckanext/schemingdcat/templates/source/new_source_form.html:86
 msgid "State"
-msgstr "State"
+msgstr "État"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:281
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:245
 msgid "Responsible party"
-msgstr "Responsible Party"
+msgstr "Partie responsable"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:285
 msgid "Author"
-msgstr "Author"
+msgstr "Auteur"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/additional_info.html:303
 msgid "Maintainer"
-msgstr "Maintainer"
+msgstr "Responsable de la maintenance"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/data_api_button.html:7
 msgid "Loading..."
-msgstr ""
+msgstr "Chargement..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/data_api_button.html:9
 msgid "Data API"
-msgstr ""
+msgstr "API de données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:10
 msgid ""
 "CSV, Comma Separated Values is a simple format for representing a "
 "rectangular array (matrix) of numeric and textual values."
 msgstr ""
-"CSV, Comma Separated Values is a simple format for representing a "
-"rectangular array (matrix) of numeric and textual values."
+"CSV (valeurs séparées par des virgules) est un format simple pour "
+"représenter un tableau rectangulaire de valeurs numériques et textuelles."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:11
 msgid "CSV"
-msgstr ""
+msgstr "CSV"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:14
 msgid ""
 "TSV, Tab-Separated Values is a text format whose primary function is to "
 "store data in a table structure."
 msgstr ""
-"TSV, Tab-Separated Values is a text format whose primary function is to "
-"store data in a table structure."
+"TSV (valeurs séparées par des tabulations) est un format texte dont la "
+"fonction principale est de stocker des données sous forme de tableau."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:15
 msgid "TSV"
-msgstr ""
+msgstr "TSV"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:18
 msgid ""
 "JSON, JavaScript Object Notation is a lightweight, text-based, language-"
 "independent data interchange format."
 msgstr ""
-"JSON, JavaScript Object Notation is a lightweight, text-based, language-"
-"independent data interchange format."
+"JSON (JavaScript Object Notation) est un format d'échange de données léger, "
+"textuel et indépendant du langage."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:19
 msgid "JSON"
-msgstr ""
+msgstr "JSON"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:22
 msgid ""
 "XML, Extensible Markup Language is a simple, very flexible text format "
 "derived from SGML (ISO 8879)."
 msgstr ""
-"XML, Extensible Markup Language is a simple, very flexible text format "
-"derived from SGML (ISO 8879)."
+"XML (Extensible Markup Language) est un format texte simple et très souple "
+"dérivé de SGML (ISO 8879)."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_datastore_formats.html:23
 msgid "XML"
-msgstr ""
+msgstr "XML"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:45
 msgid "CSW Endpoint"
-msgstr ""
+msgstr "Point d'accès CSW"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:45
 msgid "Geospatial data"
-msgstr "Geospatial data"
+msgstr "Données géospatiales"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:52
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:69
 msgid "{metadata_format} Metadata"
-msgstr "{metadata_format} Metadata"
+msgstr "Métadonnées {metadata_format}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/download_metadata.html:61
 msgid "RDF DCAT Endpoint"
-msgstr ""
+msgstr "Point d'accès RDF DCAT"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:28
 msgid "Metadata"
-msgstr "Metadata"
+msgstr "Métadonnées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:51
 msgid "DOI"
-msgstr ""
+msgstr "DOI"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:60
 msgid "This DOI has not yet been published"
-msgstr ""
+msgstr "Ce DOI n'a pas encore été publié"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/metadata_info.html:61
 msgid "Private DOI"
-msgstr ""
+msgstr "DOI privé"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:79
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:83
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:85
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html:27
 msgid "Add data"
-msgstr ""
+msgstr "Ajouter des données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:158
 msgid "Loading form..."
-msgstr ""
+msgstr "Chargement du formulaire..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:249
 msgid "Update {page}"
-msgstr ""
+msgstr "Mettre à jour {page}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/package_form.html:251
 msgid "Next"
-msgstr ""
+msgstr "Suivant"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_datadictionary_info.html:13
 msgid "Data Dictionary"
-msgstr ""
+msgstr "Dictionnaire de données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_datadictionary_info.html:22
 msgid "Column"
-msgstr ""
+msgstr "Colonne"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_datadictionary_info.html:24
 msgid "Label"
-msgstr ""
+msgstr "Libellé"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_datadictionary_info.html:25
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:39
@@ -1693,294 +1770,305 @@ msgstr "Description"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:84
 msgid "Media type"
-msgstr ""
+msgstr "Type de média"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:90
 msgid "Conforms to"
-msgstr ""
+msgstr "Conforme à"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:96
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:36
 msgid "Created"
-msgstr "Created"
+msgstr "Créé le"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:102
 msgid "Modified"
-msgstr ""
+msgstr "Modifié le"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:108
 msgid "Language"
-msgstr ""
+msgstr "Langue"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:120
 msgid "Size"
-msgstr ""
+msgstr "Taille"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_extended_info.html:133
 msgid "Size not available"
-msgstr ""
+msgstr "Taille non disponible"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html:61
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html:116
 msgid "Upload multiple files at once"
-msgstr ""
+msgstr "Envoyer plusieurs fichiers à la fois"
 
 #: ckanext/schemingdcat/templates/schemingdcat/package/snippets/resource_form.html:115
 msgid "Upload single file"
-msgstr ""
+msgstr "Envoyer un seul fichier"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/access_rights.html:14
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/access_rights.html:29
 msgid "Access rights"
-msgstr "Access rights"
+msgstr "Droits d'accès"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/access_rights.html:32
 msgid "No Access Rights provided"
-msgstr "No Access Rights provided"
+msgstr "Aucun droit d'accès indiqué"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/batch_upload.html:20
 msgid "Batch Upload Resources"
-msgstr ""
+msgstr "Dépôt groupé de ressources"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/batch_upload.html:23
 msgid ""
 "Upload multiple files at once. Each file will be created as a separate "
 "resource."
 msgstr ""
+"Envoyez plusieurs fichiers à la fois. Chaque fichier deviendra une ressource"
+" distincte."
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:6
 msgid "Security Check Required"
-msgstr ""
+msgstr "Vérification de sécurité requise"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:8
 msgid ""
 "You have performed many searches. Please solve this simple math problem to "
 "continue:"
 msgstr ""
+"Vous avez effectué de nombreuses recherches. Résolvez ce calcul simple pour "
+"continuer :"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:22
 msgid "Enter your answer"
-msgstr ""
+msgstr "Saisissez votre réponse"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:29
 msgid "Incorrect answer. Please try again."
-msgstr ""
+msgstr "Réponse incorrecte. Veuillez réessayer."
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:35
 msgid "Verify"
-msgstr ""
+msgstr "Vérifier"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/captcha_form.html:46
 msgid ""
 "This security measure helps protect our service from automated requests."
 msgstr ""
+"Cette mesure de sécurité protège le service contre les requêtes "
+"automatisées."
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/contact_info.html:18
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/publisher_info.html:18
 msgid "Copy email"
-msgstr ""
+msgstr "Copier l'adresse e-mail"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/contact_info.html:21
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/publisher_info.html:21
 msgid "Compose email"
-msgstr ""
+msgstr "Rédiger un e-mail"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/contact_info.html:25
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/publisher_info.html:25
 msgid "Enable JavaScript to view email address."
-msgstr ""
+msgstr "Activez JavaScript pour afficher l'adresse e-mail."
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/contact_info.html:46
 msgid "Punto de contacto"
-msgstr "Contact Point"
+msgstr "Point de contact"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:16
 msgid "Data Access and Licensing"
-msgstr "Data Access and Licensing"
+msgstr "Accès aux données et licence"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:29
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:36
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_license.html:29
 msgid "This dataset satisfies the Open Definition."
-msgstr ""
+msgstr "Ce jeu de données satisfait à l'Open Definition."
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:41
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_license.html:11
 msgid "No License Provided"
-msgstr ""
+msgstr "Aucune licence indiquée"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:47
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:53
 msgid "This {resource} is classified as"
-msgstr "This {resource} is classified as"
+msgstr "Cette {resource} est classée comme"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:47
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:53
 msgid "under the Access to Information Classification Policy of the catalog"
-msgstr "under the Access to Information Classification Policy of the catalog"
+msgstr ""
+"selon la politique de classification de l'accès à l'information du catalogue"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:49
 msgid "Users outside the catalog cannot access this {resource}"
-msgstr "Users outside the catalog cannot access this {resource}"
+msgstr ""
+"Les utilisateurs extérieurs au catalogue ne peuvent pas accéder à cette "
+"{resource}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_access_license.html:53
 msgid "Public"
-msgstr ""
+msgstr "Public"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:7
 msgid "Deleted datasets"
-msgstr ""
+msgstr "Jeux de données supprimés"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:9
 msgid "Deleted organizations"
-msgstr ""
+msgstr "Organisations supprimées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:11
 msgid "Deleted groups"
-msgstr ""
+msgstr "Groupes supprimés"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/data_type.html:60
 msgid "Purge"
-msgstr ""
+msgstr "Purger"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/facet_search_operator.html:53
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/facet_search_operator.html:54
 msgid "Criteria for selection"
-msgstr "Search type"
+msgstr "Critères de sélection"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/facet_search_operator.html:54
 msgid "AND"
-msgstr "AND"
+msgstr "ET"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/graphic_overview.html:4
 msgid "Graphic overview"
-msgstr "Graphic overview"
+msgstr "Aperçu graphique"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/organization.html:35
 msgid "There is no description for this organization"
-msgstr ""
+msgstr "Cette organisation n'a pas de description"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:54
 msgid "Featured dataset"
 msgid_plural "Featured datasets"
-msgstr[0] "Featured dataset"
-msgstr[1] "Featured datasets"
+msgstr[0] "Jeu de données à la une"
+msgstr[1] "Jeux de données à la une"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:70
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:77
 msgid "Read more"
-msgstr ""
+msgstr "En savoir plus"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:70
 msgid "Show less"
-msgstr ""
+msgstr "Afficher moins"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/package_item.html:82
 msgid "This dataset has no description"
-msgstr ""
+msgstr "Ce jeu de données n'a pas de description"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/permanent_url.html:3
 msgid "Permalink"
-msgstr "Permalink"
+msgstr "Lien permanent"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/permanent_url.html:5
 msgid "URIRef"
-msgstr ""
+msgstr "URIRef"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/publisher_info.html:47
 msgid "Publicador"
-msgstr "Publisher"
+msgstr "Éditeur"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/related_resources.html:6
 msgid "Related resources"
-msgstr ""
+msgstr "Ressources associées"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_dataset_map_additional_info.html:18
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_dataset_map_sidebar.html:17
 msgid "Dataset extent"
-msgstr "Dataset extent"
+msgstr "Emprise du jeu de données"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:51
 msgid "unknown"
-msgstr "unknown"
+msgstr "inconnu"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:56
 msgid "sort by name"
-msgstr "order by name"
+msgstr "trier par nom"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:63
 msgid "sort by results"
-msgstr "order by datasets found"
+msgstr "trier par résultats"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:117
 msgid "Show more {facet_type}"
-msgstr "Show more {facet_type}"
+msgstr "Afficher plus de {facet_type}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:120
 msgid "Display only the first {facet_type}"
-msgstr "Show Only Popular {facet_type}"
+msgstr "N'afficher que les premiers {facet_type}"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_facet_list.html:124
 msgid "No {facet_type} matching your search"
-msgstr "There are no {facet_type} that match this search"
+msgstr "Aucun {facet_type} ne correspond à votre recherche"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_license.html:24
 msgid "License"
-msgstr "License"
+msgstr "Licence"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_social.html:4
 msgid "Social"
-msgstr ""
+msgstr "Réseaux sociaux"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_social.html:15
 msgid "Followers"
-msgstr ""
+msgstr "Abonnés"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/schemingdcat_spatial_query.html:18
 msgid "Filter by location"
-msgstr "Filter by location"
+msgstr "Filtrer par localisation"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/search_form.html:6
 msgid "Order by"
-msgstr ""
+msgstr "Trier par"
 
 #: ckanext/schemingdcat/templates/schemingdcat/snippets/search_form.html:22
 msgid "Error"
-msgstr ""
+msgstr "Erreur"
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:309
 msgid "Saving..."
-msgstr ""
+msgstr "Enregistrement..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:333
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_tracking.html:45
 msgid "Uploading..."
-msgstr ""
+msgstr "Envoi en cours..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:1040
 msgid "File uploaded successfully to cloud storage!"
-msgstr ""
+msgstr "Fichier envoyé avec succès vers le stockage cloud !"
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:1040
 msgid ""
 "The server is still processing the metadata. Please wait a moment and "
 "refresh the page to see your resource."
 msgstr ""
+"Le serveur traite encore les métadonnées. Patientez un instant et actualisez"
+" la page pour voir votre ressource."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:1786
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_ui.html:738
 msgid "Upload cancelled"
-msgstr ""
+msgstr "Envoi annulé"
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:1978
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:60
 msgid "Extracting spatial extent from file..."
-msgstr ""
+msgstr "Extraction de l'emprise spatiale du fichier..."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:2008
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:88
 msgid "Spatial extent extracted successfully from file."
-msgstr ""
+msgstr "Emprise spatiale extraite du fichier avec succès."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:2013
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:93
@@ -1988,6 +2076,8 @@ msgid ""
 "Could not extract spatial extent from this file. You can manually enter the "
 "spatial extent if needed."
 msgstr ""
+"Impossible d'extraire l'emprise spatiale de ce fichier. Vous pouvez la "
+"saisir manuellement si nécessaire."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:2021
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:101
@@ -1995,87 +2085,98 @@ msgid ""
 "Error extracting spatial extent. You can manually enter the spatial extent "
 "if needed."
 msgstr ""
+"Erreur lors de l'extraction de l'emprise spatiale. Vous pouvez la saisir "
+"manuellement si nécessaire."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:2127
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:204
 msgid "Spatial extent extracted successfully in background."
-msgstr ""
+msgstr "Emprise spatiale extraite avec succès en arrière-plan."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_script.html:2159
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:236
-msgid "Processing spatial extent in background... This may take a few moments."
+msgid ""
+"Processing spatial extent in background... This may take a few moments."
 msgstr ""
+"Traitement de l'emprise spatiale en arrière-plan... Cela peut prendre "
+"quelques instants."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:266
 msgid ""
 "File uploaded successfully. Metadata will be extracted automatically in the "
 "background."
 msgstr ""
+"Fichier envoyé avec succès. Les métadonnées seront extraites automatiquement"
+" en arrière-plan."
 
 #: ckanext/schemingdcat/templates/schemingdcat/upload_snippets/upload_spatial.html:276
 msgid ""
 "File uploaded successfully. Comprehensive metadata will be extracted "
 "automatically in the background."
 msgstr ""
+"Fichier envoyé avec succès. L'ensemble des métadonnées sera extrait "
+"automatiquement en arrière-plan."
 
 #: ckanext/schemingdcat/templates/snippets/source_item.html:42
 #: ckanext/schemingdcat/templates/source/read_base.html:13
 msgid "There is no description for this harvest source"
-msgstr "There is no description for this harvest source"
+msgstr "Cette source de moissonnage n'a pas de description"
 
 #: ckanext/schemingdcat/templates/snippets/source_item.html:50
 #: ckanext/schemingdcat/templates/source/new_source_form.html:70
 msgid "Organization"
-msgstr "Organization"
+msgstr "Organisation"
 
 #: ckanext/schemingdcat/templates/source/new.html:5
 #: ckanext/schemingdcat/templates/source/search.html:5
 msgid "Harvest sources"
-msgstr "Harvest sources"
+msgstr "Sources de moissonnage"
 
 #: ckanext/schemingdcat/templates/source/new.html:8
 #: ckanext/schemingdcat/templates/source/search.html:8
 msgid ""
 "Harvest sources allow importing remote metadata into this catalog.   Remote "
-"sources can be other catalogs such as other CKAN instances, CSW servers, XML "
-"metadata files, XLSX with metadata records or Web Accessible Folder (WAF)."
+"sources can be other catalogs such as other CKAN instances, CSW servers, XML"
+" metadata files, XLSX with metadata records or Web Accessible Folder (WAF)."
 msgstr ""
-"Harvest sources allow importing remote metadata into this catalog.   Remote "
-"sources can be other catalogs such as other CKAN instances, CSW servers, XML "
-"metadata files, XLSX with metadata records or Web Accessible Folder (WAF)."
+"Les sources de moissonnage permettent d'importer des métadonnées distantes "
+"dans ce catalogue.   Les sources distantes peuvent être d'autres catalogues,"
+" comme d'autres instances CKAN, des serveurs CSW, des fichiers XML de "
+"métadonnées, des fichiers XLSX contenant des fiches de métadonnées ou des "
+"dossiers accessibles par le web (WAF)."
 
 #: ckanext/schemingdcat/templates/source/new.html:14
 #: ckanext/schemingdcat/templates/source/search.html:14
 msgid "Depending on the actual harvesters enabled for this instance. eg: "
-msgstr "Depending on the actual harvesters enabled for this instance. eg: "
+msgstr "Selon les moissonneurs activés sur cette instance. P. ex. : "
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:11
 msgid ""
 "This should include the <code>http://</code> or <code>https://</code> part "
 "of the URL."
 msgstr ""
-"This should include the <code>http://</code> or <code>https://</code> part "
-"of the URL."
+"Doit inclure la partie <code>http://</code> ou <code>https://</code> de "
+"l'URL."
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:17
 msgid "eg. A descriptive title"
-msgstr ""
+msgstr "p. ex. Un titre descriptif"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:24
 msgid "Name"
-msgstr "Name"
+msgstr "Nom"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:24
 msgid "eg. my-dataset"
-msgstr ""
+msgstr "p. ex. mon-jeu-de-donnees"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:29
 msgid "Source type"
-msgstr "Source type"
+msgstr "Type de source"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:46
 msgid "Update frequency"
-msgstr "Update frequency"
+msgstr "Fréquence de mise à jour"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:49
 msgid "Configuration"
@@ -2083,15 +2184,15 @@ msgstr "Configuration"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:51
 msgid "You can validate the JSON at: "
-msgstr "You can validate the JSON at: "
+msgstr "Vous pouvez valider le JSON sur : "
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:51
 msgid "JSONLint"
-msgstr ""
+msgstr "JSONLint"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:73
 msgid "No organization"
-msgstr "No organization"
+msgstr "Aucune organisation"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:89
 msgid "Active"
@@ -2102,8 +2203,9 @@ msgid ""
 "This will flag the source as deleted but keep all its datasets and previous "
 "jobs. Are you sure you want to delete this harvest source?"
 msgstr ""
-"This will flag the source as deleted but keep all its datasets and previous "
-"jobs. Are you sure you want to delete this harvest source?"
+"Cette action marquera la source comme supprimée tout en conservant ses jeux "
+"de données et ses tâches antérieures. Voulez-vous vraiment supprimer cette "
+"source de moissonnage ?"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:100
 msgid ""
@@ -2111,576 +2213,26 @@ msgid ""
 "datasets, as well as all previous job reports. Are you sure you want to "
 "continue?"
 msgstr ""
-"Warning: Apart from deleting this source, this command will remove all its "
-"datasets, as well as all previous job reports. Are you sure you want to "
-"continue?"
+"Attention : outre la suppression de cette source, cette commande effacera "
+"tous ses jeux de données ainsi que tous les rapports de tâches antérieurs. "
+"Voulez-vous vraiment continuer ?"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:109
 msgid "Delete source"
-msgstr "Delete source"
+msgstr "Supprimer la source"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:114
 msgid "Delete and clear source"
-msgstr "Delete and clear source"
+msgstr "Supprimer et vider la source"
 
 #: ckanext/schemingdcat/templates/source/new_source_form.html:122
 msgid "Save"
-msgstr ""
+msgstr "Enregistrer"
 
 #: ckanext/schemingdcat/templates/user/dashboard_datasets.html:5
 msgid "Add Dataset"
-msgstr ""
+msgstr "Ajouter un jeu de données"
 
 #: ckanext/schemingdcat/templates/user/dashboard_datasets.html:6
 msgid "Add Document"
-msgstr ""
-
-#~ msgid "Additional information"
-#~ msgstr "Additional information"
-
-#~ msgid "Field"
-#~ msgstr "Field"
-
-#~ msgid "Value"
-#~ msgstr "Value"
-
-#~ msgid "Data last updated"
-#~ msgstr "Data last updated"
-
-#~ msgid "Metadata last updated"
-#~ msgstr "Metadata last updated"
-
-#~ msgid "Coordinate Reference System"
-#~ msgstr "Coordinate Reference System"
-
-#~ msgid "Format"
-#~ msgstr "Format"
-
-#~ msgid "Rights"
-#~ msgstr "Rights"
-
-#~ msgid "More information"
-#~ msgstr "More information"
-
-#~ msgid "{resource} URI"
-#~ msgstr "{resource} URI"
-
-#~ msgid "This can be used for custom CSS on a CKAN site"
-#~ msgstr "This can be used for custom CSS on a CKAN site"
-
-# ckanext-harvest
-#~ msgid "title"
-#~ msgstr "title"
-
-#~ msgid "Group not found"
-#~ msgstr "Group not found"
-
-#, python-format
-#~ msgid "Unauthorized to read group %s"
-#~ msgstr "Unauthorized to read group %s"
-
-#~ msgid "Tags"
-#~ msgstr "Tags"
-
-#~ msgid "Formats"
-#~ msgstr "Formats"
-
-#~ msgid "Licence"
-#~ msgstr "Licence"
-
-#~ msgid "Not authorized to see this page"
-#~ msgstr "Not authorized to see this page"
-
-#~ msgid "Harvesting source successfully cleared"
-#~ msgstr "Harvesting source successfully cleared"
-
-#~ msgid "Harvesting source successfully inactivated"
-#~ msgstr "Harvesting source successfully inactivated"
-
-#~ msgid "Harvest source not found"
-#~ msgstr "Harvest source not found"
-
-#~ msgid "Harvest will start shortly. Refresh this page for updates."
-#~ msgstr "Harvest will start shortly. Refresh this page for updates."
-
-#~ msgid ""
-#~ "Cannot create new harvest jobs on inactive sources. First, please change "
-#~ "the source status to 'active'."
-#~ msgstr ""
-#~ "Cannot create new harvest jobs on inactive sources. First, please change "
-#~ "the source status to 'active'."
-
-#~ msgid "A harvest job has already been scheduled for this source"
-#~ msgstr "A harvest job has already been scheduled for this source"
-
-#~ msgid "Harvest source cleared"
-#~ msgstr "Harvest source cleared"
-
-#~ msgid "No content found"
-#~ msgstr "No content found"
-
-#~ msgid "Harvest job not found"
-#~ msgstr "Harvest job not found"
-
-#~ msgid "No jobs yet for this source"
-#~ msgstr "No jobs yet for this source"
-
-#~ msgid "User {0} not authorized to create harvest sources"
-#~ msgstr "User {0} not authorized to create harvest sources"
-
-#~ msgid "User not authorized to create a job for source {0}"
-#~ msgstr "User not authorized to create a job for source {0}"
-
-#~ msgid "Only sysadmins can create harvest jobs for all sources"
-#~ msgstr "Only sysadmins can create harvest jobs for all sources"
-
-#~ msgid "Only the sysadmins can create harvest objects"
-#~ msgstr "Only the sysadmins can create harvest objects"
-
-#~ msgid "User {0} not authorized to delete harvest source {1}"
-#~ msgstr "User {0} not authorized to delete harvest source {1}"
-
-#~ msgid "User {0} not authorized to read harvest source {1}"
-#~ msgstr "User {0} not authorized to read harvest source {1}"
-
-#~ msgid "User {0} not authorized to see jobs from source {1}"
-#~ msgstr "User {0} not authorized to see jobs from source {1}"
-
-#~ msgid "User {0} not authorized to list jobs for source {1}"
-#~ msgstr "User {0} not authorized to list jobs for source {1}"
-
-#~ msgid "User {0} not authorized to update harvest source {1}"
-#~ msgstr "User {0} not authorized to update harvest source {1}"
-
-#~ msgid "Only sysadmins can reimport all harvest objects"
-#~ msgstr "Only sysadmins can reimport all harvest objects"
-
-#~ msgid "Only sysadmins can run the pending harvest jobs"
-#~ msgstr "Only sysadmins can run the pending harvest jobs"
-
-#~ msgid "Only sysadmins can reindex all harvest sources"
-#~ msgstr "Only sysadmins can reindex all harvest sources"
-
-#~ msgid "Add Harvest Source"
-#~ msgstr "Add Harvest Source"
-
-#~ msgid "errors"
-#~ msgstr "errors"
-
-#~ msgid "Details"
-#~ msgstr "Details"
-
-#~ msgid "Id"
-#~ msgstr "Id"
-
-#~ msgid "Started"
-#~ msgstr "Started"
-
-#~ msgid "Finished"
-#~ msgstr "Finished"
-
-#~ msgid "Status"
-#~ msgstr "Status"
-
-#~ msgid "Count"
-#~ msgstr "Count"
-
-#~ msgid "Message"
-#~ msgstr "Message"
-
-#~ msgid "There are no datasets associated to this harvest source."
-#~ msgstr "There are no datasets associated to this harvest source."
-
-#~ msgid "{number} harvest source found for \"{query}\""
-#~ msgid_plural "{number} harvest sources found for \"{query}\""
-#~ msgstr[0] "{number} harvest source found for \"{query}\""
-#~ msgstr[1] "{number} harvest sources found for \"{query}\""
-
-#~ msgid "Sorry no harvest sources found for \"{query}\""
-#~ msgstr "Sorry no harvest sources found for \"{query}\""
-
-#~ msgid "{number} harvest source found"
-#~ msgid_plural "{number} harvest sources found"
-#~ msgstr[0] "{number} harvest source found"
-#~ msgstr[1] "{number} harvest sources found"
-
-#~ msgid "{number} harvest found"
-#~ msgid_plural "{number} harvest found"
-#~ msgstr[0] "{number} harvest found"
-#~ msgstr[1] "{number} harvest found"
-
-#~ msgid "Sorry no harvest sources found"
-#~ msgstr "Sorry no harvest sources found"
-
-#~ msgid "Last Harvest Job"
-#~ msgstr "Last Harvest Job"
-
-#~ msgid "View full job report"
-#~ msgstr "View full job report"
-
-#~ msgid "Admin"
-#~ msgstr "Admin"
-
-#~ msgid ""
-#~ "This will re-run the harvesting for this source. Any updates at the "
-#~ "source will overwrite the local datasets. Sources with a large number of "
-#~ "datasets may take a significant amount of time to finish harvesting. "
-#~ "Please confirm you would like us to start reharvesting."
-#~ msgstr ""
-#~ "This will re-run the harvesting for this source. Any updates at the "
-#~ "source will overwrite the local datasets. Sources with a large number of "
-#~ "datasets may take a significant amount of time to finish harvesting. "
-#~ "Please confirm you would like us to start reharvesting."
-
-#~ msgid "Start a new harvesting job for this harvest source now"
-#~ msgstr "Start a new harvesting job for this harvest source now"
-
-#~ msgid "Reharvest"
-#~ msgstr "Reharvest"
-
-#~ msgid ""
-#~ "Warning: This will remove all datasets for this source, as well as all "
-#~ "previous job reports. Are you sure you want to continue?"
-#~ msgstr ""
-#~ "Warning: This will remove all datasets for this source, as well as all "
-#~ "previous job reports. Are you sure you want to continue?"
-
-#~ msgid "Delete all harvest jobs and existing datasets from this source"
-#~ msgstr "Delete all harvest jobs and existing datasets from this source"
-
-#~ msgid "View harvest source"
-#~ msgstr "View harvest source"
-
-#~ msgid "Dashboard"
-#~ msgstr "Dashboard"
-
-#~ msgid "Jobs"
-#~ msgstr "Jobs"
-
-#~ msgid "Organizations"
-#~ msgstr "Organizations"
-
-#~ msgid "Harvest Sources"
-#~ msgstr "Harvest Sources"
-
-#~ msgid "Edit harvest source"
-#~ msgstr "Edit harvest source"
-
-#~ msgid "Create Harvest Source"
-#~ msgstr "Create Harvest Source"
-
-#~ msgid "schemingdcat_xls"
-#~ msgstr "Scheming DCAT: Remote Google Sheet/Onedrive Excel Harvester"
-
-#~ msgid "schemingdcat_ckan"
-#~ msgstr "Scheming DCAT: CKAN endpoints"
-
-#~ msgid "schemingdcat_csw"
-#~ msgstr "Scheming DCAT: INSPIRE CSW endpoints"
-
-#~ msgid "schemingdcat_ows"
-#~ msgstr "Scheming DCAT: OWS servers"
-
-#~ msgid "schemingdcat_xml"
-#~ msgstr "Scheming DCAT: XML Metadata Harvester"
-
-#~ msgid "dcat_rdf"
-#~ msgstr "DCAT: RDF Harvester"
-
-#~ msgid "dcat_json"
-#~ msgstr "DCAT: JSON Harvester"
-
-#~ msgid "Frequency"
-#~ msgstr "Frequency"
-
-#~ msgid "e.g. A descriptive title"
-#~ msgstr "e.g. A descriptive title"
-
-#~ msgid "e.g. my-dataset"
-#~ msgstr "e.g. my-dataset"
-
-#~ msgid "Return to the harvest sources list"
-#~ msgstr "Return to the harvest sources list"
-
-#~ msgid "Search sources..."
-#~ msgstr "Search sources..."
-
-#~ msgid "Search harvest sources..."
-#~ msgstr "Search harvest sources..."
-
-#~ msgid "Search..."
-#~ msgstr "Search..."
-
-#~ msgid "All harvest sources"
-#~ msgstr "All harvest sources"
-
-#~ msgid "Try another search term, browse the sources below or "
-#~ msgstr "Try another search term, browse the sources below or "
-
-#~ msgid "add a new one"
-#~ msgstr "add a new one"
-
-#~ msgid ""
-#~ " <p><strong>There was an error while searching.</strong> Please try again."
-#~ "</p> "
-#~ msgstr ""
-#~ " <p><strong>There was an error while searching.</strong> Please try again."
-#~ "</p> "
-
-#~ msgid "Harvest Jobs"
-#~ msgstr "Harvest Jobs"
-
-#~ msgid "Job: "
-#~ msgstr "Job: "
-
-#~ msgid "Started:"
-#~ msgstr "Started:"
-
-#~ msgid "Not yet"
-#~ msgstr "Not yet"
-
-#~ msgid "Finished:"
-#~ msgstr "Finished:"
-
-#~ msgid "Job Report"
-#~ msgstr "Job Report"
-
-#~ msgid "Back to job list"
-#~ msgstr "Back to job list"
-
-#~ msgid "Error Summary"
-#~ msgstr "Error Summary"
-
-#~ msgid "No errors for this job"
-#~ msgstr "No errors for this job"
-
-#~ msgid "Only the 20 most frequent errors are shown"
-#~ msgstr "Only the 20 most frequent errors are shown"
-
-#~ msgid "Job Errors"
-#~ msgstr "Job Errors"
-
-#~ msgid "Document Errors"
-#~ msgstr "Document Errors"
-
-#~ msgid "Error Report"
-#~ msgstr "Error Report"
-
-#~ msgid "documents with errors"
-#~ msgstr "documents with errors"
-
-#~ msgid "Remote content"
-#~ msgstr "Remote content"
-
-#~ msgid "Local content"
-#~ msgstr "Local content"
-
-#~ msgid "(<a href=\"{{ url }}\">ckanapi</a> library)"
-#~ msgstr "(<a href=\"{{ url }}\">ckanapi</a> library)"
-
-#~ msgid "Featured organization"
-#~ msgid_plural "Featured organizations"
-#~ msgstr[0] "Featured organization"
-#~ msgstr[1] "Featured organizations"
-
-#~ msgid "Featured group"
-#~ msgid_plural "Featured groups"
-#~ msgstr[0] "Featured group"
-#~ msgstr[1] "Featured groups"
-
-# Themes (NTI-RISP) - Schema field_name: theme_es
-#~ msgid "ciencia-tecnologia"
-#~ msgstr "Science and technology"
-
-#~ msgid "comercio"
-#~ msgstr "Commerce"
-
-#~ msgid "cultura-ocio"
-#~ msgstr "Culture and leisure"
-
-#~ msgid "demografia"
-#~ msgstr "Demography"
-
-#~ msgid "deporte"
-#~ msgstr "Sport"
-
-#~ msgid "economia"
-#~ msgstr "Economy"
-
-#~ msgid "educacion"
-#~ msgstr "Education"
-
-#~ msgid "empleo"
-#~ msgstr "Employment"
-
-#~ msgid "energia"
-#~ msgstr "Energy"
-
-#~ msgid "hacienda"
-#~ msgstr "Treasury"
-
-#~ msgid "industria"
-#~ msgstr "Industry"
-
-#~ msgid "legislacion-justicia"
-#~ msgstr "Legislation and justice"
-
-#~ msgid "medio-ambiente"
-#~ msgstr "Environment"
-
-#~ msgid "medio-rural-pesca"
-#~ msgstr "Rural environment"
-
-#~ msgid "salud"
-#~ msgstr "Healthcare"
-
-#~ msgid "sector-publico"
-#~ msgstr "Public sector"
-
-#~ msgid "seguridad"
-#~ msgstr "Security"
-
-#~ msgid "sociedad-bienestar"
-#~ msgstr "Society and welfare"
-
-#~ msgid "transporte"
-#~ msgstr "Transport"
-
-#~ msgid "turismo"
-#~ msgstr "Tourism"
-
-#~ msgid "urbanismo-infraestructuras"
-#~ msgstr "Town planning and infrastructures"
-
-#~ msgid "vivienda"
-#~ msgstr "Housing"
-
-# ISO 19115 topic category - Schema field_name: topic
-#~ msgid "biota"
-#~ msgstr "biota"
-
-#~ msgid "boundaries"
-#~ msgstr "boundaries"
-
-#~ msgid "climatologyMeteorologyAtmosphere"
-#~ msgstr "climatologyMeteorologyAtmosphere"
-
-#~ msgid "economy"
-#~ msgstr "economy"
-
-#~ msgid "elevation"
-#~ msgstr "elevation"
-
-#~ msgid "environment"
-#~ msgstr "environment"
-
-#~ msgid "farming"
-#~ msgstr "farming"
-
-#~ msgid "geoscientificInformation"
-#~ msgstr "geoscientificInformation"
-
-#~ msgid "health"
-#~ msgstr "health"
-
-#~ msgid "imageryBaseMapsEarthCover"
-#~ msgstr "imageryBaseMapsEarthCover"
-
-#~ msgid "inlandWaters"
-#~ msgstr "inlandWaters"
-
-#~ msgid "intelligenceMilitary"
-#~ msgstr "intelligenceMilitary"
-
-#~ msgid "location"
-#~ msgstr "location"
-
-#~ msgid "oceans"
-#~ msgstr "oceans"
-
-#~ msgid "planningCadastre"
-#~ msgstr "planningCadastre"
-
-#~ msgid "society"
-#~ msgstr "society"
-
-#~ msgid "structure"
-#~ msgstr "structure"
-
-#~ msgid "transportation"
-#~ msgstr "transportation"
-
-#~ msgid "utilitiesCommunication"
-#~ msgstr "utilitiesCommunication"
-
-# High-value dataset category - Schema field_name: hvd_category
-#~ msgid "c_164e0bf5"
-#~ msgstr "Meteorological"
-
-#~ msgid "c_a9135398"
-#~ msgstr "Companies and company ownership"
-
-#~ msgid "c_ac64a52d"
-#~ msgstr "Geospatial"
-
-#~ msgid "c_b79e35eb"
-#~ msgstr "Mobility"
-
-#~ msgid "c_dd313021"
-#~ msgstr "Earth observation and environment"
-
-#~ msgid "c_e1da4e07"
-#~ msgstr "Statistics"
-
-# Themes (DCAT-AP) - Schema field_name: theme_eu
-#~ msgid "AGRI"
-#~ msgstr "Agriculture, fisheries, forestry and food"
-
-#~ msgid "ECON"
-#~ msgstr "Economy and finance"
-
-#~ msgid "EDUC"
-#~ msgstr "Education, culture and sport"
-
-#~ msgid "ENER"
-#~ msgstr "Energy"
-
-#~ msgid "ENVI"
-#~ msgstr "Environment"
-
-#~ msgid "GOVE"
-#~ msgstr "Government and public sector"
-
-#~ msgid "HEAL"
-#~ msgstr "Health"
-
-#~ msgid "INTR"
-#~ msgstr "International issues"
-
-#~ msgid "JUST"
-#~ msgstr "Justice, legal system and public safety"
-
-#~ msgid "REGI"
-#~ msgstr "Regions and cities"
-
-#~ msgid "SOCI"
-#~ msgstr "Population and society"
-
-#~ msgid "TECH"
-#~ msgstr "Science and technology"
-
-# Spatial Datasets / Non-spatial Datasets
-#~ msgid "Non-spatial datasets"
-#~ msgstr "Non-spatial datasets"
-
-#~ msgid "Spatial datasets"
-#~ msgstr "Spatial datasets"
-
-#~ msgid ""
-#~ "A document is a publication such as a report, paper, or study,\n"
-#~ "          together with its metadata. Documents are what users see when\n"
-#~ "          browsing the document catalog."
-#~ msgstr ""
-#~ "A document is a publication such as a report, paper, or study,\n"
-#~ "          together with its metadata. Documents are what users see when\n"
-#~ "          browsing the document catalog."
+msgstr "Ajouter un document"

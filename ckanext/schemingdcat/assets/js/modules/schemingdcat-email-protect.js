@@ -112,8 +112,8 @@ ckan.module('schemingdcat-email-protect', function ($) {
     },
 
     _: function (message) {
-      if (window.ckan && window.ckan.i18n) {
-        return window.ckan.i18n(message);
+      if (window.ckan && window.ckan.i18n && window.ckan.i18n._) {
+        return window.ckan.i18n._(message);
       }
       return message;
     }
