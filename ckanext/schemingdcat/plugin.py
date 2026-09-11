@@ -1461,6 +1461,22 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         package_patch delegates to it.
         """
         log.info(f"[SchemingDCATPlugin.package_patch] CALLED with keys: {list(data_dict.keys())}")
+        # Expand submitted author rows before CKAN merges the stored package.
+        # Otherwise the existing authors list masks the form's flat subfields.
+        from ckanext.scheming.plugins import expand_form_composite
+        for field in ('authors', 'authors_json'):
+            if field in data_dict:
+                continue
+            form_rows = {
+                key: value for key, value in data_dict.items()
+                if isinstance(key, str) and key.startswith(field + '-')
+            }
+            submitted_keys = set(form_rows)
+            expand_form_composite(form_rows, {field})
+            for key in submitted_keys - form_rows.keys():
+                del data_dict[key]
+            data_dict.update(form_rows)
+
         payload_keys = {
             key[-1] if isinstance(key, tuple) and key else key
             for key in data_dict.keys()
