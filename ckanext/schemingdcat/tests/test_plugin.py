@@ -7,6 +7,19 @@ import ckanext.schemingdcat.helpers as helpers
 import ckanext.schemingdcat.plugin as plugin
 
 
+def test_missing_create_name_does_not_pollute_parent_auth_audit(monkeypatch):
+    context = {'__auth_audit': [('package_create', True)]}
+
+    def not_found(read_context, data):
+        read_context.setdefault('__auth_audit', []).append(('package_show', False))
+        raise toolkit.ObjectNotFound('not created yet')
+
+    monkeypatch.setattr(toolkit, 'get_action', lambda name: not_found)
+    assert plugin.SchemingDCATDatasetsPlugin()._read_package_for_dataset_update(
+        context, {'name': 'new-learning-resource'}) is None
+    assert context['__auth_audit'] == [('package_create', True)]
+
+
 def test_stage_requested_group_memberships_preserves_current_groups(monkeypatch):
     subject = plugin.SchemingDCATDatasetsPlugin()
     context = {}
@@ -264,6 +277,9 @@ def test_apply_requested_group_memberships_falls_back_to_staged_groups_when_relo
 def test_package_update_backfills_missing_fields_and_retries(monkeypatch):
     subject = plugin.SchemingDCATDatasetsPlugin()
     calls = {'next_action': 0, 'backfill': None, 'apply': 0}
+
+    # This unit test exercises retry/backfill, without a persisted package.
+    monkeypatch.setattr(toolkit, 'check_access', lambda *args, **kwargs: True)
 
     monkeypatch.setattr(subject, '_stage_requested_group_memberships', lambda ctx, payload: None)
     monkeypatch.setattr(

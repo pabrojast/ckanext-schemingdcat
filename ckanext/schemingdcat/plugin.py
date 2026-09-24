@@ -420,14 +420,27 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         # We don't need to register them here to avoid conflicts
         log.info("SchemingDCAT-CloudStorage integration configured with enhanced UI")
 
-    def read_template(self):
-        return "schemingdcat/package/read.html"
+    def _schema_template(self, package_type, key, default):
+        # Cada tipo puede elegir sus plantillas sin cambiar las de los demas.
+        return self._schemas.get(package_type, {}).get(key, default)
+
+    def read_template(self, package_type=None):
+        return self._schema_template(package_type, 'read_template', "schemingdcat/package/read.html")
+
+    def search_template(self, package_type=None):
+        return self._schema_template(package_type, 'search_template', 'package/search.html')
+
+    def new_template(self, package_type=None):
+        return self._schema_template(package_type, 'new_template', 'package/new.html')
+
+    def edit_template(self, package_type=None):
+        return self._schema_template(package_type, 'edit_template', 'package/edit.html')
 
     def resource_template(self):
         return "schemingdcat/package/resource_read.html"
 
-    def package_form(self):
-        return "schemingdcat/package/snippets/package_form.html"
+    def package_form(self, package_type=None):
+        return self._schema_template(package_type, 'package_form', "schemingdcat/package/snippets/package_form.html")
 
     def resource_form(self):
         return "schemingdcat/package/snippets/resource_form.html"
@@ -543,6 +556,9 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return None
 
         read_context = dict(context or {})
+        # Un alta consulta un nombre que aun no existe. El NotFound esperado
+        # no debe dejar una entrada de auditoria compartida con package_create.
+        read_context.pop('__auth_audit', None)
         read_context.pop('schema', None)
         read_context['ignore_auth'] = True
         try:
