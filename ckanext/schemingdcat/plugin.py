@@ -84,8 +84,9 @@ class SchemingDCATPlugin(
         import hashlib
         
         # Log beaker session params for debugging
-        beaker_params = {k: v for k, v in config.items() if k.startswith('beaker.session')}
-        log.info(f"[CSRF FIX] Beaker session params: {beaker_params}")
+        beaker_params = {k: v for k, v in config.items()
+                         if k.startswith('beaker.session') and 'secret' not in k and 'validate_key' not in k}
+        log.debug(f"[CSRF FIX] Beaker session params: {beaker_params}")
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         csrf_field = (
