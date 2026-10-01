@@ -9,9 +9,19 @@ from ckanext.scheming.plugins import (
 )
 from ckanext.scheming import logic as scheming_logic
 
-# Cloudstorage integration imports
-from ckanext.cloudstorage import storage
-from ckanext.cloudstorage import helpers as cloudstorage_helpers
+# Cloudstorage integration imports (optional: the `node` deployments run with
+# CKAN's local file storage and do not install ckanext-cloudstorage at all).
+try:
+    from ckanext.cloudstorage import storage
+    from ckanext.cloudstorage import helpers as cloudstorage_helpers
+except ImportError:  # pragma: no cover - depends on the deployment
+    storage = None
+    cloudstorage_helpers = None
+
+
+def _cloudstorage_active():
+    """True when ckanext-cloudstorage is importable AND enabled in ckan.plugins."""
+    return storage is not None and plugins.plugin_loaded('cloudstorage')
 
 import ckanext.schemingdcat.cli as cli
 import ckanext.schemingdcat.config as sdct_config
@@ -527,6 +537,10 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
 
     def _resolve_spatial_memberstate_groups(self, context, data_dict):
         memberstate_groups = []
+        if not toolkit.asbool(
+            toolkit.config.get('schemingdcat.memberstate_groups_enabled', True)
+        ):
+            return memberstate_groups
         for uri in self._extract_spatial_uris(data_dict):
             try:
                 group_slug = helpers.schemingdcat_find_member_state_group(uri, context)
@@ -797,19 +811,37 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def get_helpers(self):
         # Merge schemingdcat helpers with cloudstorage helpers
         schemingdcat_helpers = super().get_helpers()
-        cloudstorage_helper_dict = {
-            'cloudstorage_use_secure_urls': cloudstorage_helpers.use_secure_urls,
-            'cloudstorage_use_azure_direct_upload': cloudstorage_helpers.use_azure_direct_upload,
-            'cloudstorage_get_cloud_storage_type': cloudstorage_helpers.get_cloud_storage_type,
-            'cloudstorage_use_enhanced_upload': cloudstorage_helpers.use_enhanced_upload,
-            'localised_filesize': helpers.safe_localised_filesize
-        }
+        if cloudstorage_helpers is not None:
+            cloudstorage_helper_dict = {
+                'cloudstorage_use_secure_urls': cloudstorage_helpers.use_secure_urls,
+                'cloudstorage_use_azure_direct_upload': cloudstorage_helpers.use_azure_direct_upload,
+                'cloudstorage_get_cloud_storage_type': cloudstorage_helpers.get_cloud_storage_type,
+                'cloudstorage_use_enhanced_upload': cloudstorage_helpers.use_enhanced_upload,
+            }
+        else:
+            # Templates test these with `is defined` and call them: keep the
+            # names resolvable so local-storage deployments render the plain
+            # CKAN upload widget.
+            cloudstorage_helper_dict = {
+                'cloudstorage_use_secure_urls': lambda: False,
+                'cloudstorage_use_azure_direct_upload': lambda: False,
+                'cloudstorage_get_cloud_storage_type': lambda: None,
+                'cloudstorage_use_enhanced_upload': lambda: False,
+            }
+        cloudstorage_helper_dict['localised_filesize'] = helpers.safe_localised_filesize
         schemingdcat_helpers.update(cloudstorage_helper_dict)
         return schemingdcat_helpers
 
     # IUploader implementation - integrate cloudstorage
     def get_resource_uploader(self, data_dict):
-        """Use cloudstorage ResourceCloudStorage for resource uploads"""
+        """Use cloudstorage ResourceCloudStorage for resource uploads.
+
+        When ckanext-cloudstorage is not installed/enabled return None so that
+        ckan.lib.uploader.get_resource_uploader falls back to the core
+        ResourceUpload (local file storage).
+        """
+        if not _cloudstorage_active():
+            return None
         # Pass Azure info to the uploader if present
         uploader = storage.ResourceCloudStorage(data_dict)
         
@@ -830,6 +862,13 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         For non-sysadmin users, groups are deferred to after_dataset_create/update
         hooks to avoid 403 errors from CKAN's member_create auth checks.
         """
+        # Deployments without UNESCO member-state groups can switch the whole
+        # mechanism off (schemingdcat.memberstate_groups_enabled = false).
+        if not toolkit.asbool(
+            toolkit.config.get('schemingdcat.memberstate_groups_enabled', True)
+        ):
+            return data_dict
+
         # Prevent double processing (e.g., package_patch → package_update chain)
         if context.get('_memberstate_groups_processed'):
             return data_dict
@@ -1529,7 +1568,11 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
     def before_delete(self, context, resource, resources):
         """Handle cloudstorage file deletion when resource is deleted"""
         import os.path
-        
+
+        if not _cloudstorage_active():
+            # Core CKAN handles local file cleanup.
+            return
+
         # Find the resource info in the resources list
         for res in resources:
             if res['id'] == resource['id']:

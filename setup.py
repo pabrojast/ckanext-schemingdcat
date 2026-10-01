@@ -27,15 +27,21 @@ setup(
     namespace_packages=['ckanext'],
     include_package_data=True,
     install_requires=[
-        # Core dependencies
-        'gspread>=6.1.2',
-        'msal>=1.29.0',
-        'Office365-REST-Python-Client>=2.5.5',
+        # Core dependencies (kept minimal: cloud/sheets integrations are optional)
         'openpyxl>=3.1.2',
-        'pandas',
-        'azure-storage-blob>=12.14.0',
     ],
     extras_require={
+        'cloud': [
+            # Azure Blob integration used together with ckanext-cloudstorage
+            'azure-storage-blob>=12.14.0',
+        ],
+        'sheets': [
+            # XLS/Google Sheets/SharePoint harvesters
+            'gspread>=6.1.2',
+            'msal>=1.29.0',
+            'Office365-REST-Python-Client>=2.5.5',
+            'pandas',
+        ],
         'spatial': [
             # Spatial dependencies for extent extraction
             'fiona>=1.8.0',
