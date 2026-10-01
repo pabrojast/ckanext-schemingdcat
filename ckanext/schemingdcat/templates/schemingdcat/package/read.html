@@ -6,13 +6,13 @@
   {% asset 'ckanext-schemingdcat/schemingdcat-email-protect' %}
   {{ super() }}
   {% block package_description %}
-    {# Access-level banner (ckanext-datashare); no-op when the plugin is
-       off or the dataset is public #}
+    {# Misma leyenda del formulario, también para Public. #}
+    {% set datashare_access = h.datashare_access(pkg) if 'datashare_access' in h else none %}
     {% if 'datashare_access' in h %}
-      {% snippet 'package/snippets/datashare_banner.html', pkg=pkg %}
+      {% snippet 'package/snippets/datashare_banner.html', pkg=pkg, access=datashare_access %}
     {% endif %}
     <div class="dataset-badges">
-      {% if pkg.private %}
+      {% if pkg.private and not (datashare_access and datashare_access.level == 'confidential') %}
         <span class="dataset-private badge pull-left">
           <i class="fa fa-lock"></i>
           {{ _('Private') }}
