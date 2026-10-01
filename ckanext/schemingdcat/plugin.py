@@ -19,6 +19,19 @@ except ImportError:  # pragma: no cover - depends on the deployment
     cloudstorage_helpers = None
 
 
+def _fresh_context(context):
+    """Shallow-copy a context for a nested action call.
+
+    ``dict(context)`` shares the ``__auth_audit`` list with the caller; when a
+    nested ``package_show`` raises NotFound (e.g. during package_create) before
+    its auth check, the stale audit entry breaks the *outer* action with
+    "Action function package_show did not call its auth function".
+    """
+    fresh = dict(context or {})
+    fresh.pop('__auth_audit', None)
+    return fresh
+
+
 def _cloudstorage_active():
     """True when ckanext-cloudstorage is importable AND enabled in ckan.plugins."""
     return storage is not None and plugins.plugin_loaded('cloudstorage')
@@ -556,7 +569,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if not package_id:
             return None
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
         read_context['ignore_auth'] = True
         try:
@@ -686,7 +699,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if set(staged_current_group_names) == set(staged_target_group_names):
             return
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
         read_context['ignore_auth'] = True
         try:
@@ -793,7 +806,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if v not in (None, ''):
                 patch_data[required_field] = v
 
-        patch_context = dict(context or {})
+        patch_context = _fresh_context(context)
         patch_context.pop('schema', None)
         patch_context['_skip_doi_update'] = True
         patch_context['_schemingdcat_backfill_attempted'] = True
@@ -1161,7 +1174,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if not resource_id:
             return None
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
 
         resource_dict = toolkit.get_action('resource_show')(read_context, {'id': resource_id})
@@ -1241,7 +1254,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning('[RESOURCE UPDATE] Could not build patch data for missing-field backfill')
             return False
 
-        patch_context = dict(context or {})
+        patch_context = _fresh_context(context)
         patch_context.pop('schema', None)
         patch_context['_skip_doi_update'] = True
         patch_context['_schemingdcat_metadata_job'] = True
@@ -1431,7 +1444,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if not self._backfill_missing_dataset_fields_for_resource_update(context, data_dict, missing_fields):
                 raise
 
-            retry_context = dict(context or {})
+            retry_context = _fresh_context(context)
             retry_context['_schemingdcat_backfill_attempted'] = True
             result = next_action(retry_context, data_dict)
 
@@ -1485,7 +1498,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if not self._backfill_missing_dataset_fields_for_package_update(context, data_dict, missing_fields):
                 raise
 
-            retry_context = dict(context or {})
+            retry_context = _fresh_context(context)
             retry_context['_schemingdcat_backfill_attempted'] = True
             result = next_action(retry_context, data_dict)
 
@@ -2082,7 +2095,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return resource
 
         try:
-            system_context = dict(context)
+            system_context = _fresh_context(context)
             system_context.update({
                 'ignore_auth': True,
                 'api_version': 3,
@@ -2113,7 +2126,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return
 
         try:
-            system_context = dict(context)
+            system_context = _fresh_context(context)
             system_context.update({
                 'ignore_auth': True,
                 'api_version': 3,
