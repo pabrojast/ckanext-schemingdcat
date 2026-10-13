@@ -265,6 +265,9 @@ def test_package_update_backfills_missing_fields_and_retries(monkeypatch):
     subject = plugin.SchemingDCATDatasetsPlugin()
     calls = {'next_action': 0, 'backfill': None, 'apply': 0}
 
+    # This test isolates retry handling; permission checks use real datasets
+    # in the integration tests, rather than the synthetic pkg-1 below.
+    monkeypatch.setattr(toolkit, 'check_access', lambda *args: True)
     monkeypatch.setattr(subject, '_stage_requested_group_memberships', lambda ctx, payload: None)
     monkeypatch.setattr(
         subject,
