@@ -28,6 +28,18 @@ import sys
 
 log = logging.getLogger(__name__)
 
+
+def _fresh_context(context):
+    """Isolate auth auditing for a nested action without changing permissions.
+
+    A shallow copy shares ``__auth_audit`` with its caller. If package_show
+    raises NotFound before check_access, the leftover entry can make a later
+    successful package_show fail the outer action's auth audit.
+    """
+    fresh = dict(context or {})
+    fresh.pop('__auth_audit', None)
+    return fresh
+
 # Debug: Print when module is imported (to diagnose RQ worker issues)
 print(f"[SCHEMINGDCAT PLUGIN] Module imported successfully", file=sys.stderr)
 sys.stderr.flush()
@@ -62,7 +74,7 @@ class SchemingDCATPlugin(
         
         # Log beaker session params for debugging
         beaker_params = {k: v for k, v in config.items() if k.startswith('beaker.session')}
-        log.info(f"[CSRF FIX] Beaker session params: {beaker_params}")
+        log.info("[CSRF FIX] Beaker session parameter names: %s", sorted(beaker_params))
         
         # Fix WTF_CSRF_FIELD_NAME - ConfigParser converts to lowercase but Flask-WTF needs uppercase
         csrf_field = (
@@ -542,7 +554,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if not package_id:
             return None
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
         read_context['ignore_auth'] = True
         try:
@@ -672,7 +684,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if set(staged_current_group_names) == set(staged_target_group_names):
             return
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
         read_context['ignore_auth'] = True
         try:
@@ -779,7 +791,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if v not in (None, ''):
                 patch_data[required_field] = v
 
-        patch_context = dict(context or {})
+        patch_context = _fresh_context(context)
         patch_context.pop('schema', None)
         patch_context['_skip_doi_update'] = True
         patch_context['_schemingdcat_backfill_attempted'] = True
@@ -1122,7 +1134,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
         if not resource_id:
             return None
 
-        read_context = dict(context or {})
+        read_context = _fresh_context(context)
         read_context.pop('schema', None)
 
         resource_dict = toolkit.get_action('resource_show')(read_context, {'id': resource_id})
@@ -1202,7 +1214,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             log.warning('[RESOURCE UPDATE] Could not build patch data for missing-field backfill')
             return False
 
-        patch_context = dict(context or {})
+        patch_context = _fresh_context(context)
         patch_context.pop('schema', None)
         patch_context['_skip_doi_update'] = True
         patch_context['_schemingdcat_metadata_job'] = True
@@ -1392,7 +1404,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if not self._backfill_missing_dataset_fields_for_resource_update(context, data_dict, missing_fields):
                 raise
 
-            retry_context = dict(context or {})
+            retry_context = _fresh_context(context)
             retry_context['_schemingdcat_backfill_attempted'] = True
             result = next_action(retry_context, data_dict)
 
@@ -1446,7 +1458,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             if not self._backfill_missing_dataset_fields_for_package_update(context, data_dict, missing_fields):
                 raise
 
-            retry_context = dict(context or {})
+            retry_context = _fresh_context(context)
             retry_context['_schemingdcat_backfill_attempted'] = True
             result = next_action(retry_context, data_dict)
 
@@ -2039,7 +2051,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return resource
 
         try:
-            system_context = dict(context)
+            system_context = _fresh_context(context)
             system_context.update({
                 'ignore_auth': True,
                 'api_version': 3,
@@ -2070,7 +2082,7 @@ class SchemingDCATDatasetsPlugin(SchemingDatasetsPlugin):
             return
 
         try:
-            system_context = dict(context)
+            system_context = _fresh_context(context)
             system_context.update({
                 'ignore_auth': True,
                 'api_version': 3,
