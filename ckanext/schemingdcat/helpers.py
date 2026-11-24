@@ -1276,6 +1276,10 @@ def schemingdcat_dataset_type_label(dataset_type, plural=False):
     base_label = dataset_type.strip().replace("_", " ").replace("-", " ").title()
 
     overrides = {
+        "learning": {
+            "singular": p.toolkit._("Learning resource"),
+            "plural": p.toolkit._("Learning resources"),
+        },
         "dataset": {
             "singular": p.toolkit._("Dataset"),
             "plural": p.toolkit._("Datasets"),

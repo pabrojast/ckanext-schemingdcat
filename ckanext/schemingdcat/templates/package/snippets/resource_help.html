@@ -1,7 +1,10 @@
 {# Custom resource help text for IHP-WINS document/data uploads #}
 {% set current_type = dataset_type or (pkg.type if pkg is defined and pkg else '') %}
 <section class="module module-narrow module-shallow">
-  {% if current_type == 'documents' %}
+  {% if current_type == 'learning' %}
+    <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('Learning materials') }}</h2>
+    <div class="module-content"><p>{{ _('Attach training materials or link to files on the provider website. Changes require a new review before publication.') }}</p></div>
+  {% elif current_type == 'documents' %}
     <p class="text-muted small">{{ _('A screenshot of a computer') }}</p>
     <p class="text-muted small">{{ _('AI-generated content may be incorrect.') }}</p>
     <h2 class="module-heading"><i class="fa fa-info-circle"></i> {{ _('Document Upload Form') }}</h2>
